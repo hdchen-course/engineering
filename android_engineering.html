@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Android Engineering — Interview Prep Handbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --sw: 260px;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+#sb {
+  width: var(--sw);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; bottom: 0;
+  overflow-y: auto; z-index: 100;
+  transition: width .3s ease;
+}
+#sb::-webkit-scrollbar { width: 4px; }
+#sb::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.sbh {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.sbt { font-size: 13px; font-weight: 700; color: var(--blue-d); text-transform: uppercase; letter-spacing: 1px; }
+.sbs { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.ng { padding: 12px 8px 0; }
+.ngl { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 6px; }
+.ni {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: var(--text2);
+  transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+}
+.ni:hover { background: var(--bg3); color: var(--text); }
+.ni.active { background: var(--blue-l); color: var(--blue-d); font-weight: 600; }
+.ni-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.ni-text { flex: 1; font-size: 12px; }
+.badge { margin-left: auto; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+.bh { background: var(--red-l); color: var(--red); }
+.bg { background: var(--green-l); color: var(--green); }
+.bp { background: var(--purple-l); color: var(--purple); }
+.bt { background: var(--teal-l); color: var(--teal); }
+.bo { background: var(--orange-l); color: var(--orange); }
+
+/* MAIN — normal document flow, centered like the rest of the book */
+#main { background: var(--bg); }
+.container { max-width: 1080px; margin: 0 auto; padding: 20px 20px 0; }
+
+/* TOP SECTION NAV (site style, sticky) */
+.nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 14px 0; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; font-family: 'Inter', sans-serif; transition: all .2s; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue-d); border-color: var(--blue); }
+
+/* HEADER */
+.ph {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px;
+  border-radius: var(--r);
+  margin: 8px 0 4px;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #93c5fd; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 650px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+.sec { padding: 28px 4px; display: none; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: #fff; border-radius: var(--r); margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--blue-l); color: var(--blue-d); font-size: 11px; font-weight: 500; margin: 2px; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* INTERVIEW QUOTE */
+.iq {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--text2);
+  font-size: 13px;
+  position: relative;
+}
+.iq::before {
+  content: 'SAY THIS';
+  position: absolute;
+  top: -8px; left: 14px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  background: var(--blue);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+h4.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* SKILL BOX */
+.skill-box {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 18px; margin: 10px 0; box-shadow: var(--shadow-sm);
+}
+.skill-box h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.skill-box ul { padding-left: 18px; font-size: 13px; color: var(--text2); }
+.skill-box li { margin-bottom: 4px; }
+
+/* SVG CONTAINERS */
+.svg-container {
+  margin: 20px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.svg-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* PROGRESS */
+.prog { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.pc { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow-sm); text-align: center; }
+.pc .num { font-size: 28px; font-weight: 800; color: var(--blue-d); }
+.pc .lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg3); padding: 1px 5px; border-radius: 4px; color: var(--blue-d); }
+
+pre, pre.codeblock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+  line-height: 1.6;
+  color: var(--text2);
+  white-space: pre;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: 12px; }
+
+/* LIST STYLING */
+.content-list { padding-left: 20px; margin: 8px 0; }
+.content-list li { margin-bottom: 6px; font-size: 13px; color: var(--text2); }
+.content-list li strong { color: var(--text); }
+
+/* DECISION GRID */
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.decision-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.decision-item h5 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-d);
+  margin-bottom: 6px;
+}
+.decision-item p {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.decision-item .di-key {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+@media (max-width: 768px) {
+  #sb { width: 0; overflow: hidden; }
+  #main { left: 0; }
+  .sec { padding: 20px 16px; }
+  .ph { padding: 24px 16px; }
+}
+a.lc { color: var(--blue); text-decoration: none; font-weight: 500; }
+a.lc:hover { text-decoration: underline; color: var(--blue-d); }
+</style>
+
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<style id="and-syntax">
+pre .kw{color:#7c3aed;font-weight:600}
+pre .cm{color:#64748b;font-style:italic}
+pre .num{color:#ea580c}
+pre .str{color:#0d9488}
+.stepper{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;margin:16px 0;box-shadow:var(--shadow-sm)}
+.stepper-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.stepper-btn{padding:8px 16px;border-radius:8px;border:1px solid var(--blue);background:var(--blue);color:#fff;cursor:pointer;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;transition:background .15s}
+.stepper-btn:hover{background:var(--blue-d)}
+.stepper-btn.ghost{background:var(--bg2);color:var(--text2);border-color:var(--border)}
+.stepper-btn.ghost:hover{background:var(--bg3)}
+.stepper-btn:disabled{opacity:.4;cursor:not-allowed}
+.stepper-cap{margin-top:12px;padding:12px 14px;background:var(--bg3);border-radius:8px;font-size:13px;color:var(--text2);min-height:52px;line-height:1.6}
+.stepper-cap b{color:var(--text)}
+.stepper-prog{font-size:11px;color:var(--text3);margin-left:auto;font-weight:700;letter-spacing:.5px}
+.lc-node rect{fill:#fff;stroke:var(--border);stroke-width:1.5;transition:fill .25s,stroke .25s,stroke-width .25s}
+.lc-node text{fill:var(--text2);transition:fill .25s}
+.lc-node.on rect{fill:var(--blue-l);stroke:var(--blue);stroke-width:2.5}
+.lc-node.on text{fill:var(--blue-d)}
+.lc-node.dead rect{stroke-dasharray:5 3}
+.lc-node.dead.on rect{fill:var(--red-l);stroke:var(--red)}
+.lc-node.dead.on text{fill:#b91c1c}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part IX · Chapter 1 — <b>Android Engineering</b></span><span class="bkspacer"></span></nav>
+
+<div id="main">
+<div class="container">
+
+<div class="ph">
+  <div class="htag">Mobile Engineering &middot; Interview Prep</div>
+  <div class="ht">Android <span>Engineering</span> &mdash; From App Model to the Frame Budget</div>
+  <div class="hd">A software engineer's map of Android: the Activity/Fragment app model and its lifecycle, the modern Kotlin + Jetpack Compose stack, MVVM/MVI with unidirectional data flow, the main-thread rule behind ANRs, the 16&nbsp;ms frame budget, memory leaks, storage &amp; networking, and how the manifest and Gradle tie it together. Analogy-first, then interview depth.</div>
+  <div class="hm">
+    <div class="chip">Sections <b>8</b></div>
+    <div class="chip">Language <b>Kotlin</b></div>
+    <div class="chip">UI <b>Jetpack Compose</b></div>
+    <div class="chip">Signature <b>Lifecycle</b></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="go('overview')">The App Model</button>
+  <button class="nav-btn" onclick="go('lifecycle')">Lifecycle</button>
+  <button class="nav-btn" onclick="go('stack')">Modern Stack</button>
+  <button class="nav-btn" onclick="go('arch')">Architecture (MVVM/MVI)</button>
+  <button class="nav-btn" onclick="go('threading')">Threading, ANRs &amp; Jank</button>
+  <button class="nav-btn" onclick="go('memory')">Memory &amp; Leaks</button>
+  <button class="nav-btn" onclick="go('data')">Storage &amp; Networking</button>
+  <button class="nav-btn" onclick="go('build')">Manifest &amp; Gradle</button>
+</nav>
+
+<!-- ==================== TAB: OVERVIEW ==================== -->
+<div class="sec active" id="tab-overview">
+<h2 class="stitle">The App Model — Activities, Fragments &amp; Components</h2>
+<div class="sdesc">What an Android app actually is, and why it feels so different from a web server or a desktop program.</div>
+
+<p><strong>The analogy first.</strong> A web server owns its own <code>main()</code>: it starts, runs a loop, and stops when you tell it to. An Android app does <em>not</em>. Think of your app as a set of <strong>rooms in a building the operating system owns</strong>. The OS decides when to open a room (a screen), when to send someone away because a phone call arrived, and when to demolish the whole building to free up space. Your code is a collection of callbacks the OS invokes — you react; you don't drive.</p>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>The single biggest mental shift for a backend/web engineer: <strong>you don't control your own process lifetime.</strong> The system can pause, stop, recreate, or outright kill your components at almost any time. Almost every Android "pitfall" — configuration changes, ANRs, leaks, lost state — is a consequence of this one fact.</p></div>
+
+<h3 class="sub">The four app components</h3>
+<p>Every Android app is built from four kinds of entry points the system can launch independently. Each is declared in the <code>AndroidManifest.xml</code>.</p>
+<table class="tbl">
+<thead><tr><th>Component</th><th>What it is</th><th>Web/backend analogy</th></tr></thead>
+<tbody>
+<tr><td><strong>Activity</strong></td><td>One screen the user interacts with (e.g. an inbox screen). The primary UI entry point.</td><td>A page / route handler</td></tr>
+<tr><td><strong>Service</strong></td><td>Long-running work with no UI (playing music, syncing). Modern apps prefer <code>WorkManager</code> for deferrable jobs.</td><td>A background worker / cron job</td></tr>
+<tr><td><strong>BroadcastReceiver</strong></td><td>Responds to system-wide events (connectivity changed, boot completed).</td><td>An event / webhook subscriber</td></tr>
+<tr><td><strong>ContentProvider</strong></td><td>Exposes app data to other apps through a URI-addressed interface.</td><td>A REST API over your data</td></tr>
+</tbody>
+</table>
+
+<h3 class="sub">Activities and Fragments</h3>
+<p>An <strong>Activity</strong> is a full screen. A <strong>Fragment</strong> is a reusable, embeddable slice of UI <em>with its own lifecycle</em> that lives inside an Activity — think a master list and detail pane that rearrange on a tablet vs. a phone. Historically apps had many Activities; the modern pattern is <strong>single-Activity architecture</strong>: one Activity hosts many Fragments (or, with Compose, many composable "screens") and the <code>Navigation</code> component swaps between them.</p>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">A</span><span class="ct">Why Fragments exist (and why they're notorious)</span><span class="db dm">CONTEXT</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>The good:</strong> reusable UI across screen sizes; a back stack managed by the <code>FragmentManager</code>; independent lifecycle so a piece of UI can be added/removed dynamically.</li>
+<li><strong>The pain:</strong> a Fragment has <em>two</em> lifecycles (the Fragment and its View), which is a classic leak source; nested-fragment and state-restoration bugs are common enough that "Fragment lifecycle" is a standard interview topic.</li>
+<li><strong>Where it's going:</strong> Jetpack Compose largely removes the need for Fragments as UI containers — a "screen" is just a composable function — but Fragments remain everywhere in existing codebases, so know them.</li>
+</ul>
+</div></div>
+
+<div class="note"><div class="notel">NOTE FOR WEB / BACKEND READERS</div><p>Map it to what you know: an <strong>Activity ≈ a route/page</strong>, the <strong>manifest ≈ your route table + deployment descriptor</strong>, an <strong>Intent ≈ a request/redirect</strong> (used both to navigate within your app and to hand work to other apps), and the <strong>process ≈ a container the platform can OOM-kill at will</strong>. The crucial difference: there is no long-lived server object you own. State that would live in a request-scoped session on the server must instead survive <em>on the client</em> across recreation — which is exactly what ViewModel and saved state solve.</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>If asked "what happens when a user taps your app icon?", don't jump to UI. Say: the system resolves the <strong>launcher Activity</strong> from the manifest's intent-filter, starts (or reuses) your <strong>process</strong>, instantiates the Activity, and drives it through <code>onCreate → onStart → onResume</code>. Naming the manifest, the process, and the lifecycle in one breath signals you understand Android's ownership model, not just widgets.</p></div>
+</div>
+
+<!-- ==================== TAB: LIFECYCLE ==================== -->
+<div class="sec" id="tab-lifecycle">
+<h2 class="stitle">The Activity Lifecycle</h2>
+<div class="sdesc">The state machine every Android engineer must know cold — plus configuration-change recreation and process death/restore, the two cases that separate juniors from seniors.</div>
+
+<p><strong>Analogy.</strong> A lifecycle callback is the OS knocking on your door to say what's about to happen: "you're now visible" (<code>onStart</code>), "you have the user's attention" (<code>onResume</code>), "someone else is taking the stage — wrap up fast" (<code>onPause</code>). You do the right cleanup/setup in each. Miss one and you leak resources, drain battery, or lose the user's data.</p>
+
+<h3 class="sub">The state machine</h3>
+<div class="svg-container">
+<svg id="andlc_stage" viewBox="0 0 760 300" width="100%" role="img" aria-label="Android Activity lifecycle state machine">
+  <defs>
+    <marker id="lcah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#748099"/></marker>
+  </defs>
+  <text x="264" y="70" text-anchor="middle" font-size="11" font-weight="700" fill="#15803d">RESUMED / running (foreground, has focus)</text>
+  <g class="lc-node" id="lc-create"><rect x="6" y="100" width="96" height="46" rx="8"/><text x="54" y="120" text-anchor="middle" font-size="11" font-weight="600">onCreate()</text><text x="54" y="135" text-anchor="middle" font-size="9">created</text></g>
+  <g class="lc-node" id="lc-start"><rect x="132" y="100" width="96" height="46" rx="8"/><text x="180" y="120" text-anchor="middle" font-size="11" font-weight="600">onStart()</text><text x="180" y="135" text-anchor="middle" font-size="9">visible</text></g>
+  <g class="lc-node" id="lc-resume"><rect x="258" y="100" width="96" height="46" rx="8"/><text x="306" y="120" text-anchor="middle" font-size="11" font-weight="600">onResume()</text><text x="306" y="135" text-anchor="middle" font-size="9">interactive</text></g>
+  <g class="lc-node" id="lc-pause"><rect x="384" y="100" width="96" height="46" rx="8"/><text x="432" y="120" text-anchor="middle" font-size="11" font-weight="600">onPause()</text><text x="432" y="135" text-anchor="middle" font-size="9">losing focus</text></g>
+  <g class="lc-node" id="lc-stop"><rect x="510" y="100" width="96" height="46" rx="8"/><text x="558" y="120" text-anchor="middle" font-size="11" font-weight="600">onStop()</text><text x="558" y="135" text-anchor="middle" font-size="9">hidden</text></g>
+  <g class="lc-node" id="lc-destroy"><rect x="636" y="100" width="96" height="46" rx="8"/><text x="684" y="120" text-anchor="middle" font-size="11" font-weight="600">onDestroy()</text><text x="684" y="135" text-anchor="middle" font-size="9">gone</text></g>
+  <line x1="102" y1="123" x2="130" y2="123" stroke="#748099" stroke-width="1.5" marker-end="url(#lcah)"/>
+  <line x1="228" y1="123" x2="256" y2="123" stroke="#748099" stroke-width="1.5" marker-end="url(#lcah)"/>
+  <line x1="354" y1="123" x2="382" y2="123" stroke="#748099" stroke-width="1.5" marker-end="url(#lcah)"/>
+  <line x1="480" y1="123" x2="508" y2="123" stroke="#748099" stroke-width="1.5" marker-end="url(#lcah)"/>
+  <line x1="606" y1="123" x2="634" y2="123" stroke="#748099" stroke-width="1.5" marker-end="url(#lcah)"/>
+  <path d="M432 146 C432 200, 306 200, 306 148" fill="none" stroke="#16a34a" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#lcah)"/>
+  <rect x="312" y="184" width="114" height="13" rx="3" fill="var(--bg2)"/>
+  <text x="369" y="193" text-anchor="middle" font-size="9" fill="#15803d">user returns → onResume</text>
+  <path d="M558 146 C558 250, 180 250, 180 148" fill="none" stroke="#7c3aed" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#lcah)"/>
+  <text x="369" y="242" text-anchor="middle" font-size="9" fill="#7c3aed">onRestart → onStart</text>
+  <g class="lc-node dead" id="lc-dead"><rect x="636" y="200" width="110" height="46" rx="8"/><text x="691" y="220" text-anchor="middle" font-size="10" font-weight="600">process killed</text><text x="691" y="235" text-anchor="middle" font-size="9">no callbacks</text></g>
+  <path d="M558 146 C600 175, 640 185, 668 200" fill="none" stroke="#dc2626" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#lcah)"/>
+</svg>
+</div>
+
+<h3 class="sub">Replayable walkthrough</h3>
+<div class="sdesc">Press <b>Step</b> to walk a real Activity from launch through backgrounding, a rotation (configuration change), process death, and finally finish. <b>Reset</b> replays it. Watch which node lights up.</div>
+<div class="stepper" id="andlc_player">
+  <div class="stepper-cap" id="andlc_cap"></div>
+  <div class="stepper-controls">
+    <button class="stepper-btn" id="andlc_step">Step ▶</button>
+    <button class="stepper-btn ghost" id="andlc_back">◀ Back</button>
+    <button class="stepper-btn ghost" id="andlc_reset">↺ Reset</button>
+    <span class="stepper-prog" id="andlc_prog"></span>
+  </div>
+</div>
+
+<h3 class="sub">The callbacks, precisely</h3>
+<table class="tbl">
+<thead><tr><th>Callback</th><th>Fires when</th><th>Do here</th></tr></thead>
+<tbody>
+<tr><td><code>onCreate</code></td><td>Instance created (once per instance)</td><td>Inflate UI, wire ViewModel, restore <code>savedInstanceState</code></td></tr>
+<tr><td><code>onStart</code></td><td>Becoming visible</td><td>Register cheap observers; start UI updates</td></tr>
+<tr><td><code>onResume</code></td><td>In foreground with focus</td><td>Start camera/sensors/animations; take exclusive resources</td></tr>
+<tr><td><code>onPause</code></td><td>Losing focus (keep it <em>fast</em>)</td><td>Release exclusive resources; <strong>never</strong> do heavy/blocking work</td></tr>
+<tr><td><code>onStop</code></td><td>No longer visible</td><td>Persist data, unregister observers, free heavy memory</td></tr>
+<tr><td><code>onDestroy</code></td><td>Finishing or being recreated</td><td>Final cleanup; cancel anything still running</td></tr>
+</tbody>
+</table>
+
+<div class="trap"><div class="trapl">TRAP — the two cases juniors miss</div><p><strong>(1) Configuration change:</strong> a rotation, dark-mode toggle, or language change destroys and recreates the Activity <em>by default</em>. Any state held in Activity fields is lost. <strong>(2) Process death:</strong> a backgrounded app can be killed with <em>no callbacks at all</em> — your ViewModel and every in-memory object vanish. On return, the system recreates your task from a fresh process. If you only kept state in memory, the user loses their work.</p></div>
+
+<div class="tip"><div class="tipl">THE FIX</div><p>Two tools, two jobs. A <strong>ViewModel</strong> survives configuration changes (it's scoped to the screen, not the Activity instance) — put screen state there. A <strong>SavedStateHandle / <code>onSaveInstanceState</code> Bundle</strong> survives process death — the system holds it as a parcel (in the ActivityManager) and redelivers it when your process is recreated, so put the <em>small</em> essentials there (a scroll position, a draft text, the selected id). It does <em>not</em> survive a reboot or a user-initiated dismissal (swiping the app away). Big data is re-fetched from Room/network on restore.</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Expect "what happens when the user rotates the screen while a network call is in flight?" The strong answer: the Activity is destroyed and recreated, but the <strong>ViewModel and its <code>viewModelScope</code> coroutine survive</strong>, so the call is not restarted; when it completes it updates the ViewModel's <code>StateFlow</code>, and the recreated UI re-collects the latest state. Then volunteer the harder case — <em>process death</em> — and note that only <code>SavedStateHandle</code> survives it. That two-tier answer is the senior signal.</p></div>
+</div>
+
+<!-- ==================== TAB: STACK ==================== -->
+<div class="sec" id="tab-stack">
+<h2 class="stitle">The Modern Stack — Kotlin, Compose, ViewModel, Flow</h2>
+<div class="sdesc">What a brand-new Android app is built from in the mid-2020s, and why each piece exists.</div>
+
+<p><strong>Analogy.</strong> If you know React with hooks, you already know most of modern Android. <strong>Jetpack Compose</strong> is React for native UI: you write functions that return UI as a function of state, and the framework re-renders (re-composes) when state changes. <strong>StateFlow</strong> is your observable store; <strong>ViewModel</strong> is where that store lives so it survives screen rotations; <strong>Coroutines</strong> are async/await.</p>
+
+<h3 class="sub">Kotlin</h3>
+<p>Officially supported since 2017 and Google's preferred (Kotlin-first) language since 2019. Highlights an interviewer expects you to name: <strong>null safety</strong> in the type system (<code>String</code> vs <code>String?</code>), <strong>coroutines</strong> for structured concurrency, concise <strong>data classes</strong>, <strong>sealed classes</strong> for exhaustive state modeling, and extension functions. Java interop is seamless, so mixed codebases are normal.</p>
+
+<h3 class="sub">Jetpack Compose — declarative UI</h3>
+<p>The old way (Android Views / XML) was <strong>imperative</strong>: you built a view tree in XML, found widgets by id, and mutated them (<code>textView.setText(...)</code>). Compose is <strong>declarative</strong>: the UI is a pure function of state, and you never mutate widgets by hand.</p>
+<pre><span class="cm">// Declarative UI: describes what to show for a given state.</span>
+<span class="cm">// When `state` changes, Compose re-invokes this and updates only what differs.</span>
+<span class="kw">@Composable</span>
+<span class="kw">fun</span> ProfileScreen(vm: ProfileViewModel = hiltViewModel()) {  <span class="cm">// Hilt supplies repo + userId</span>
+    <span class="kw">val</span> ui <span class="kw">by</span> vm.state.collectAsStateWithLifecycle()
+    <span class="kw">when</span> (<span class="kw">val</span> s = ui) {
+        <span class="kw">is</span> ProfileUiState.Loading -&gt; CircularProgressIndicator()
+        <span class="kw">is</span> ProfileUiState.Success -&gt; Text(s.user.name)
+        <span class="kw">is</span> ProfileUiState.Error   -&gt; ErrorView(s.message, onRetry = vm::reload)  <span class="cm">// no-arg retry</span>
+    }
+}</pre>
+<div class="note"><div class="notel">RECOMPOSITION</div><p>Compose's snapshot system tracks reads of snapshot state (<code>State&lt;T&gt;</code>). A <code>StateFlow</code> is <em>not</em> observed directly — it becomes observable only once you collect it into a <code>State&lt;T&gt;</code> via <code>collectAsState()</code>/<code>collectAsStateWithLifecycle()</code>. When a value a composable read changes, only that composable (and its subtree) re-runs — this is <em>recomposition</em>. Keep composables side-effect-free and cheap; do side effects in <code>LaunchedEffect</code>/<code>DisposableEffect</code>, not inline.</p></div>
+
+<h3 class="sub">ViewModel — where state lives</h3>
+<p>A <code>ViewModel</code> holds and prepares UI state and survives configuration changes. It exposes state and receives events; it must <strong>never</strong> hold a reference to a View, Activity, or any UI <code>Context</code> (that would leak on rotation).</p>
+<pre><span class="kw">class</span> ProfileViewModel(
+    <span class="kw">private val</span> repo: UserRepository,
+    <span class="kw">private val</span> userId: String,          <span class="cm">// captured once; retry needs no argument</span>
+) : ViewModel() {
+
+    <span class="kw">private val</span> _state = MutableStateFlow&lt;ProfileUiState&gt;(ProfileUiState.Loading)
+    <span class="kw">val</span> state: StateFlow&lt;ProfileUiState&gt; = _state.asStateFlow()
+
+    <span class="kw">init</span> { reload() }
+
+    <span class="kw">fun</span> reload() {                                <span class="cm">// () -&gt; Unit, so vm::reload fits onRetry</span>
+        viewModelScope.launch {                     <span class="cm">// auto-cancels when the VM clears</span>
+            _state.value = ProfileUiState.Loading
+            _state.value = <span class="kw">try</span> {
+                ProfileUiState.Success(repo.user(userId))
+            } <span class="kw">catch</span> (e: IOException) {
+                ProfileUiState.Error(e.message.orEmpty())
+            }
+        }
+    }
+}</pre>
+
+<h3 class="sub">LiveData vs StateFlow</h3>
+<table class="tbl">
+<thead><tr><th></th><th>LiveData</th><th>StateFlow</th></tr></thead>
+<tbody>
+<tr><td>Origin</td><td>Older Jetpack (2017)</td><td>Kotlin coroutines (current default)</td></tr>
+<tr><td>Always has a value</td><td>No (nullable, may be unset)</td><td>Yes (constructed with an initial value)</td></tr>
+<tr><td>Lifecycle-aware</td><td>Built-in</td><td>Via <code>collectAsStateWithLifecycle()</code> / <code>repeatOnLifecycle</code></td></tr>
+<tr><td>Operators</td><td>Few</td><td>Full Flow operator set (map, filter, combine…)</td></tr>
+<tr><td>Use when</td><td>Legacy code / Java interop</td><td>New Kotlin code</td></tr>
+</tbody>
+</table>
+
+<h3 class="sub">Coroutines &amp; Flow — async without callbacks</h3>
+<p>A <strong>coroutine</strong> is a suspendable computation: <code>suspend</code> functions look synchronous but yield the thread while waiting (no callback pyramids). A <strong>Flow</strong> is a cold, asynchronous stream — a sequence of values over time (like an <code>Observable</code>). <strong>StateFlow</strong>/<strong>SharedFlow</strong> are hot Flows for state and events.</p>
+<pre><span class="cm">// A cold Flow that emits, combines, and stays off the main thread.</span>
+<span class="kw">fun</span> searchResults(query: Flow&lt;String&gt;): Flow&lt;List&lt;Item&gt;&gt; =
+    query
+        .debounce(<span class="num">300</span>)                 <span class="cm">// wait for typing to settle</span>
+        .distinctUntilChanged()
+        .flatMapLatest { q -&gt; repo.search(q) } <span class="cm">// cancels the stale search</span>
+        .flowOn(Dispatchers.IO)          <span class="cm">// upstream runs on IO threads</span></pre>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Be ready to justify <strong>StateFlow over LiveData</strong> ("always-valued, richer operators, and one concurrency model with the rest of my coroutine code") and to explain <strong>cold vs hot</strong> Flows (a cold Flow re-runs its producer per collector; a hot <code>StateFlow</code> shares one value among collectors). If you mention <code>flatMapLatest</code> for search-as-you-type and <code>collectAsStateWithLifecycle</code> to avoid collecting while the screen is stopped, you read as current.</p></div>
+</div>
+
+<!-- ==================== TAB: ARCH ==================== -->
+<div class="sec" id="tab-arch">
+<h2 class="stitle">App Architecture — MVVM, MVI &amp; Unidirectional Data Flow</h2>
+<div class="sdesc">How to structure a screen so state is predictable and testable — the recurring senior-level design question.</div>
+
+<p><strong>Analogy.</strong> Unidirectional data flow (UDF) is a one-way conveyor belt: <strong>events go up</strong> (the user taps, the UI tells the ViewModel), <strong>state comes down</strong> (the ViewModel produces new state, the UI renders it). There is exactly one source of truth and one direction of change, so you can always answer "why does the screen look like this?" by reading the current state object.</p>
+
+<h3 class="sub">The layers</h3>
+<div class="svg-container">
+<svg viewBox="0 0 720 300" width="100%" role="img" aria-label="MVVM unidirectional data flow diagram">
+  <defs>
+    <marker id="ar-down" markerWidth="10" markerHeight="10" refX="5" refY="8" orient="auto"><path d="M0,0 L10,0 L5,8 Z" fill="#2563eb"/></marker>
+    <marker id="ar-up" markerWidth="10" markerHeight="10" refX="5" refY="0" orient="auto"><path d="M0,8 L10,8 L5,0 Z" fill="#ea580c"/></marker>
+  </defs>
+  <rect x="230" y="20" width="260" height="60" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="360" y="45" text-anchor="middle" font-size="13" font-weight="700" fill="#1e40af">UI layer — Compose</text>
+  <text x="360" y="65" text-anchor="middle" font-size="10" fill="#1e40af">stateless; renders UiState, emits events</text>
+  <rect x="230" y="120" width="260" height="60" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="360" y="145" text-anchor="middle" font-size="13" font-weight="700" fill="#5b21b6">ViewModel</text>
+  <text x="360" y="165" text-anchor="middle" font-size="10" fill="#5b21b6">holds StateFlow&lt;UiState&gt;; the single source of truth</text>
+  <rect x="230" y="220" width="260" height="60" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="360" y="245" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">Data layer — Repository</text>
+  <text x="360" y="265" text-anchor="middle" font-size="10" fill="#166534">Room + Retrofit; mediates sources</text>
+  <line x1="300" y1="80" x2="300" y2="118" stroke="#2563eb" stroke-width="2" marker-end="url(#ar-down)"/>
+  <text x="250" y="103" text-anchor="middle" font-size="9" fill="#2563eb">state ↓</text>
+  <line x1="420" y1="118" x2="420" y2="82" stroke="#ea580c" stroke-width="2" marker-end="url(#ar-up)"/>
+  <text x="470" y="103" text-anchor="middle" font-size="9" fill="#c2410c">events ↑</text>
+  <line x1="300" y1="180" x2="300" y2="218" stroke="#2563eb" stroke-width="2" marker-end="url(#ar-down)"/>
+  <text x="250" y="203" text-anchor="middle" font-size="9" fill="#2563eb">data ↓</text>
+  <line x1="420" y1="218" x2="420" y2="182" stroke="#ea580c" stroke-width="2" marker-end="url(#ar-up)"/>
+  <text x="470" y="203" text-anchor="middle" font-size="9" fill="#c2410c">requests ↑</text>
+</svg>
+</div>
+<ul class="content-list">
+<li><strong>UI layer (Compose):</strong> stateless composables that render a <code>UiState</code> and forward user events upward. No business logic.</li>
+<li><strong>ViewModel:</strong> converts events into new state, holds the <code>StateFlow&lt;UiState&gt;</code> that is the screen's single source of truth.</li>
+<li><strong>Data layer:</strong> a <code>Repository</code> hides the details of Room, Retrofit, and caching behind a clean interface — the ViewModel never talks to a database or the network directly.</li>
+</ul>
+
+<h3 class="sub">MVVM vs MVI</h3>
+<table class="tbl">
+<thead><tr><th></th><th>MVVM</th><th>MVI</th></tr></thead>
+<tbody>
+<tr><td>State shape</td><td>Often several observable fields</td><td>One immutable <code>UiState</code> per screen</td></tr>
+<tr><td>Events</td><td>ViewModel exposes methods</td><td>A single <code>onEvent(Intent)</code> reducer</td></tr>
+<tr><td>Strength</td><td>Simple, less boilerplate</td><td>Fully predictable; trivial to time-travel/replay/test</td></tr>
+<tr><td>Cost</td><td>State can drift across fields</td><td>More ceremony for small screens</td></tr>
+</tbody>
+</table>
+<pre><span class="cm">// MVI: one immutable state + one event entry point (a reducer).</span>
+<span class="kw">data class</span> UiState(<span class="kw">val</span> loading: Boolean = <span class="kw">false</span>, <span class="kw">val</span> items: List&lt;Item&gt; = emptyList())
+
+<span class="kw">sealed interface</span> Event {
+    <span class="kw">data object</span> Refresh : Event
+    <span class="kw">data class</span> Select(<span class="kw">val</span> id: String) : Event
+}
+
+<span class="kw">fun</span> onEvent(e: Event) = <span class="kw">when</span> (e) {
+    Event.Refresh   -&gt; refresh()
+    <span class="kw">is</span> Event.Select -&gt; open(e.id)
+}</pre>
+
+<div class="tip"><div class="tipl">MODEL STATE, DON'T FLAG IT</div><p>Prefer a <code>sealed interface UiState { Loading; Success(data); Error(msg) }</code> over three separate booleans (<code>isLoading</code>, <code>hasError</code>…). Sealed hierarchies make illegal states unrepresentable and force an exhaustive <code>when</code> in the UI — the compiler catches the case you forgot.</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>"Design the architecture for a screen that loads a list, supports pull-to-refresh, and handles errors." Draw the three layers, put a single immutable <code>UiState</code> in the ViewModel, route user actions through one event function, and keep the Composable stateless. Then name the payoff: <strong>testability</strong> (the ViewModel is a plain class you unit-test with a fake repository) and <strong>survivability</strong> (state in the ViewModel outlives rotation). Mentioning dependency injection (Hilt) for supplying the repository is a bonus.</p></div>
+</div>
+
+<!-- ==================== TAB: THREADING ==================== -->
+<div class="sec" id="tab-threading">
+<h2 class="stitle">The Main Thread, ANRs &amp; the 16&nbsp;ms Frame Budget</h2>
+<div class="sdesc">Why one thread rules everything, why blocking it is fatal, and the math behind smooth scrolling.</div>
+
+<p><strong>Analogy.</strong> The <strong>main (UI) thread</strong> is a single cashier serving one line. It handles input events, runs your callbacks, <em>and</em> draws every frame. If you make the cashier do a slow task (a network call, a big file read), the entire line freezes — the screen stops responding. Do it long enough and Android shows the dreaded <strong>"Application Not Responding" (ANR)</strong> dialog.</p>
+
+<h3 class="sub">The two rules of the main thread</h3>
+<div class="g2">
+<div class="skill-box"><h4 style="color:var(--red);">Rule 1: Never block it</h4><ul><li>No network, disk, or heavy CPU work on the main thread.</li><li>Input events not handled within <strong>~5&nbsp;s</strong> → ANR.</li><li>A <code>BroadcastReceiver</code> that runs &gt;10&nbsp;s → ANR.</li></ul></div>
+<div class="skill-box"><h4 style="color:var(--blue);">Rule 2: Only it can touch UI</h4><ul><li>All UI/state updates must happen on the main thread.</li><li>Background work must hand results back to it.</li><li>Coroutines make this a one-liner (<code>withContext</code>).</li></ul></div>
+</div>
+
+<pre><span class="cm">// WRONG — blocks the main thread → frozen UI → ANR</span>
+<span class="kw">fun</span> onClick() {
+    <span class="kw">val</span> data = api.fetchBlocking()   <span class="cm">// network call on the UI thread!</span>
+    render(data)
+}
+
+<span class="cm">// RIGHT — suspend off the main thread, resume on it to update state</span>
+<span class="kw">fun</span> load() = viewModelScope.launch {          <span class="cm">// starts on the main dispatcher</span>
+    _state.value = UiState.Loading
+    <span class="kw">val</span> data = withContext(Dispatchers.IO) { api.fetch() }  <span class="cm">// off-thread</span>
+    _state.value = UiState.Success(data)        <span class="cm">// back on main — safe</span>
+}</pre>
+
+<h3 class="sub">The 16&nbsp;ms frame budget &amp; jank</h3>
+<p>A 60&nbsp;Hz display refreshes every <strong>1000&nbsp;ms ÷ 60 ≈ 16.67&nbsp;ms</strong>. To render smoothly, all your work for a frame — measure, layout, draw, recomposition — must finish inside that window. Miss it and the previous frame is shown again: a <strong>dropped frame</strong>, perceived as stutter or <strong>jank</strong>. On a 120&nbsp;Hz display the budget shrinks to <strong>~8.3&nbsp;ms</strong>.</p>
+<div class="svg-container">
+<svg viewBox="0 0 720 190" width="100%" role="img" aria-label="Frame budget: smooth vs janky frame">
+  <text x="360" y="18" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">One frame = 16.67 ms budget (60 Hz)</text>
+  <text x="20" y="55" font-size="11" font-weight="600" fill="#166534">Smooth</text>
+  <rect x="80" y="40" width="360" height="26" rx="4" fill="#dcfce7" stroke="#16a34a"/>
+  <rect x="80" y="40" width="240" height="26" rx="4" fill="#1d6b2e"/>
+  <text x="200" y="58" text-anchor="middle" font-size="10" fill="#fff">work ≈ 11 ms</text>
+  <line x1="440" y1="30" x2="440" y2="76" stroke="#334155" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <text x="470" y="58" font-size="10" fill="#166534">frame shown on time ✓</text>
+  <text x="20" y="120" font-size="11" font-weight="600" fill="#c81e1e">Janky</text>
+  <rect x="80" y="105" width="360" height="26" rx="4" fill="#fee2e2" stroke="#dc2626"/>
+  <rect x="80" y="105" width="520" height="26" rx="4" fill="#c81e1e"/>
+  <text x="270" y="123" text-anchor="middle" font-size="10" fill="#fff">work ≈ 24 ms (main thread blocked)</text>
+  <line x1="440" y1="95" x2="440" y2="141" stroke="#334155" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <text x="360" y="165" text-anchor="middle" font-size="10" fill="#c81e1e">deadline missed → previous frame repeated → dropped frame (jank)</text>
+</svg>
+</div>
+<ul class="content-list">
+<li><strong>Common jank causes:</strong> heavy work in a composable/<code>onBind</code>, large-image decoding on the main thread, unbounded recomposition, synchronous disk reads, allocation storms triggering GC pauses.</li>
+<li><strong>Tools to name:</strong> Android Studio Profiler, Systrace/Perfetto, the <em>Layout Inspector</em>, Compose recomposition counts, and <em>StrictMode</em> to catch main-thread disk/network in debug builds.</li>
+</ul>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Connect the two ideas: <strong>ANR is the catastrophic end of the same spectrum whose mild end is jank</strong> — both come from doing too much on the main thread. If asked "the list scrolls choppily, how do you debug it?", answer with the budget (16.67&nbsp;ms), profile to find the frame that overruns, then move the offending work off-thread (coroutine + <code>Dispatchers.IO</code>/<code>Default</code>), cache decoded images, and reduce recomposition scope. Quantify it — naming the 16.67&nbsp;ms budget is a strong signal.</p></div>
+</div>
+
+<!-- ==================== TAB: MEMORY ==================== -->
+<div class="sec" id="tab-memory">
+<h2 class="stitle">Memory &amp; Leaks</h2>
+<div class="sdesc">Android's aggressive process killing plus long-lived references make leaks a top interview and production topic.</div>
+
+<p><strong>Analogy.</strong> A memory leak is a guest who won't leave. The Activity's "party" (its screen) is over and the OS wants to reclaim the room, but something is still <em>holding the guest's coat</em> — a reference — so the garbage collector can't clear it. Rotate the screen a few times and you've got a pile of dead Activities stuck in memory, eventually an <code>OutOfMemoryError</code>.</p>
+
+<h3 class="sub">The classic leak: holding a Context/Activity</h3>
+<pre><span class="cm">// LEAK 1 — a static/singleton holds an Activity Context forever</span>
+<span class="kw">object</span> ImageCache { <span class="kw">var</span> ctx: Context? = <span class="kw">null</span> }   <span class="cm">// never store an Activity here</span>
+
+<span class="cm">// LEAK 2 — a delayed callback outlives the screen and captures it</span>
+Handler(Looper.getMainLooper()).postDelayed({ useActivity() }, <span class="num">60_000</span>)
+
+<span class="cm">// SAFE — use applicationContext for long-lived needs, and</span>
+<span class="cm">// lifecycle-scoped coroutines that auto-cancel on onDestroy</span>
+<span class="kw">val</span> appCtx = context.applicationContext            <span class="cm">// lives as long as the app</span>
+lifecycleScope.launch { <span class="cm">/* cancelled when the owner is destroyed */</span> }</pre>
+
+<h3 class="sub">Why an Activity Context is dangerous</h3>
+<ul class="content-list">
+<li>An <strong>Activity Context</strong> is tied to one screen instance; retaining it past <code>onDestroy</code> pins the whole view hierarchy in memory.</li>
+<li>The <strong>application Context</strong> lives for the app's lifetime — use it for singletons, DI graphs, and anything long-lived. But never use it to inflate UI or show a dialog (it has no theme/window).</li>
+<li>Non-static inner classes, listeners, and <code>Handler</code> callbacks implicitly capture their outer Activity — a frequent silent leak.</li>
+</ul>
+
+<h3 class="sub">Lifecycle-aware components — the modern defense</h3>
+<p>Jetpack ties work to a <code>Lifecycle</code> so it starts and <em>stops itself</em> automatically — no manual cleanup to forget.</p>
+<table class="tbl">
+<thead><tr><th>Tool</th><th>Scoped to</th><th>Auto-cleanup</th></tr></thead>
+<tbody>
+<tr><td><code>viewModelScope</code></td><td>ViewModel</td><td>Coroutines cancel when the VM is cleared</td></tr>
+<tr><td><code>lifecycleScope</code></td><td>Activity/Fragment</td><td>Cancels on <code>onDestroy</code></td></tr>
+<tr><td><code>repeatOnLifecycle</code></td><td>A target state (e.g. STARTED)</td><td>Collection stops when below that state</td></tr>
+<tr><td><code>DisposableEffect</code></td><td>A composable's presence</td><td>Runs <code>onDispose</code> cleanup on leave</td></tr>
+</tbody>
+</table>
+
+<div class="tip"><div class="tipl">TIP</div><p>Name <strong>LeakCanary</strong> — the standard library that auto-detects retained Activities/Fragments in debug builds and prints the reference chain holding them. "I'd add LeakCanary and read the leak trace" is a concrete, credible answer.</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Expect "your app's memory grows every time the user rotates — what's happening?" The answer walks the leak: rotation recreates the Activity, but something (a static field, a running thread, a registered listener, a ViewModel that wrongly holds a View) still references the old instance, so the GC can't collect it. Fix by using <code>applicationContext</code> for long-lived refs, lifecycle-scoped coroutines, unregistering listeners in <code>onStop</code>, and never letting a ViewModel touch a View. Cite LeakCanary as your detection tool.</p></div>
+</div>
+
+<!-- ==================== TAB: DATA ==================== -->
+<div class="sec" id="tab-data">
+<h2 class="stitle">Storage &amp; Networking — Room &amp; Retrofit</h2>
+<div class="sdesc">Local persistence and remote APIs, and the offline-first pattern that ties them together.</div>
+
+<h3 class="sub">Room — a typed layer over SQLite</h3>
+<p><strong>Analogy.</strong> SQLite is the embedded relational database every Android device ships with; <strong>Room</strong> is the ORM (like an ActiveRecord/JPA) that turns raw SQL and cursors into typed Kotlin — with <em>compile-time verification of your queries</em>. Room can return a <code>Flow</code>, so the UI updates automatically whenever the underlying rows change.</p>
+<pre><span class="kw">@Entity</span>(tableName = <span class="str">"user"</span>)
+<span class="kw">data class</span> UserEntity(<span class="kw">@PrimaryKey val</span> id: String, <span class="kw">val</span> name: String)
+
+<span class="kw">@Dao</span>
+<span class="kw">interface</span> UserDao {
+    <span class="kw">@Query</span>(<span class="str">"SELECT * FROM user WHERE id = :id"</span>)
+    <span class="kw">fun</span> observe(id: String): Flow&lt;UserEntity?&gt;   <span class="cm">// reactive: re-emits on change</span>
+
+    <span class="kw">@Insert</span>(onConflict = OnConflictStrategy.REPLACE)
+    <span class="kw">suspend fun</span> upsert(user: UserEntity)          <span class="cm">// suspend: runs off main thread</span>
+}</pre>
+<p>Other storage options to name: <strong>DataStore</strong> (the modern replacement for <code>SharedPreferences</code>, coroutine/Flow-based) for small key–value or typed settings; app-private files and the <code>MediaStore</code> for large binaries. Don't put big blobs in a database.</p>
+
+<h3 class="sub">Retrofit + OkHttp — the networking stack</h3>
+<p><strong>OkHttp</strong> is the HTTP client (connection pooling, timeouts, interceptors, caching). <strong>Retrofit</strong> sits on top and turns an annotated Kotlin interface into a type-safe API client; <code>suspend</code> functions integrate directly with coroutines. The call returns a <strong>DTO</strong> (Data Transfer Object) — the raw wire/JSON shape; <code>toDomain()</code> converts it to the clean model the app uses, and <code>toEntity()</code> converts it to the Room row that gets stored.</p>
+<pre><span class="kw">interface</span> UserApi {
+    <span class="kw">@GET</span>(<span class="str">"users/{id}"</span>)
+    <span class="kw">suspend fun</span> getUser(<span class="kw">@Path</span>(<span class="str">"id"</span>) id: String): UserDto
+}
+
+<span class="kw">val</span> api: UserApi = Retrofit.Builder()
+    .baseUrl(<span class="str">"https://api.example.com/"</span>)
+    .client(OkHttpClient.Builder().addInterceptor(logging).build())
+    .addConverterFactory(MoshiConverterFactory.create())   <span class="cm">// JSON ↔ DTO</span>
+    .build()
+    .create(UserApi::class.java)</pre>
+
+<h3 class="sub">Offline-first: single source of truth</h3>
+<p>The senior pattern: the UI reads <strong>only from the database</strong>; the network's job is to keep the database fresh. Room emits a <code>Flow</code> the UI collects, so a successful sync silently updates the screen.</p>
+<pre><span class="cm">// Repository (holds an injected repoScope: CoroutineScope): DB is the source of truth; network refreshes it.</span>
+<span class="kw">fun</span> user(id: String): Flow&lt;User&gt; = dao.observe(id)
+    .onStart { repoScope.launch { refresh(id) } }  <span class="cm">// kick a NON-blocking refresh — don't await, or cached rows are delayed on a slow network</span>
+    .filterNotNull()
+    .map { it.toDomain() }
+
+<span class="kw">private suspend fun</span> refresh(id: String) {
+    runCatching { dao.upsert(api.getUser(id).toEntity()) }  <span class="cm">// write-through</span>
+}</pre>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>For "design the data layer for a feed that works offline", present <strong>offline-first with a single source of truth</strong>: Retrofit fetches, Room persists, the UI observes Room via <code>Flow</code>. Mention cache invalidation/refresh policy, <code>WorkManager</code> for reliable background sync (survives process death and reboots), and pagination (the <code>Paging 3</code> library). The phrase "the database is the single source of truth, the network only refreshes it" is the one interviewers wait to hear.</p></div>
+</div>
+
+<!-- ==================== TAB: BUILD ==================== -->
+<div class="sec" id="tab-build">
+<h2 class="stitle">The Manifest, Permissions &amp; Gradle</h2>
+<div class="sdesc">The declaration file that defines your app to the OS, the runtime-permission model, and the build system that assembles it all.</div>
+
+<h3 class="sub">AndroidManifest.xml</h3>
+<p><strong>Analogy.</strong> The manifest is your app's <em>passport plus floor plan</em>: it declares who the app is (package, components), what rooms exist (Activities/Services), how it can be entered (intent-filters — including the launcher icon and deep links), and what capabilities it needs (permissions). The OS reads it before running a single line of your code.</p>
+<pre><span class="cm">&lt;!-- AndroidManifest.xml --&gt;</span>
+&lt;manifest&gt;
+    &lt;uses-permission android:name=<span class="str">"android.permission.INTERNET"</span> /&gt;
+    &lt;uses-permission android:name=<span class="str">"android.permission.CAMERA"</span> /&gt;
+
+    &lt;application android:name=<span class="str">".MyApp"</span>&gt;
+        &lt;activity android:name=<span class="str">".MainActivity"</span> android:exported=<span class="str">"true"</span>&gt;
+            &lt;intent-filter&gt;
+                &lt;action   android:name=<span class="str">"android.intent.action.MAIN"</span> /&gt;
+                &lt;category android:name=<span class="str">"android.intent.category.LAUNCHER"</span> /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/activity&gt;
+    &lt;/application&gt;
+&lt;/manifest&gt;</pre>
+
+<h3 class="sub">Permissions — install-time vs runtime</h3>
+<ul class="content-list">
+<li><strong>Normal</strong> permissions (e.g. <code>INTERNET</code>) are granted at install; just declare them.</li>
+<li><strong>Dangerous</strong> permissions (camera, location, contacts) must be <strong>requested at runtime</strong> (Android 6 / API 23+) and can be revoked by the user at any time — so check before every sensitive use.</li>
+<li>Modern APIs prefer <strong>scoped, purpose-built contracts</strong> (e.g. the photo picker) that need no broad permission at all.</li>
+</ul>
+<pre><span class="cm">// Runtime request for a dangerous permission (Compose / Activity Result API)</span>
+<span class="kw">val</span> launcher = rememberLauncherForActivityResult(
+    ActivityResultContracts.RequestPermission()
+) { granted -&gt; <span class="kw">if</span> (granted) openCamera() <span class="kw">else</span> showRationale() }
+
+Button(onClick = { launcher.launch(Manifest.permission.CAMERA) }) {
+    Text(<span class="str">"Take photo"</span>)
+}</pre>
+
+<h3 class="sub">Gradle — the build system</h3>
+<p><strong>Analogy.</strong> Gradle is Android's <code>npm</code>+<code>webpack</code>+<code>make</code> combined: it resolves dependencies, compiles Kotlin, merges manifests and resources, runs annotation processors, and packages the signed <strong>APK/AAB</strong>. The key files: a top-level project build script, a per-module <code>build.gradle.kts</code>, and a <code>libs.versions.toml</code> version catalog.</p>
+<pre><span class="cm">// app/build.gradle.kts — module build configuration (Kotlin DSL)</span>
+plugins {
+    id(<span class="str">"com.android.application"</span>)
+    id(<span class="str">"org.jetbrains.kotlin.android"</span>)
+}
+android {
+    namespace = <span class="str">"com.example.app"</span>
+    compileSdk = <span class="num">35</span>
+    defaultConfig {
+        applicationId = <span class="str">"com.example.app"</span>
+        minSdk = <span class="num">24</span>        <span class="cm">// oldest OS you support</span>
+        targetSdk = <span class="num">35</span>     <span class="cm">// OS behavior you target</span>
+    }
+    buildTypes {
+        release { isMinifyEnabled = <span class="kw">true</span> }   <span class="cm">// R8 shrink/obfuscate</span>
+    }
+    buildFeatures { compose = <span class="kw">true</span> }
+}
+dependencies {
+    implementation(platform(<span class="str">"androidx.compose:compose-bom:2024.09.00"</span>))
+    implementation(<span class="str">"androidx.activity:activity-compose:1.9.2"</span>)
+}</pre>
+<table class="tbl">
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>minSdk</code></td><td>Lowest Android version the app installs on</td></tr>
+<tr><td><code>targetSdk</code></td><td>Android version whose behaviors you opt into (drives compatibility)</td></tr>
+<tr><td><code>compileSdk</code></td><td>SDK/API level you compile against</td></tr>
+<tr><td><strong>APK vs AAB</strong></td><td>APK installs on a device; AAB (App Bundle) is what you upload — the store generates optimized per-device APKs</td></tr>
+<tr><td><strong>R8</strong></td><td>Shrinks/obfuscates code and strips unused classes in release builds</td></tr>
+<tr><td><strong>build variants</strong></td><td>Combinations of build types (debug/release) × product flavors (free/paid)</td></tr>
+</tbody>
+</table>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Two common ones here. (1) "What's the difference between <code>minSdk</code> and <code>targetSdk</code>?" — install floor vs behavior target; a low <code>minSdk</code> widens your audience but forces compatibility handling. (2) "How do you handle a permission the user denied?" — check state, show a rationale, and degrade gracefully rather than nagging or crashing, because dangerous permissions can be revoked at any time. Knowing APK vs AAB and that R8 minifies release builds rounds out the "ships to production" signal.</p></div>
+</div>
+
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Activity</strong></td><td>One screen the user interacts with; an app's primary UI entry point.</td></tr>
+<tr><td><strong>Fragment</strong></td><td>Reusable, embeddable slice of UI with its own lifecycle, hosted inside an Activity.</td></tr>
+<tr><td><strong>Intent</strong></td><td>A message used to navigate within an app or hand work to another app.</td></tr>
+<tr><td><strong>ViewModel</strong></td><td>Holds and prepares UI state; survives configuration changes and never references a View.</td></tr>
+<tr><td><strong>Kotlin</strong></td><td>Google's preferred, Kotlin-first Android language; null-safe with built-in coroutines.</td></tr>
+<tr><td><strong>Jetpack Compose</strong></td><td>Declarative UI toolkit that renders the UI as a function of state.</td></tr>
+<tr><td><strong>Coroutine</strong></td><td>A suspendable computation for asynchronous work that reads like synchronous code.</td></tr>
+<tr><td><strong>Flow</strong></td><td>A cold, asynchronous stream that emits a sequence of values over time.</td></tr>
+<tr><td><strong>StateFlow</strong></td><td>A hot, always-valued Flow that holds current state and shares it among collectors.</td></tr>
+<tr><td><strong>UDF</strong></td><td>Unidirectional Data Flow — events flow up to the ViewModel, state flows down to the UI.</td></tr>
+<tr><td><strong>MVVM</strong></td><td>Model–View–ViewModel — architecture where a ViewModel exposes observable state to the UI.</td></tr>
+<tr><td><strong>MVI</strong></td><td>Model–View–Intent — one immutable UiState per screen, updated through a single event reducer.</td></tr>
+<tr><td><strong>ANR</strong></td><td>Application Not Responding — system dialog shown when the main thread is blocked too long (~5&nbsp;s).</td></tr>
+<tr><td><strong>Jank</strong></td><td>Visible stutter caused by missing a frame's rendering deadline (a dropped frame).</td></tr>
+<tr><td><strong>Room</strong></td><td>Typed persistence library (ORM) over SQLite with compile-time-checked queries.</td></tr>
+<tr><td><strong>Retrofit</strong></td><td>Type-safe HTTP client that turns an annotated Kotlin interface into an API client.</td></tr>
+<tr><td><strong>DTO</strong></td><td>Data Transfer Object — the raw wire/JSON shape returned by the network, mapped to domain models.</td></tr>
+<tr><td><strong>AndroidManifest.xml</strong></td><td>Declares the app's components, permissions, and entry points to the operating system.</td></tr>
+<tr><td><strong>Gradle</strong></td><td>Android's build system — resolves dependencies, compiles code, and packages the APK/AAB.</td></tr>
+<tr><td><strong>APK / AAB</strong></td><td>APK installs on a device; the AAB (App Bundle) is uploaded, and the store generates per-device APKs.</td></tr>
+</table>
+
+</div>
+</div>
+<script>
+function go(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  if (typeof event !== 'undefined' && event && event.currentTarget) event.currentTarget.classList.add('active');
+  window.scrollTo(0, 0);
+}
+function toggle(el) {
+  const body = el.nextElementSibling;
+  const chevron = el.querySelector('.chv');
+  body.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open');
+}
+</script>
+<script>
+/* Activity lifecycle replayable stepper — namespaced IIFE, unique ids (andlc_*),
+   no globals, no clash with go()/toggle()/handbook-nav. */
+(function(){
+  var steps = [
+    { n:[], t:"Ready", d:"Press <b>Step ▶</b> to launch the Activity and walk its full lifecycle — including a rotation and process death." },
+    { n:["lc-create"], t:"onCreate()", d:"App launched. The system creates the Activity instance and calls onCreate(savedInstanceState). Inflate the UI (setContent{}), wire the ViewModel. If savedInstanceState is non-null, restore transient UI state here." },
+    { n:["lc-start"], t:"onStart()", d:"The Activity becomes visible on screen — but not yet interactive. Register lightweight observers and start UI updates." },
+    { n:["lc-resume"], t:"onResume() — RESUMED", d:"The Activity is in the foreground with input focus. This is the running state where the user interacts. Start camera, sensors, and animations now." },
+    { n:["lc-pause"], t:"onPause()", d:"Something took foreground focus (a dialog, split-screen, or an incoming Activity). Still partly visible. Keep this FAST — the next Activity's onResume() will not run until yours returns." },
+    { n:["lc-stop"], t:"onStop()", d:"The Activity is fully hidden. Release heavy resources, unregister observers, and persist data. It may sit here indefinitely." },
+    { n:["lc-start","lc-resume"], t:"onRestart() → onStart() → onResume()", d:"The user navigates back. The Activity is NOT recreated — it restarts from onStart() and returns to RESUMED. In-memory state is intact." },
+    { n:["lc-destroy"], t:"Configuration change → onPause → onStop → onDestroy", d:"Rotating the device (or a theme / locale change) destroys the Activity by default. isChangingConfigurations() is true. Anything held in Activity fields is now lost." },
+    { n:["lc-create"], t:"…immediately recreated: onCreate(savedInstanceState ≠ null)", d:"A brand-new Activity instance is created. onSaveInstanceState() had bundled small UI state, and savedInstanceState now redelivers it. A ViewModel scoped to this screen SURVIVES the change untouched — that is why screen state lives in a ViewModel, not in Activity fields." },
+    { n:["lc-dead"], t:"Process death (no callbacks fire)", d:"While the app is backgrounded, Android may kill the whole process to reclaim memory. NO lifecycle callbacks run. Every in-memory object — including your ViewModel — is gone." },
+    { n:["lc-create"], t:"Restore after process death: onCreate(savedInstanceState ≠ null)", d:"The user returns; the system recreates your task in a fresh process. savedInstanceState is redelivered (SavedStateHandle in a ViewModel), so restore from it — never assume your objects survived. This is the case web/backend devs forget." },
+    { n:["lc-destroy"], t:"finish() / backed out → onPause → onStop → onDestroy", d:"The Activity is finished for good. Resources are freed and the instance is discarded." }
+  ];
+  var i = 0;
+  var stage = document.getElementById('andlc_stage');
+  if(!stage) return;
+  var cap = document.getElementById('andlc_cap'),
+      prog = document.getElementById('andlc_prog'),
+      stepBtn = document.getElementById('andlc_step'),
+      backBtn = document.getElementById('andlc_back'),
+      resetBtn = document.getElementById('andlc_reset');
+  function clearAll(){
+    Array.prototype.forEach.call(stage.querySelectorAll('.lc-node'), function(g){ g.classList.remove('on'); });
+  }
+  function render(){
+    clearAll();
+    var s = steps[i];
+    s.n.forEach(function(id){ var g = document.getElementById(id); if(g) g.classList.add('on'); });
+    cap.innerHTML = '<b>' + s.t + '</b><br>' + s.d;
+    prog.textContent = 'Step ' + i + ' / ' + (steps.length - 1);
+    stepBtn.disabled = (i >= steps.length - 1);
+    backBtn.disabled = (i <= 0);
+  }
+  stepBtn.addEventListener('click', function(){ if(i < steps.length - 1){ i++; render(); } });
+  backBtn.addEventListener('click', function(){ if(i > 0){ i--; render(); } });
+  resetBtn.addEventListener('click', function(){ i = 0; render(); });
+  render();
+})();
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="swift_refresher.html">‹ Swift Refresher</a><a class="bkc" href="index.html">📖 Contents</a><a href="ios_engineering.html">iOS Engineering ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

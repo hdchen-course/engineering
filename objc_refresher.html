@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Objective-C Refresher — Messaging, ARC, Blocks, Protocols &amp; Foundation for Interviews</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #114f8c; --blue-l: #d0ebff; --green: #1d6b2e; --green-l: #d3f9d8;
+  --yellow: #a85700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #4a2fa8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1050px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.nav { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin: 18px 0 32px; position: sticky; top: 0; background: var(--bg); padding: 14px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 23px; font-weight: 700; margin: 28px 0 14px; color: var(--blue); }
+h3 { font-size: 17px; font-weight: 600; margin: 22px 0 10px; }
+h4 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 14px 18px; overflow-x: auto; margin: 10px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #cdd6f4; white-space: pre; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.warn p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.old { background: var(--red-l); border-left: 3px solid var(--red); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.old p { color: #8a1c1c; margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 18px; padding: 22px 26px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th, td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 16px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--purple-l); color:var(--purple); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VIII · Chapter 11 — <b>Objective-C Refresher</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Objective-C Refresher</h1>
+  <div class="sub">Objective-C's distinctive model and the syntax around it — Smalltalk-style <strong>message passing</strong> and dynamic dispatch, classes and designated initializers, properties and <strong>ARC</strong> memory management, blocks, protocols and delegation, categories, and the Foundation types — a practical brush-up for a programmer reading or maintaining legacy iOS/macOS code</div>
+</header>
+
+<style id="objc-code-hl">
+.container pre .kw{color:#cba6f7}
+.container pre .cm{color:#9aa0bd;font-style:italic}
+.container pre .str{color:#a6e3a1}
+.container pre .num{color:#fab387}
+.container pre .fn{color:#89b4fa}
+.container pre .type{color:#f9e2af}
+</style>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'messaging')">Messaging</button>
+  <button class="nav-btn" onclick="showSection(event,'classes')">Classes</button>
+  <button class="nav-btn" onclick="showSection(event,'properties')">Properties</button>
+  <button class="nav-btn" onclick="showSection(event,'memory')">Memory (ARC)</button>
+  <button class="nav-btn" onclick="showSection(event,'foundation')">Foundation</button>
+  <button class="nav-btn" onclick="showSection(event,'blocks')">Blocks</button>
+  <button class="nav-btn" onclick="showSection(event,'protocols')">Protocols</button>
+  <button class="nav-btn" onclick="showSection(event,'categories')">Categories</button>
+  <button class="nav-btn" onclick="showSection(event,'nilerrors')">nil &amp; errors</button>
+  <button class="nav-btn" onclick="showSection(event,'pitfalls')">Pitfalls</button>
+  <button class="nav-btn" onclick="showSection(event,'tooling')">Tooling</button>
+</div>
+
+<!-- MESSAGING -->
+<div class="section active" id="messaging">
+<div class="card">
+<h2>Message passing — the core model</h2>
+<p>Objective-C is C with a thin Smalltalk-style object layer added on top. The single idea that everything else follows from is that you don't <em>call methods</em> — you <strong>send messages</strong>. The syntax is <code>[receiver selector:arg]</code>, not <code>receiver.method(arg)</code>. A <strong>selector</strong> is the name of the message (e.g. <code>length</code>, <code>stringByAppendingString:</code>); the runtime looks it up on the receiver's class <em>at run time</em> and dispatches dynamically. Two consequences a newcomer feels immediately: method names read as interleaved <code>label:value</code> pairs, and <strong>sending a message to <code>nil</code> is legal and does nothing</strong> — it returns <code>0</code>/<code>nil</code> instead of crashing.</p>
+<pre><span class="cm">// import Foundation — the base framework (NSString, NSArray, …)</span>
+<span class="kw">#import</span> &lt;<span class="type">Foundation/Foundation.h</span>&gt;
+
+<span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    @<span class="kw">autoreleasepool</span> {
+        <span class="type">NSString</span> *s = <span class="str">@"hello"</span>;
+        <span class="cm">// message send: [receiver selector] — NOT s.uppercaseString()</span>
+        <span class="type">NSString</span> *up = [s <span class="fn">uppercaseString</span>];
+        <span class="type">NSUInteger</span> n  = [up <span class="fn">length</span>];
+        <span class="cm">// keyword message: one label per argument</span>
+        <span class="type">NSString</span> *joined = [s <span class="fn">stringByAppendingString:</span><span class="str">@" world"</span>];
+        <span class="fn">printf</span>(<span class="str">"%s %lu %s\n"</span>, [up <span class="fn">UTF8String</span>], (<span class="kw">unsigned</span> <span class="kw">long</span>)n, [joined <span class="fn">UTF8String</span>]);
+
+        <span class="cm">// messaging nil is SAFE: returns 0 / nil, no crash</span>
+        <span class="type">NSString</span> *nothing = <span class="kw">nil</span>;
+        <span class="type">NSUInteger</span> z = [nothing <span class="fn">length</span>];        <span class="cm">// 0</span>
+        <span class="kw">id</span> r = [nothing <span class="fn">uppercaseString</span>];          <span class="cm">// nil</span>
+        <span class="fn">printf</span>(<span class="str">"nil length = %lu\n"</span>, (<span class="kw">unsigned</span> <span class="kw">long</span>)z);
+        <span class="fn">printf</span>(<span class="str">"nil object message -&gt; %s\n"</span>, r == <span class="kw">nil</span> ? <span class="str">"nil"</span> : <span class="str">"obj"</span>);
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+<pre><span class="cm">// → output:</span>
+HELLO 5 hello world
+nil length = 0
+nil object message -&gt; nil</pre>
+<div class="insight"><p>Dispatch is <strong>dynamic</strong>: <code>[obj doThing]</code> compiles to <code>objc_msgSend(obj, @selector(doThing))</code>, which finds the implementation on <code>obj</code>'s class at run time. That is why the language supports selectors as first-class values, <code>respondsToSelector:</code> introspection, categories, and swizzling — the binding is a runtime lookup, not a compile-time address. The flip side is that a typo in a selector is not a compile error unless the compiler can see a declaration for it.</p></div>
+<div class="tip"><p><strong>nil-messaging</strong> is a feature, not a bug: it removes most of the defensive <code>if (x != null)</code> checks a Java or C++ developer expects. A message to <code>nil</code> returns <code>nil</code> for object returns, <code>0</code> for numeric returns, and a zeroed struct only for structs small enough to be returned in registers (larger struct returns — e.g. &gt;16 bytes on arm64, returned via an indirect pointer — are left undefined, so don't rely on them). The cost is that a silently-swallowed <code>nil</code> can mask a logic error — see the Pitfalls section.</p></div>
+</div>
+</div>
+
+<!-- CLASSES -->
+<div class="section" id="classes">
+<div class="card">
+<h2>Classes — <code>@interface</code> / <code>@implementation</code> &amp; initializers</h2>
+<p>A class is split into a public <strong><code>@interface</code></strong> (the declaration, historically in a <code>.h</code> header) and an <strong><code>@implementation</code></strong> (the code, in a <code>.m</code> file). Methods are prefixed by their receiver kind: <strong><code>-</code> for instance methods</strong> and <strong><code>+</code> for class methods</strong>. Objects are created in two steps — <code>alloc</code> grabs zeroed memory, then an <strong>init</strong> method sets it up: <code>[[Vec2 alloc] initWithX:3 y:4]</code>. The <strong>designated initializer</strong> is the one that does the real work (calls <code>[super init]</code> and assigns every ivar); convenience initializers funnel into it. Return <code>instancetype</code> from initializers and factory methods so the static type is the actual subclass.</p>
+<pre><span class="kw">#import</span> &lt;<span class="type">Foundation/Foundation.h</span>&gt;
+
+<span class="kw">@interface</span> <span class="type">Vec2</span> : <span class="type">NSObject</span>
+<span class="kw">@property</span> (<span class="kw">nonatomic</span>) <span class="kw">double</span> x;
+<span class="kw">@property</span> (<span class="kw">nonatomic</span>) <span class="kw">double</span> y;
+<span class="cm">// designated initializer — returns instancetype, not id</span>
+- (<span class="type">instancetype</span>)<span class="fn">initWithX:</span>(<span class="kw">double</span>)x <span class="fn">y:</span>(<span class="kw">double</span>)y;
+- (<span class="kw">double</span>)<span class="fn">distanceTo:</span>(<span class="type">Vec2</span> *)other;
++ (<span class="type">instancetype</span>)<span class="fn">origin</span>;                    <span class="cm">// + = class (factory) method</span>
+<span class="kw">@end</span>
+
+<span class="kw">@implementation</span> <span class="type">Vec2</span>
+- (<span class="type">instancetype</span>)<span class="fn">initWithX:</span>(<span class="kw">double</span>)x <span class="fn">y:</span>(<span class="kw">double</span>)y {
+    self = [<span class="kw">super</span> <span class="fn">init</span>];              <span class="cm">// always chain to super's init</span>
+    <span class="kw">if</span> (self) {
+        _x = x;                       <span class="cm">// assign the auto-synthesized ivar _x</span>
+        _y = y;
+    }
+    <span class="kw">return</span> self;
+}
+- (<span class="kw">double</span>)<span class="fn">distanceTo:</span>(<span class="type">Vec2</span> *)other {
+    <span class="kw">double</span> dx = self.x - other.x;     <span class="cm">// dot-syntax = a getter message</span>
+    <span class="kw">double</span> dy = self.y - other.y;
+    <span class="kw">return</span> <span class="fn">sqrt</span>(dx*dx + dy*dy);
+}
++ (<span class="type">instancetype</span>)<span class="fn">origin</span> {
+    <span class="kw">return</span> [[<span class="kw">self</span> <span class="fn">alloc</span>] <span class="fn">initWithX:</span><span class="num">0</span> <span class="fn">y:</span><span class="num">0</span>];
+}
+<span class="kw">@end</span>
+
+<span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    @<span class="kw">autoreleasepool</span> {
+        <span class="type">Vec2</span> *a = [[<span class="type">Vec2</span> <span class="fn">alloc</span>] <span class="fn">initWithX:</span><span class="num">3</span> <span class="fn">y:</span><span class="num">4</span>];
+        <span class="type">Vec2</span> *o = [<span class="type">Vec2</span> <span class="fn">origin</span>];
+        <span class="fn">printf</span>(<span class="str">"a = (%.0f, %.0f)\n"</span>, a.x, a.y);
+        <span class="fn">printf</span>(<span class="str">"distance = %.1f\n"</span>, [a <span class="fn">distanceTo:</span>o]);
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+<pre><span class="cm">// → output:</span>
+a = (3, 4)
+distance = 5.0</pre>
+<div class="insight"><p>The <code>self = [super init]</code> assignment is not a ritual: an initializer is allowed to return a <em>different</em> object (or <code>nil</code> on failure), so you must capture and test what <code>super</code> hands back before touching ivars. Note that inside the initializer we assign the <strong>ivar</strong> <code>_x</code> directly rather than the property <code>self.x</code> — a common convention, because a subclass could override the setter and you don't want that running against a half-built object.</p></div>
+<div class="warn"><p>Do not name a class <code>Point</code>, <code>Rect</code>, <code>Size</code>, <code>Fixed</code>, or other identifiers that collide with C typedefs in the SDK's <code>MacTypes.h</code> — you'll get a "redefinition as a different kind of symbol" error. Real code sidesteps this with a <strong>class prefix</strong> (Objective-C has no namespaces): Foundation uses <code>NS</code>, and your app might use a two- or three-letter prefix of its own.</p></div>
+</div>
+</div>
+
+<!-- PROPERTIES -->
+<div class="section" id="properties">
+<div class="card">
+<h2>Properties — <code>@property</code>, attributes &amp; the synthesized ivar</h2>
+<p>A <strong><code>@property</code></strong> declares a getter/setter pair (and, by default, a backing ivar named <code>_name</code>) in one line. The parenthesized <strong>attributes</strong> control the accessors: memory policy (<code>strong</code> / <code>weak</code> / <code>copy</code> / <code>assign</code>), atomicity (<code>nonatomic</code> for the common single-threaded case; the default <code>atomic</code> adds locking), and mutability (<code>readonly</code> vs the default <code>readwrite</code>). <strong>Dot-syntax</strong> (<code>obj.name</code>) is pure sugar for the accessor messages <code>[obj name]</code> / <code>[obj setName:…]</code> — it is <em>not</em> a field access.</p>
+<pre><span class="kw">@interface</span> <span class="type">Person</span> : <span class="type">NSObject</span>
+<span class="kw">@property</span> (<span class="kw">nonatomic</span>, <span class="kw">copy</span>)     <span class="type">NSString</span> *name;     <span class="cm">// copy: snapshot against mutable strings</span>
+<span class="kw">@property</span> (<span class="kw">nonatomic</span>)           <span class="type">NSInteger</span> age;
+<span class="kw">@property</span> (<span class="kw">nonatomic</span>, <span class="kw">readonly</span>) <span class="type">NSString</span> *summary;  <span class="cm">// getter only</span>
+<span class="kw">@end</span>
+
+<span class="kw">@implementation</span> <span class="type">Person</span>
+- (<span class="type">NSString</span> *)<span class="fn">summary</span> {                       <span class="cm">// custom getter for the readonly prop</span>
+    <span class="kw">return</span> [<span class="type">NSString</span> <span class="fn">stringWithFormat:</span><span class="str">@"%@ (%ld)"</span>, self.name, (<span class="kw">long</span>)self.age];
+}
+<span class="kw">@end</span>
+
+<span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    @<span class="kw">autoreleasepool</span> {
+        <span class="type">Person</span> *p = [<span class="type">Person</span> <span class="fn">new</span>];           <span class="cm">// new = alloc + init</span>
+        <span class="type">NSMutableString</span> *m = [<span class="type">NSMutableString</span> <span class="fn">stringWithString:</span><span class="str">@"Ann"</span>];
+        p.name = m;                        <span class="cm">// dot-syntax setter; copy takes a snapshot</span>
+        [m <span class="fn">appendString:</span><span class="str">@"XYZ"</span>];             <span class="cm">// mutate the ORIGINAL afterwards</span>
+        p.age = <span class="num">30</span>;
+        <span class="fn">printf</span>(<span class="str">"name=%s\n"</span>, [p.name <span class="fn">UTF8String</span>]);   <span class="cm">// still "Ann" — copy protected us</span>
+        <span class="fn">printf</span>(<span class="str">"summary=%s\n"</span>, [p.summary <span class="fn">UTF8String</span>]);
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+<pre><span class="cm">// → output:</span>
+name=Ann
+summary=Ann (30)</pre>
+<div class="insight"><p><strong>Why <code>copy</code> on <code>NSString</code>?</strong> A caller can hand you an <code>NSMutableString</code> where an <code>NSString</code> is expected. With <code>strong</code> you'd retain <em>their</em> mutable instance and it could change under you; <code>copy</code> takes an immutable snapshot at assignment time. The rule of thumb: use <code>copy</code> for value-like types that have a mutable subclass (<code>NSString</code>, <code>NSArray</code>, <code>NSDictionary</code>, blocks), and <code>strong</code> for genuine reference objects.</p></div>
+<div class="tip"><p>Modern Objective-C <strong>auto-synthesizes</strong> the ivar and accessors, so you rarely write <code>@synthesize</code>. The backing ivar is <code>_name</code> by default. You reach it directly (<code>_name</code>) inside initializers and <code>dealloc</code>; everywhere else prefer <code>self.name</code> so custom accessors and KVO notifications fire.</p></div>
+</div>
+</div>
+
+<!-- MEMORY (ARC) -->
+<div class="section" id="memory">
+<div class="card">
+<h2>Memory management — ARC, <code>strong</code> / <code>weak</code> &amp; retain cycles</h2>
+<p>Objective-C manages object lifetime with <strong>reference counting</strong>. Under <strong>ARC (Automatic Reference Counting)</strong> — the default in every modern project — the compiler inserts the <code>retain</code>/<code>release</code> calls for you at compile time; an object is deallocated when its retain count hits zero. You never call <code>retain</code>/<code>release</code> by hand. What you <em>do</em> control is the <strong>ownership qualifier</strong> on each reference: <strong><code>strong</code></strong> keeps the target alive (the default for object properties); <strong><code>weak</code></strong> does not, and is automatically set to <code>nil</code> when the target is deallocated; <code>unsafe_unretained</code> is like <code>weak</code> but is <em>not</em> zeroed (a dangling pointer risk — avoid it unless targeting very old runtimes).</p>
+<p>The classic leak is a <strong>retain cycle</strong>: two objects that hold each other with <code>strong</code> references keep each other's count above zero forever. You break the cycle by making one direction <code>weak</code> — canonically, a child's back-reference to its parent, or a delegate reference.</p>
+<pre><span class="kw">@class</span> <span class="type">Parent</span>;
+
+<span class="kw">@interface</span> <span class="type">Child</span> : <span class="type">NSObject</span>
+<span class="kw">@property</span> (<span class="kw">nonatomic</span>, <span class="kw">weak</span>) <span class="type">Parent</span> *parent;    <span class="cm">// weak → breaks the cycle</span>
+<span class="kw">@end</span>
+<span class="kw">@implementation</span> <span class="type">Child</span>
+- (<span class="kw">void</span>)<span class="fn">dealloc</span> { <span class="fn">printf</span>(<span class="str">"Child dealloc\n"</span>); }
+<span class="kw">@end</span>
+
+<span class="kw">@interface</span> <span class="type">Parent</span> : <span class="type">NSObject</span>
+<span class="kw">@property</span> (<span class="kw">nonatomic</span>, <span class="kw">strong</span>) <span class="type">Child</span> *child;  <span class="cm">// parent strongly OWNS child</span>
+<span class="kw">@end</span>
+<span class="kw">@implementation</span> <span class="type">Parent</span>
+- (<span class="kw">void</span>)<span class="fn">dealloc</span> { <span class="fn">printf</span>(<span class="str">"Parent dealloc\n"</span>); }
+<span class="kw">@end</span>
+
+<span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    @<span class="kw">autoreleasepool</span> {
+        <span class="type">Parent</span> *p = [<span class="type">Parent</span> <span class="fn">new</span>];
+        <span class="type">Child</span>  *c = [<span class="type">Child</span> <span class="fn">new</span>];
+        p.child  = c;      <span class="cm">// strong</span>
+        c.parent = p;      <span class="cm">// weak → no cycle</span>
+        <span class="fn">printf</span>(<span class="str">"wired up\n"</span>);
+    }   <span class="cm">// scope ends: both deallocate because nothing strongly retains them</span>
+    <span class="fn">printf</span>(<span class="str">"after pool\n"</span>);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+<pre><span class="cm">// → output (build with clang -fobjc-arc):</span>
+wired up
+Parent dealloc
+Child dealloc
+after pool</pre>
+<div class="warn"><p>Make <em>both</em> directions <code>strong</code> and neither <code>dealloc</code> ever prints — the objects leak. That is the retain cycle. The fix is exactly the <code>weak</code> back-reference above; delegates and parent pointers are <code>weak</code> for this reason, and blocks capturing <code>self</code> need the <code>weakSelf</code> pattern (see Blocks).</p></div>
+<h3>Autorelease pools &amp; the historical MRC note</h3>
+<p>The <code>@autoreleasepool { … }</code> block drains objects that were <em>autoreleased</em> (returned by convenience constructors like <code>stringWithFormat:</code>) when the block exits. In an app the run loop wraps each iteration in a pool for you; you add an explicit one around tight loops that create many temporaries, or in a plain command-line <code>main</code>. Before 2011, code used <strong>Manual Reference Counting (MRC)</strong>: you balanced every <code>alloc</code>/<code>retain</code>/<code>copy</code> with a matching <code>release</code>/<code>autorelease</code> by hand, following the "you own what you <code>alloc</code>/<code>copy</code>/<code>new</code>/<code>retain</code>" rule.</p>
+<div class="old"><p><strong>Legacy (MRC) code you may still meet:</strong> explicit <code>[obj retain]</code>, <code>[obj release]</code>, <code>[obj autorelease]</code>, and <code>[super dealloc]</code> at the end of a <code>dealloc</code>. Under ARC these are compile errors (the compiler owns them). A file can opt out with <code>-fno-objc-arc</code>, which is how mixed old/new codebases keep a few MRC files alive — but new code is always ARC.</p></div>
+</div>
+</div>
+
+<!-- FOUNDATION -->
+<div class="section" id="foundation">
+<div class="card">
+<h2>Foundation types — strings, collections &amp; literals</h2>
+<p>Foundation supplies the everyday value types, and nearly all come in an <strong>immutable</strong> class plus a <strong>mutable</strong> subclass: <code>NSString</code> / <code>NSMutableString</code>, <code>NSArray</code> / <code>NSMutableArray</code>, <code>NSDictionary</code> / <code>NSMutableDictionary</code>. Collections hold <strong>objects only</strong>, so scalars are <strong>boxed</strong> into <code>NSNumber</code>. Compiler <strong>literals</strong> make this bearable: <code>@"…"</code> for strings, <code>@[…]</code> for arrays, <code>@{…}</code> for dictionaries, and <code>@(expr)</code> to box a number or <code>BOOL</code>. Subscripting (<code>arr[i]</code>, <code>dict[key]</code>) works on both.</p>
+<pre><span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    @<span class="kw">autoreleasepool</span> {
+        <span class="type">NSArray</span> *arr = <span class="str">@[</span><span class="str">@"a"</span>, <span class="str">@"b"</span>, <span class="str">@"c"</span><span class="str">]</span>;              <span class="cm">// array literal</span>
+        <span class="type">NSDictionary</span> *dict = <span class="str">@{</span><span class="str">@"one"</span>: <span class="num">@1</span>, <span class="str">@"two"</span>: <span class="num">@2</span><span class="str">}</span>;  <span class="cm">// dictionary literal</span>
+        <span class="type">NSNumber</span> *n = @(<span class="num">3</span> + <span class="num">4</span>);                        <span class="cm">// boxed int → NSNumber</span>
+        <span class="type">BOOL</span> flag = <span class="kw">YES</span>;
+        <span class="type">NSNumber</span> *b = @(flag);                          <span class="cm">// boxed BOOL</span>
+
+        <span class="fn">printf</span>(<span class="str">"arr[1] = %s\n"</span>, [arr[<span class="num">1</span>] <span class="fn">UTF8String</span>]);      <span class="cm">// subscripting</span>
+        <span class="fn">printf</span>(<span class="str">"count = %lu\n"</span>, (<span class="kw">unsigned</span> <span class="kw">long</span>)arr.count);
+        <span class="fn">printf</span>(<span class="str">"two = %ld\n"</span>, (<span class="kw">long</span>)[dict[<span class="str">@"two"</span>] <span class="fn">integerValue</span>]);
+        <span class="fn">printf</span>(<span class="str">"n = %d, b = %d\n"</span>, [n <span class="fn">intValue</span>], [b <span class="fn">boolValue</span>]);
+
+        <span class="type">NSMutableArray</span> *ma = [<span class="str">@[</span><span class="num">@1</span>, <span class="num">@2</span><span class="str">]</span> <span class="fn">mutableCopy</span>];
+        [ma <span class="fn">addObject:</span><span class="num">@3</span>];
+        <span class="fn">printf</span>(<span class="str">"ma.count = %lu\n"</span>, (<span class="kw">unsigned</span> <span class="kw">long</span>)ma.count);
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+<pre><span class="cm">// → output:</span>
+arr[1] = b
+count = 3
+two = 2
+n = 7, b = 1
+ma.count = 3</pre>
+<div class="insight"><p>The literals are pure compiler sugar: <code>@[a, b]</code> lowers to <code>[NSArray arrayWithObjects:(id[]){a, b} count:2]</code> (a counted C-array call), and <code>@42</code> to <code>[NSNumber numberWithInt:42]</code>. That counted call <em>raises an exception</em> on a <code>nil</code> element, so a <code>nil</code> inside an <code>@[…]</code> literal is a <em>runtime crash</em>, not a truncation — use <code>NSNull</code> as an explicit placeholder (next section) when a slot may be empty.</p></div>
+<div class="tip"><p><code>%@</code> is the format specifier for "any object" — it sends <code>description</code> (or <code>debugDescription</code>) to the argument. It works in <code>NSLog</code> and <code>+stringWithFormat:</code>, not in C's <code>printf</code>; that's why these runnable snippets convert to a C string with <code>UTF8String</code> before <code>printf</code>. In real code you'd typically write <code>NSLog(@"%@", obj)</code>.</p></div>
+</div>
+</div>
+
+<!-- BLOCKS -->
+<div class="section" id="blocks">
+<div class="card">
+<h2>Blocks — closures, capture &amp; <code>__block</code></h2>
+<p>A <strong>block</strong> is Objective-C's closure: an anonymous function that captures variables from its enclosing scope. The type syntax uses a caret: <code>returnType (^name)(paramTypes)</code>, and the literal is <code>^returnType(params){ … }</code> (the return type is usually inferred and omitted). By default a block <strong>captures a copy</strong> of each referenced local (by value at creation time); to mutate a captured local and share it back, mark it <strong><code>__block</code></strong>. Blocks are used throughout Foundation's <code>enumerate…UsingBlock:</code>, completion handlers, and GCD (Grand Central Dispatch).</p>
+<pre><span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    @<span class="kw">autoreleasepool</span> {
+        <span class="cm">// block literal: ^returnType(params){…}; here the return type is inferred</span>
+        <span class="kw">int</span> (^square)(<span class="kw">int</span>) = ^(<span class="kw">int</span> n){ <span class="kw">return</span> n * n; };
+        <span class="fn">printf</span>(<span class="str">"square(6) = %d\n"</span>, square(<span class="num">6</span>));
+
+        <span class="kw">int</span> captured = <span class="num">10</span>;
+        <span class="kw">void</span> (^printCaptured)(<span class="kw">void</span>) = ^{ <span class="fn">printf</span>(<span class="str">"captured = %d\n"</span>, captured); };
+        captured = <span class="num">99</span>;              <span class="cm">// block copied the VALUE at creation time</span>
+        printCaptured();             <span class="cm">// prints 10, not 99</span>
+
+        __block <span class="kw">int</span> total = <span class="num">0</span>;      <span class="cm">// __block → mutable &amp; shared with the block</span>
+        <span class="type">NSArray</span> *nums = <span class="str">@[</span><span class="num">@1</span>, <span class="num">@2</span>, <span class="num">@3</span>, <span class="num">@4</span><span class="str">]</span>;
+        [nums <span class="fn">enumerateObjectsUsingBlock:</span>^(<span class="type">NSNumber</span> *x, <span class="type">NSUInteger</span> i, <span class="type">BOOL</span> *stop){
+            total += [x <span class="fn">intValue</span>];
+        }];
+        <span class="fn">printf</span>(<span class="str">"total = %d\n"</span>, total);
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+<pre><span class="cm">// → output:</span>
+square(6) = 36
+captured = 10
+total = 10</pre>
+<div class="warn"><p><strong>The retain-cycle-with-<code>self</code> pitfall.</strong> A block that references <code>self</code> (or an ivar, which implicitly captures <code>self</code>) <em>strongly retains</em> <code>self</code>. If <code>self</code> also retains the block — e.g. a stored <code>@property (copy)</code> completion handler — you have a cycle and both leak. The fix is the <strong>weakSelf / strongSelf</strong> pattern: capture a <code>__weak</code> reference, then re-pin it to a local <code>strong</code> inside the block so it can't vanish mid-body.</p></div>
+<pre><span class="kw">typedef</span> <span class="kw">void</span> (^Task)(<span class="kw">void</span>);
+
+<span class="kw">@interface</span> <span class="type">Worker</span> : <span class="type">NSObject</span>
+<span class="kw">@property</span> (<span class="kw">nonatomic</span>, <span class="kw">copy</span>) <span class="type">Task</span> task;   <span class="cm">// self retains the block…</span>
+<span class="kw">@property</span> (<span class="kw">nonatomic</span>) <span class="type">NSInteger</span> jobs;
+<span class="kw">@end</span>
+
+<span class="kw">@implementation</span> <span class="type">Worker</span>
+- (<span class="kw">void</span>)<span class="fn">dealloc</span> { <span class="fn">printf</span>(<span class="str">"Worker dealloc\n"</span>); }
+- (<span class="kw">void</span>)<span class="fn">setup</span> {
+    __weak <span class="kw">typeof</span>(self) weakSelf = self;      <span class="cm">// …so capture self WEAKLY</span>
+    self.task = ^{
+        <span class="kw">typeof</span>(self) strongSelf = weakSelf;   <span class="cm">// pin for the block body</span>
+        <span class="kw">if</span> (strongSelf) {
+            <span class="fn">printf</span>(<span class="str">"jobs = %ld\n"</span>, (<span class="kw">long</span>)strongSelf.jobs);
+        }
+    };
+}
+<span class="kw">@end</span>
+
+<span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    @<span class="kw">autoreleasepool</span> {
+        <span class="type">Worker</span> *w = [<span class="type">Worker</span> <span class="fn">new</span>];
+        w.jobs = <span class="num">5</span>;
+        [w <span class="fn">setup</span>];
+        w.task();
+    }   <span class="cm">// Worker deallocates — block held self weakly, so no cycle</span>
+    <span class="fn">printf</span>(<span class="str">"done\n"</span>);
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+<pre><span class="cm">// → output:</span>
+jobs = 5
+Worker dealloc
+done</pre>
+<div class="tip"><p>Note the "Worker dealloc" fires <em>before</em> "done": with <code>weakSelf</code> the block does not keep the <code>Worker</code> alive, so it is released at the end of the pool. Replace <code>weakSelf</code> with a direct <code>self</code> reference and the stored block would retain the <code>Worker</code> forever — the cycle. This exact pattern shows up in every completion-handler-heavy iOS codebase.</p></div>
+</div>
+</div>
+
+<!-- PROTOCOLS -->
+<div class="section" id="protocols">
+<div class="card">
+<h2>Protocols — interfaces &amp; the delegation pattern</h2>
+<p>A <strong><code>@protocol</code></strong> is Objective-C's interface: a named list of methods a class can promise to implement. Methods are <strong><code>@required</code></strong> by default or explicitly <strong><code>@optional</code></strong>. A class adopts protocols in angle brackets after its superclass (<code>@interface Foo : NSObject &lt;Bar, Baz&gt;</code>), and you type a value by capability with <strong><code>id&lt;Protocol&gt;</code></strong> — "any object conforming to <code>Protocol</code>". Before calling an optional method you must probe with <code>respondsToSelector:</code>, because it may not be there.</p>
+<pre><span class="kw">@protocol</span> <span class="type">Formatter</span> &lt;<span class="type">NSObject</span>&gt;
+<span class="kw">@required</span>
+- (<span class="type">NSString</span> *)<span class="fn">format:</span>(<span class="type">NSInteger</span>)value;
+<span class="kw">@optional</span>
+- (<span class="type">NSString</span> *)<span class="fn">prefix</span>;
+<span class="kw">@end</span>
+
+<span class="kw">@interface</span> <span class="type">HexFormatter</span> : <span class="type">NSObject</span> &lt;<span class="type">Formatter</span>&gt;
+<span class="kw">@end</span>
+<span class="kw">@implementation</span> <span class="type">HexFormatter</span>
+- (<span class="type">NSString</span> *)<span class="fn">format:</span>(<span class="type">NSInteger</span>)value {
+    <span class="kw">return</span> [<span class="type">NSString</span> <span class="fn">stringWithFormat:</span><span class="str">@"0x%lX"</span>, (<span class="kw">unsigned</span> <span class="kw">long</span>)value];
+}
+<span class="kw">@end</span>
+
+<span class="cm">// accept ANY object that conforms to Formatter</span>
+<span class="type">NSString</span> *<span class="fn">describe</span>(<span class="kw">id</span>&lt;<span class="type">Formatter</span>&gt; f, <span class="type">NSInteger</span> v) {
+    <span class="type">NSString</span> *body = [f <span class="fn">format:</span>v];
+    <span class="kw">if</span> ([f <span class="fn">respondsToSelector:</span>@<span class="kw">selector</span>(prefix)]) {  <span class="cm">// guard the optional method</span>
+        <span class="kw">return</span> [[f <span class="fn">prefix</span>] <span class="fn">stringByAppendingString:</span>body];
+    }
+    <span class="kw">return</span> body;
+}
+
+<span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    @<span class="kw">autoreleasepool</span> {
+        <span class="type">HexFormatter</span> *h = [<span class="type">HexFormatter</span> <span class="fn">new</span>];
+        <span class="fn">printf</span>(<span class="str">"%s\n"</span>, [<span class="fn">describe</span>(h, <span class="num">255</span>) <span class="fn">UTF8String</span>]);
+        <span class="fn">printf</span>(<span class="str">"conforms = %d\n"</span>, [h <span class="fn">conformsToProtocol:</span>@<span class="kw">protocol</span>(<span class="type">Formatter</span>)]);
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+<pre><span class="cm">// → output:</span>
+0xFF
+conforms = 1</pre>
+<div class="insight"><p><strong>Delegation</strong> is the pattern that made protocols famous across Cocoa. Instead of subclassing a view or a data source, an object exposes a <code>@property (nonatomic, weak) id&lt;SomeDelegate&gt; delegate;</code> and calls back into it (<code>[self.delegate didFinish:result]</code>) at key moments. The delegate is <strong><code>weak</code></strong> to avoid the classic view↔controller retain cycle, and optional callbacks are guarded with <code>respondsToSelector:</code>. This is how <code>UITableView</code>, <code>UITextField</code>, and countless APIs hand control back to your code.</p></div>
+</div>
+</div>
+
+<!-- CATEGORIES -->
+<div class="section" id="categories">
+<div class="card">
+<h2>Categories &amp; class extensions</h2>
+<p>A <strong>category</strong> adds methods to an existing class <em>you don't own</em> — even a Foundation class — without subclassing. The syntax is <code>@interface ClassName (CategoryName)</code>. A <strong>class extension</strong> is an <em>anonymous</em> category — <code>@interface ClassName ()</code> — placed in the <code>.m</code> file to declare <strong>private</strong> ivars, properties, and methods, and (a common trick) to redeclare a publicly <code>readonly</code> property as <code>readwrite</code> internally.</p>
+<pre><span class="cm">// Category: add a method to NSString (a class you don't own)</span>
+<span class="kw">@interface</span> <span class="type">NSString</span> (<span class="type">Shout</span>)
+- (<span class="type">NSString</span> *)<span class="fn">shout</span>;
+<span class="kw">@end</span>
+<span class="kw">@implementation</span> <span class="type">NSString</span> (<span class="type">Shout</span>)
+- (<span class="type">NSString</span> *)<span class="fn">shout</span> {
+    <span class="kw">return</span> [[self <span class="fn">uppercaseString</span>] <span class="fn">stringByAppendingString:</span><span class="str">@"!"</span>];
+}
+<span class="kw">@end</span>
+
+<span class="kw">@interface</span> <span class="type">Counter</span> : <span class="type">NSObject</span>
+<span class="kw">@property</span> (<span class="kw">nonatomic</span>, <span class="kw">readonly</span>) <span class="type">NSInteger</span> count;   <span class="cm">// public: read-only</span>
+- (<span class="kw">void</span>)<span class="fn">tick</span>;
+<span class="kw">@end</span>
+
+<span class="cm">// Class extension: private surface, declared in the .m</span>
+<span class="kw">@interface</span> <span class="type">Counter</span> ()
+<span class="kw">@property</span> (<span class="kw">nonatomic</span>, <span class="kw">readwrite</span>) <span class="type">NSInteger</span> count;  <span class="cm">// redeclare as writable internally</span>
+<span class="kw">@end</span>
+
+<span class="kw">@implementation</span> <span class="type">Counter</span>
+- (<span class="kw">void</span>)<span class="fn">tick</span> { self.count += <span class="num">1</span>; }
+<span class="kw">@end</span>
+
+<span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    @<span class="kw">autoreleasepool</span> {
+        <span class="fn">printf</span>(<span class="str">"%s\n"</span>, [[<span class="str">@"hi"</span> <span class="fn">shout</span>] <span class="fn">UTF8String</span>]);
+        <span class="type">Counter</span> *c = [<span class="type">Counter</span> <span class="fn">new</span>];
+        [c <span class="fn">tick</span>]; [c <span class="fn">tick</span>];
+        <span class="fn">printf</span>(<span class="str">"count = %ld\n"</span>, (<span class="kw">long</span>)c.count);
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+<pre><span class="cm">// → output:</span>
+HI!
+count = 2</pre>
+<div class="warn"><p><strong>Category caveats.</strong> A category <em>cannot</em> add stored properties/ivars (only methods), and if two categories define the same selector on the same class, which one wins is undefined. Because categories can also <em>override</em> existing methods with no compile-time warning, prefix category method names in shipping code (e.g. <code>myapp_shout</code>) to avoid silently clobbering a framework method or colliding with a future SDK addition.</p></div>
+</div>
+</div>
+
+<!-- NIL & ERRORS -->
+<div class="section" id="nilerrors">
+<div class="card">
+<h2><code>nil</code> / <code>Nil</code> / <code>NULL</code> / <code>NSNull</code>, <code>BOOL</code> &amp; errors</h2>
+<p>Objective-C has four distinct "nothing" values, and mixing them up is a classic source of bugs. <code>nil</code> is a null <em>object</em> pointer; <code>Nil</code> is a null <em>Class</em> pointer; <code>NULL</code> is the C null pointer (for non-object C pointers); and <strong><code>NSNull</code></strong> is a real singleton <em>object</em> (<code>[NSNull null]</code>) used as a placeholder <em>inside</em> collections, which cannot store a bare <code>nil</code>. <code>BOOL</code> is a C type with the values <code>YES</code> (1) and <code>NO</code> (0).</p>
+<pre><span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    @<span class="kw">autoreleasepool</span> {
+        <span class="cm">// NSNull is a real object placeholder — collections can't hold bare nil</span>
+        <span class="type">NSArray</span> *a = <span class="str">@[</span><span class="str">@"x"</span>, [<span class="type">NSNull</span> <span class="fn">null</span>], <span class="str">@"z"</span><span class="str">]</span>;
+        <span class="kw">id</span> middle = a[<span class="num">1</span>];
+        <span class="fn">printf</span>(<span class="str">"is NSNull = %d\n"</span>, middle == [<span class="type">NSNull</span> <span class="fn">null</span>]);
+
+        <span class="type">NSString</span> *s1 = [<span class="type">NSString</span> <span class="fn">stringWithFormat:</span><span class="str">@"ab%@"</span>, <span class="str">@"c"</span>];
+        <span class="type">NSString</span> *s2 = <span class="str">@"abc"</span>;
+        <span class="fn">printf</span>(<span class="str">"== (identity) : %d\n"</span>, s1 == s2);        <span class="cm">// pointer compare — may be 0</span>
+        <span class="fn">printf</span>(<span class="str">"isEqual (value): %d\n"</span>, [s1 <span class="fn">isEqualToString:</span>s2]);
+
+        <span class="type">BOOL</span> yes = <span class="kw">YES</span>;
+        <span class="fn">printf</span>(<span class="str">"BOOL yes = %d\n"</span>, yes);                <span class="cm">// YES is 1, NO is 0</span>
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+<pre><span class="cm">// → output:</span>
+is NSNull = 1
+== (identity) : 0
+isEqual (value): 1
+BOOL yes = 1</pre>
+<div class="warn"><p><code>==</code> compares <strong>pointers</strong>, so it is true only when two references point at the exact same object. For value equality you must send <code>isEqual:</code> (or a typed variant like <code>isEqualToString:</code>). The <code>== (identity)</code> line prints <code>0</code> here because the runtime-built string and the literal are different instances — never compare object contents with <code>==</code>.</p></div>
+<h3>Error handling — <code>NSError **</code> out-parameter</h3>
+<p>Objective-C uses exceptions (<code>@throw</code>/<code>@try</code>) only for <em>programmer errors</em>; recoverable/runtime failures use the <strong><code>NSError</code> convention</strong>: the method returns a <code>BOOL</code> (or <code>nil</code> object) to signal success, and writes details into an <code>NSError **</code> out-parameter. Callers pass the address of a local <code>NSError *</code> and inspect it only when the return value indicates failure.</p>
+<pre><span class="cm">// BOOL return signals success; details flow out via NSError **</span>
+<span class="type">BOOL</span> <span class="fn">parsePositive</span>(<span class="type">NSString</span> *text, <span class="type">NSInteger</span> *out, <span class="type">NSError</span> **error) {
+    <span class="type">NSInteger</span> v = [text <span class="fn">integerValue</span>];
+    <span class="kw">if</span> (v &lt;= <span class="num">0</span>) {
+        <span class="kw">if</span> (error) {                       <span class="cm">// always null-check the out-param</span>
+            *error = [<span class="type">NSError</span> <span class="fn">errorWithDomain:</span><span class="str">@"AppErrorDomain"</span>
+                                         <span class="fn">code:</span><span class="num">42</span>
+                                     <span class="fn">userInfo:</span>@{<span class="type">NSLocalizedDescriptionKey</span>: <span class="str">@"not positive"</span>}];
+        }
+        <span class="kw">return</span> <span class="kw">NO</span>;
+    }
+    <span class="kw">if</span> (out) *out = v;
+    <span class="kw">return</span> <span class="kw">YES</span>;
+}
+
+<span class="kw">int</span> <span class="fn">main</span>(<span class="kw">void</span>) {
+    @<span class="kw">autoreleasepool</span> {
+        <span class="type">NSError</span> *err = <span class="kw">nil</span>;
+        <span class="type">NSInteger</span> value = <span class="num">0</span>;
+        <span class="kw">if</span> (<span class="fn">parsePositive</span>(<span class="str">@"7"</span>, &amp;value, &amp;err)) {
+            <span class="fn">printf</span>(<span class="str">"ok: %ld\n"</span>, (<span class="kw">long</span>)value);
+        }
+        <span class="kw">if</span> (!<span class="fn">parsePositive</span>(<span class="str">@"-3"</span>, &amp;value, &amp;err)) {   <span class="cm">// test the RETURN, not err</span>
+            <span class="fn">printf</span>(<span class="str">"failed: %s (code %ld)\n"</span>,
+                   [err.localizedDescription <span class="fn">UTF8String</span>], (<span class="kw">long</span>)err.code);
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+<pre><span class="cm">// → output:</span>
+ok: 7
+failed: not positive (code 42)</pre>
+<div class="insight"><p>The golden rule: <strong>decide success from the return value, not from whether <code>error</code> is non-<code>nil</code></strong>. A method may leave <code>*error</code> untouched (or set) even on success, so reading it after a <code>YES</code> return is undefined-behavior territory. This is the same shape Swift bridges into <code>throws</code> — a Swift <code>try foo()</code> maps onto exactly this <code>NSError **</code> pattern.</p></div>
+</div>
+</div>
+
+<!-- PITFALLS -->
+<div class="section" id="pitfalls">
+<div class="card">
+<h2>Common pitfalls (and their fixes)</h2>
+
+<h3>1 · <code>nil</code>-messaging silently no-ops</h3>
+<p>The same feature that removes null-checks can hide a bug: <code>[obj doWork]</code> on a <code>nil</code> <code>obj</code> does nothing and returns <code>0</code>/<code>nil</code>, so a method that "isn't running" is often a silently-<code>nil</code> receiver. When a value must not be <code>nil</code>, assert it (<code>NSParameterAssert(obj)</code>) rather than letting the message vanish. Watch especially for <code>nil</code> arithmetic: <code>[array count]</code> on a <code>nil</code> array is <code>0</code>, which can mask a failed load.</p>
+
+<h3>2 · <code>==</code> vs <code>isEqual:</code></h3>
+<p>As shown in the nil &amp; errors section, <code>==</code> compares pointers. Comparing string or number <em>contents</em> with <code>==</code> works only by accident (interned literals) and breaks the moment one side is built at runtime. Always use <code>isEqual:</code> / <code>isEqualToString:</code> for value equality — and if you override <code>isEqual:</code> on your own class, override <code>hash</code> to match, or the object misbehaves as a dictionary key.</p>
+
+<h3>3 · Mutable vs immutable <code>copy</code></h3>
+<p>Sending <code>copy</code> to an <em>immutable</em> object may return the <strong>same</strong> instance (a valid optimization — there's nothing to copy), whereas <code>mutableCopy</code> always returns a distinct mutable object. Don't assume <code>copy</code> gives you a fresh, mutable object.</p>
+<pre><span class="type">NSString</span> *imm = <span class="str">@"abc"</span>;
+<span class="type">NSString</span> *c = [imm <span class="fn">copy</span>];                <span class="cm">// immutable copy → may be the SAME object</span>
+<span class="type">NSMutableString</span> *mc = [imm <span class="fn">mutableCopy</span>];  <span class="cm">// always a distinct instance</span>
+<span class="fn">printf</span>(<span class="str">"copy same ptr = %d\n"</span>, imm == c);
+<span class="fn">printf</span>(<span class="str">"mutableCopy same ptr = %d\n"</span>, imm == (<span class="type">NSString</span> *)mc);
+[mc <span class="fn">appendString:</span><span class="str">@"d"</span>];
+<span class="fn">printf</span>(<span class="str">"mc = %s, imm = %s\n"</span>, [mc <span class="fn">UTF8String</span>], [imm <span class="fn">UTF8String</span>]);</pre>
+<pre><span class="cm">// → output:</span>
+copy same ptr = 1
+mutableCopy same ptr = 0
+mc = abcd, imm = abc</pre>
+
+<h3>4 · Retain cycles in blocks &amp; delegates</h3>
+<p>A stored block that captures <code>self</code>, or a <code>strong</code> delegate reference, is the two most common leaks. Blocks: use the <code>weakSelf</code>/<code>strongSelf</code> pattern (Blocks section). Delegates: declare <code>@property (nonatomic, weak) id&lt;…&gt; delegate;</code>. Both come down to the same rule — <strong>the "back" or "callback" pointer should be <code>weak</code></strong> so it doesn't form a cycle with the owner.</p>
+
+<h3>5 · KVC / KVO pitfalls</h3>
+<p><strong>Key-Value Coding</strong> (<code>valueForKey:</code> / <code>setValue:forKey:</code>) and <strong>Key-Value Observing</strong> resolve keys as <em>strings</em> at run time, so a mistyped key is not a compile error — it throws <code>NSUnknownKeyException</code> at run time. For KVO to fire, changes must go through the accessor (<code>self.name = …</code> or <code>setValue:forKey:</code>); assigning the ivar <code>_name</code> directly bypasses the notification. And every <code>addObserver:…</code> must be balanced by <code>removeObserver:…</code> before the observer deallocates, or you crash on the next notification to a dead object.</p>
+<div class="warn"><p>A meta-pitfall for newcomers: treating Objective-C as "C++ with brackets". The dynamic runtime changes the mental model — dispatch is by selector at run time (so there is no compile-time devirtualization to lean on), <code>nil</code> receivers are silent, equality and copying are message-based, and object lifetime is reference-counted (mind cycles), not scope-based like C++ RAII. Idiomatic Objective-C leans on the runtime (protocols, categories, KVC/KVO, delegation) rather than fighting it.</p></div>
+</div>
+</div>
+
+<!-- TOOLING -->
+<div class="section" id="tooling">
+<div class="card">
+<h2>Tooling &amp; interop</h2>
+<p>Objective-C is compiled by <strong>clang</strong> (the LLVM C-family front end), links against <strong>Foundation</strong> (and, on Apple platforms, UIKit/AppKit), and is edited in <strong>Xcode</strong>. A single-file program builds and runs from the command line:</p>
+<pre><span class="cm"># compile one .m file against Foundation, with ARC enabled</span>
+clang -fobjc-arc -framework Foundation prog.m -o prog
+./prog</pre>
+<table>
+<tr><th>Tool / flag</th><th>What it does</th></tr>
+<tr><td><code>clang</code></td><td>The compiler; treats <code>.m</code> as Objective-C, <code>.mm</code> as Objective-C++.</td></tr>
+<tr><td><code>-fobjc-arc</code></td><td>Enable ARC. Xcode turns this on by default; the bare CLI does <em>not</em>, so add it (or use <code>-fno-objc-arc</code> for a legacy MRC file).</td></tr>
+<tr><td><code>-framework Foundation</code></td><td>Link the Foundation framework (<code>NSString</code>, collections, <code>NSError</code>, …).</td></tr>
+<tr><td>Xcode / <code>xcodebuild</code></td><td>The IDE and its build tool; the Static Analyzer catches leaks and misuse.</td></tr>
+</table>
+<h3>Bridging to Swift</h3>
+<p>Objective-C and <strong>Swift</strong> interoperate in the same target. Swift imports Objective-C via a <em>bridging header</em>; Objective-C sees Swift classes through a generated <code>-Swift.h</code> header (Swift symbols must be marked <code>@objc</code> / <code>@objcMembers</code> or inherit <code>NSObject</code>). Nullability annotations (<code>nullable</code> / <code>nonnull</code>, usually via the <code>NS_ASSUME_NONNULL_BEGIN</code>/<code>_END</code> region) tell Swift which Objective-C references become optionals, and <code>NSError **</code> methods bridge to Swift <code>throws</code>. For plain C / Core Foundation pointers, ownership is transferred across the ARC boundary with <code>__bridge</code>, <code>__bridge_retained</code>, and <code>__bridge_transfer</code> casts.</p>
+<div class="insight"><p><strong>Interview angle.</strong> A crisp "what makes Objective-C distinctive?" answer: it is <em>C plus a dynamic messaging runtime</em>. Dispatch is by selector at run time (enabling categories, delegation, KVC/KVO, and introspection); messaging <code>nil</code> is safe; memory is reference-counted with ARC, so the real skill is spotting <strong>retain cycles</strong> and reaching for <code>weak</code>. Its whole design optimizes for the dynamic, framework-heavy Cocoa style — which is also why Swift, its successor, kept full two-way interop rather than a clean break.</p></div>
+<div class="tip"><p>Every runnable snippet in this chapter was compiled and executed with <code>clang -fobjc-arc -framework Foundation</code> on macOS; the <code>// → output</code> blocks are the real program output. Output is printed with C's <code>printf</code> (via <code>-UTF8String</code>) purely to keep it deterministic and prefix-free — production code logs with <code>NSLog(@"%@", …)</code>, which adds a timestamp and process prefix.</p></div>
+</div>
+</div>
+
+<!-- GLOSSARY -->
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p>Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Message passing</strong></td><td>Sending a named message to a receiver (<code>[obj method]</code>), dispatched dynamically at run time rather than a static method call.</td></tr>
+<tr><td><strong>Selector</strong></td><td>The name identifying a message (e.g. <code>length</code>, <code>format:</code>); a first-class value via <code>@selector(...)</code>.</td></tr>
+<tr><td><strong>objc_msgSend</strong></td><td>The runtime function a message send compiles to; it looks up and calls the receiver's implementation.</td></tr>
+<tr><td><strong>nil</strong></td><td>Null object pointer; sending it a message is safe and returns <code>0</code> / <code>nil</code> instead of crashing.</td></tr>
+<tr><td><strong>instancetype</strong></td><td>Return type meaning "an instance of the receiver's own class"; used for initializers and factory methods.</td></tr>
+<tr><td><strong>Designated initializer</strong></td><td>The initializer that calls <code>[super init]</code> and sets every ivar; convenience initializers funnel into it.</td></tr>
+<tr><td><strong>ivar</strong></td><td>Instance variable — an object's backing storage; a property's is named <code>_name</code> by default.</td></tr>
+<tr><td><strong>@property</strong></td><td>Declaration generating a getter/setter pair plus a backing ivar, tuned by attributes (<code>strong</code>, <code>copy</code>, <code>nonatomic</code>, <code>readonly</code>, …).</td></tr>
+<tr><td><strong>ARC</strong> (Automatic Reference Counting)</td><td>Compile-time insertion of <code>retain</code>/<code>release</code>; an object deallocates when its reference count reaches zero.</td></tr>
+<tr><td><strong>strong / weak</strong></td><td>Ownership qualifiers: <code>strong</code> keeps the target alive; <code>weak</code> does not and auto-nils when it is deallocated.</td></tr>
+<tr><td><strong>Retain cycle</strong></td><td>Two objects retaining each other <code>strong</code>ly so neither's count reaches zero — a leak, broken with <code>weak</code>.</td></tr>
+<tr><td><strong>Autorelease pool</strong></td><td>A <code>@autoreleasepool { … }</code> scope that releases autoreleased objects when it exits.</td></tr>
+<tr><td><strong>MRC</strong> (Manual Reference Counting)</td><td>Legacy pre-ARC model where you balanced <code>retain</code>/<code>release</code>/<code>autorelease</code> calls by hand.</td></tr>
+<tr><td><strong>Foundation</strong></td><td>The base framework supplying <code>NSString</code>, the collections, <code>NSNumber</code>, <code>NSError</code>, and other value types.</td></tr>
+<tr><td><strong>Block</strong></td><td>Objective-C's closure: an anonymous function that captures variables from its enclosing scope.</td></tr>
+<tr><td><strong>__block</strong></td><td>Qualifier letting a block mutate a captured local and share the change back with the enclosing scope.</td></tr>
+<tr><td><strong>weakSelf / strongSelf</strong></td><td>Pattern for capturing <code>self</code> weakly then re-pinning it inside a block to avoid a retain cycle.</td></tr>
+<tr><td><strong>Protocol</strong></td><td>A named list of <code>@required</code>/<code>@optional</code> methods a class can promise to implement — an interface.</td></tr>
+<tr><td><strong>Delegation</strong></td><td>Pattern where an object calls back into a <code>weak</code> delegate that conforms to a protocol.</td></tr>
+<tr><td><strong>Category / class extension</strong></td><td>A category adds methods to an existing class; an anonymous category (class extension) declares a class's private surface.</td></tr>
+<tr><td><strong>NSNull</strong></td><td>Singleton object (<code>[NSNull null]</code>) used as a placeholder inside collections, which cannot hold a bare <code>nil</code>.</td></tr>
+<tr><td><strong>BOOL / YES / NO</strong></td><td>Objective-C's boolean type and its two values, <code>YES</code> (1) and <code>NO</code> (0).</td></tr>
+<tr><td><strong>NSError **</strong></td><td>Out-parameter error convention: the return value signals success, and error details flow out through the pointer.</td></tr>
+<tr><td><strong>KVC / KVO</strong> (Key-Value Coding / Observing)</td><td>String-keyed property access and change observation, resolved by name at run time.</td></tr>
+</table>
+</div>
+
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  evt.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="kotlin_refresher.html">‹ Kotlin Refresher</a><a class="bkc" href="index.html">📖 Contents</a><a href="swift_refresher.html">Swift Refresher ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

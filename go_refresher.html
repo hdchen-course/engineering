@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go Refresher — Simplicity + Built-in Concurrency for Interviews</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #114f8c; --blue-l: #d0ebff; --green: #1d6b2e; --green-l: #d3f9d8;
+  --yellow: #a85700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #4a2fa8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1050px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.nav { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin: 18px 0 32px; position: sticky; top: 0; background: var(--bg); padding: 14px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 23px; font-weight: 700; margin: 28px 0 14px; color: var(--blue); }
+h3 { font-size: 17px; font-weight: 600; margin: 22px 0 10px; }
+h4 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 14px 18px; overflow-x: auto; margin: 10px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #cdd6f4; white-space: pre; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.warn p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.old { background: var(--red-l); border-left: 3px solid var(--red); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.old p { color: #8a1c1c; margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 18px; padding: 22px 26px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th, td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 16px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--purple-l); color:var(--purple); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VIII · Chapter 4 — <b>Go Refresher</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Go Refresher</h1>
+  <div class="sub">Go's radical simplicity + concurrency built into the language — a fast way in from C++/Java/Python, then interview-grade depth</div>
+</header>
+
+<style id="go-code-hl">
+.container pre .kw{color:#cba6f7}
+.container pre .cm{color:#7f849c;font-style:italic}
+.container pre .str{color:#a6e3a1}
+.container pre .num{color:#fab387}
+.container pre .fn{color:#89b4fa}
+.container pre .ty{color:#f9e2af}
+</style>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'philosophy')">Philosophy &amp; migration</button>
+  <button class="nav-btn" onclick="showSection(event,'types')">Types &amp; basics</button>
+  <button class="nav-btn" onclick="showSection(event,'slices')">Slices &amp; maps</button>
+  <button class="nav-btn" onclick="showSection(event,'structs')">Structs &amp; interfaces</button>
+  <button class="nav-btn" onclick="showSection(event,'errors')">Errors &amp; defer</button>
+  <button class="nav-btn" onclick="showSection(event,'concurrency')">Concurrency</button>
+  <button class="nav-btn" onclick="showSection(event,'runtime')">Scheduler &amp; GC</button>
+  <button class="nav-btn" onclick="showSection(event,'tooling')">Tooling &amp; patterns</button>
+  <button class="nav-btn" onclick="showSection(event,'interview')">Interview Q&amp;A</button>
+</div>
+
+<!-- PHILOSOPHY -->
+<div class="section active" id="philosophy">
+<div class="card">
+<h2>Go's design philosophy (why it feels different)</h2>
+<p>Go was built at Google to make large teams productive on large codebases. The guiding instinct is <strong>radical simplicity</strong>: a small language you can hold in your head, one obvious way to do most things, and a compiler + tooling fast enough to feel like a scripting language while producing a single static binary.</p>
+<p>The classic mental model: <em>"Go is C for the 21st century — with garbage collection, memory safety, and concurrency built in."</em> A high-schooler can read idiomatic Go on day one; the depth is in the runtime and the concurrency model.</p>
+<ul>
+  <li><strong>Simplicity over features.</strong> No inheritance, no exceptions, no operator overloading, no implicit conversions. Fewer ways to be clever = easier to read someone else's code.</li>
+  <li><strong>Composition over inheritance.</strong> You build behavior by embedding structs and satisfying interfaces, not by deep class trees.</li>
+  <li><strong>Errors are values.</strong> Functions return an <code>error</code>; you check it. No hidden control flow.</li>
+  <li><strong>Concurrency is a language feature.</strong> Goroutines and channels, not an add-on library.</li>
+  <li><strong>Tooling is opinionated.</strong> <code>gofmt</code> ends every formatting argument; <code>go test</code>, <code>go vet</code>, the race detector, and modules are all included.</li>
+  <li><strong>Fast compiles.</strong> The dependency model and lack of headers make builds fast even at scale.</li>
+</ul>
+<div class="insight"><p><strong>Slogan worth quoting:</strong> "Don't communicate by sharing memory; share memory by communicating." That is the philosophy of channels in one line — pass data between goroutines rather than guarding shared state with locks.</p></div>
+</div>
+
+<div class="card">
+<h3>A note for people coming from C++, Java, or Python</h3>
+<table>
+<tr><th>You know…</th><th>In Go…</th></tr>
+<tr><td><strong>C++</strong>: manual memory / RAII, templates, exceptions, pointer arithmetic</td><td>Garbage-collected (no <code>delete</code>); pointers exist but <em>no pointer arithmetic</em>; generics arrived in 1.18; no exceptions — errors are returned; goroutines instead of threads.</td></tr>
+<tr><td><strong>Java</strong>: classes + inheritance, checked exceptions, JVM startup, threads/executors</td><td>No classes/inheritance — structs + methods + interfaces (satisfied <em>implicitly</em>); no exceptions; instant startup, single binary; goroutines are far cheaper than threads.</td></tr>
+<tr><td><strong>Python</strong>: dynamic types, the GIL, <code>asyncio</code></td><td>Static + compiled + genuinely parallel; explicit types (with inference); goroutines give real multicore parallelism — no GIL.</td></tr>
+</table>
+<div class="tip"><p>The fastest way to feel at home: run <code>gofmt</code> constantly, read the standard library source (it <em>is</em> the style guide), and internalize "return the error, don't throw it." Most of your existing algorithmic and systems knowledge transfers directly.</p></div>
+<h4>Hello, Go</h4>
+<pre><span class="kw">package</span> main
+
+<span class="kw">import</span> <span class="str">"fmt"</span>
+
+<span class="cm">// main is the entry point; the package must be "main".</span>
+<span class="kw">func</span> <span class="fn">main</span>() {
+    fmt.<span class="fn">Println</span>(<span class="str">"Hello, Go"</span>)
+}</pre>
+<div class="insight"><p><strong>Interview angle.</strong> When asked "why Go?", lead with the philosophy, not features: simplicity that scales to big teams, concurrency as a first-class primitive, a static binary with fast builds, and tooling that ends pointless style debates. Then name a fit: network services, CLIs, and infrastructure where predictable latency and easy deployment matter.</p></div>
+</div>
+</div>
+
+<!-- TYPES -->
+<div class="section" id="types">
+<div class="card">
+<h2>Types &amp; basics</h2>
+<p>Go is statically typed with type inference. Every variable has a well-defined <strong>zero value</strong>, so there is no "uninitialized garbage" like in C/C++.</p>
+<pre><span class="kw">package</span> main
+
+<span class="kw">import</span> <span class="str">"fmt"</span>
+
+<span class="kw">func</span> <span class="fn">main</span>() {
+    <span class="kw">var</span> i <span class="ty">int</span> = <span class="num">42</span>       <span class="cm">// explicit type</span>
+    f := <span class="num">3.14</span>             <span class="cm">// := short declaration, inferred as float64</span>
+    s := <span class="str">"héllo"</span>          <span class="cm">// string: immutable, UTF-8 bytes</span>
+    ok := <span class="kw">true</span>            <span class="cm">// bool</span>
+    <span class="kw">var</span> r <span class="ty">rune</span> = <span class="str">'世'</span>     <span class="cm">// rune = int32, one Unicode code point</span>
+    <span class="kw">var</span> b <span class="ty">byte</span> = <span class="str">'A'</span>     <span class="cm">// byte = uint8</span>
+
+    fmt.<span class="fn">Println</span>(i, f, s, ok, r, b)
+    fmt.<span class="fn">Println</span>(<span class="fn">len</span>(s))       <span class="cm">// 6: byte length, not rune count (é is 2 bytes)</span>
+}</pre>
+
+<h3>Zero values &amp; declaration</h3>
+<table>
+<tr><th>Type</th><th>Zero value</th></tr>
+<tr><td>numeric (<code>int</code>, <code>float64</code>…)</td><td><code>0</code></td></tr>
+<tr><td><code>string</code></td><td><code>""</code> (empty, never nil)</td></tr>
+<tr><td><code>bool</code></td><td><code>false</code></td></tr>
+<tr><td>pointer, slice, map, channel, func, interface</td><td><code>nil</code></td></tr>
+</table>
+<div class="warn"><p><code>:=</code> only works inside functions and <em>declares</em> a new variable; use <code>=</code> to assign to an existing one. Declaring a variable you never read is a <strong>compile error</strong> — Go refuses to build code with unused locals or unused imports.</p></div>
+
+<h3>Pointers (no arithmetic)</h3>
+<pre>x := <span class="num">10</span>
+p := &amp;x            <span class="cm">// *int, address of x</span>
+*p = <span class="num">20</span>           <span class="cm">// dereference and set; x is now 20</span>
+<span class="cm">// p++ is a COMPILE ERROR — Go has no pointer arithmetic.</span>
+
+<span class="cm">// new(T) returns a *T pointing at a zero value</span>
+q := <span class="fn">new</span>(<span class="ty">int</span>)      <span class="cm">// *int -&gt; 0</span></pre>
+<p>Pointers give you shared, mutable references without unsafe arithmetic. There is no dangling-pointer problem: the garbage collector keeps memory alive as long as any pointer references it, even if you return the address of a local variable (Go moves it to the heap — called <em>escape analysis</em>).</p>
+
+<h3>Control flow — small surface area</h3>
+<pre><span class="cm">// The ONLY loop keyword is `for`.</span>
+<span class="kw">for</span> i := <span class="num">0</span>; i &lt; n; i++ { }        <span class="cm">// C-style</span>
+<span class="kw">for</span> cond { }                       <span class="cm">// while-style</span>
+<span class="kw">for</span> { <span class="kw">break</span> }                       <span class="cm">// infinite loop</span>
+<span class="kw">for</span> i, v := <span class="kw">range</span> xs { <span class="fn">use</span>(i, v) }  <span class="cm">// range over slice/map/string/channel</span>
+
+<span class="cm">// if can carry an init statement; no parentheses, braces required</span>
+<span class="kw">if</span> v, err := <span class="fn">doThing</span>(); err != <span class="kw">nil</span> {
+    <span class="kw">return</span> err
+}
+
+<span class="kw">switch</span> {                            <span class="cm">// tagless switch = clean if/else-if chain</span>
+<span class="kw">case</span> score &gt;= <span class="num">90</span>:
+    grade = <span class="str">"A"</span>
+<span class="kw">default</span>:
+    grade = <span class="str">"?"</span>
+}                                    <span class="cm">// no fall-through by default</span></pre>
+<div class="insight"><p><strong>Interview angle.</strong> The "unused variable/import is an error" rule and the single <code>for</code> keyword are good talking points: they show Go trades a little friction for codebases that stay clean and uniform. Mention <code>gofmt</code> — style is not a code-review topic in Go.</p></div>
+</div>
+</div>
+
+<!-- SLICES & MAPS -->
+<div class="section" id="slices">
+<div class="card">
+<h2>Slices — the go-to type (know the header by heart)</h2>
+<p>An <strong>array</strong> in Go has a fixed size baked into its type (<code>[3]int</code>) and is rarely used directly. The everyday type is the <strong>slice</strong> (<code>[]int</code>): a lightweight view onto a backing array. A slice value is a tiny 3-word <em>header</em>:</p>
+<ul>
+  <li><strong>ptr</strong> — pointer to the first element in the backing array</li>
+  <li><strong>len</strong> — how many elements the slice currently exposes</li>
+  <li><strong>cap</strong> — how many elements exist from <code>ptr</code> to the end of the backing array</li>
+</ul>
+
+<svg viewBox="0 0 720 300" style="max-width:100%;height:auto" role="img" aria-label="Slice header with ptr, len, cap pointing into a backing array, and how append grows it">
+  <rect x="0" y="0" width="720" height="300" fill="#ffffff"/>
+  <!-- slice header -->
+  <text x="20" y="28" font-family="Inter,sans-serif" font-size="14" font-weight="700" fill="#212529">slice header  s := nums[0:3]  // len 3, cap 5</text>
+  <g font-family="JetBrains Mono,monospace" font-size="13">
+    <rect x="20" y="42" width="90" height="40" fill="#e5dbff" stroke="#4a2fa8"/>
+    <text x="65" y="60" text-anchor="middle" fill="#4a2fa8" font-weight="700">ptr</text>
+    <text x="65" y="76" text-anchor="middle" fill="#495057">•──▶</text>
+    <rect x="110" y="42" width="90" height="40" fill="#d0ebff" stroke="#114f8c"/>
+    <text x="155" y="60" text-anchor="middle" fill="#114f8c" font-weight="700">len = 3</text>
+    <rect x="200" y="42" width="90" height="40" fill="#d3f9d8" stroke="#1d6b2e"/>
+    <text x="245" y="60" text-anchor="middle" fill="#1d6b2e" font-weight="700">cap = 5</text>
+  </g>
+  <!-- backing array -->
+  <text x="20" y="128" font-family="Inter,sans-serif" font-size="13" font-weight="600" fill="#495057">backing array (5 slots)</text>
+  <g font-family="JetBrains Mono,monospace" font-size="14">
+    <rect x="20" y="138" width="60" height="46" fill="#d0ebff" stroke="#114f8c"/><text x="50" y="167" text-anchor="middle" fill="#212529">2</text>
+    <rect x="80" y="138" width="60" height="46" fill="#d0ebff" stroke="#114f8c"/><text x="110" y="167" text-anchor="middle" fill="#212529">3</text>
+    <rect x="140" y="138" width="60" height="46" fill="#d0ebff" stroke="#114f8c"/><text x="170" y="167" text-anchor="middle" fill="#212529">5</text>
+    <rect x="200" y="138" width="60" height="46" fill="#f1f3f5" stroke="#7a828a" stroke-dasharray="4 3"/><text x="230" y="167" text-anchor="middle" fill="#5c636a">·</text>
+    <rect x="260" y="138" width="60" height="46" fill="#f1f3f5" stroke="#7a828a" stroke-dasharray="4 3"/><text x="290" y="167" text-anchor="middle" fill="#5c636a">·</text>
+  </g>
+  <text x="20" y="205" font-family="Inter,sans-serif" font-size="12" fill="#5c636a">len covers filled slots · cap reaches the array end · spare slots are reusable</text>
+  <!-- arrow from ptr to array -->
+  <path d="M 65 82 C 65 110, 50 118, 50 136" fill="none" stroke="#4a2fa8" stroke-width="2" marker-end="url(#ah)"/>
+  <defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4a2fa8"/></marker></defs>
+
+  <!-- append within cap -->
+  <text x="380" y="128" font-family="Inter,sans-serif" font-size="13" font-weight="600" fill="#1d6b2e">append(s, 7) — fits in cap: reuse array, len→4</text>
+  <g font-family="JetBrains Mono,monospace" font-size="14">
+    <rect x="380" y="138" width="52" height="46" fill="#d3f9d8" stroke="#1d6b2e"/><text x="406" y="167" text-anchor="middle">2</text>
+    <rect x="432" y="138" width="52" height="46" fill="#d3f9d8" stroke="#1d6b2e"/><text x="458" y="167" text-anchor="middle">3</text>
+    <rect x="484" y="138" width="52" height="46" fill="#d3f9d8" stroke="#1d6b2e"/><text x="510" y="167" text-anchor="middle">5</text>
+    <rect x="536" y="138" width="52" height="46" fill="#fff3bf" stroke="#a85700"/><text x="562" y="167" text-anchor="middle">7</text>
+    <rect x="588" y="138" width="52" height="46" fill="#f1f3f5" stroke="#7a828a" stroke-dasharray="4 3"/><text x="614" y="167" text-anchor="middle" fill="#5c636a">·</text>
+  </g>
+
+  <!-- append beyond cap -->
+  <text x="20" y="245" font-family="Inter,sans-serif" font-size="13" font-weight="600" fill="#c92a2a">append when len == cap — GROW: allocate a new, bigger array, copy, repoint ptr</text>
+  <g font-family="JetBrains Mono,monospace" font-size="14">
+    <rect x="20" y="255" width="46" height="40" fill="#ffe3e3" stroke="#c92a2a"/><text x="43" y="281" text-anchor="middle">2</text>
+    <rect x="66" y="255" width="46" height="40" fill="#ffe3e3" stroke="#c92a2a"/><text x="89" y="281" text-anchor="middle">3</text>
+    <rect x="112" y="255" width="46" height="40" fill="#ffe3e3" stroke="#c92a2a"/><text x="135" y="281" text-anchor="middle">5</text>
+    <rect x="158" y="255" width="46" height="40" fill="#ffe3e3" stroke="#c92a2a"/><text x="181" y="281" text-anchor="middle">7</text>
+    <rect x="204" y="255" width="46" height="40" fill="#ffe3e3" stroke="#c92a2a"/><text x="227" y="281" text-anchor="middle">9</text>
+    <rect x="250" y="255" width="46" height="40" fill="#f1f3f5" stroke="#7a828a" stroke-dasharray="4 3"/>
+    <rect x="296" y="255" width="46" height="40" fill="#f1f3f5" stroke="#7a828a" stroke-dasharray="4 3"/>
+    <rect x="342" y="255" width="46" height="40" fill="#f1f3f5" stroke="#7a828a" stroke-dasharray="4 3"/>
+    <rect x="388" y="255" width="46" height="40" fill="#f1f3f5" stroke="#7a828a" stroke-dasharray="4 3"/>
+    <rect x="434" y="255" width="46" height="40" fill="#f1f3f5" stroke="#7a828a" stroke-dasharray="4 3"/>
+    <text x="490" y="270" font-family="Inter,sans-serif" font-size="12" fill="#5c636a"><tspan x="490" dy="0">new cap ≈ 2×</tspan><tspan x="490" dy="15">(grows ~1.25× for large slices)</tspan></text>
+  </g>
+</svg>
+
+<h3>Slices in code</h3>
+<pre>nums := []<span class="ty">int</span>{<span class="num">2</span>, <span class="num">3</span>, <span class="num">5</span>}          <span class="cm">// literal: len 3, cap 3</span>
+buf := <span class="fn">make</span>([]<span class="ty">int</span>, <span class="num">0</span>, <span class="num">8</span>)         <span class="cm">// len 0, cap 8 (preallocate to avoid regrows)</span>
+
+nums = <span class="fn">append</span>(nums, <span class="num">7</span>)          <span class="cm">// may reallocate; ALWAYS reassign the result</span>
+sub := nums[<span class="num">1</span>:<span class="num">3</span>]              <span class="cm">// [3 5] — shares the SAME backing array as nums</span>
+fmt.<span class="fn">Println</span>(<span class="fn">len</span>(sub), <span class="fn">cap</span>(sub)) <span class="cm">// 2 5 (append grew cap to 6; cap(sub)=6-1)</span></pre>
+<div class="warn"><p><strong>Aliasing trap.</strong> Because a slice shares its backing array, writing through <code>sub[0]</code> mutates <code>nums</code> too. And <code>append</code> into a sub-slice can silently overwrite elements of the parent if there is spare cap. When you need an independent copy, use <code>copy(dst, src)</code> or a full-slice expression <code>s[low:high:max]</code> to cap it.</p></div>
+
+<h3>Maps</h3>
+<pre>m := <span class="fn">make</span>(<span class="kw">map</span>[<span class="ty">string</span>]<span class="ty">int</span>)     <span class="cm">// or map literal: map[string]int{"a": 1}</span>
+m[<span class="str">"a"</span>] = <span class="num">1</span>
+m[<span class="str">"z"</span>]++                    <span class="cm">// missing key reads as zero value, then increments to 1</span>
+
+v, ok := m[<span class="str">"b"</span>]              <span class="cm">// comma-ok: ok is false if key absent</span>
+<span class="kw">if</span> !ok { fmt.<span class="fn">Println</span>(<span class="str">"missing"</span>) }
+<span class="fn">delete</span>(m, <span class="str">"a"</span>)
+
+<span class="kw">for</span> k, v := <span class="kw">range</span> m {         <span class="cm">// iteration order is RANDOMIZED on purpose</span>
+    fmt.<span class="fn">Println</span>(k, v)
+}</pre>
+<div class="warn"><p>Maps are <strong>not safe for concurrent read+write</strong> — a concurrent write crashes the program with a fatal error ("fatal error: concurrent map writes") that <code>recover()</code> cannot catch. Guard with a <code>sync.Mutex</code> or use <code>sync.Map</code>. Also: you can't take the address of a map element (<code>&amp;m["k"]</code> is illegal) because the backing store can move on growth.</p></div>
+<div class="insight"><p><strong>Interview angle.</strong> The classic question is "what does <code>append</code> return and why must you reassign?" Answer with the header: append may allocate a new backing array and give you a new header; the old variable would still point at the old array. Bonus points for the sub-slice aliasing trap and <code>s[low:high:max]</code> to bound capacity.</p></div>
+</div>
+</div>
+
+<!-- STRUCTS & INTERFACES -->
+<div class="section" id="structs">
+<div class="card">
+<h2>Structs &amp; methods</h2>
+<p>A <code>struct</code> groups fields. You attach behavior with <strong>methods</strong> — functions with a <em>receiver</em>. There are no classes; a method can be defined on any named type you own.</p>
+<pre><span class="kw">type</span> Point <span class="kw">struct</span> {
+    X, Y <span class="ty">int</span>
+}
+
+<span class="cm">// Value receiver: gets a COPY, cannot mutate the caller's Point.</span>
+<span class="kw">func</span> (p Point) <span class="fn">Add</span>(q Point) Point {
+    <span class="kw">return</span> Point{p.X + q.X, p.Y + q.Y}
+}
+
+<span class="cm">// Pointer receiver: can mutate; use for big structs or in-place changes.</span>
+<span class="kw">func</span> (p *Point) <span class="fn">Scale</span>(f <span class="ty">int</span>) {
+    p.X *= f
+    p.Y *= f
+}
+
+<span class="kw">func</span> <span class="fn">main</span>() {
+    p := Point{X: <span class="num">1</span>, Y: <span class="num">2</span>}
+    p.<span class="fn">Scale</span>(<span class="num">10</span>)                <span class="cm">// Go auto-takes &amp;p for the pointer method</span>
+    fmt.<span class="fn">Println</span>(p.<span class="fn">Add</span>(Point{<span class="num">1</span>, <span class="num">1</span>})) <span class="cm">// {11 21}</span>
+}</pre>
+<div class="tip"><p><strong>Receiver rule of thumb:</strong> be consistent per type. If any method needs a pointer receiver (mutation, or the struct is large), give <em>all</em> its methods pointer receivers. Structs are <strong>value types</strong> — assigning or passing one copies every field, unlike Java objects which are references.</p></div>
+
+<h3>Composition via embedding (not inheritance)</h3>
+<pre><span class="kw">type</span> Logger <span class="kw">struct</span>{ prefix <span class="ty">string</span> }
+<span class="kw">func</span> (l Logger) <span class="fn">Log</span>(msg <span class="ty">string</span>) { fmt.<span class="fn">Println</span>(l.prefix, msg) }
+
+<span class="kw">type</span> Server <span class="kw">struct</span> {
+    Logger          <span class="cm">// embedded: Server "has-a" Logger and promotes its methods</span>
+    Addr <span class="ty">string</span>
+}
+
+s := Server{Logger: Logger{prefix: <span class="str">"[srv]"</span>}, Addr: <span class="str">":8080"</span>}
+s.<span class="fn">Log</span>(<span class="str">"up"</span>)              <span class="cm">// promoted: calls s.Logger.Log</span></pre>
+</div>
+
+<div class="card">
+<h2>Interfaces — satisfied implicitly</h2>
+<p>An interface is a set of method signatures. A type satisfies it <strong>automatically</strong> by having those methods — there is no <code>implements</code> keyword and no declared relationship. This is <em>structural</em> (duck) typing checked at compile time.</p>
+<pre><span class="kw">type</span> Stringer <span class="kw">interface</span> {
+    <span class="fn">String</span>() <span class="ty">string</span>
+}
+
+<span class="kw">type</span> Temp <span class="ty">float64</span>
+
+<span class="cm">// Temp now satisfies Stringer just by having this method.</span>
+<span class="kw">func</span> (t Temp) <span class="fn">String</span>() <span class="ty">string</span> {
+    <span class="kw">return</span> fmt.<span class="fn">Sprintf</span>(<span class="str">"%.1f°C"</span>, <span class="ty">float64</span>(t))
+}
+
+<span class="kw">var</span> s Stringer = Temp(<span class="num">21.5</span>)   <span class="cm">// works — no "implements" needed</span>
+fmt.<span class="fn">Println</span>(s.<span class="fn">String</span>())        <span class="cm">// 21.5°C</span></pre>
+<div class="insight"><p>Implicit satisfaction means you can write an interface <em>after the fact</em> to describe types you don't own (e.g. define a small interface that <code>*os.File</code> happens to satisfy). Idiomatic Go favors <strong>tiny interfaces</strong> — often one method (<code>io.Reader</code>, <code>io.Writer</code>). "Accept interfaces, return structs."</p></div>
+
+<h3>The empty interface, <code>any</code>, and type assertions</h3>
+<pre><span class="kw">var</span> x <span class="ty">any</span> = <span class="num">42</span>            <span class="cm">// any == interface{}; holds any value (Go 1.18+ alias)</span>
+
+n, ok := x.(<span class="ty">int</span>)          <span class="cm">// type assertion with comma-ok (no panic if wrong)</span>
+<span class="kw">if</span> ok { fmt.<span class="fn">Println</span>(n * <span class="num">2</span>) }
+
+<span class="kw">switch</span> v := x.(<span class="kw">type</span>) {     <span class="cm">// type switch</span>
+<span class="kw">case</span> <span class="ty">int</span>:    fmt.<span class="fn">Println</span>(<span class="str">"int"</span>, v)
+<span class="kw">case</span> <span class="ty">string</span>: fmt.<span class="fn">Println</span>(<span class="str">"string"</span>, v)
+<span class="kw">default</span>:     fmt.<span class="fn">Println</span>(<span class="str">"other"</span>)
+}</pre>
+<div class="warn"><p><strong>The nil-interface trap.</strong> An interface value holds a (type, value) pair. A non-nil interface wrapping a nil pointer is <em>not</em> <code>== nil</code>. Returning a concrete <code>*MyError</code> that is nil through an <code>error</code> return makes <code>err != nil</code> true unexpectedly. Return a literal <code>nil</code> for the no-error case.</p></div>
+
+<h3>Generics (Go 1.18+)</h3>
+<pre><span class="cm">// Type parameter with a constraint (a union of allowed types).</span>
+<span class="kw">func</span> <span class="fn">Max</span>[T <span class="ty">int</span> | <span class="ty">int64</span> | <span class="ty">float64</span> | <span class="ty">string</span>](a, b T) T {
+    <span class="kw">if</span> a &gt; b {
+        <span class="kw">return</span> a
+    }
+    <span class="kw">return</span> b
+}
+
+fmt.<span class="fn">Println</span>(<span class="fn">Max</span>(<span class="num">3</span>, <span class="num">7</span>))          <span class="cm">// 7 (T inferred as int)</span>
+fmt.<span class="fn">Println</span>(<span class="fn">Max</span>(<span class="str">"a"</span>, <span class="str">"b"</span>))      <span class="cm">// b</span></pre>
+<div class="insight"><p><strong>Interview angle.</strong> Explain the difference from Java/C++: Go interfaces are satisfied structurally, so coupling is looser and interfaces stay small. Expect "how do interfaces work under the hood?" — answer: an interface value is two words, a pointer to a type descriptor (itable) and a pointer to the data. Method calls go through the itable.</p></div>
+</div>
+</div>
+
+<!-- ERRORS & DEFER -->
+<div class="section" id="errors">
+<div class="card">
+<h2>Error handling — errors are values</h2>
+<p>Go has no exceptions for ordinary failures. A function that can fail returns an <code>error</code> as its last result; <code>nil</code> means success. You handle it right there. This makes control flow explicit and local.</p>
+<pre><span class="kw">import</span> (
+    <span class="str">"fmt"</span>
+    <span class="str">"os"</span>
+)
+
+<span class="kw">func</span> <span class="fn">readConfig</span>(path <span class="ty">string</span>) ([]<span class="ty">byte</span>, <span class="ty">error</span>) {
+    data, err := os.<span class="fn">ReadFile</span>(path)
+    <span class="kw">if</span> err != <span class="kw">nil</span> {
+        <span class="cm">// %w WRAPS err, preserving it for errors.Is / errors.As.</span>
+        <span class="kw">return</span> <span class="kw">nil</span>, fmt.<span class="fn">Errorf</span>(<span class="str">"read config %q: %w"</span>, path, err)
+    }
+    <span class="kw">return</span> data, <span class="kw">nil</span>
+}</pre>
+<p><code>error</code> is just an interface: <code>type error interface { Error() string }</code>. Anything with an <code>Error() string</code> method is an error.</p>
+
+<h3>Sentinels, wrapping, <code>errors.Is</code> / <code>errors.As</code></h3>
+<pre><span class="kw">import</span> <span class="str">"errors"</span>
+
+<span class="kw">var</span> ErrNotFound = errors.<span class="fn">New</span>(<span class="str">"not found"</span>)   <span class="cm">// a sentinel error</span>
+
+<span class="cm">// A custom error type carries structured detail.</span>
+<span class="kw">type</span> ValidationError <span class="kw">struct</span> {
+    Field <span class="ty">string</span>
+}
+<span class="kw">func</span> (e *ValidationError) <span class="fn">Error</span>() <span class="ty">string</span> {
+    <span class="kw">return</span> <span class="str">"invalid field: "</span> + e.Field
+}
+
+<span class="cm">// errors.Is compares against a sentinel, unwrapping the chain.</span>
+<span class="kw">if</span> errors.<span class="fn">Is</span>(err, ErrNotFound) { <span class="cm">/* handle 404 */</span> }
+
+<span class="cm">// errors.As extracts a concrete type from the chain.</span>
+<span class="kw">var</span> ve *ValidationError
+<span class="kw">if</span> errors.<span class="fn">As</span>(err, &amp;ve) {
+    fmt.<span class="fn">Println</span>(<span class="str">"bad field:"</span>, ve.Field)
+}</pre>
+<div class="tip"><p><strong>Idiom:</strong> wrap with context as an error travels up (<code>fmt.Errorf("doing X: %w", err)</code>), and only compare/inspect at the boundary that can act on it. Wrap with <code>%w</code> (keeps the chain) vs <code>%v</code> (flattens to text, breaks <code>Is/As</code>).</p></div>
+</div>
+
+<div class="card">
+<h2>defer, panic, recover</h2>
+<p><code>defer</code> schedules a call to run when the surrounding function returns — LIFO order. It's Go's cleanup mechanism (the RAII substitute): close files, unlock mutexes, right next to where you acquired them.</p>
+<pre><span class="kw">func</span> <span class="fn">process</span>(path <span class="ty">string</span>) <span class="ty">error</span> {
+    f, err := os.<span class="fn">Open</span>(path)
+    <span class="kw">if</span> err != <span class="kw">nil</span> {
+        <span class="kw">return</span> err
+    }
+    <span class="kw">defer</span> f.<span class="fn">Close</span>()          <span class="cm">// runs no matter how we return below</span>
+
+    mu.<span class="fn">Lock</span>()
+    <span class="kw">defer</span> mu.<span class="fn">Unlock</span>()        <span class="cm">// deferred calls run in reverse: Unlock, then Close</span>
+    <span class="cm">// ... work ...</span>
+    <span class="kw">return</span> <span class="kw">nil</span>
+}</pre>
+<p><code>panic</code> is for <em>truly exceptional</em>, unrecoverable situations (programmer bugs, impossible states) — not routine errors. It unwinds the stack running deferred calls. <code>recover</code>, called inside a deferred function, stops the unwind and lets you convert a panic into an error at a boundary.</p>
+<pre><span class="cm">// Convert a panic into an error at an API boundary.</span>
+<span class="kw">func</span> <span class="fn">safeDivide</span>(a, b <span class="ty">int</span>) (result <span class="ty">int</span>, err <span class="ty">error</span>) {
+    <span class="kw">defer</span> <span class="kw">func</span>() {
+        <span class="kw">if</span> r := <span class="fn">recover</span>(); r != <span class="kw">nil</span> {
+            err = fmt.<span class="fn">Errorf</span>(<span class="str">"recovered: %v"</span>, r) <span class="cm">// named return set here</span>
+        }
+    }()
+    <span class="kw">return</span> a / b, <span class="kw">nil</span>          <span class="cm">// b == 0 panics; deferred func catches it</span>
+}</pre>
+<div class="warn"><p>Don't use panic/recover as exceptions for flow control — idiomatic Go returns errors. <code>recover</code> only works inside a <em>deferred</em> function and only catches a panic in the same goroutine. An unrecovered panic in any goroutine crashes the whole program.</p></div>
+<div class="insight"><p><strong>Interview angle.</strong> "Errors vs panic?" — errors are expected outcomes you return and handle; panic is for unrecoverable bugs. "What does defer guarantee?" — it runs on every return path (including during a panic), in LIFO order, and its arguments are evaluated when <code>defer</code> is reached, not when it runs (a common trick question).</p></div>
+</div>
+</div>
+
+<!-- CONCURRENCY -->
+<div class="section" id="concurrency">
+<div class="card">
+<h2>Goroutines &amp; channels — the headline feature</h2>
+<p>A <strong>goroutine</strong> is a function running concurrently, started with the <code>go</code> keyword. It's not an OS thread: it starts with a tiny ~2&nbsp;KB stack that grows on demand, and the Go runtime multiplexes millions of them onto a handful of OS threads. Starting one is nearly free.</p>
+<pre><span class="kw">go</span> <span class="fn">doWork</span>()                 <span class="cm">// runs concurrently; main does NOT wait</span>
+<span class="kw">go</span> <span class="kw">func</span>(id <span class="ty">int</span>) {          <span class="cm">// anonymous goroutine</span>
+    fmt.<span class="fn">Println</span>(<span class="str">"worker"</span>, id)
+}(<span class="num">7</span>)</pre>
+<p><strong>Channels</strong> are typed pipes that let goroutines communicate <em>and</em> synchronize. A send blocks until a receiver is ready (and vice-versa) on an unbuffered channel — so the channel itself provides the handshake.</p>
+<pre>ch := <span class="fn">make</span>(<span class="kw">chan</span> <span class="ty">int</span>)        <span class="cm">// unbuffered: send blocks until someone receives</span>
+<span class="kw">go</span> <span class="kw">func</span>() { ch &lt;- <span class="num">42</span> }()     <span class="cm">// send</span>
+v := &lt;-ch                    <span class="cm">// receive (blocks until value arrives)</span>
+
+buf := <span class="fn">make</span>(<span class="kw">chan</span> <span class="ty">int</span>, <span class="num">2</span>)     <span class="cm">// buffered: send blocks only when the buffer is full</span>
+<span class="fn">close</span>(buf)                   <span class="cm">// closing signals "no more values"; receives still drain the buffer</span>
+
+<span class="cm">// range over a channel receives until it is closed.</span>
+<span class="kw">for</span> v := <span class="kw">range</span> ch {
+    <span class="fn">use</span>(v)
+}
+
+<span class="cm">// comma-ok on receive detects a closed channel</span>
+v, ok := &lt;-ch                <span class="cm">// ok == false once closed and drained</span></pre>
+<div class="warn"><p>Rules that prevent panics: <strong>only the sender closes</strong> a channel, and never close it twice. Sending on a closed channel panics. A receive from a nil channel blocks forever. Leaked goroutines blocked on a channel that never sends are the most common Go "memory leak."</p></div>
+
+<h3 id="goch-stepper-heading">Watch it run: channel send/receive stepper</h3>
+<p>A producer goroutine sends <code>1, 2, 3</code> into a channel with <strong>capacity 2</strong>; a consumer receives. Step through to see buffering, blocking when full, and how a freed slot unblocks the sender.</p>
+
+<div id="goch-stepper" style="border:1px solid var(--border);border-radius:10px;padding:16px;background:#fbfcfe">
+  <svg id="goch-svg" viewBox="0 0 700 220" style="max-width:100%;height:auto" role="img" aria-label="Animated goroutine sending values into a buffered channel while a consumer receives">
+    <!-- producer -->
+    <rect x="10" y="60" width="150" height="100" rx="10" fill="#e5dbff" stroke="#4a2fa8"/>
+    <text x="85" y="52" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="700" fill="#4a2fa8">producer goroutine</text>
+    <text x="85" y="95" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="12" fill="#495057">to send:</text>
+    <text id="goch-prod" x="85" y="120" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="18" font-weight="700" fill="#212529">1 2 3</text>
+    <text id="goch-block" x="85" y="148" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#c92a2a"></text>
+    <!-- channel -->
+    <text x="350" y="52" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="700" fill="#114f8c">channel (cap 2)</text>
+    <rect id="goch-s0" x="290" y="80" width="55" height="60" rx="6" fill="#f1f3f5" stroke="#7a828a"/>
+    <text id="goch-s0t" x="317" y="118" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="20" font-weight="700" fill="#212529"></text>
+    <rect id="goch-s1" x="355" y="80" width="55" height="60" rx="6" fill="#f1f3f5" stroke="#7a828a"/>
+    <text id="goch-s1t" x="382" y="118" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="20" font-weight="700" fill="#212529"></text>
+    <!-- arrows -->
+    <text x="230" y="115" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="20" fill="#4a2fa8">→</text>
+    <text x="470" y="115" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="20" fill="#1d6b2e">→</text>
+    <!-- consumer -->
+    <rect x="540" y="60" width="150" height="100" rx="10" fill="#d3f9d8" stroke="#1d6b2e"/>
+    <text x="615" y="52" text-anchor="middle" font-family="Inter,sans-serif" font-size="12" font-weight="700" fill="#1d6b2e">consumer</text>
+    <text x="615" y="95" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="12" fill="#495057">received:</text>
+    <text id="goch-cons" x="615" y="120" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="18" font-weight="700" fill="#212529">—</text>
+    <text id="goch-closed" x="350" y="175" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="700" fill="#a85700"></text>
+  </svg>
+  <p id="goch-cap" style="min-height:44px;margin:10px 4px;font-weight:600;color:#495057">Start: the producer will send 1, 2, 3 on a channel of capacity 2. The consumer is waiting to receive.</p>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <button id="goch-step" style="padding:8px 18px;border-radius:8px;border:1px solid #114f8c;background:#d0ebff;color:#114f8c;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Step ▶</button>
+    <button id="goch-reset" style="padding:8px 18px;border-radius:8px;border:1px solid #adb5bd;background:#fff;color:#495057;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">Reset ↺</button>
+    <span id="goch-count" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5c636a">step 0 / 7</span>
+  </div>
+</div>
+<script>
+(function(){
+  var frames = [
+    {prod:"1 2 3", slots:[null,null], cons:"—", block:"", closed:"", cap:"Start: the producer will send 1, 2, 3 on a channel of capacity 2. The consumer is waiting to receive."},
+    {prod:"2 3",   slots:[1,null],    cons:"—", block:"", closed:"", cap:"ch <- 1  → value buffered (1 of 2). Buffer had room, so the send did NOT block."},
+    {prod:"3",     slots:[1,2],       cons:"—", block:"", closed:"", cap:"ch <- 2  → buffer now full (2 of 2)."},
+    {prod:"3",     slots:[1,2],       cons:"—", block:"parked ⏸", closed:"", cap:"ch <- 3  → buffer is full, so the send BLOCKS. The producer goroutine parks until a slot frees."},
+    {prod:"—",     slots:[2,3],       cons:"1",  block:"", closed:"", cap:"v := <-ch receives 1. A slot frees, the parked producer wakes and completes ch <- 3. Buffer holds [2 3]."},
+    {prod:"—",     slots:[3,null],    cons:"1 2", block:"", closed:"", cap:"<-ch receives 2. Buffer holds [3]."},
+    {prod:"—",     slots:[null,null], cons:"1 2 3", block:"", closed:"close(ch)", cap:"<-ch receives 3, then the sender calls close(ch). All values delivered, buffer empty."},
+    {prod:"—",     slots:[null,null], cons:"1 2 3", block:"", closed:"closed + drained", cap:"for v := range ch stops after the channel is closed and drained. Each value was delivered exactly once. (A select{} could have waited on this channel alongside others.)"}
+  ];
+  var i = 0;
+  var $ = function(id){ return document.getElementById(id); };
+  function slot(rect, txt, val){
+    if (val === null){ rect.setAttribute("fill","#f1f3f5"); rect.setAttribute("stroke","#7a828a"); txt.textContent=""; }
+    else { rect.setAttribute("fill","#d0ebff"); rect.setAttribute("stroke","#114f8c"); txt.textContent=val; }
+  }
+  function render(){
+    var f = frames[i];
+    $("goch-prod").textContent = f.prod;
+    slot($("goch-s0"), $("goch-s0t"), f.slots[0]);
+    slot($("goch-s1"), $("goch-s1t"), f.slots[1]);
+    $("goch-cons").textContent = f.cons;
+    $("goch-block").textContent = f.block;
+    $("goch-closed").textContent = f.closed;
+    $("goch-cap").textContent = f.cap;
+    $("goch-count").textContent = "step " + i + " / " + (frames.length - 1);
+    $("goch-step").disabled = (i === frames.length - 1);
+    $("goch-step").style.opacity = (i === frames.length - 1) ? "0.45" : "1";
+  }
+  $("goch-step").addEventListener("click", function(){ if (i < frames.length - 1){ i++; render(); } });
+  $("goch-reset").addEventListener("click", function(){ i = 0; render(); });
+  render();
+})();
+</script>
+
+<h3>select — wait on multiple channels</h3>
+<p><code>select</code> is like a <code>switch</code> for channel operations: it blocks until one case can proceed, then runs it. If several are ready it picks one at random. A <code>default</code> makes it non-blocking; <code>time.After</code> adds a timeout.</p>
+<pre><span class="kw">select</span> {
+<span class="kw">case</span> v := &lt;-ch1:
+    fmt.<span class="fn">Println</span>(<span class="str">"got from ch1:"</span>, v)
+<span class="kw">case</span> ch2 &lt;- x:
+    fmt.<span class="fn">Println</span>(<span class="str">"sent x to ch2"</span>)
+<span class="kw">case</span> &lt;-time.<span class="fn">After</span>(<span class="num">2</span> * time.Second):
+    fmt.<span class="fn">Println</span>(<span class="str">"timed out"</span>)
+<span class="kw">default</span>:
+    fmt.<span class="fn">Println</span>(<span class="str">"nothing ready right now"</span>) <span class="cm">// makes select non-blocking</span>
+}</pre>
+<div class="insight"><p><strong>Interview angle.</strong> Expect "goroutine vs thread" (cheap, user-space scheduled, growable stack vs OS thread ~1&nbsp;MB), "buffered vs unbuffered channel," and "how do you cancel/timeout work?" — answer <code>context.Context</code> + <code>select</code> on <code>ctx.Done()</code>. Be ready to spot a deadlock (all goroutines blocked → the runtime aborts with a <em>fatal error</em>, "all goroutines are asleep - deadlock!", which is <strong>not</strong> a recoverable panic).</p></div>
+</div>
+</div>
+
+<!-- RUNTIME -->
+<div class="section" id="runtime">
+<div class="card">
+<h2>The scheduler (G–M–P), at a high level</h2>
+<p>Goroutines are cheap because Go schedules them in <em>user space</em>. The runtime uses the <strong>G–M–P</strong> model:</p>
+<ul>
+  <li><strong>G</strong> — a goroutine (its stack + state).</li>
+  <li><strong>M</strong> — a "machine," i.e. an OS thread that actually runs code.</li>
+  <li><strong>P</strong> — a "processor," a scheduling context holding a run queue of Gs. The number of P's is <code>GOMAXPROCS</code> (defaults to the number of logical CPUs (<code>runtime.NumCPU()</code>); since Go 1.25 the default also respects the container's cgroup CPU limit, so in a CPU-capped container it can be lower).</li>
+</ul>
+<p>An M must hold a P to run Gs. Each P has a local run queue; when it empties, that P <strong>steals</strong> work from another P's queue (work-stealing) to stay busy. When a goroutine makes a blocking syscall, the M can detach from its P so another M can keep the P's queue running — so one blocked goroutine doesn't stall the others.</p>
+
+<svg viewBox="0 0 700 210" style="max-width:100%;height:auto" role="img" aria-label="G-M-P scheduler: goroutines queued on P processors, run by M OS threads on CPU cores">
+  <rect x="0" y="0" width="700" height="210" fill="#ffffff"/>
+  <g font-family="Inter,sans-serif" font-size="12" font-weight="700">
+    <!-- P1 -->
+    <rect x="20" y="20" width="300" height="80" rx="8" fill="#d0ebff" stroke="#114f8c"/>
+    <text x="30" y="38" fill="#114f8c">P0 (run queue)</text>
+    <g font-family="JetBrains Mono,monospace" font-size="12" font-weight="700">
+      <circle cx="60" cy="66" r="16" fill="#4a2fa8"/><text x="60" y="71" text-anchor="middle" fill="#fff">G</text>
+      <circle cx="100" cy="66" r="16" fill="#4a2fa8"/><text x="100" y="71" text-anchor="middle" fill="#fff">G</text>
+      <circle cx="140" cy="66" r="16" fill="#4a2fa8"/><text x="140" y="71" text-anchor="middle" fill="#fff">G</text>
+      <circle cx="180" cy="66" r="16" fill="#6c757d"/><text x="180" y="71" text-anchor="middle" fill="#fff">G</text>
+    </g>
+    <!-- P2 -->
+    <rect x="360" y="20" width="320" height="80" rx="8" fill="#d0ebff" stroke="#114f8c"/>
+    <text x="370" y="38" fill="#114f8c">P1 (run queue)</text>
+    <g font-family="JetBrains Mono,monospace" font-size="12" font-weight="700">
+      <circle cx="400" cy="66" r="16" fill="#4a2fa8"/><text x="400" y="71" text-anchor="middle" fill="#fff">G</text>
+      <circle cx="440" cy="66" r="16" fill="#4a2fa8"/><text x="440" y="71" text-anchor="middle" fill="#fff">G</text>
+    </g>
+    <text x="505" y="70" fill="#1d6b2e" font-size="11">◀ steals work when empty</text>
+    <!-- M threads -->
+    <rect x="60" y="130" width="120" height="40" rx="8" fill="#fff3bf" stroke="#a85700"/><text x="120" y="155" text-anchor="middle" fill="#a85700">M (OS thread)</text>
+    <rect x="440" y="130" width="120" height="40" rx="8" fill="#fff3bf" stroke="#a85700"/><text x="500" y="155" text-anchor="middle" fill="#a85700">M (OS thread)</text>
+    <line x1="120" y1="100" x2="120" y2="130" stroke="#495057" stroke-width="2"/>
+    <line x1="500" y1="100" x2="500" y2="130" stroke="#495057" stroke-width="2"/>
+    <!-- cores -->
+    <rect x="60" y="185" width="120" height="20" rx="4" fill="#f1f3f5" stroke="#7a828a"/><text x="120" y="200" text-anchor="middle" font-size="10" fill="#5c636a">CPU core</text>
+    <rect x="440" y="185" width="120" height="20" rx="4" fill="#f1f3f5" stroke="#7a828a"/><text x="500" y="200" text-anchor="middle" font-size="10" fill="#5c636a">CPU core</text>
+  </g>
+</svg>
+<div class="tip"><p>Since Go 1.14 the scheduler is <strong>asynchronously preemptive</strong>: a goroutine in a tight loop can be preempted at safe points, so it can't starve others. Earlier versions only switched at function-call/channel/allocation points.</p></div>
+</div>
+
+<div class="card">
+<h2>Garbage collection, at a high level</h2>
+<p>Go uses a <strong>concurrent, tri-color mark-and-sweep</strong> collector tuned for <em>low latency</em> rather than peak throughput. Most GC work runs <em>concurrently</em> with your program; stop-the-world pauses are tiny (sub-millisecond in typical services).</p>
+<ul>
+  <li><strong>Tri-color:</strong> objects are white (unvisited), grey (reachable, children not yet scanned), or black (fully scanned). Marking finishes when no grey objects remain; anything still white is unreachable and freed.</li>
+  <li><strong>Write barrier:</strong> while marking runs concurrently, a write barrier catches pointer writes so the mutator can't hide a reachable object from the collector.</li>
+  <li><strong>Non-generational, non-compacting:</strong> unlike the JVM, Go's GC doesn't move objects or use generations. Escape analysis puts many objects on the stack, reducing heap pressure in the first place.</li>
+  <li><strong><code>GOGC</code></strong> (default 100) trades memory for CPU: it triggers the next GC when the heap has grown ~100% since the last one. Higher = less frequent GC, more memory.</li>
+</ul>
+<div class="insight"><p><strong>Interview angle.</strong> "How does Go's GC differ from Java's?" — Go optimizes for short, predictable pause times with a concurrent mark-sweep, non-generational, non-compacting collector; the JVM offers multiple tunable generational/compacting collectors optimized more for throughput. "How do you reduce GC pressure?" — preallocate slices with <code>make(…, 0, n)</code>, reuse buffers via <code>sync.Pool</code>, avoid needless pointers, and let value types stay on the stack.</p></div>
+</div>
+</div>
+
+<!-- TOOLING & PATTERNS -->
+<div class="section" id="tooling">
+<div class="card">
+<h2>Standard tooling (batteries included)</h2>
+<p>Go ships one binary, <code>go</code>, that builds, tests, formats, and manages dependencies. No third-party build system needed.</p>
+<pre><span class="cm"># Build &amp; run</span>
+go run .                  <span class="cm"># compile + run the current package</span>
+go build ./...            <span class="cm"># produce a static binary (cross-compile via GOOS/GOARCH)</span>
+GOOS=linux GOARCH=arm64 go build   <span class="cm"># cross-compile, no toolchain juggling</span>
+
+<span class="cm"># Test (files named *_test.go, funcs TestXxx(t *testing.T))</span>
+go test ./...             <span class="cm"># run all tests</span>
+go test -race ./...       <span class="cm"># run with the data-race detector — use in CI</span>
+go test -bench=. -cover   <span class="cm"># benchmarks + coverage</span>
+
+<span class="cm"># Format &amp; lint (non-negotiable in Go culture)</span>
+go fmt ./...              <span class="cm"># canonical formatting; zero style debates</span>
+go vet ./...              <span class="cm"># catches suspicious constructs</span>
+
+<span class="cm"># Modules = dependency management (go.mod / go.sum)</span>
+go mod init example.com/proj
+go get github.com/some/dep@v1.4.0
+go mod tidy               <span class="cm"># add missing + drop unused deps</span></pre>
+
+<h3>A tiny table test (idiomatic)</h3>
+<pre><span class="kw">func</span> <span class="fn">TestMax</span>(t *testing.T) {
+    cases := []<span class="kw">struct</span> {
+        a, b, want <span class="ty">int</span>
+    }{
+        {<span class="num">1</span>, <span class="num">2</span>, <span class="num">2</span>},
+        {<span class="num">5</span>, <span class="num">3</span>, <span class="num">5</span>},
+    }
+    <span class="kw">for</span> _, c := <span class="kw">range</span> cases {
+        <span class="kw">if</span> got := <span class="fn">Max</span>(c.a, c.b); got != c.want {
+            t.<span class="fn">Errorf</span>(<span class="str">"Max(%d,%d) = %d, want %d"</span>, c.a, c.b, got, c.want)
+        }
+    }
+}</pre>
+</div>
+
+<div class="card">
+<h2>Concurrency patterns worth knowing</h2>
+<h3>Worker pool (bounded parallelism)</h3>
+<p>Fixed number of goroutines pull jobs off a channel — caps concurrency and reuses goroutines.</p>
+<pre><span class="kw">func</span> <span class="fn">worker</span>(jobs &lt;-<span class="kw">chan</span> <span class="ty">int</span>, results <span class="kw">chan</span>&lt;- <span class="ty">int</span>, wg *sync.WaitGroup) {
+    <span class="kw">defer</span> wg.<span class="fn">Done</span>()
+    <span class="kw">for</span> j := <span class="kw">range</span> jobs {          <span class="cm">// drains until jobs is closed</span>
+        results &lt;- j * j
+    }
+}
+
+<span class="kw">func</span> <span class="fn">main</span>() {
+    jobs := <span class="fn">make</span>(<span class="kw">chan</span> <span class="ty">int</span>, <span class="num">100</span>)
+    results := <span class="fn">make</span>(<span class="kw">chan</span> <span class="ty">int</span>, <span class="num">100</span>)
+    <span class="kw">var</span> wg sync.WaitGroup
+
+    <span class="kw">for</span> w := <span class="num">0</span>; w &lt; <span class="num">3</span>; w++ {         <span class="cm">// 3 workers</span>
+        wg.<span class="fn">Add</span>(<span class="num">1</span>)
+        <span class="kw">go</span> <span class="fn">worker</span>(jobs, results, &amp;wg)
+    }
+    <span class="kw">for</span> j := <span class="num">1</span>; j &lt;= <span class="num">9</span>; j++ {
+        jobs &lt;- j
+    }
+    <span class="fn">close</span>(jobs)                    <span class="cm">// tell workers no more jobs</span>
+
+    <span class="kw">go</span> <span class="kw">func</span>() { wg.<span class="fn">Wait</span>(); <span class="fn">close</span>(results) }() <span class="cm">// close results once all workers done</span>
+    <span class="kw">for</span> r := <span class="kw">range</span> results {
+        fmt.<span class="fn">Println</span>(r)
+    }
+}</pre>
+<div class="tip"><p>Note the <strong>directional channel types</strong> in the signature: <code>&lt;-chan int</code> (receive-only) and <code>chan&lt;- int</code> (send-only). They document intent and let the compiler stop a worker from accidentally closing the jobs channel.</p></div>
+
+<h3>Fan-out / fan-in</h3>
+<p><strong>Fan-out:</strong> start several goroutines reading the same input channel to parallelize. <strong>Fan-in:</strong> merge their outputs back into one channel.</p>
+<pre><span class="cm">// fanIn merges many input channels into one output channel.</span>
+<span class="kw">func</span> <span class="fn">fanIn</span>(ins ...&lt;-<span class="kw">chan</span> <span class="ty">int</span>) &lt;-<span class="kw">chan</span> <span class="ty">int</span> {
+    out := <span class="fn">make</span>(<span class="kw">chan</span> <span class="ty">int</span>)
+    <span class="kw">var</span> wg sync.WaitGroup
+    wg.<span class="fn">Add</span>(<span class="fn">len</span>(ins))
+    <span class="kw">for</span> _, in := <span class="kw">range</span> ins {
+        <span class="kw">go</span> <span class="kw">func</span>(c &lt;-<span class="kw">chan</span> <span class="ty">int</span>) {   <span class="cm">// pass c as arg (pre-1.22 loop-var capture safety)</span>
+            <span class="kw">defer</span> wg.<span class="fn">Done</span>()
+            <span class="kw">for</span> v := <span class="kw">range</span> c {
+                out &lt;- v
+            }
+        }(in)
+    }
+    <span class="kw">go</span> <span class="kw">func</span>() { wg.<span class="fn">Wait</span>(); <span class="fn">close</span>(out) }()
+    <span class="kw">return</span> out
+}</pre>
+<div class="warn"><p>Prefer synchronization primitives that fit: channels for handing off data and signaling; <code>sync.WaitGroup</code> to wait for a set of goroutines; <code>sync.Mutex</code>/<code>sync.RWMutex</code> for protecting shared state; <code>context.Context</code> for cancellation/timeouts across a call tree. Always run CI with <code>-race</code>.</p></div>
+<div class="insight"><p><strong>Interview angle.</strong> Be able to write a worker pool from scratch and explain who closes which channel and why (sender closes; close signals completion; <code>WaitGroup</code> coordinates the "all done, close results" step). A frequent follow-up: "add cancellation" → thread a <code>context.Context</code> and <code>select</code> on <code>ctx.Done()</code> in the worker loop.</p></div>
+</div>
+</div>
+
+<!-- INTERVIEW -->
+<div class="section" id="interview">
+<div class="card">
+<h2>Interview Q&amp;A — likely Go questions</h2>
+
+<div class="qa"><div class="q">"What is a goroutine and how is it different from an OS thread?"</div>
+<p>A goroutine is a function scheduled by the Go runtime in user space. It starts with a ~2&nbsp;KB growable stack and is multiplexed onto a small pool of OS threads (G–M–P model), so you can run hundreds of thousands cheaply. OS threads are ~1&nbsp;MB and switched by the kernel. Starting a goroutine is <code>go f()</code>; you coordinate with channels or <code>sync</code> primitives.</p></div>
+
+<div class="qa"><div class="q">"Explain slices: what happens on append?"</div>
+<p>A slice is a header of {ptr, len, cap}. <code>append</code> writes into spare capacity if <code>len &lt; cap</code>; otherwise it allocates a new, larger backing array (~2× small, ~1.25× large), copies, and returns a new header — which is why you must reassign the result. Sub-slices share the backing array, so appends and writes can alias the parent.</p></div>
+
+<div class="qa"><div class="q">"How do interfaces work / how is satisfaction determined?"</div>
+<p>Structurally and implicitly: a type satisfies an interface simply by having the required methods — no <code>implements</code> keyword. At runtime an interface value is two words: a pointer to a type/itable descriptor and a pointer to the data. Idiomatic Go uses small interfaces and "accepts interfaces, returns structs."</p></div>
+
+<div class="qa"><div class="q">"Value receiver vs pointer receiver?"</div>
+<p>Value receivers operate on a copy (can't mutate the original, fine for small immutable types). Pointer receivers can mutate and avoid copying large structs. Keep it consistent per type. Note a subtlety: a non-pointer value's method set excludes pointer-receiver methods, so a <code>T</code> value boxed in an interface can't satisfy an interface that needs them — you must store <code>*T</code>.</p></div>
+
+<div class="qa"><div class="q">"How does Go handle errors, and what is wrapping?"</div>
+<p>Errors are ordinary values returned as the last result; you check <code>if err != nil</code>. <code>fmt.Errorf("...: %w", err)</code> wraps an error to preserve the chain; <code>errors.Is</code> tests for a sentinel and <code>errors.As</code> extracts a concrete type, both unwrapping. Panic/recover is reserved for unrecoverable bugs, not routine failures.</p></div>
+
+<div class="qa"><div class="q">"Buffered vs unbuffered channels? When does a send block?"</div>
+<p>Unbuffered: a send blocks until a receiver is ready (a synchronous handshake). Buffered (<code>make(chan T, n)</code>): a send blocks only when the buffer is full; a receive blocks only when empty. Closing signals no more values; receives still drain remaining buffered values, then return the zero value with <code>ok == false</code>.</p></div>
+
+<div class="qa"><div class="q">"What causes a Go deadlock, and how do you avoid goroutine leaks?"</div>
+<p>Deadlock: every goroutine is blocked (e.g. sending on an unbuffered channel with no receiver) — the runtime detects the all-asleep case and aborts with a fatal error (not a recoverable panic). Leaks: a goroutine blocked forever on a channel that's never sent to/closed. Avoid with clear ownership (sender closes), <code>select</code> with <code>ctx.Done()</code> for cancellation, and buffering or draining appropriately.</p></div>
+
+<div class="qa"><div class="q">"Describe Go's garbage collector."</div>
+<p>Concurrent tri-color mark-and-sweep, tuned for low pause times; non-generational and non-compacting. A write barrier keeps concurrent marking correct. <code>GOGC</code> tunes the memory/CPU trade-off. Escape analysis keeps many allocations on the stack, cutting heap pressure.</p></div>
+
+<div class="qa"><div class="q">"How do you detect and prevent data races?"</div>
+<p>Run tests/binaries with the built-in race detector (<code>go test -race</code>, <code>go run -race</code>). Prevent by not sharing mutable state across goroutines without synchronization — communicate over channels, or guard with <code>sync.Mutex</code>/atomics. Maps and slices aren't safe for concurrent writes.</p></div>
+
+<div class="qa"><div class="q">"Why choose Go? What are its trade-offs?"</div>
+<p>Pros: simple to read/learn, first-class concurrency, fast compiles, single static binary, great tooling, predictable GC latency — ideal for network services, CLIs, and infrastructure. Trade-offs: less expressive than C++/Rust (generics are newer and limited), no manual memory control, error handling is verbose, and it's not built for hard-real-time or manual-SIMD workloads.</p></div>
+
+<div class="tip"><p><strong>Positioning to lead with:</strong> "I like Go for services where clarity, predictable latency, and easy deployment matter. I'm comfortable with the concurrency model — goroutines, channels, <code>select</code>, and <code>context</code> for cancellation — and I lean on the tooling (<code>gofmt</code>, <code>go vet</code>, <code>-race</code>) to keep things safe and uniform." Then be ready to whiteboard a worker pool.</p></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p>Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>gofmt</strong></td><td>Go's canonical code formatter; enforces one standard style so formatting is never debated.</td></tr>
+<tr><td><strong>Goroutine</strong></td><td>A function run concurrently by the Go runtime; starts with a tiny (~2&nbsp;KB) growable stack, far cheaper than an OS thread.</td></tr>
+<tr><td><strong>Channel</strong></td><td>Typed pipe that lets goroutines communicate and synchronize; sends and receives block to form a handshake.</td></tr>
+<tr><td><strong>Zero value</strong></td><td>The default a variable gets when declared — <code>0</code>, <code>""</code>, <code>false</code>, or <code>nil</code> — so there is no uninitialized garbage.</td></tr>
+<tr><td><strong>Escape analysis</strong></td><td>Compiler analysis deciding whether a value can stay on the stack or must move to the heap.</td></tr>
+<tr><td><strong>Slice</strong></td><td>Lightweight 3-word header {ptr, len, cap} viewing a backing array; Go's everyday dynamic sequence.</td></tr>
+<tr><td><strong>Embedding</strong></td><td>Placing one type inside a struct to promote its methods; Go's composition-over-inheritance mechanism.</td></tr>
+<tr><td><strong>Interface</strong></td><td>A set of method signatures that a type satisfies implicitly (structurally) just by having those methods.</td></tr>
+<tr><td><strong>Sentinel error</strong></td><td>A predefined error value (via <code>errors.New</code>) compared against later with <code>errors.Is</code>.</td></tr>
+<tr><td><strong>errors.Is / errors.As</strong></td><td>Helpers that unwrap an error chain to match a sentinel or extract a concrete error type.</td></tr>
+<tr><td><strong>defer</strong></td><td>Schedules a call to run when the surrounding function returns, in LIFO order; Go's cleanup mechanism.</td></tr>
+<tr><td><strong>panic / recover</strong></td><td><code>panic</code> unwinds the stack for unrecoverable bugs; <code>recover</code>, inside a deferred func, stops the unwind.</td></tr>
+<tr><td><strong>select</strong></td><td>A switch-like statement that blocks until one of several channel operations can proceed.</td></tr>
+<tr><td><strong>context.Context</strong></td><td>Standard type propagating cancellation, deadlines, and timeouts across a call tree.</td></tr>
+<tr><td><strong>G–M–P</strong></td><td>The scheduler model: G = goroutine, M = OS thread ("machine"), P = scheduling context ("processor").</td></tr>
+<tr><td><strong>GOMAXPROCS</strong></td><td>Number of P's — goroutines runnable in parallel; defaults to the logical CPU count (since Go 1.25, capped by the container's cgroup CPU limit).</td></tr>
+<tr><td><strong>Work-stealing</strong></td><td>An idle P takes goroutines from another P's run queue to stay busy.</td></tr>
+<tr><td><strong>Tri-color mark-and-sweep</strong></td><td>Go's concurrent GC algorithm, coloring objects white/grey/black to find unreachable memory.</td></tr>
+<tr><td><strong>GOGC</strong></td><td>GC tuning knob (default 100): triggers the next collection after the heap grows that percentage.</td></tr>
+<tr><td><strong>Race detector</strong></td><td>Built-in tool (the <code>-race</code> flag) that flags unsynchronized concurrent memory access at runtime.</td></tr>
+</table>
+</div>
+
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  evt.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="cpp_refresher.html">‹ C++ Refresher</a><a class="bkc" href="index.html">📖 Contents</a><a href="java_refresher.html">Java Refresher ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

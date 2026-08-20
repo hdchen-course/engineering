@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Map &amp; Geospatial System Design — Interview Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+ --bg: #f8f9fa;
+ --bg2: #ffffff;
+ --bg3: #f1f3f5;
+ --bg4: #e9ecef;
+ --border: #dee2e6;
+ --text: #212529;
+ --text2: #495057;
+ --text3: #868e96;
+ --blue: #1971c2;
+ --blue-l: #d0ebff;
+ --blue-d: #1864ab;
+ --green: #2f9e44;
+ --green-l: #d3f9d8;
+ --yellow: #e67700;
+ --yellow-l: #fff3bf;
+ --red: #c92a2a;
+ --red-l: #ffe3e3;
+ --purple: #7048e8;
+ --purple-l: #e5dbff;
+ --orange: #e8590c;
+ --orange-l: #ffe8cc;
+ --teal: #0ca678;
+ --teal-l: #c3fae8;
+ --r: 12px;
+ --shadow: 0 4px 20px rgba(0,0,0,0.06);
+ --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+ font-family: 'Inter', system-ui, sans-serif;
+ background: var(--bg);
+ color: var(--text);
+ font-size: 15px;
+ line-height: 1.7;
+ min-height: 100vh;
+}
+
+/* TOP SECTION NAV (sticky) */
+.nav {
+ display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+ position: sticky; top: 0; z-index: 100;
+ background: var(--bg); padding: 16px 16px; border-bottom: 1px solid var(--border);
+}
+.nav-btn {
+ padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border);
+ background: var(--bg2); color: var(--text2); cursor: pointer;
+ font-size: 13px; font-weight: 600; transition: all .2s;
+ font-family: 'Inter', sans-serif;
+}
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+
+/* MAIN */
+#main { background: var(--bg); }
+.container { max-width: 1100px; margin: 0 auto; padding: 8px 24px 48px; }
+
+/* HEADER */
+.ph {
+ background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+ padding: 40px 44px;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #93c5fd; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 650px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+.sec { display: none; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+ background: #fff; border-radius: var(--r); margin-bottom: 12px;
+ box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+ padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+ cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--blue-l); color: var(--blue-d); font-size: 11px; font-weight: 500; margin: 2px; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* INTERVIEW QUOTE */
+.iq {
+ background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+ border: 1px solid #bae6fd;
+ border-left: 4px solid var(--blue);
+ border-radius: 8px;
+ padding: 14px 18px;
+ margin: 14px 0;
+ font-style: italic;
+ color: var(--text2);
+ font-size: 13px;
+ position: relative;
+}
+.iq::before {
+ content: 'SAY THIS';
+ position: absolute;
+ top: -8px; left: 14px;
+ font-size: 9px; font-weight: 700; font-style: normal;
+ background: var(--blue);
+ color: #fff;
+ padding: 1px 8px;
+ border-radius: 4px;
+ letter-spacing: 1px;
+}
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+h4.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* SKILL BOX */
+.skill-box {
+ background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+ padding: 18px; margin: 10px 0; box-shadow: var(--shadow-sm);
+}
+.skill-box h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.skill-box ul { padding-left: 18px; font-size: 13px; color: var(--text2); }
+.skill-box li { margin-bottom: 4px; }
+
+/* SVG CONTAINERS */
+.svg-container {
+ margin: 20px 0;
+ text-align: center;
+ overflow-x: auto;
+}
+.svg-container svg {
+ max-width: 100%;
+ height: auto;
+}
+
+/* PROGRESS */
+.prog { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.pc { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow-sm); text-align: center; }
+.pc .num { font-size: 28px; font-weight: 800; color: var(--blue-d); }
+.pc .lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg3); padding: 1px 5px; border-radius: 4px; color: var(--blue-d); }
+
+/* LIST STYLING */
+.content-list { padding-left: 20px; margin: 8px 0; }
+.content-list li { margin-bottom: 6px; font-size: 13px; color: var(--text2); }
+.content-list li strong { color: var(--text); }
+
+/* DECISION GRID */
+.decision-grid {
+ display: grid;
+ grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+ gap: 12px;
+ margin: 14px 0;
+}
+.decision-item {
+ background: #fff;
+ border: 1px solid var(--border);
+ border-radius: var(--r);
+ padding: 14px;
+ box-shadow: var(--shadow-sm);
+}
+.decision-item .di-t {
+ font-size: 13px;
+ font-weight: 700;
+ color: var(--blue-d);
+ margin-bottom: 6px;
+}
+.decision-item p {
+ font-size: 12px;
+ color: var(--text2);
+ margin-bottom: 4px;
+}
+.decision-item .di-key {
+ font-size: 10px;
+ color: var(--text3);
+ font-weight: 600;
+ text-transform: uppercase;
+ letter-spacing: .5px;
+}
+
+@media (max-width: 768px) {
+ .container { padding: 4px 12px 32px; }
+ .ph { padding: 24px 16px; }
+}
+a.lc { color: var(--blue); text-decoration: none; font-weight: 500; }
+a.lc:hover { text-decoration: underline; color: var(--blue-d); }
+</style>
+
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part IV · Chapter 4 — <b>Map &amp; Geospatial System Design</b></span><span class="bkspacer"></span></nav>
+
+<div id="main">
+
+<div class="ph">
+ <div class="htag">Map &amp; Geospatial &middot; System Design Interview Guide</div>
+ <div class="ht">Map System Design <span>Interview Prep</span> &mdash; A Per-Round Playbook</div>
+ <div class="hd">A study guide for a modern map/geospatial system design interview: phone screen, coding, AI-assisted map system design, code review, and behavioral. The system-design round is built around the map-tile decomposition that anchors strong answers, using a public map platform (Azure Maps) as the concrete example throughout.</div>
+ <div class="hm">
+ <div class="chip">Rounds <b>5</b></div>
+ <div class="chip">Focus <b>Geospatial system design</b></div>
+ <div class="chip">Platform <b>Azure Maps (example)</b></div>
+ <div class="chip">Hardest <b>Code review</b></div>
+ </div>
+</div>
+
+<nav class="nav">
+ <button class="nav-btn active" onclick="go('process')">Overview</button>
+ <button class="nav-btn" onclick="go('design-req')">Requirements &amp; Estimation</button>
+ <button class="nav-btn" onclick="go('design-hld')">Backend High-Level Design</button>
+ <button class="nav-btn" onclick="go('design-geo')">Geospatial &amp; Tiling Deep Dive</button>
+ <button class="nav-btn" onclick="go('design-fe')">Frontend &amp; Code Review</button>
+ <button class="nav-btn" onclick="go('design-trade')">Trade-offs &amp; Tips</button>
+ <button class="nav-btn" onclick="go('coding')">Coding Rounds</button>
+ <button class="nav-btn" onclick="go('ai')">AI-Assisted Development</button>
+ <button class="nav-btn" onclick="go('review')">Code Review</button>
+ <button class="nav-btn" onclick="go('bq')">Experience &amp; Behavioral</button>
+ <button class="nav-btn" onclick="go('azure')">Azure Maps Web SDK</button>
+ <button class="nav-btn" onclick="go('geo-ref')">Geospatial Reference</button>
+</nav>
+
+<div class="container">
+
+<div class="sec active" id="tab-process">
+<h2 class="stitle">Interview Approach &amp; Overview</h2>
+<div class="sdesc">A map/geospatial system design interview typically spans five kinds of round. Here's what each one tests and how to approach it.</div>
+
+<h3 class="sub">The Rounds at a Glance</h3>
+<table class="tbl">
+<thead><tr><th>Round</th><th>What it covers</th><th>What it's really testing</th></tr></thead>
+<tbody>
+<tr><td>Phone screen</td><td>One coding question + experience + production-systems + working style</td><td>A compressed version of the whole process</td></tr>
+<tr><td>Coding</td><td>1–2 LeetCode-style questions, no external tools, any language</td><td>Comprehension, code quality, communication — not just a green check</td></tr>
+<tr><td>AI-assisted system design</td><td>Design a scalable map product; decompose it, reason about perf/scale/reliability/security</td><td>Whether you make the tile pyramid the organizing primitive</td></tr>
+<tr><td>AI-assisted coding / code review</td><td>Generate frontend code with an AI agent, then review it; or review a real diff</td><td>Judgment reviewing AI output, not typing speed</td></tr>
+<tr><td>Behavioral</td><td>Collaboration style, growth mindset, customer focus — and scope</td><td>Broad ownership; interviewers often push for larger-scope examples</td></tr>
+</tbody>
+</table>
+
+<div class="note"><div class="notel">NOTE</div><p>Treat the phone screen as the whole process in miniature — it bundles code, experience, systems, and fit into one call. It is not a throwaway; the same reflexes that carry the full interview carry the screen.</p></div>
+
+<h3 class="sub">Strategy for Each Round</h3>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">R0</span><span class="ct">Phone Screen — the process in miniature</span><span class="db de">SCREEN</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>One LeetCode-style question, a past-experience walkthrough, production-systems familiarity, and working-style questions.</p>
+<div class="ins"><div class="insl">INSIGHT</div><p>The phone screen is a compressed version of the whole process — code + experience + systems + fit. Treat it as the process in miniature, not a throwaway.</p></div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">1</span><span class="ct">Coding Round — two reflexes that carry it</span><span class="db de">CORE</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>1–2 LeetCode-style questions, no external tools, any language. Two reflexes matter more than raw speed:</p>
+<ul class="content-list">
+<li><strong>When stuck, hand-trace a concrete example.</strong> On a queue/sliding-window problem, writing out a small array and tracing push/pop by hand makes the invariant obvious far faster than reasoning abstractly.</li>
+<li><strong>Clarify constraints before coding.</strong> A single question ("are inputs sorted? can values repeat?") often exposes a constraint that collapses a brute force into a linear pass — and saves you from coding the wrong thing.</li>
+</ul>
+<div class="tip"><div class="tipl">TIP</div><p>Two reflexes that carry this round: (1) when stuck, stop theorizing and <strong>hand-trace a concrete example</strong>; (2) <strong>clarify constraints before writing code</strong> — inputs, ranges, edge cases, expected output shape.</p></div>
+<div class="iq">"Before I code — can I confirm the input size and whether duplicates/empty are possible? Let me trace a small example to make sure I've got the invariant right."</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">2</span><span class="ct">AI-Assisted System Design — where the bonus lives</span><span class="db de">CORE</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Design a scalable map-based product; decompose it, name key components, reason about performance/scalability/reliability/security; both frontend and backend.</p>
+<ul class="content-list">
+<li><strong>Map-tile partitioning is the bonus move.</strong> Decompose the product around the <strong>tile pyramid (z/x/y quadkey)</strong> — partition the world by tiles, cache/serve per-tile, scale reads horizontally.</li>
+<li><strong>Volunteer 2–3 non-obvious observations</strong> — going beyond the obvious decomposition is what separates a strong answer.</li>
+</ul>
+<div class="ins"><div class="insl">INSIGHT</div><p>Anchoring the whole design on the tile/quadkey partition scheme is the move for a map product. It gives you a natural sharding key, a natural cache key (Front Door/CDN per tile), and a clean story for hot-tile handling.</p></div>
+<div class="tip"><div class="tipl">TIP</div><p>Come in with 2–3 "non-obvious" observations pre-loaded (hot-tile skew, tile invalidation on data change, cross-zoom prefetch, viewport-driven <code>DataSource</code> culling). Volunteering these unprompted is what earns the bonus.</p></div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">3</span><span class="ct">AI-Assisted Coding — domain knowledge beats tool fluency</span><span class="db dm">JUDGMENT</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>You may be handed an AI coding tool (e.g. GitHub Copilot) and asked to generate frontend code, then <strong>review the AI-generated code</strong> for flaws/improvements/trade-offs.</p>
+<ul class="content-list">
+<li>The differentiator: knowing the <strong>Azure Maps Web SDK best-practices</strong> well enough to catch a real <strong>performance problem</strong> in AI-generated code that a tool-fluent-but-domain-thin candidate would miss.</li>
+</ul>
+<div class="warn"><div class="warnl">WATCH</div><p>You may be handed a tool you have never touched. Tool fluency isn't the bar — <strong>product/domain knowledge</strong> is. Knowing the best-practices doc is what makes you competent in the room, not tool experience.</p></div>
+<div class="tip"><div class="tipl">TIP</div><p>To prepare: (1) spend a few hours with an AI coding tool so the UI isn't new; (2) know the Azure Maps Web SDK perf traps cold (marker vs. <code>SymbolLayer</code>/<code>BubbleLayer</code> at scale, batching source updates on one <code>DataSource</code>, <code>VectorTileSource</code> over GeoJSON for large data, debouncing camera/<code>moveend</code> handlers, cleaning up event listeners).</p></div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">4</span><span class="ct">Code Review — the hardest round for many</span><span class="db dh">HARD</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Review a diff spanning <strong>React/TypeScript + ASP.NET/C#</strong>, identify issues, discuss. The round explicitly <em>doesn't</em> test language-specific constructs or framework expertise — yet it trips people up.</p>
+<ul class="content-list">
+<li>The common failure: not fully understanding unfamiliar code and going silent. The fix is to <strong>give review comments anyway</strong>, reasoning from what the change is trying to do.</li>
+<li>The comments only get sharp when you reason about the <em>change</em>, not when you're decoding syntax.</li>
+</ul>
+<div class="trap"><div class="trapl">TRAP</div><p>Getting lost in unfamiliar syntax (C#/ASP.NET) and going silent. Reviewers read silence as "can't review." Comment anyway — but keep the comments about correctness, error handling, and contracts, not syntax.</p></div>
+<div class="iq">"I'm not fluent in this exact framework, so let me focus on what the diff is trying to do and reason about it from first principles — here's what concerns me about correctness, error handling, and the contract this endpoint exposes."</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">5</span><span class="ct">Behavioral — interviewers push for scope</span><span class="db dm">SCOPE</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Experience and behavioral questions on collaboration style and team culture. A recurring pattern: after a competent answer, the interviewer asks for a <strong>larger-scope example</strong>.</p>
+<ul class="content-list">
+<li>What lands: a broad-ownership story — e.g. inheriting systems after several senior engineers departed and becoming the single owner who stabilizes and rebuilds them. Broad ownership under pressure is the seniority signal interviewers fish for.</li>
+</ul>
+<div class="ins"><div class="insl">INSIGHT</div><p>Interviewers actively push on scope. A competent-but-small first answer invites "give me something bigger." An org-level ownership story lands because it demonstrates broad ownership under pressure.</p></div>
+<div class="tip"><div class="tipl">TIP</div><p>Have a <strong>big-scope ownership story</strong> ready as the <em>first</em> answer, not the fallback. Frame it against common culture themes: <strong>growth mindset</strong> (ramping on systems you didn't build), <strong>customer focus</strong> (keeping the product running for users), <strong>collaboration</strong> (holding the team's surface area together).</p></div>
+<div class="iq">"When several senior colleagues left within a short window, I inherited the systems they built and became the single owner — I had to reverse-engineer, stabilize, and rebuild what they left behind, while keeping it running for customers."</div>
+</div></div>
+
+<h3 class="sub">Where to Invest Prep Time</h3>
+<div class="g2">
+<div class="skill-box"><h4>Code Review (usually the hardest)</h4><ul>
+<li>Drill reading <strong>React/TypeScript + ASP.NET/C#</strong> diffs — enough to follow intent, not master syntax.</li>
+<li>Build a review checklist independent of language: correctness, edge cases, error handling, null/async safety, security, API contract, naming, tests.</li>
+<li>Practice narrating comments <strong>even when the syntax is foreign</strong> — reason from what the change is trying to do.</li>
+</ul></div>
+<div class="skill-box"><h4>Remove the AI-tool surprise</h4><ul>
+<li>Spend hours with <strong>GitHub Copilot</strong> so the UI is muscle memory.</li>
+<li>Know the <strong>Azure Maps Web SDK best-practices</strong> cold — it's what catches the perf bug.</li>
+<li>Be ready to discuss AI coding agents (Copilot / Codex / Claude Code / Gemini) — newer loops ask about this.</li>
+</ul></div>
+</div>
+<div class="g2">
+<div class="skill-box"><h4>Lead behavioral with scope</h4><ul>
+<li>Open with a large-scope ownership story — don't wait to be pushed.</li>
+<li>Have 2–3 large-scope STAR stories, each mapped to a culture theme.</li>
+<li>Assume every behavioral question gets a "go bigger" follow-up; pre-stage the bigger version.</li>
+</ul></div>
+<div class="skill-box"><h4>Keep the proven strengths</h4><ul>
+<li>Coding: hand-trace when stuck, clarify before coding.</li>
+<li>System design: anchor on <strong>map-tile / quadkey partitioning</strong> and volunteer 2 non-obvious insights.</li>
+<li>Bring concrete, quantified stories that show ownership and customer impact.</li>
+</ul></div>
+</div>
+</div>
+<div class="sec" id="tab-design-req">
+<h2 class="stitle">Requirements &amp; Estimation</h2>
+<div class="sdesc">Pin scope and do the math before drawing — the interesting part is fan-out and spatial decomposition, not CRUD.</div>
+<p>The concrete problem for this walkthrough: design a real-time, crowd-sourced traffic-incident map — drivers report incidents (accidents, hazards, closures) from the field, and millions of other drivers see them on a live map and get rerouted. The estimates below size that system.</p>
+
+<h3 class="sub">What to confirm out loud (then move)</h3>
+<ul class="content-list">
+<li><strong>Scale &amp; skew:</strong> ~25M concurrent map sessions, ~50k incident writes/sec raw (~800/s <em>distinct</em> after dedup), read:write ≈ 1000:1 against distinct writes (only ~16:1 against raw writes), top-20 metros ≈ 60% of traffic. Read-dominated + skewed &rarr; pre-aggregation + caching, not a write-optimized store.</li>
+<li><strong>Latency budget:</strong> nearby viewers see an incident in 2–5s p95; cold viewport query p95 &lt; 200ms; write-ack p95 &lt; 100ms; routing may lag 30s. <strong>Eventual consistency OK; never block the writer on global fan-out.</strong></li>
+<li><strong>Lifecycle:</strong> auto-expire by age + negative votes + reporter trust; unconfirmed crash ~10 min, confirmed closure hours.</li>
+<li><strong>Dedup in scope:</strong> co-located (~50–100m) same-type reports in a rolling window collapse into one incident + confidence score.</li>
+<li><strong>Abuse:</strong> anonymous consumer + authenticated fleet; spam down-weighted, not silently dropped.</li>
+<li><strong>Build ON Azure Maps:</strong> Render (vector tiles), Search/Geocode, Route exist. You design the <em>incident layer</em>, not a map engine.</li>
+<li><strong>EU residency</strong> but cross-border viewports must still work.</li>
+</ul>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>The one number that drives the whole design: <strong>~800k cold viewport QPS</strong> (25M sessions re-querying ≈ 1×/30s). That is only survivable if you answer from <strong>cached, pre-aggregated tiles</strong>, not a live geo-query per request. Say this number early — it's what forces the tile-cache read path and separates a Hire from a No-Hire.</p></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">MATH</span><span class="ct">Back-of-envelope worth defending</span><span class="db de">EST</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>Reads:</strong> 25M / 30s ≈ 833k viewport QPS at the read tier. Must be a tile-cache hit path.</li>
+<li><strong>Writes:</strong> 50k/s raw &rarr; ~800/s <em>distinct</em> after dedup; <em>distinct live</em> incidents order 100k–500k active globally. Fits in memory per region. So the ratio is ~16:1 against raw writes but ≈1000:1 against distinct writes — the 1000:1 you quote is the post-dedup number, not 833k/50k.</li>
+<li><strong>Fan-out:</strong> the trap is 25M connections × every incident. Each connection must care about <em>only its viewport's tiles</em>. A downtown crash touches the few thousand connections on that tile, not millions.</li>
+<li><strong>Payload:</strong> an incident delta ≈ 100–200 bytes (id, tile, lat/lng @ 6-decimals, type enum, confidence, expiry). ~500 incidents cold ≈ 50–100KB, then tiny deltas.</li>
+</ul>
+</div></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>The dedup-ratio number is hand-waved.</strong> "50k/s × 600s collapses to 100k–500k" silently assumes a 60–300× dedup ratio with no justification. In sparse regions dedup is ~1× (nothing to collapse) — so the <em>distinct</em> incident count is dominated by geography, not by a global average. If an interviewer pushes: derive it per-tile (dense metros dedup hard; rural cells barely dedup), and note the live-object count is bounded by <em>active tiles × avg incidents/tile</em>, not one blended multiplier.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>800k QPS assumes exactly one query per 30s.</strong> A single pan/zoom gesture fires many viewport changes; without client-side throttling + tile-diffing (see Frontend), real cold-query QPS could be 5–10× higher. The 800k is a <em>floor</em>, not a ceiling — state that the client contract (throttle + only refetch on tile-set change) is what makes the number real.</p></div>
+
+<div class="iq">"Before I draw anything: this is read-dominated (≈1000:1 against distinct writes, ~16:1 raw) and geographically skewed, eventual consistency is fine, and I must never block the writer on fan-out. That combination pushes me to a write-accept-fast + async-aggregate design where reads come off pre-aggregated, tile-keyed, CDN-cached buckets — so let me anchor on ~800k viewport QPS as the number I'm designing the read path around."</div>
+</div>
+
+<div class="sec" id="tab-design-hld">
+<h2 class="stitle">Backend High-Level Design</h2>
+<div class="sdesc">Split the fast write-accept path from async fan-out/aggregation; everything keys to one tile coordinate space.</div>
+
+<h3 class="sub">Ingestion (write path) — ack in &lt;100ms, never wait on propagation</h3>
+<ol class="content-list">
+<li><strong>Edge / regional ingest:</strong> authenticated (fleet) or rate-limited anonymous (consumer). Per-account + per-device <strong>token buckets right here</strong>; low-trust reporters accepted but flagged, not dropped.</li>
+<li><strong>Validate + normalize + assign tile key:</strong> compute the quadkey (and S2/H3 cell) from lat/lng at ingest, so the report is addressable in the shared coordinate space immediately.</li>
+<li><strong>Append to durable log</strong> (Event Hubs / Kafka) partitioned by tile prefix, then <strong>ack</strong>. Ordered per-partition, replayable — this is the &lt;100ms path.</li>
+<li><strong>Dedup/merge worker</strong> consumes per tile-partition, collapses co-location+type+window into a canonical incident + confidence. 50k raw writes/s become a much smaller stream of <em>distinct state changes</em>.</li>
+</ol>
+
+<h3 class="sub">Storage</h3>
+<ul class="content-list">
+<li><strong>Live incident store:</strong> keyed by incident id, sharded by tile. Cosmos DB (partition key = coarse quadkey) fronted by Azure Cache for Redis per region. Native TTL makes age-expiry cheap.</li>
+<li><strong>Tile aggregate store:</strong> pre-aggregated per-tile buckets at multiple zoom levels (cluster counts). This is what the read API serves.</li>
+<li><strong>Cold/analytics:</strong> the event log lands in Blob storage for replay, abuse forensics, and tile rebuilds.</li>
+</ul>
+
+<h3 class="sub">Read/query path — two distinct patterns</h3>
+<div class="g2">
+<div class="skill-box"><h4>Cold viewport load</h4><ul><li>Client asks for tiles in bounds at its zoom.</li><li>Served from pre-aggregated tile buckets <strong>behind a CDN</strong> &rarr; p95 &lt;200ms.</li><li>Street zoom &rarr; individual incidents; zoomed out &rarr; cluster counts.</li></ul></div>
+<div class="skill-box"><h4>Live incremental updates</h4><ul><li>After cold load, client subscribes to the <strong>tile topics</strong> in view.</li><li>Receives add/update/remove-by-id deltas over Web PubSub / SignalR.</li><li>One publish per tile &rarr; N interested subscribers.</li></ul></div>
+</div>
+<p><strong>Route integration:</strong> Route calls the same tile/cell index with a <em>corridor</em> query (the route's cells) for <code>road_closed</code>/<code>flooding</code> above a confidence threshold; tolerates 30s lag, so it reads slightly staler aggregates.</p>
+
+<h4 class="sub2">Fan-out topology</h4>
+<p>Azure Web PubSub / SignalR with <strong>topics = tiles</strong> (not per-user, not per-incident). A merge worker publishes one delta to the tile's topic after updating; SignalR fans it to exactly the connections subscribed to that tile.</p>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Partition-by-tile-prefix recreates the hot-tile problem at the log layer.</strong> Event Hubs / Kafka partitions have a hard per-partition throughput ceiling (~1MB/s or ~1k events/s on Event Hubs). Dense metros = 60% of traffic map to a handful of hot tile-prefixes &rarr; hot partitions &rarr; write-ack budget blown exactly where load is highest. Fix: hash-salt the partition key within a hot tile (spread across N sub-partitions, re-merge in the dedup worker), or partition by <code>(tile_prefix, salt)</code> with salt sized to observed load. The candidate never addressed log-layer hot partitions.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>25M persistent connections is a cost/limit story that got skipped.</strong> Tile-topic fan-out bounds the <em>delivery</em> blast radius, but you still pay to <em>hold</em> 25M idle WebSocket connections. Azure SignalR bills per-connection and has unit ceilings (~1k concurrent/unit standard); 25M connections is tens of thousands of units (~25,000) and a major cost line. Name it: heartbeat/keepalive tuning, connection coalescing, and a fallback to <strong>tile-version polling</strong> for idle/background clients so you don't hold a live socket for a phone with the app backgrounded.</p></div>
+
+<h3 class="sub">Multi-region</h3>
+<p>Each region owns ingest + store + fan-out for its geography (EU incidents stored in EU). A cross-border viewport subscribes to tile topics homed in the adjacent region. Regional outage degrades to <strong>stale-but-visible</strong>: the CDN keeps serving last-good tiles; the overlay stays up even if live deltas pause.</p>
+
+<div class="warn"><div class="warnl">WATCH</div><p><strong>EU residency vs. cross-border serving.</strong> "Subscribe to topics homed in the adjacent region" is fine when a non-EU viewer reads EU data, but if you <em>store or process</em> a cross-border tile's EU reports in a non-EU region to serve a border viewport, that's a residency violation. Keep storage/processing of EU-origin reports in-EU and only <em>replicate the read-side aggregate tile</em> across the border — be explicit about which artifact crosses.</p></div>
+
+<div class="iq">"Two paths: writers append to a tile-partitioned durable log and ack in under 100ms; a downstream merge worker does dedup and pre-aggregation asynchronously. Reads never touch the live store — cold loads hit CDN-cached tile buckets and live updates come as id-keyed deltas over tile-topic Pub/Sub."</div>
+</div>
+
+<div class="sec" id="tab-design-geo">
+<h2 class="stitle">Geospatial &amp; Tile Partitioning Deep Dive</h2>
+<div class="sdesc">The core: make the map tile pyramid the single organizing primitive, then earn it against the alternatives.</div>
+
+<h3 class="sub">Tile pyramid (z/x/y / quadkey) as the ONE primitive</h3>
+<p>The strong-hire move: the same tile scheme keys <strong>(1)</strong> the storage/index partition, <strong>(2)</strong> the pre-aggregated cluster buckets, <strong>(3)</strong> the SignalR fan-out topics, and <strong>(4)</strong> the client subscription set. When storage, aggregation, fan-out, and subscription all snap to one coordinate space, an entire class of "translate between two indexing schemes" bugs disappears, and <strong>zoom level maps directly onto aggregation level and subscription granularity</strong>.</p>
+<ul class="content-list">
+<li><strong>Azure Maps already speaks z/x/y vector tiles.</strong> The client's viewport <em>is</em> a set of tiles; its subscription set is that same list. No impedance mismatch.</li>
+<li><strong>Quadkey is hierarchical:</strong> zoom z = a 4<sup>z</sup> grid; the parent is the quadkey with the last char dropped. Rolling counts up the pyramid is a prefix operation — exactly the zoom&rarr;aggregation mapping.</li>
+</ul>
+
+<h4 class="sub2">Zoom &rarr; aggregation &rarr; subscription</h4>
+<table class="tbl"><thead><tr><th>Zoom</th><th>What the client gets</th><th>Subscription</th></tr></thead><tbody>
+<tr><td>Street (z&ge;14)</td><td>Individual incidents</td><td>Handful of visible tiles</td></tr>
+<tr><td>Metro (z≈10–12)</td><td>Pre-aggregated cluster counts per child tile ("320 incidents, mostly slowdowns")</td><td>Coarser tiles; write-time clustering, read = bucket lookup</td></tr>
+<tr><td>Country (z&lt;8)</td><td>Heatmap weights (point_count) per coarse tile</td><td>Very coarse tiles</td></tr>
+</tbody></table>
+
+<div class="tip"><div class="tipl">TIP</div><p>Clustering lives at <strong>write-time</strong> (rolled into tile buckets as incidents merge/expire), so a read is never a re-cluster. Each bucket carries a monotonic <strong>version/etag</strong>; any add/update/expire bumps the version and rolls the delta up the quadkey parents. CDN + clients key cache on <code>tile+version</code>, so an expired incident can't linger — a version bump invalidates it.</p></div>
+
+<h3 class="sub">Index comparison (be ready to compare all four)</h3>
+<table class="tbl"><thead><tr><th>Index</th><th>Strength</th><th>Weakness / what breaks</th><th>Role here</th></tr></thead><tbody>
+<tr><td><strong>Geohash / quadkey prefix</strong></td><td>Cheap prefix range scans, hierarchical, aligns 1:1 with map tiles + CDN keys</td><td>Rectangular cells; boundary straddle; cell size jumps 4× per zoom</td><td><strong>Primary</strong> — same space as tiles</td></tr>
+<tr><td><strong>S2</strong> (Hilbert curve, spherical)</td><td>Great 1-D locality (neighbors stay close); exact hierarchical containment; low shape-distortion cells on the sphere (not equal-area &mdash; that's H3's strength); compact covering of arbitrary shapes</td><td>Not the z/x/y pyramid; extra mapping to tiles</td><td>Route-corridor / polygon covering</td></tr>
+<tr><td><strong>H3</strong> (hexagons)</td><td>Uniform adjacency (no diagonal-neighbor ambiguity) — clean radius/"near me" dedup</td><td>Hex hierarchy isn't 1:4, doesn't line up with tile pyramid</td><td>Secondary — proximity/dedup</td></tr>
+<tr><td><strong>PostGIS R-tree</strong></td><td>Excellent ad-hoc polygon queries at low write rates</td><td>R-tree maintenance + vacuum pressure + single-writer bottleneck at 50k/s insert/expire churn</td><td>Offline/analytics only — never the hot path</td></tr>
+</tbody></table>
+<p><strong>Verdict:</strong> quadkey primary (partition, buckets, topics, subs) + an S2/H3 covering for the geometric 10% (route corridor, radius dedup). One primitive for the 90% path.</p>
+
+<h3 class="sub">Boundary problem (name it before asked)</h3>
+<ul class="content-list">
+<li><strong>Viewport overlaps 4 tiles / incident on a tile edge:</strong> always query the <em>set of tiles intersecting the bounds</em> (up to 4 + a 1-tile buffer ring), never a single tile. Store each incident with a small <code>buffer</code>/<code>tolerance</code> (same knobs Azure's DataSource exposes for tile clipping) so an edge-straddling feature is queryable from both sides.</li>
+<li><strong>Route proximity:</strong> expand the polyline to the ordered set of cells within a corridor width (S2/H3 covering) and query those.</li>
+</ul>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">GOTCHA</span><span class="ct">Cross-region dedup race (converge to ONE without a global lock)</span><span class="db dh">HARD</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Two edge regions each get a report for the same crash within 500ms. Use a <strong>deterministic, idempotent merge key</strong>: <code>incident_id = hash(cell @ dedup_zoom, type, floor(ts / window))</code>. Both regions compute the <em>same</em> id from the same cell+type+window &rarr; they address one object, convergent by construction (CRDT-style, no coordination). Each region increments a grow-only confidence counter / OR-set of reporter ids; when async replication meets, counters merge. During the sub-second window a viewer may see two pins that collapse into one — acceptable under eventual consistency, far cheaper than a distributed lock on a 50k/s path.</p>
+</div></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>The convergent key reintroduces the boundary bug it claims to kill — in BOTH space and time.</strong> (a) A crash 50–100m from a <code>dedup_zoom</code> cell edge lands in different cells for two reporters &rarr; different keys &rarr; two incidents that never merge. (b) Two reports 500ms apart can straddle a <code>floor(ts/window)</code> boundary &rarr; different time buckets &rarr; two ids. The candidate's own tile-boundary insight defeats their dedup. Real fix: probe the target cell <em>and its neighbors</em> (and window <em>N and N−1</em>) and merge into the lowest existing id, or use overlapping/sliding windows — pure hashing is not enough. This is the single most likely place the interviewer catches you.</p></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">GOTCHA</span><span class="ct">Hot-tile problem (stadium empties, one quadkey gets 100× writes)</span><span class="db dh">HARD</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li>Dedup key collapses most reports &rarr; write amplification bounded.</li>
+<li>Tile-topic fan-out is one publish regardless of write volume &rarr; read fan-out doesn't explode.</li>
+<li><strong>Coalesce version bumps</strong> — debounce to ~1 bump / 1–2s so you don't invalidate the CDN entry 100×/sec.</li>
+</ul>
+<div class="trap"><div class="trapl">TRAP</div><p>"Dynamically sub-shard a hot tile by pushing dedup to a finer zoom temporarily" <strong>changes <code>dedup_zoom</code>, which is part of the merge key</strong> — so during the transition the two regions compute different ids and the cross-region convergence property breaks exactly when load is highest. If you sub-shard, do it at the log-partition level (salt), not by mutating the dedup key.</p></div>
+</div></div>
+
+<h3 class="sub">Real-time fan-out — boundary-crossing churn</h3>
+<p>A car on the highway crosses tiles every few seconds &rarr; subscribe/unsubscribe storm. Fixes: subscribe to a <strong>buffer ring</strong> (current + neighbor tiles) at street zoom; add <strong>hysteresis</strong> (only unsubscribe a tile after it's been out of view N seconds) so a crossing is usually already-subscribed; at highway speed drop the client to a <strong>coarser zoom / larger tiles</strong> so crossings are rarer.</p>
+
+<div class="iq">"I make the quadkey pyramid the single coordinate space for storage partition, cluster buckets, fan-out topics, and client subscriptions — so zoom level literally is aggregation level is subscription granularity. I keep an S2 or H3 covering only for route-corridor and radius-dedup, because those are arbitrary-shape queries the rectangular tile grid handles poorly."</div>
+</div>
+
+<div class="sec" id="tab-design-fe">
+<h2 class="stitle">Frontend &amp; AI-Generated-Code Review</h2>
+<div class="sdesc">Correct Azure Maps Web SDK usage + the perf pitfalls to catch in AI-emitted code — and how to drive the agent.</div>
+
+<h3 class="sub">Framing (honest and pragmatic)</h3>
+<div class="iq">"I'm a distributed-systems generalist, not a React specialist — so my job with the agent isn't to know every SDK call, it's to feed it the right constraints, then critique its output against principles I do know cold: perf, component lifecycle, and the physics of rendering thousands of points on a phone."</div>
+
+<h3 class="sub">Correct Azure Maps architecture to steer toward</h3>
+<ul class="content-list">
+<li><strong>VectorTileSource for the dense/aggregated view</strong> — loads only in-view tiles, clipped + generalized per zoom, snapping to the same quadkey scheme as the backend. GeoJSON <code>DataSource</code> only for the <em>live, viewport-sized</em> incremental layer.</li>
+<li><strong>Bubble layer &gt; Symbol layer</strong> for bulk points — a WebGL circle is far cheaper than loading/rendering a marker image; the gap is very visible at tens of thousands of points. Symbols only where iconography is genuinely needed.</li>
+<li><strong>Clustering / declutter at low zoom</strong> — clusters at metro zoom (weighted by <code>point_count</code>), individual bubbles at street zoom. Never render thousands of HTML markers.</li>
+<li><strong>HTML markers &amp; popups are DOM, not WebGL</strong> — they die after a few hundred; reuse a <em>single</em> popup instance, never use markers for the bulk layer.</li>
+<li><strong>Batch:</strong> add a FeatureCollection in one call; use <code>setShapes</code> for a single canvas refresh instead of per-feature <code>add</code>/<code>clear</code> loops.</li>
+<li><strong>Separate rapidly-changing live incidents into their own DataSource</strong> so static base features don't re-render on every delta.</li>
+<li><strong>Init perf:</strong> watch the <code>'ready'</code> event (fires ~2× faster than <code>'load'</code>), set initial camera/style on init, lazy-load the SDK behind a placeholder div, reduce coordinate precision to 6 decimals.</li>
+</ul>
+
+<h3 class="sub">The AI-code flaws to catch</h3>
+<div class="g2">
+<div class="skill-box"><h4>Flaws (root causes)</h4><ul>
+<li><strong>Refetch on every <code>'move'</code></strong> with no throttle/debounce &rarr; dozens of calls/sec per pan.</li>
+<li><strong>Subscription/handler leak</strong> — SignalR + map listeners not torn down in <code>useEffect</code> cleanup. A real connection+memory leak at 25M sessions.</li>
+<li><strong>Full layer redraw per update</strong> instead of id-keyed diff (recreating source/layer each event).</li>
+<li><strong>No clustering/declutter</strong> &rarr; thousands of markers wreck framerate.</li>
+<li><strong>Raw useEffect fetch, no cancellation</strong> &rarr; stale-response race when panning fast.</li>
+<li><strong>No loading/empty/error state; expired incidents linger on-screen.</strong></li>
+</ul></div>
+<div class="skill-box"><h4>Fixes</h4><ul>
+<li>Throttle + only refetch when the bbox crosses a <strong>new tile set</strong> (tile-diff, not per-pixel).</li>
+<li>Return a cleanup that unsubscribes + removes listeners.</li>
+<li>Keep the DataSource; apply id-keyed add/update/remove deltas — only changed shapes refresh.</li>
+<li>Enable clustering; switch to a WebGL bubble/symbol layer.</li>
+<li><code>AbortController</code> + drop responses whose request generation is stale.</li>
+<li>Honor tile version/expiry; remove-by-id on expiry deltas.</li>
+</ul></div>
+</div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Mixing a live DataSource with a custom VectorTileSource creates a double-render / flicker bug the candidate didn't name.</strong> Vector tiles are <em>immutable, URL-fetched</em> — you cannot push a delta into them; they refresh only when the tile URL/version changes. So a just-reported incident lives in the live DataSource <em>and</em>, seconds later, also appears in the regenerated vector tile &rarr; two overlapping renders of the same incident until one is reconciled. You need an explicit handoff: the live layer must <strong>suppress ids that have been baked into the current tile version</strong> (filter by tile version/etag), and the zoom transition between the live layer and the tiled-aggregate layer needs a dedup rule. Catching the SDK flaws is the baseline; naming this integration seam is the differentiator.</p></div>
+
+<h3 class="sub">Critique the AI's choices, don't accept them</h3>
+<p>If it emits HTML markers, push back with the trade-off explicitly: DOM markers are fast to build and easy to style (dev speed) but die at a few hundred points; a WebGL SymbolLayer or a custom vector tile source costs more effort but is the only thing holding 60fps at thousands of points on a phone. State the trade-off, then pick the vector/WebGL path for this scale.</p>
+
+<div class="tip"><div class="tipl">TIP</div><p>Harden ONE issue live and prove root-cause: fix refetch + leak together (throttled bbox/tile-diff fetch, <code>AbortController</code>, id-keyed incremental apply, real cleanup) and verify it no longer refetches on sub-tile pans and connections drop on unmount. Then say where you would <strong>not</strong> trust the agent — the geospatial/tiling logic, the fan-out topology, and anything security (auth/token handling) — because those are correctness- and cost-critical, and verify them by hand.</p></div>
+
+<div class="warn"><div class="warnl">WATCH</div><p><strong>Security-specific Azure Maps trap to volunteer:</strong> never embed the subscription key in the client — use Azure AD / Managed Identity / SAS tokens via a token proxy, and use a caret range (<code>^</code>) so patch/minor security fixes get picked up on install (keep the lockfile refreshed) — for a CDN-loaded SDK, bump the versioned URL instead. A blank map + 401 = missing auth; data on the opposite side of the globe = reversed <code>[longitude, latitude]</code> order. These are the exact bugs the review round expects you to spot.</p></div>
+</div>
+
+<div class="sec" id="tab-design-trade">
+<h2 class="stitle">Trade-offs &amp; Interview Tips</h2>
+<div class="sdesc">Decisions to defend, two volunteered insights, the rubric, and how to push from Hire to Strong-Hire.</div>
+
+<h3 class="sub">Core trade-offs (defend, don't just list)</h3>
+<div class="decision-grid">
+<div class="decision-item"><div class="di-t">Eventual consistency + convergent dedup key</div><p>A distributed lock on a 50k/s write path blows the 100ms ack and creates a global failure mode. A deterministic cell+type+window key gives idempotent convergence for free.</p><div class="di-key">Key: cost is a sub-second window where a dup pin may show — worth it.</div></div>
+<div class="decision-item"><div class="di-t">Write-time pre-aggregation over read-time</div><p>Read:write is ≈1000:1 against distinct (deduped) writes — pay clustering once per change, serve millions of reads from cached buckets.</p><div class="di-key">Key: read-time clustering at 800k QPS would be ruinous.</div></div>
+<div class="decision-item"><div class="di-t">Tile-topic fan-out over per-user/per-incident</div><p>Per-user = 25M topics + resubscribe storms; per-incident = fanning a downtown crash to millions who don't care.</p><div class="di-key">Key: bounds blast radius to "connections viewing this tile."</div></div>
+<div class="decision-item"><div class="di-t">Quadkey primary + S2/H3 secondary</div><p>Accept a bit of dual-indexing to get both CDN/tile alignment and clean route-corridor coverings.</p><div class="di-key">Key: one index can't do both well.</div></div>
+</div>
+
+<div class="ins"><div class="insl">INSIGHT (volunteered #1)</div><p><strong>Routing-feedback oscillation / thundering-herd reroute.</strong> The overlay feeds Route's "avoid this closure." If 50k cars all see the same fresh closure and Route sends them down the <em>same</em> alternate, you've created the next incident — a self-inflicted jam, possibly oscillating as the reroute clears the original and everyone floods back. This is control-loop stability, not a maps problem. Mitigations: spread load across <strong>k alternates probabilistically</strong>; damp the incident's routing weight with hysteresis/confidence thresholds; treat confidence as a <em>gradual</em> cost multiplier, not a binary avoid. The naive "correct" behavior (instantly route everyone around) is exactly what destabilizes the network.</p></div>
+
+<div class="ins"><div class="insl">INSIGHT (volunteered #2)</div><p><strong>CDN/tile cache invalidation + privacy in sparse cells.</strong> (a) An expired incident lingering in a cached tile or in a client's delivered SignalR state is a real "ghost closure" that misroutes people — the tile-version/etag scheme kills it (expiry bumps version &rarr; CDN invalidates + remove-by-id delta), plus a low TTL at street zoom and coalesced version bumps to avoid invalidation storms. (b) A single anonymous report in a rural cell can de-anonymize the reporter — enforce a <strong>k-anonymity floor</strong> (don't expose until ≥k independent reporters, or snap to a coarser cell), which doubles as spam resistance: weight votes by reporter trust, cap per-account/per-device influence, require geographic diversity of confirmers, and gate <em>routing</em> behind a higher confidence bar than display.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Version-based cache-busting means the CDN barely helps the hot tiles — which are 60% of your traffic.</strong> Cold static tiles cache beautifully; but a dense-metro tile bumps its version every 1–2s, so its URL changes constantly &rarr; CDN miss on nearly every hot-tile request. The "p95&lt;200ms because it's a cache hit most of the time" claim holds for the long tail, not for downtown. Fix: for hot tiles, serve from the regional Redis edge (not CDN) with a short-TTL soft cache and stale-while-revalidate, and reserve the CDN for cooler tiles. Don't claim a uniform cache-hit rate.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>k-anonymity fights the product's core promise.</strong> "Don't render until ≥k reporters" directly contradicts the requirement that an unconfirmed crash appears in 2–5s and dies in ~10 min — the <em>first</em> reporter of a real hazard in a sparse area would never be shown. Present k-anonymity as a <em>trade-off with a cost</em> (privacy vs. first-reporter value), not a free win: e.g., show low-confidence single-reporter incidents on the <em>display</em> overlay with a "unconfirmed" style but require ≥k before feeding <em>routing</em>.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Down-vote abuse is unhandled.</strong> The answer defends against up-vote spam (a fake closure) but expiry is also driven by <em>negative</em> votes — so a coordinated ring can down-vote a <em>real</em> hazard into early expiry (adversarial suppression). Apply the same trust-weighting + geographic-diversity gating to down-votes, and require higher-trust confirmation to expire a high-confidence first-party (fleet) report.</p></div>
+
+<h3 class="sub">Rubric — where the line is</h3>
+<table class="tbl"><thead><tr><th>Band</th><th>Signal</th></tr></thead><tbody>
+<tr><td><strong>No-Hire</strong></td><td>Jumps to coding without clarifying scale/read-write split; treats it as CRUD (single table, "just add a lat/lng index + WHERE between"); polling-only, no fan-out cost sense; can't explain why quadtree/geohash/S2 helps; renders thousands of DOM markers; blindly accepts AI code (misses the leak + refetch-on-move); no expiry/dedup/abuse; hand-waves consistency with "just use a transaction."</td></tr>
+<tr><td><strong>Hire</strong></td><td>Clarifies scale/latency/consistency first; accepts eventual consistency, separates write-accept from async fan-out; real geospatial decomposition + cell-boundary reasoning; cold pull + live incremental split; sane fan-out (tile-topic SignalR or version polling) aware of boundary churn; dedup/clustering/TTL+votes/rate-limiting; WebGL+clustering frontend; catches the substantive AI flaws and fixes one at root cause; states trade-offs; builds on Azure Maps.</td></tr>
+<tr><td><strong>Strong-Hire</strong></td><td>All of Hire, PLUS the tile/quadkey pyramid as the single organizing primitive across storage, buckets, topics, and subscriptions (zoom = aggregation = subscription); crisp hot-tile / boundary-straddle / per-zoom freshness reasoning; convergent idempotent cross-region merge (no global lock); AND proactively raises ≥2 unprompted concerns (routing-feedback loop, ghost-tile cache invalidation, resubscribe thundering-herd, idle-connection cost, sparse-cell re-identification); drives the AI agent deliberately and names where it won't trust the model; frames the work in customer-impact and growth-mindset terms.</td></tr>
+</tbody></table>
+
+<div class="tip"><div class="tipl">TIP</div><p><strong>Hire &rarr; Strong-Hire lever:</strong> say the sentence "the same quadkey keys the index, the cluster buckets, the fan-out topics, AND the client subscription — so zoom level is aggregation level is subscription granularity" out loud and early. Then volunteer two second-order failure modes before being asked (routing oscillation + ghost-tile cache). That single framing plus proactive failure-mode thinking is what separates the bands — and it's exactly the kind of ownership and customer-impact signal a strong interview rubric rewards.</p></div>
+
+<div class="note"><div class="notel">NOTE</div><p>Fixes to internalize from the red-team: (1) probe neighbor cells + adjacent time-windows in the dedup merge — a pure hash key straddles boundaries; (2) salt hot log-partitions instead of mutating <code>dedup_zoom</code>; (3) don't claim a uniform CDN hit rate — hot tiles need a Redis edge with stale-while-revalidate; (4) suppress live-layer ids already baked into the current vector tile version to avoid double-render; (5) budget the cost of 25M idle connections and fall back to version-polling for backgrounded clients.</p></div>
+
+<div class="iq">"If I had to pick the one thing I'm most proud of and the one thing I'd stress-test first: proud of collapsing the whole system onto one tile coordinate space; and I'd stress-test the dedup merge key at cell and time-window boundaries, because that's where 'convergent by construction' quietly becomes 'two incidents that never merge.'"</div>
+</div>
+<div class="sec" id="tab-coding">
+<h2 class="stitle">Coding Rounds — Comprehension, Quality, Communication</h2>
+<div class="sdesc">Phone screen + two 1-hr rounds, 1-2 LeetCode-style each, NO external tools, any language.</div>
+
+<div class="note"><div class="notel">NOTE</div><p>If algorithms are already a strength, what still loses points is the <strong>meta-game</strong>: these loops score comprehension, code quality, and communication — not just a green checkmark. This section is about not dropping those points, plus two common failure modes for strong solvers: freezing on a queue problem, and nearly brute-forcing a question you hadn't fully read.</p></div>
+
+<h3 class="sub">1. The problem-solving protocol (say it out loud, every time)</h3>
+<div class="ins"><div class="insl">INSIGHT</div><p>Strong coders skip straight to typing because they've "seen this before". In these interviews the interviewer is grading the <em>process</em>. Narrate five explicit phases so a silent 20-minute solve becomes a demonstrated one.</p></div>
+
+<ol class="content-list">
+<li><strong>Clarify (2-3 min):</strong> restate the problem in my words, pin down input types, ranges, duplicates, empty/null, sortedness, and what "valid" output means. This is the easiest place to lose points — see L2 below.</li>
+<li><strong>Examples (2 min):</strong> write ONE concrete worked example by hand, plus one edge case. This is my unfreeze tool.</li>
+<li><strong>Approach (3-5 min):</strong> state brute force + its complexity, then the target approach + why, get a nod BEFORE coding.</li>
+<li><strong>Code (15-20 min):</strong> top-down, real names, small helpers, talk through invariants as I write.</li>
+<li><strong>Test (5 min):</strong> dry-run the concrete example line by line, then edge cases, then state complexity.</li>
+</ol>
+
+<div class="iq">"Before I code, let me restate it and check a couple of assumptions with you, then I'll walk an example, then propose an approach — stop me if you'd rather I go faster."</div>
+
+<h3 class="sub">2. Two lessons for strong solvers — bake them into the protocol</h3>
+
+<div class="g2">
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">L1</span><span class="ct">Stuck on a queue problem → a concrete example unfreezes you</span><span class="db de">UNSTICK</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Reasoning abstractly about a monotonic-queue / sliding-window state is where solvers stall. The fix isn't more thinking — it's drawing a 5-element array and hand-simulating the queue push/pop step by step. The invariant becomes obvious the moment it's on paper.</p>
+<div class="tip"><div class="tipl">TIP</div><p>When abstract reasoning stalls for &gt;60s, STOP and hand-simulate a tiny input. Say: "Let me make this concrete." It's not a weakness signal — interviewers read it as disciplined debugging.</p></div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">L2</span><span class="ct">Almost brute-forcing it → a clarifying question reveals the real constraint</span><span class="db de">CLARIFY</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>It's easy to start coding an O(n²) scan when one question — "are the intervals already sorted / can values repeat?" — would expose a constraint that collapses it to a single linear pass. The efficient solution often exists only because you asked, not because of cleverness.</p>
+<div class="trap"><div class="trapl">TRAP</div><p>Over-thinking pushes strong candidates INTO brute force: you see a solution instantly and start typing before reading the constraints that make a better one possible. Always mine the constraints (sorted? bounded range? stream? read-only?) before committing.</p></div>
+</div></div>
+</div>
+
+<h3 class="sub">3. Likely topic areas — a maps/Azure Maps team</h3>
+<div class="note"><div class="notel">NOTE</div><p>Not a prediction, a prep-weighting. Geospatial teams gravitate to grids, intervals, and graph/heap problems. I'll frame my chosen example against a map domain when natural — it signals I understand the product space.</p></div>
+
+<table class="tbl">
+<thead><tr><th>Area</th><th>Why a maps team likes it</th><th>What I rehearse</th></tr></thead>
+<tbody>
+<tr><td>Intervals / sweep line</td><td>Merging bounding boxes, time-windowed traffic, overlapping route segments</td><td>Sort-by-start merge, sweep events, minimize meeting-rooms heap</td></tr>
+<tr><td>Grids + BFS/DFS/multi-source BFS</td><td>Tile pyramids (z/x/y), flood fill regions, nearest-open-cell, reachability</td><td>Directions arrays, visited sets, multi-source BFS (nearest POI), 0-1 BFS</td></tr>
+<tr><td>Graphs (Dijkstra / A* / topo / union-find)</td><td>Routing is the canonical map problem; connected regions of tiles</td><td>Dijkstra with PQ, A* heuristic, Union-Find for region merge, topo for deps</td></tr>
+<tr><td>Heaps / top-K</td><td>K-nearest POIs, top-K congested links, streaming merge of tile updates</td><td>Bounded max-heap for K-nearest, merge-k-sorted-lists</td></tr>
+<tr><td>Sliding window / two pointers</td><td>Trajectory smoothing, rate windows, longest valid segment of a track</td><td>Variable window + shrink invariant, monotonic deque for window max/min</td></tr>
+<tr><td>Design-a-DS (LRU, queue, rate limiter, geo-index)</td><td>Tile cache eviction, request throttling, in-memory spatial index</td><td>LRU via map+DLL, circular buffer, "design a class" with clean public API</td></tr>
+</tbody>
+</table>
+
+<div class="tip"><div class="tipl">TIP</div><p>For a "design a data structure" prompt, lead with the public API and its per-op complexity contract BEFORE internals — it reads as senior. e.g. "get/put both O(1) amortized; here's how I guarantee that."</p></div>
+
+<h3 class="sub">4. Code-quality checklist — what interviewers actually grade</h3>
+<div class="ins"><div class="insl">INSIGHT</div><p>They evaluate "quality" and "comprehension" as distinct axes from correctness. A working brute force with clean structure can outscore a cramped optimal solution. Treat the whiteboard/editor like a PR I'd send for review.</p></div>
+
+<div class="skill-box"><h4>Ship-quality-code checklist</h4><ul>
+<li><strong>Naming:</strong> <code>rowCount</code>/<code>visited</code>/<code>frontier</code>, not <code>n</code>/<code>v</code>/<code>q</code>. Domain names when it's a map (<code>tileZoom</code>, <code>neighbors</code>).</li>
+<li><strong>Decomposition:</strong> extract helpers (<code>isInBounds</code>, <code>neighbors(cell)</code>) instead of one 40-line method — signals I think in units.</li>
+<li><strong>Edge cases up front:</strong> null/empty, single element, all-same, max range, cycles. State them, then guard them.</li>
+<li><strong>No library shortcut that hides the skill:</strong> if the point is the algorithm, don't paper over it with a one-call stdlib magic method — but DO use stdlib for plumbing (collections, PQ) and say why.</li>
+<li><strong>Invariants as comments:</strong> one line stating what the loop maintains. Cheap, high-signal.</li>
+<li><strong>Complexity stated:</strong> time AND space, and whether it's tight or improvable.</li>
+<li><strong>Immutability / no hidden mutation:</strong> don't mutate the input unless asked; call it out if I do.</li>
+</ul></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p>"NO external tools" means no autocomplete/AI in the coding round. My competitive-programming muscle memory is fine, but I've drilled compiling in my head — no IDE red squiggles to lean on. I write the imports and exact method signatures, and I don't invent an API I'm not sure exists; I'll write a tiny helper instead.</p></div>
+
+<h3 class="sub">5. Communication scripts (fill the silence with signal)</h3>
+<div class="decision-grid">
+<div class="decision-item"><div class="di-t">When I get the problem</div><p>Restate + clarify before touching code.</p><div class="di-key">Key: "So the input is X, I return Y; can values repeat / is it sorted / how big can n get?"</div></div>
+<div class="decision-item"><div class="di-t">When I pick an approach</div><p>Name brute force, name the target, justify the jump.</p><div class="di-key">Key: "Brute force is O(n²); since it's sorted I can do one pass in O(n) — I'll code that."</div></div>
+<div class="decision-item"><div class="di-t">When I'm stuck</div><p>Go concrete out loud; don't go silent.</p><div class="di-key">Key: "Let me hand-simulate a small case to find the invariant."</div></div>
+<div class="decision-item"><div class="di-t">When I spot my own bug</div><p>Own it, don't hide it — self-review is a positive.</p><div class="di-key">Key: "Off-by-one here on the boundary — fixing, and I'll re-run the example."</div></div>
+<div class="decision-item"><div class="di-t">When done</div><p>Test before declaring victory; state complexity.</p><div class="di-key">Key: "Let me dry-run my example and one edge, then give you time/space."</div></div>
+<div class="decision-item"><div class="di-t">If there's a follow-up</div><p>Anticipate scale/streaming — my distributed-systems angle.</p><div class="di-key">Key: "If this were a stream or didn't fit in memory, I'd switch to..."</div></div>
+</div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Two failure modes for a fast solver: (1) silence — I solve it in my head and the interviewer sees nothing; (2) premature typing — I code before confirming the approach and burn time on a rewrite. The protocol exists to kill both. Narrate, confirm, then type.</p></div>
+
+<h3 class="sub">6. Phone-screen specifics</h3>
+<div class="note"><div class="notel">NOTE</div><p>The screen bundles 1 coding question with experience + production-systems + working-style talk. Keep the coding tight (same protocol) and leave room to bridge into a crown-jewel story if they probe systems — e.g. a pub/sub re-architecture or a database cascading-failure root-cause analysis (RCA) — so the algorithm and the senior-engineer signal both land in 45–50 min.</p></div>
+<div class="iq">"I can solve this efficiently, and I'll narrate my thinking so you see how I'd approach it on a real PR — clarify, agree on an approach, then write code I'd be comfortable shipping."</div>
+
+</div>
+<div class="sec" id="tab-ai">
+<h2 class="stitle">AI-Assisted Development Round</h2>
+<div class="sdesc">They hand you an AI agent. The test is your JUDGMENT reviewing its output, not your typing.</div>
+
+<h3 class="sub">What they are actually scoring</h3>
+<p>Two flavors of this round. <strong>(A) Generate + Review:</strong> they give you Copilot, ask you to generate a map frontend, then critique the AI's own code for flaws, improvements, and trade-offs. <strong>(B) Scaffold + Build:</strong> you start from a scaffolding project and build a complete app with their agent, and they probe how you actually work with agents (Copilot / Codex / Claude Code / Gemini).</p>
+<div class="note"><div class="notel">NOTE</div><p>Never having used Copilot is fine — nobody is grading your keystrokes. They are grading whether you can <strong>read AI output critically</strong> and steer it. Your real edge is domain knowledge: know the Azure Maps Web SDK best-practices well enough to name a concrete perf bug the AI introduces. Lead with judgment, not fluency.</p></div>
+<div class="iq">"I treat the agent like a fast junior engineer — great at boilerplate, needs a senior reviewing every line. My value in this room is the review, not the generation."</div>
+
+<h3 class="sub">Driving the agent fluently even if you are new</h3>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">01</span><span class="ct">Copilot / agent mechanics — the 90-second crash course</span><span class="db de">FLUENCY</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>Inline suggestions:</strong> ghost text appears as you type; <code>Tab</code> accepts, <code>Esc</code> rejects, <code>Alt+]</code> / <code>Alt+[</code> cycles alternatives. Say out loud "I'll reject that — wrong layer type" so they hear the judgment.</li>
+<li><strong>Prompt in comments:</strong> write intent as a comment above where you want code, e.g. <code>// create an Azure Maps DataSource, add a bubble layer, cluster points</code> then let it draft. Comment-driven prompting is the cleanest way to steer inline Copilot.</li>
+<li><strong>Chat / agent panel:</strong> for multi-file work use the chat side panel — <code>/explain</code>, <code>/fix</code>, <code>/tests</code>, and <code>#file</code> or <code>@workspace</code> to give it context. In agent mode it edits multiple files and runs the build; you approve each diff.</li>
+<li><strong>Iterate in small steps:</strong> never accept a 200-line dump. Ask for one component, review, then "now add clustering", "now add a loading state". Small diffs = reviewable diffs.</li>
+<li><strong>Narrate accept/reject:</strong> the interviewer cannot read your mind. Verbalize: "Accepting the scaffold, but I'm going to reject the marker loop — that's the DOM cost trap."</li>
+</ul>
+<div class="tip"><div class="tipl">TIP</div><p>If you blank on a shortcut, just say "I'd normally accept with Tab here" and keep moving. Showing the <em>mental model</em> (draft → review → iterate) matters far more than muscle memory.</p></div>
+</div></div>
+
+<h3 class="sub">Review checklist — AI-generated map frontend</h3>
+<p>Each card is a pattern the AI writes wrong by default, the right fix, and the "why" you say aloud. The perf ones are your crown jewels — those are exactly what reading the SDK doc twice buys you.</p>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">R1</span><span class="ct">HTML markers in a loop for thousands of points</span><span class="db de">PERF</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="trap"><div class="trapl">TRAP</div><p>AI loves <code>new atlas.HtmlMarker(...)</code> in a <code>for</code> loop — clean-looking, and catastrophic at scale. HTML Markers &amp; Popups are <strong>DOM elements, not WebGL</strong>; performance falls off a cliff after a few hundred.</p></div>
+<ul class="content-list">
+<li><strong>Right fix:</strong> put the points in a <code>DataSource</code> and render with a <strong>bubble layer</strong> (WebGL circle) or <strong>symbol layer</strong>; enable <strong>clustering</strong> for large sets.</li>
+<li><strong>Why:</strong> WebGL draws tens of thousands of circles in one GPU pass; the DOM chokes rendering and reflowing thousands of nodes. This is the single highest-impact bug in map frontends.</li>
+</ul>
+<div class="iq">"This renders each point as a DOM node — it'll be smooth in the demo with 20 points and freeze the browser at 20,000. I'd move to a DataSource + bubble layer with clustering."</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">R2</span><span class="ct">Symbol layer where a bubble layer belongs</span><span class="db de">PERF</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="trap"><div class="trapl">TRAP</div><p>AI defaults to a <code>SymbolLayer</code> with an icon image for plain points. Each symbol loads/renders an image; at tens of thousands of points that is measurably heavier than a circle.</p></div>
+<ul class="content-list">
+<li><strong>Right fix:</strong> use a <strong>bubble layer</strong> for simple many-point rendering; reserve symbol layer for when you genuinely need an icon or text label.</li>
+<li><strong>Why:</strong> a WebGL circle is cheaper than image sprite handling — the Azure Maps guidance calls this out explicitly for large point counts.</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">R3</span><span class="ct">GeoJSON DataSource for a massive dataset</span><span class="db de">PERF / SCALE</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="trap"><div class="trapl">TRAP</div><p>AI fetches one giant GeoJSON blob (millions of features) into a <code>DataSource</code>. The whole payload downloads and lives in memory even though only a sliver is on screen.</p></div>
+<ul class="content-list">
+<li><strong>Right fix:</strong> use a <strong>VectorTileSource</strong> — it loads only in-view tiles, clipped and generalized per zoom (z/x/y tile pyramid). GeoJSON DataSource is right for small–medium sets (up to ~hundreds of thousands); tiles for millions+.</li>
+<li><strong>Why:</strong> tiles cap network + memory to the viewport; a monolithic GeoJSON scales with total data, not what's visible.</li>
+</ul>
+<div class="iq">"Rule of thumb: DataSource up to hundreds of thousands of features managed in the worker; past that, VectorTileSource so we only ever pay for the viewport."</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">R4</span><span class="ct">Per-feature add / repeated clear — canvas thrash</span><span class="db de">PERF</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="trap"><div class="trapl">TRAP</div><p>AI writes <code>points.forEach(p =&gt; source.add(p))</code>, or <code>clear</code> then re-<code>add</code> on every update. Each call triggers a canvas refresh — N features = N repaints.</p></div>
+<ul class="content-list">
+<li><strong>Right fix:</strong> batch — pass an array / FeatureCollection to a single <code>add</code>; to replace everything use <code>setShapes</code> (one refresh); stop calling <code>clear</code> repeatedly.</li>
+<li><strong>Why:</strong> one refresh instead of N. Also, separate <strong>rapidly-changing data into its own DataSource</strong> so static features don't re-render on every live update.</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">R5</span><span class="ct">Reversed coordinate order — [lat, lng]</span><span class="db de">CORRECTNESS</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="trap"><div class="trapl">TRAP</div><p>The classic. AI (and humans from a Google Maps background) writes <code>[latitude, longitude]</code>. Azure Maps / GeoJSON expect <strong><code>[longitude, latitude]</code></strong>. Symptom: your data lands on the opposite side of the globe or in the ocean.</p></div>
+<ul class="content-list">
+<li><strong>Right fix:</strong> <code>new atlas.data.Position(longitude, latitude)</code> — lng first, always.</li>
+<li><strong>Why:</strong> GeoJSON spec is x,y = lng,lat. This is a silent correctness bug, not a crash — easy to miss in review, so call it out fast.</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">R6</span><span class="ct">Subscription key hardcoded in client</span><span class="db de">SECURITY</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="trap"><div class="trapl">TRAP</div><p>AI drops <code>authType: 'subscriptionKey', subscriptionKey: 'abc123...'</code> straight into frontend JS. That key ships to every browser and can be scraped and abused.</p></div>
+<ul class="content-list">
+<li><strong>Right fix:</strong> use <strong>Azure AD auth</strong> with <code>authType: 'anonymous'</code> + a token proxy / <code>getToken</code> callback, backed by <strong>Managed Identity</strong> or a short-lived <strong>SAS token</strong>. Never embed the subscription key client-side.</li>
+<li><strong>Why:</strong> a leaked key = uncapped billing and data access. Token flow keeps the credential server-side and rotatable.</li>
+</ul>
+<div class="iq">"This key is in the client bundle — anyone can pull it from devtools. I'd swap to anonymous auth with an Azure AD token fetched from our proxy backed by Managed Identity."</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">R7</span><span class="ct">No loading, error, or 401 handling</span><span class="db de">ROBUSTNESS</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="warn"><div class="warnl">WATCH</div><p>AI generates the happy path only. No spinner while tiles load, no fallback if the fetch fails, no handling of a blank map (which almost always = <strong>401 auth failure</strong>).</p></div>
+<ul class="content-list">
+<li><strong>Right fix:</strong> subscribe to <code>map.events.add('ready', ...)</code> before touching sources/layers; add error handling on data fetches; show a loading placeholder <code>div</code>; surface auth errors instead of a silent blank canvas.</li>
+<li><strong>Why:</strong> watch <code>'ready'</code> not <code>'load'</code> — it fires ~2x faster. A blank map with no error is the worst UX; make failures visible.</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">R8</span><span class="ct">Recreating layers/sources &amp; a popup per feature</span><span class="db de">PERF</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="trap"><div class="trapl">TRAP</div><p>AI recreates the <code>DataSource</code>/layer on every data change and creates a fresh <code>Popup</code> for each marker click. Both leak and thrash.</p></div>
+<ul class="content-list">
+<li><strong>Right fix:</strong> create sources/layers <strong>once</strong> and update their data/style options instead of recreating; <strong>reuse a single Popup</strong> instance and just move it / reset content.</li>
+<li><strong>Why:</strong> fewer sources/layers = fewer HTTP requests and less GPU setup; one popup avoids DOM churn.</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">R9</span><span class="ct">Missing zoom ranges, precision, and expression guards</span><span class="db de">PERF / CORRECTNESS</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="tip"><div class="tipl">TIP</div><p>Second-order wins the AI omits — mention 1–2 to show depth without nitpicking.</p></div>
+<ul class="content-list">
+<li><strong>Zoom ranges:</strong> set layer <code>minZoom</code>/<code>maxZoom</code>, tile-layer bounds, and source zoom range so the engine skips out-of-range work; tune DataSource <code>buffer</code> &amp; <code>tolerance</code> (Douglas-Peucker simplification).</li>
+<li><strong>Precision:</strong> reduce coordinates to <strong>6 decimals (~0.1m)</strong>, strip unused properties, minimize GeoJSON payload.</li>
+<li><strong>Expressions:</strong> prefer <code>match</code> over chained <code>['get',...]</code>; order boolean tests most→least specific; guard with <code>['has',...]</code> + <code>['to-color',..., fallback]</code> so a missing property doesn't throw.</li>
+<li><strong>A11y:</strong> map canvas needs keyboard/ARIA affordances and text alternatives — AI almost never adds these.</li>
+</ul>
+</div></div>
+
+<h3 class="sub">Verbalizing trade-offs (this is the real test)</h3>
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">TO</span><span class="ct">A repeatable sentence pattern for every review comment</span><span class="db dm">SCRIPT</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Structure each critique as: <strong>Observation → Impact → Alternative → When the AI's version is actually fine.</strong> That last clause is what separates a senior reviewer from a linter.</p>
+<div class="iq">"This uses HTML markers (observation). Fine for a handful of pins, but it'll freeze at 20k points (impact). I'd switch to a bubble layer with clustering (alternative). If this map only ever shows the user's 3 saved locations, though, markers are simpler and I'd leave it (trade-off)."</div>
+<div class="decision-grid">
+<div class="decision-item"><div class="di-t">Perf vs simplicity</div><p>Tiles/clustering add complexity — justify them by scale, don't add them blindly.</p><div class="di-key">Key: size the solution to the dataset</div></div>
+<div class="decision-item"><div class="di-t">Correctness vs speed</div><p>[lng,lat] and auth are non-negotiable; precision tuning is a nice-to-have.</p><div class="di-key">Key: rank bugs by blast radius</div></div>
+<div class="decision-item"><div class="di-t">Ship vs polish</div><p>Name what you'd fix now (security, crash-path) vs backlog (a11y polish, expression tuning).</p><div class="di-key">Key: show prioritization, not perfectionism</div></div>
+</div>
+</div></div>
+
+<h3 class="sub">Flavor B — building from a scaffold with an agent</h3>
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">WF</span><span class="ct">A workflow you can narrate start to finish</span><span class="db dm">WORKFLOW</span><span class="chv">&#9654;</span></div><div class="cb">
+<ol class="content-list">
+<li><strong>Orient first:</strong> ask the agent <code>@workspace explain the project structure</code> before generating anything — understand the scaffold's routing, build, and where map code should live.</li>
+<li><strong>Plan in plain language:</strong> state the target ("map page + a token-proxy backend endpoint + a points DataSource with clustering"), then have the agent draft a task list you approve.</li>
+<li><strong>Build in thin vertical slices:</strong> map init (watch <code>'ready'</code>, camera set on init) → auth via token endpoint → one DataSource + bubble layer → clustering → popup reuse → loading/error states. Review each diff before the next.</li>
+<li><strong>Run the build after each slice:</strong> in agent mode let it run the dev server / build; read the errors yourself, don't just hit "auto-fix" blindly.</li>
+<li><strong>Keep a running review:</strong> apply the R1–R9 checklist as you go, not at the end — catch the [lng,lat] and key-in-client issues the moment they appear.</li>
+</ol>
+<div class="tip"><div class="tipl">TIP</div><p>When they ask "which AI agents have you used?" — be honest and framed for growth mindset: "Primarily Claude Code and the CLI agents; I'm newer to Copilot's inline flow but the mental model transfers — draft, review every diff, iterate in small slices. I trust the tool for boilerplate and keep the architecture and security decisions on me." That answer signals a growth mindset — comfortable learning something new and closing the gap fast.</p></div>
+<div class="ins"><div class="insl">INSIGHT</div><p>The agent makes generation free, which makes <strong>review the scarce skill</strong>. Every place you catch a bubble-vs-marker perf trap or a client-side key, you are demonstrating exactly the senior judgment this round exists to measure — and the SDK doc you read twice is the ammunition.</p></div>
+</div></div>
+
+</div>
+<div class="sec" id="tab-review"><h2 class="stitle">Code Review Round — Reviewing Code You Don't Fully Understand</h2><div class="sdesc">React/TS + ASP.NET/C# diff. They test judgment, not syntax. Here's how to find real issues in unfamiliar code.</div>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>The brief is explicit: this round does <strong>not</strong> test React/C# constructs or framework expertise. Going quiet because you "couldn't understand the code" reads as <em>zero signal</em>. A senior reviewer doesn't need to know the framework; they know the <strong>categories of things that go wrong in all code</strong> and can reason from patterns. Your job this round is to <strong>narrate a disciplined review out loud</strong>, not to compile the code in your head.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p>The single biggest failure mode is <strong>staying silent when confused</strong>. Silence gives the interviewer nothing to score. The fix is to <em>externalize your process</em>: say what you're reading, what you're looking for, and what you notice — even when you're unsure. An honest "I don't know this API, but this shape looks dangerous because…" scores far higher than saying nothing.</p></div>
+
+<h3 class="sub">The Review Protocol — a repeatable 5-pass method</h3>
+<div class="sdesc">Run these passes in order, out loud. Don't read line-by-line top-to-bottom on the first look.</div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">P1</span><span class="ct">Intent first — what problem does this PR solve?</span><span class="db dh">START HERE</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Before reading any code, establish intent. You cannot judge whether code is correct without knowing what "correct" means here.</p>
+<ul class="content-list">
+<li><strong>Read:</strong> PR title, description, linked ticket, commit messages.</li>
+<li><strong>Ask:</strong> "What's the goal of this change, and what's the acceptance criteria?"</li>
+<li><strong>Map the diff:</strong> which files changed, and how do they relate — is this frontend-only, backend-only, or a full-stack feature crossing the API boundary?</li>
+<li><strong>Form a hypothesis:</strong> "If I were implementing this, I'd expect to see X, Y, Z. Let me check whether the diff does that and nothing surprising extra."</li>
+</ul>
+<div class="iq">"Before I dig into lines, let me make sure I understand the intent. It looks like this PR adds a search-by-region endpoint on the backend and wires a new results panel on the frontend. Is that right? What's the expected behavior when the region has no results?"</div>
+<div class="tip"><div class="tipl">TIP</div><p>Comparing the diff against the <em>stated intent</em> catches two high-value bug classes for free: <strong>scope creep</strong> (unrelated changes sneaking in) and <strong>missing pieces</strong> (intent says "handle errors" but no error path exists).</p></div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">P2</span><span class="ct">Scan by category, not by syntax</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>You don't need to understand every token. You need to pattern-match the <strong>shape</strong> of the code against a checklist of failure categories. When a shape triggers a category, stop and investigate that spot.</p>
+<ul class="content-list">
+<li><strong>Follow the data:</strong> trace one input (a user value, a request body, a map click) from entry to where it's stored/rendered. Bugs cluster along data flow.</li>
+<li><strong>Follow the trust boundary:</strong> anywhere data crosses from client→server, server→DB, or external→internal, ask "is this validated? authorized? escaped?"</li>
+<li><strong>Follow the lifecycle:</strong> anything opened (connection, subscription, file, timer, listener) — is it closed on every path, including errors?</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">P3</span><span class="ct">Prioritize — sort findings by severity before speaking</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Don't dump every nit first. Lead with what matters. This shows senior judgment.</p>
+<table class="tbl"><thead><tr><th>Tier</th><th>Category</th><th>Examples</th></tr></thead><tbody>
+<tr><td><strong>Blocker</strong></td><td>Correctness, security, data loss</td><td>Missing auth check, SQL injection, race that corrupts state, null deref on happy path</td></tr>
+<tr><td><strong>Should-fix</strong></td><td>Reliability, perf, error handling</td><td>N+1 query, unhandled rejection, resource leak, missing edge case</td></tr>
+<tr><td><strong>Nit</strong></td><td>Readability, naming, style</td><td>Unclear name, dead code, missing comment, magic number</td></tr>
+</tbody></table>
+<div class="iq">"I've got a few observations. One I'd consider a blocker, a couple of should-fixes, and some nits. Want me to start with the blocker?"</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">P4</span><span class="ct">Verify against tests — do the tests match the change?</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li>Does the PR add/modify tests for the new behavior? If not, that's a finding by itself.</li>
+<li>Do the tests cover <strong>edge cases and failure paths</strong>, or only the happy path?</li>
+<li>Would the tests actually <em>fail</em> if the logic were wrong, or are they asserting trivia?</li>
+</ul>
+<div class="iq">"I don't see a test for the empty-region case, and that's exactly the branch I'm least sure is handled. I'd ask for one before approving."</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">P5</span><span class="ct">Deliver — observation + reasoning + question/ask</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Every finding should follow the same three-part shape so it lands as constructive, not nitpicky:</p>
+<ol class="content-list">
+<li><strong>Observation:</strong> "Here on line N, the handler does X."</li>
+<li><strong>Reasoning / risk:</strong> "That's a problem because if Y happens, we'd get Z (crash / leak / wrong result)."</li>
+<li><strong>Ask or suggestion:</strong> "Could we validate before use / wrap in a using / add a null check? Or is there a guarantee upstream I'm missing?"</li>
+</ol>
+<div class="note"><div class="notel">NOTE</div><p>Framing the third part as a <em>question</em> when unsure is a strength, not a weakness. It signals collaboration and a growth mindset, and protects you from being wrong about framework guarantees you don't know.</p></div>
+</div></div>
+
+<h3 class="sub">Language-agnostic category checklist</h3>
+<div class="sdesc">These transfer across React, C#, Java, anything. Memorize the list; walk it against any diff.</div>
+
+<div class="g2">
+<div class="skill-box"><h4>Correctness & edge cases</h4><ul>
+<li>Off-by-one, boundary values (0, 1, max)</li>
+<li>Empty collection / empty string / whitespace</li>
+<li>Negative numbers, overflow</li>
+<li>Duplicate or out-of-order input</li>
+<li>What happens on the "no results" / "not found" path?</li>
+</ul></div>
+<div class="skill-box"><h4>Null / undefined handling</h4><ul>
+<li>Values that can be null but aren't checked</li>
+<li>Optional chaining missing before a field access</li>
+<li>Default values for missing config/params</li>
+<li>"Cannot read property of undefined" waiting to happen</li>
+</ul></div>
+<div class="skill-box"><h4>Error handling</h4><ul>
+<li>Swallowed exceptions (empty catch)</li>
+<li>Errors logged but execution continues in a bad state</li>
+<li>No handling for a failed network/DB call</li>
+<li>Error messages that leak internals to the user</li>
+</ul></div>
+<div class="skill-box"><h4>Input validation & security</h4><ul>
+<li>User input concatenated into SQL / query (injection)</li>
+<li>Unescaped user input rendered as HTML (XSS)</li>
+<li>Unbounded input (no length/size/page-size limit → DoS)</li>
+<li>Path/URL built from user input (path traversal, SSRF)</li>
+</ul></div>
+<div class="skill-box"><h4>AuthN / AuthZ</h4><ul>
+<li>Endpoint missing an auth/permission check</li>
+<li>Checks identity but not <em>ownership</em> (IDOR: can I read another user's record by ID?)</li>
+<li>Authorization done on the client only</li>
+<li>Secrets/keys hardcoded or shipped to the client</li>
+</ul></div>
+<div class="skill-box"><h4>Concurrency & races</h4><ul>
+<li>Read-modify-write without a lock/transaction</li>
+<li>Shared mutable state across requests/threads</li>
+<li>Check-then-act (TOCTOU) gaps</li>
+<li>Async work whose ordering isn't guaranteed</li>
+</ul></div>
+<div class="skill-box"><h4>Resource leaks</h4><ul>
+<li>Opened but not closed on the error path</li>
+<li>Event listeners/subscriptions/timers never removed</li>
+<li>Connections not returned to the pool</li>
+<li>Unbounded caches / growing collections</li>
+</ul></div>
+<div class="skill-box"><h4>Performance / scale</h4><ul>
+<li>Query inside a loop (N+1)</li>
+<li>Loading a whole table then filtering in memory</li>
+<li>No pagination / no limit on a list endpoint</li>
+<li>Repeated expensive work with no caching/memoization</li>
+</ul></div>
+</div>
+
+<div class="ins"><div class="insl">TRANSFERABILITY</div><p>These lists illustrate the method — swap in your target stack's common pitfalls.</p></div>
+
+<h3 class="sub">Frontend-specific smells (React / TypeScript)</h3>
+<div class="sdesc">You don't need to write React. You need to recognize these shapes and name the risk.</div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">FE</span><span class="ct">The React red-flag list</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>Missing <code>key</code> on list items:</strong> rendering an array (<code>.map(...)</code>) into elements without a stable <code>key</code>, or using the array index as key — causes wrong re-renders / state bleed. Easy to spot even without React depth.</li>
+<li><strong><code>useEffect</code> dependency issues:</strong> an effect that uses a variable but doesn't list it in the dependency array (stale data), or lists something that changes every render (infinite loop). Ask: "does this effect re-run when it should, and only then?"</li>
+<li><strong>Missing effect cleanup (leak):</strong> a <code>useEffect</code> that subscribes / adds a listener / starts a timer / opens a socket but returns no cleanup function → leak + "setState on unmounted component". This is your resource-leak category, frontend flavor.</li>
+<li><strong>Unmemoized heavy work in render:</strong> expensive compute or new object/array literals created on every render, or passed as props causing children to re-render. Candidate for <code>useMemo</code>/<code>useCallback</code>. Frame as perf, not blocker.</li>
+<li><strong>Secrets in the client:</strong> API keys, connection strings, tokens embedded in frontend code or in a bundled env var — anything shipped to the browser is public. For Azure Maps: a raw subscription key in the JS bundle should be an <strong>Azure AD / SAS token</strong> flow instead.</li>
+<li><strong>Direct DOM / <code>dangerouslySetInnerHTML</code>:</strong> injecting user-provided HTML → XSS. Flag immediately.</li>
+<li><strong>Fetch without error/loading state:</strong> a data call that only handles success — no spinner, no error UI, no empty state.</li>
+<li><strong>State derived from props but stored in state:</strong> duplicated source of truth that can drift.</li>
+</ul>
+<div class="iq">"I don't know React's rendering internals deeply, but this list is built from <code>.map</code> with no <code>key</code> prop — in most frameworks that breaks reconciliation and can leak state between rows. Can you confirm there's a stable id we could key on?"</div>
+</div></div>
+
+<h3 class="sub">Backend-specific smells (C# / ASP.NET)</h3>
+<div class="sdesc">Same idea — recognize the shape, name the category, ask.</div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">BE</span><span class="ct">The C#/ASP.NET red-flag list</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>async/await misuse:</strong> <code>.Result</code> or <code>.Wait</code> on an async call (deadlock risk / thread starvation); <code>async void</code> methods (exceptions can't be caught); a method that does I/O but isn't async; not <code>await</code>-ing a Task (fire-and-forget, lost errors). You can spot these by the <em>shape</em> — a blocking <code>.Result</code> on something clearly asynchronous.</li>
+<li><strong>IDisposable / <code>using</code>:</strong> objects that hold resources (DB connections, streams, HttpClient-owned handles) created without a <code>using</code> statement/block → leak. This is resource-leak, backend flavor.</li>
+<li><strong>Unvalidated model binding:</strong> controller action takes a request DTO and trusts it — no <code>[Required]</code>/range/length validation, no <code>ModelState.IsValid</code> check. Also mass-assignment / over-posting: binding fields the client shouldn't be able to set (e.g. <code>IsAdmin</code>, <code>UserId</code>).</li>
+<li><strong>EF Core N+1:</strong> looping over entities and lazily touching a navigation property inside the loop → one query per row. Look for a loop that accesses related data without an <code>Include</code>/projection. Flag as perf/scale.</li>
+<li><strong>SQL injection:</strong> raw SQL built by string concatenation with user input instead of parameters. Blocker.</li>
+<li><strong>Missing <code>[Authorize]</code> / auth check:</strong> a controller or action that mutates data but has no authorization attribute, or checks that a user is logged in but not that they own the resource being modified (IDOR).</li>
+<li><strong>Swallowed exceptions:</strong> <code>catch (Exception) { }</code> or catching and returning 200 anyway.</li>
+<li><strong>Blocking the request thread / no cancellation:</strong> long work with no <code>CancellationToken</code> threaded through.</li>
+<li><strong>Leaking internals in responses:</strong> returning full exception/stack trace or the raw EF entity (with fields the client shouldn't see) instead of a DTO.</li>
+</ul>
+<div class="iq">"I'm not a C# expert, but calling <code>.Result</code> on what looks like an async database call is a pattern I'd flag — in most runtimes that blocks a thread and can deadlock under load. Could we <code>await</code> it instead? Happy to be corrected if this framework handles it differently."</div>
+</div></div>
+
+<h3 class="sub">Full-stack: check the contract across the boundary</h3>
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">FS</span><span class="ct">Where frontend and backend must agree</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>A React+C# diff often hides bugs <em>between</em> the two files, not inside either. High-value because most reviewers only look within one file.</p>
+<ul class="content-list">
+<li><strong>Shape mismatch:</strong> frontend expects a field the API doesn't return (or a different type / casing — <code>camelCase</code> vs <code>PascalCase</code>).</li>
+<li><strong>Error contract:</strong> backend returns 400/500 with a body the frontend never handles.</li>
+<li><strong>Validation only on one side:</strong> client validates but server trusts (security), or server validates but client shows no error (UX).</li>
+<li><strong>Pagination / limits:</strong> frontend requests "all", backend has no cap.</li>
+<li><strong>Auth token flow:</strong> for a map product, is the frontend getting a short-lived SAS/AAD token from a backend endpoint, or embedding a long-lived key?</li>
+</ul>
+</div></div>
+
+<h3 class="sub">Scripts — what to actually say</h3>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">SAY</span><span class="ct">Opening: set up your process out loud</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="iq">"Let me start by understanding the intent, then I'll walk the diff by category — correctness, error handling, security, resources, performance — and flag anything that trips a category. I'll think out loud so you can follow my reasoning, and I'll call out where I'm unsure versus confident."</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">SAY</span><span class="ct">Clarifying questions (ask early, ask freely)</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li>"What problem is this PR solving, and is there a ticket or acceptance criteria?"</li>
+<li>"Who calls this — is the input trusted (internal) or from an end user?"</li>
+<li>"Is there validation or auth upstream that I'm not seeing in this diff?"</li>
+<li>"What's the expected behavior on the failure / empty / not-found path?"</li>
+<li>"Is this a hot path — how often does this run, and at what scale?"</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">SAY</span><span class="ct">Voicing an observation when you're NOT sure of the syntax</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>This is the key template for your weakest spot. Separate the <em>pattern</em> (which you can judge) from the <em>framework detail</em> (which you can ask about).</p>
+<div class="iq">"I don't know this framework deeply, but this pattern looks like a resource leak: we open a connection on line 12 and there's no <code>using</code> or explicit close, so on the exception path at line 20 it wouldn't be released. Is there cleanup happening somewhere I'm not seeing?"</div>
+<div class="iq">"I'm not certain about the exact React semantics, but rendering this list without a <code>key</code> is a pattern that usually causes incorrect re-renders. Is there a stable id we could use?"</div>
+<div class="iq">"Independent of the language: this takes user input and builds a query string from it. If that reaches the database unparameterized, that's an injection risk. Can we confirm it's parameterized?"</div>
+<div class="tip"><div class="tipl">TIP</div><p>Notice the structure every time: <em>"I don't know X specifically, BUT this pattern generally means Y because Z — can you confirm?"</em> You get credit for the reasoning and the humility, and you're never wrong because you asked.</p></div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">SAY</span><span class="ct">Closing: summarize and give a verdict</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="iq">"To summarize: one blocker — the endpoint mutates data with no authorization check, which is an IDOR risk. Two should-fixes — an N+1 query in the results loop, and an effect with no cleanup that'll leak listeners. A couple of nits on naming and a magic number. I'd request changes on the blocker and the N+1, approve after that. Overall the approach is sound — the structure is clean and it solves the stated problem."</div>
+<div class="tip"><div class="tipl">TIP</div><p>Always end with a clear <strong>decision</strong> (approve / request changes) and at least one <strong>genuine positive</strong>. Reviewers who only criticize read as junior; balancing risk with what's good reads as senior and collaborative.</p></div>
+</div></div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Time management: with a limited diff, don't get stuck on the first file. Do a fast full scan (P1–P2) across everything first so you don't miss the blocker hiding in file 3, then go deep on the highest-severity spots. Announce this: "Let me skim all the files once for the big risks, then go deep."</p></div>
+
+<div class="decision-grid">
+<div class="decision-item"><div class="di-t">If you get lost</div><p>Narrate it and re-anchor to intent.</p><div class="di-key">Key: "Let me step back to what this PR is trying to do."</div></div>
+<div class="decision-item"><div class="di-t">If you spot nothing</div><p>Walk the checklist out loud category by category — the act of naming categories surfaces issues.</p><div class="di-key">Key: Categories, not syntax.</div></div>
+<div class="decision-item"><div class="di-t">If unsure it's a bug</div><p>State it as a question, not an assertion.</p><div class="di-key">Key: "Is X guaranteed here?"</div></div>
+<div class="decision-item"><div class="di-t">If it's just style</div><p>Label it a nit and move on fast.</p><div class="di-key">Key: Don't inflate nits into blockers.</div></div>
+</div>
+
+</div>
+<div class="sec" id="tab-bq">
+<h2 class="stitle">Experience &amp; Behavioral</h2>
+<div class="sdesc">These rounds screen growth mindset, collaboration, and customer focus — and interviewers push for SCOPE. The stories below are illustrative templates; adapt them to your own experience.</div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>The scope escalation trap.</strong> A common pattern: your first answer is a clean team-level story, the interviewer nods, then asks for a <em>bigger</em> example. If you stall, you lose the round. What tends to satisfy is an org-level story — e.g. inheriting and rebuilding systems after several senior engineers departed, owning them across teams rather than just contributing a feature. Lesson: for every theme, have a task-level AND an org-level version pre-loaded. When they say "bigger," jump one rung up the ladder immediately — don't hesitate, don't re-tell the same story louder.</p></div>
+
+<h3 class="sub">Culture pillars — what interviewers actually listen for</h3>
+<p>Many large tech employers screen against a small set of culture themes. The columns below use one common framing; the <em>bridge</em> column shows the kind of evidence that maps to each theme.</p>
+<table class="tbl">
+<thead><tr><th>Pillar</th><th>Common phrasing</th><th>What they listen for</th><th>Example bridge</th></tr></thead>
+<tbody>
+<tr><td><strong>Growth mindset</strong></td><td>"Value learning over knowing everything"</td><td>You entered discomfort and grew; you don't posture expertise</td><td>Named a gap (a tool or stack you hadn't used), learned it deliberately, and showed how you close gaps</td></tr>
+<tr><td><strong>Customer focus</strong></td><td>Start from the customer's problem</td><td>You measured customer pain, not just tech elegance</td><td>A latency/delivery win framed by the customer-visible number it moved, not internal vanity metrics</td></tr>
+<tr><td><strong>Collaboration</strong></td><td>Work across silos, no politics</td><td>You made OTHER teams successful; shared credit</td><td>Inherited ownership across teams; ran a cross-team RCA; unblocked peers rather than hoarding</td></tr>
+<tr><td><strong>Diversity &amp; inclusion</strong></td><td>Diverse perspectives, everyone contributes</td><td>You amplified quieter voices; you listen</td><td>Built psychological safety in blameless postmortems; mentored engineers into ownership</td></tr>
+</tbody>
+</table>
+
+<div class="note"><div class="notel">NOTE</div><p>These loops are often <strong>less rigid than a strict STAR rubric</strong> — you don't need surgical STAR. Keep it conversational: 1 line of situation, then mostly action + result + reflection. But keep the <em>result quantified</em>, and always close with "what I learned / would do differently" — that IS the growth mindset signal.</p></div>
+
+<h3 class="sub">Prepared story archetypes — framed at LARGE scope</h3>
+<p>Use these as shape templates. Swap in your own systems, numbers, and outcomes.</p>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">S1</span><span class="ct">Inherited ownership (org-level) — the "bigger scope" answer</span><span class="db de">SCOPE</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+<ul class="content-list">
+<li><strong>Situation:</strong> A wave of senior engineers departed over a short window. They owned core real-time and social systems.</li>
+<li><strong>Action:</strong> Don't just cover tickets — inherit the systems whole: reverse-engineer undocumented services, rebuild the fragile parts (e.g. the pub/sub routing, the follow-system fan-out), and become the cross-team owner others route questions to.</li>
+<li><strong>Result:</strong> Platform stayed stable through the attrition; the rebuilt systems ended up more reliable than what was inherited (e.g. higher delivery success, infra removed, fan-out latency cut).</li>
+<li><strong>Reflection:</strong> Scope isn't headcount — it's how much breaks when you're gone. This is the move from "owns a feature" to "the platform depends on me."</li>
+</ul>
+<div class="iq">"When several senior engineers left in a short span, I didn't just backfill their tickets — I took over their systems end to end, across team boundaries, and rebuilt the fragile parts. That's when my scope stopped being a feature and became the platform."</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">S2</span><span class="ct">Pub/Sub re-architecture — collaboration + reliability</span><span class="db de">COLLAB</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+<ul class="content-list">
+<li><strong>Situation:</strong> Real-time fan-out ran on self-managed inter-pod routing inside Kubernetes — brittle, opaque, hard for other teams to reason about.</li>
+<li><strong>Action:</strong> Re-architect onto a proper pub/sub model, remove redundant infra, add per-stage observability so any team can see where a message is.</li>
+<li><strong>Result:</strong> Higher delivery reliability, less infra to run, and other teams can self-diagnose instead of paging you — that's the collaboration angle.</li>
+<li><strong>Reflection:</strong> The observability wasn't for you; it was so you could hand the system to others. Reliability + shareability together.</li>
+</ul>
+<div class="iq">"I replaced a self-managed routing layer with pub/sub and, just as importantly, added per-stage observability — so the win wasn't only reliability, it was that other teams could operate it without me."</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">S3</span><span class="ct">Throughput win + database cascading-failure RCA — customer impact</span><span class="db de">CUST</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+<ul class="content-list">
+<li><strong>Throughput:</strong> Split sync/async paths to multiply an API's QPS several-fold — directly customer-facing latency and capacity.</li>
+<li><strong>RCA:</strong> Trace a cascading database failure to a missing index that quietly exhausted a burstable resource (e.g. cloud storage burst credits); fixing it lifts availability by several nines-worth. (Cousin story: a slow analytics query cut from ~10s to ~1.5s by fixing data skew.)</li>
+<li><strong>Method:</strong> A disciplined production RCA — build a code-verified model, prove it with logs, localize the broken stage, write a runbook so it never recurs.</li>
+<li><strong>Reflection:</strong> Availability numbers are customer numbers. Moving from "sometimes broken" to "trustworthy" is the whole point.</li>
+</ul>
+<div class="iq">"A missing index was silently draining a burstable storage credit and cascading into outages. I proved it with logs, fixed the index, and availability jumped — then I wrote the runbook so the next person catches it in minutes."</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">S4</span><span class="ct">Leading teams then returning to IC — people scope + growth</span><span class="db de">LEAD</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+<ul class="content-list">
+<li><strong>Scope:</strong> Years of engineering-management experience — owning team direction, hiring, blameless postmortems, and mentoring engineers into ownership.</li>
+<li><strong>Why return to IC:</strong> a deliberate choice to stay close to distributed-systems depth. Frame as growth, not demotion: "I chose to sharpen the craft again."</li>
+<li><strong>Inclusion angle:</strong> Run retros where the quietest engineer speaks first; separate the problem from the person so people surface failures early.</li>
+</ul>
+<div class="iq">"I led teams for several years, then deliberately chose an IC role to go deep on distributed systems again — I'd rather keep learning the craft than protect a title. That's the growth mindset these loops talk about."</div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">S5</span><span class="ct">Learning AI-assisted dev + closing gaps — growth mindset</span><span class="db de">GROW</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+<ul class="content-list">
+<li><strong>Honest gap:</strong> A tool or stack you hadn't used (e.g. an AI coding assistant, or a frontend framework outside your core).</li>
+<li><strong>Action:</strong> Don't hide it — pick it up on purpose, and learn to <em>review</em> AI-generated code critically (spot flaws, trade-offs) rather than trust it blindly.</li>
+<li><strong>Bridge:</strong> Your strength is judgment — reviewing many diffs and running RCAs transfers directly to reviewing AI output.</li>
+<li><strong>Reflection:</strong> A growth mindset means being comfortable saying 'I don't know that yet' and then closing the gap fast.</li>
+</ul>
+<div class="iq">"I hadn't used this tool before — so I learned it deliberately, and I focused on the skill that actually matters: reviewing what the AI produces with the same rigor I bring to any code review. I'd rather learn it than pretend I already know it."</div>
+</div></div>
+
+<h3 class="sub">Scope-escalation ladder — climb a rung when they say "bigger"</h3>
+<div class="decision-grid">
+<div class="decision-item"><div class="di-t">1. Task</div><p>Fixed the missing index; bounded a worker pool to stop OOM.</p><div class="di-key">Key: solved the immediate thing correctly.</div></div>
+<div class="decision-item"><div class="di-t">2. Feature</div><p>Shipped a sync/async split for a large throughput gain; auto-sharded a hot subsystem.</p><div class="di-key">Key: owned a customer-facing capability end to end.</div></div>
+<div class="decision-item"><div class="di-t">3. System</div><p>Re-architected pub/sub, removed redundant infra, added per-stage observability.</p><div class="di-key">Key: own a subsystem others depend on.</div></div>
+<div class="decision-item"><div class="di-t">4. Org / cross-team</div><p>Inherited departed seniors' systems; became the cross-team owner; led teams.</p><div class="di-key">Key: when you're gone, multiple teams feel it.</div></div>
+</div>
+
+<div class="tip"><div class="tipl">TIP</div><p>Start one rung <em>below</em> where you think they want, so you have room to climb on demand. If the first answer lands at "system," keep the "org/inherited-ownership" story ready for the inevitable "give me something bigger." Never re-tell the same story — move UP the ladder.</p></div>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Every story should end with a sentence that names a culture pillar without quoting it robotically: reliability → "so other teams could operate it" (collaboration), a fix → "I wrote the runbook" (customer trust), a gap → "I learned it on purpose" (growth mindset). The pillar is the <em>closing beat</em>, not the opening claim.</p></div>
+
+<h3 class="sub">Say-this openers</h3>
+<div class="iq">"Growth mindset — the honest one: I hadn't used this tool before. Here's how I learned it and what I'd trust it for versus not."</div>
+<div class="iq">"Customer focus — users waited ten minutes to see an update. I cared about <em>that</em> number, and drove it down."</div>
+<div class="iq">"Collaboration — my proudest reliability win wasn't the metric, it was that I could hand the system to another team and walk away."</div>
+<div class="iq">"Bigger scope? When our seniors left, I inherited their systems across team lines and rebuilt them — that's when scope became org-level, not feature-level."</div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>If you have management experience but the role is a senior IC one, don't over-lead on the EM years. Use leadership as <em>evidence of scope and collaboration</em>, then pivot back to hands-on depth (distributed systems, RCA, algorithms). Frame the IC move as a deliberate choice to sharpen craft, never as a step down.</p></div>
+</div>
+<div class="sec" id="tab-azure">
+<h2 class="stitle">Azure Maps &mdash; Product &amp; Web SDK Best Practices</h2>
+<div class="sdesc">Read this twice before the interview. It's the ammo for the AI-code-review and frontend rounds.</div>
+
+<h3 class="sub">1 &middot; Product &amp; Offerings Overview</h3>
+<p>Azure Maps is a geospatial platform: a client-side <strong>Web SDK</strong> (WebGL map control + service modules) sitting on top of a set of <strong>REST services</strong>. Know the surface area cold &mdash; in the design round you'll be expected to name the right primitive for each need instead of hand-waving "call the maps API."</p>
+
+<table class="tbl">
+<thead><tr><th>Offering</th><th>What it does</th><th>Use it for</th></tr></thead>
+<tbody>
+<tr><td><strong>Web SDK</strong> (<code>atlas.Map</code>)</td><td>WebGL vector map control; DataSource, VectorTileSource, bubble/symbol/line/polygon/heat layers, HTML markers, popups, camera, events</td><td>Interactive browser map, custom rendering, real-time overlays</td></tr>
+<tr><td><strong>Render / Tile</strong></td><td>Raster + vector base-map tiles (z/x/y), static map images</td><td>Base map, thumbnails, server-rendered images</td></tr>
+<tr><td><strong>Search / Geocoding</strong></td><td>Forward/reverse geocode, POI &amp; fuzzy search, autocomplete</td><td>Address &rarr; coordinate, "find restaurants near me"</td></tr>
+<tr><td><strong>Route</strong></td><td>Directions, matrix, isochrone/reachable range, truck/EV constraints</td><td>Turn-by-turn, ETA, delivery routing</td></tr>
+<tr><td><strong>Traffic</strong></td><td>Flow + incident tiles/data</td><td>Live congestion overlay, ETA adjustment</td></tr>
+<tr><td><strong>Weather</strong></td><td>Current, forecast, severe alerts, radar tiles</td><td>Weather-aware routing/ops</td></tr>
+<tr><td><strong>Creator</strong></td><td>Indoor maps &mdash; upload facility drawings, serve custom indoor tilesets</td><td>Campus/venue/warehouse indoor nav</td></tr>
+</tbody>
+</table>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Mental split: <strong>Web SDK = the client rendering engine</strong>; <strong>REST services = the data plane</strong> behind it. In system design, put Search/Route/Weather behind your own backend (caching + auth + rate-limit), and let the browser talk to the SDK + your token proxy &mdash; not directly to keyed endpoints.</p></div>
+
+<h4 class="sub2">Authentication options</h4>
+<ul class="content-list">
+<li><strong>Subscription key:</strong> simplest, but a shared secret &mdash; fine for server-to-server, <em>never</em> shipped to a browser.</li>
+<li><strong>Azure AD (Entra ID):</strong> role-based (RBAC), token issued per user/app; the recommended production path.</li>
+<li><strong>Managed Identity:</strong> your backend/VM/App Service gets an identity with no secret to store &mdash; best for server-side calls.</li>
+<li><strong>SAS token:</strong> short-lived, scoped, rate-limited token minted server-side and handed to the client.</li>
+</ul>
+
+<h3 class="sub">2 &middot; Data Sources &mdash; GeoJSON DataSource vs VectorTileSource</h3>
+<p>The single highest-leverage decision. Choosing <code>DataSource</code> for a massive dataset is the classic perf bug &mdash; the whole set is held in memory and pushed to the WebGL context.</p>
+
+<table class="tbl">
+<thead><tr><th></th><th>GeoJSON <code>DataSource</code></th><th><code>VectorTileSource</code></th></tr></thead>
+<tbody>
+<tr><td>Scale</td><td>Small&ndash;medium (up to ~100Ks features)</td><td>Large&ndash;massive (millions+)</td></tr>
+<tr><td>How data loads</td><td>Entire set managed locally in a web worker</td><td>Only in-view tiles, clipped + generalized per zoom (z/x/y pyramid)</td></tr>
+<tr><td>Source of data</td><td>Inline GeoJSON, object, or URL</td><td>Vector tile endpoint (your service / Azure Maps)</td></tr>
+<tr><td>Mutable at runtime?</td><td>Yes &mdash; add/remove/setShapes/cluster</td><td>No client-side edits; regenerate tiles server-side</td></tr>
+<tr><td>Best for</td><td>User-drawn shapes, a few thousand live points, ad-hoc overlays</td><td>Whole-country POIs, road networks, huge static/semi-static layers</td></tr>
+</tbody>
+</table>
+
+<div class="tip"><div class="tipl">TIP</div><p>Combine multiple datasets into a <strong>single vector tile source</strong> where possible &mdash; it roughly halves HTTP requests versus one source per dataset. Fewer sources &amp; layers is a recurring theme.</p></div>
+
+<div class="iq">"For a few thousand editable features I'd use a GeoJSON DataSource in the web worker. Once we're talking millions of points across the country, that has to be a VectorTileSource so only the in-view, zoom-generalized tiles ever hit the client &mdash; otherwise we're shipping the entire planet into WebGL memory."</div>
+
+<h3 class="sub">3 &middot; Rendering Performance</h3>
+
+<table class="tbl">
+<thead><tr><th>Choice</th><th>Prefer</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Rendering many points</td><td><strong>Bubble layer</strong> over Symbol layer</td><td>WebGL circle is far cheaper than loading/rendering an image icon; noticeable at tens of thousands of points</td></tr>
+<tr><td>Points needing an icon/label</td><td>Symbol layer (sparingly)</td><td>Needed for imagery, but heavier &mdash; reserve for lower counts / higher zooms</td></tr>
+<tr><td>Hundreds+ interactive DOM elements</td><td><strong>Avoid HTML markers/popups</strong> &rarr; use a layer</td><td>HTML markers &amp; popups are DOM, not WebGL &mdash; perf degrades after a few hundred</td></tr>
+<tr><td>Dense point clouds</td><td><strong>Clustering</strong> (raise cluster radius)</td><td>Collapses thousands of points into aggregate bubbles; larger radius = fewer clusters = faster</td></tr>
+<tr><td>Density visualization</td><td>Weighted heat map (<code>weight = point_count</code>)</td><td>Cluster + heat gives readable density without per-point cost</td></tr>
+</tbody>
+</table>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">DOM</span><span class="ct">HTML markers &amp; popups: the DOM trap</span><span class="db de">TRAP</span><span class="chv">&#9654;</span></div><div class="cb">
+<div class="trap"><div class="trapl">TRAP</div><p>Rendering one <code>atlas.HtmlMarker</code> per feature for a large set. Each marker is a real DOM node &mdash; layout/paint cost explodes past a few hundred. Symptom: map pans/zooms smoothly until markers are added, then it stutters.</p></div>
+<ul class="content-list">
+<li><strong>Fix:</strong> use a bubble/symbol layer or clustering for the bulk set; keep HTML markers for a handful of special pins only.</li>
+<li><strong>Popups:</strong> reuse a <em>single</em> popup instance and move/re-content it, rather than creating a new popup per click.</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">Z</span><span class="ct">Zoom ranges &amp; layer/source bounds</span><span class="db dm">SKIP WORK</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>Layer <code>minZoom</code>/<code>maxZoom</code>:</strong> so labels/detail layers don't render when zoomed out.</li>
+<li><strong>Tile-layer bounds + source zoom range:</strong> the engine skips requesting/processing tiles outside the region and zoom levels you serve.</li>
+<li><strong>DataSource <code>buffer</code> &amp; <code>tolerance</code>:</strong> tolerance drives Douglas&ndash;Peucker simplification &mdash; coarser geometry at low zoom = less to draw.</li>
+</ul>
+<div class="note"><div class="notel">NOTE</div><p>Also set <code>maxZoom</code>/<code>minZoom</code> on the source itself &mdash; this is what lets the engine avoid over-generating tiles no one views.</p></div>
+</div></div>
+
+<h4 class="sub2">Payload hygiene</h4>
+<ul class="content-list">
+<li><strong>Coordinate precision:</strong> trim to 6 decimals (~0.1 m) &mdash; more is wasted bytes.</li>
+<li><strong>Strip unused features/properties</strong> and minimize GeoJSON before it ships.</li>
+<li><strong>Access raw GeoJSON via URL</strong> so the SDK reads it directly instead of keeping a duplicate in-memory copy.</li>
+</ul>
+
+<h3 class="sub">4 &middot; Data-Update Performance</h3>
+<p>Every mutation can trigger a canvas refresh. The goal: <strong>one refresh, not N</strong>.</p>
+
+<table class="tbl">
+<thead><tr><th>Anti-pattern</th><th>Do instead</th></tr></thead>
+<tbody>
+<tr><td>Loop calling <code>add(feature)</code> per item</td><td>Batch: <code>add([...])</code> / add a <code>FeatureCollection</code> once</td></tr>
+<tr><td>Repeated <code>clear</code> then re-add</td><td><code>setShapes([...])</code> &mdash; replaces all in a single refresh</td></tr>
+<tr><td>One DataSource for static + live data</td><td>Separate rapidly-changing data into its own DataSource</td></tr>
+</tbody>
+</table>
+
+<div class="tip"><div class="tipl">TIP</div><p>Isolate live/animated features in a dedicated DataSource so the static base features aren't re-rendered on every tick. For live vector/tile data, honor the <code>expires</code> header so the client refreshes tiles at the right cadence.</p></div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Also reuse objects: <strong>create layers and sources once</strong> and update their data/style options &mdash; recreating <code>Map</code> layers on every state change is a common React pitfall (see the code-review round).</p></div>
+
+<h3 class="sub">5 &middot; Expression Optimization</h3>
+<p>Data-driven style expressions run per-feature per-frame &mdash; sloppy ones are a silent perf and correctness cost.</p>
+<ul class="content-list">
+<li><strong>Simplify:</strong> a boolean <code>['get','isRestaurant']</code> beats a <code>['match', ...]</code> when the property is already a boolean.</li>
+<li><strong>Order boolean tests most &rarr; least specific</strong> so common/cheap cases short-circuit first.</li>
+<li><strong>Guard against missing properties:</strong> wrap with <code>['has', ...]</code> before <code>['get', ...]</code>, and use <code>['to-color', value, fallback]</code> so a missing/invalid color property doesn't throw.</li>
+</ul>
+<div class="trap"><div class="trapl">TRAP</div><p>An expression that does <code>['get','color']</code> with no <code>has</code>/fallback guard: one feature missing that property errors the layer and can blank the whole render. Always provide a fallback.</p></div>
+
+<h3 class="sub">6 &middot; Initial-Load Optimization</h3>
+<ul class="content-list">
+<li><strong>Watch <code>'ready'</code>, not <code>'load'</code>:</strong> <code>ready</code> fires roughly 2&times; sooner &mdash; use it to start adding sources/layers.</li>
+<li><strong>Set initial camera &amp; style in the <code>Map</code> constructor options</strong>, not after init &mdash; setting them afterward causes an extra reflow/re-fetch.</li>
+<li><strong>Lazy-load the SDK</strong> (load the atlas script only when the map is actually needed) and show a placeholder <code>div</code> so layout doesn't shift.</li>
+</ul>
+<div class="iq">"I'd hook <code>ready</code> instead of <code>load</code>, pass center/zoom/style into the constructor, and lazy-load the atlas bundle behind a placeholder &mdash; that alone roughly halves time-to-interactive on the map."</div>
+
+<h3 class="sub">7 &middot; Security</h3>
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Subscription key embedded in client JS.</strong> Anyone can view-source it, rack up your bill, and exfiltrate data. This is the first thing to flag in the code-review round if you see a literal key in a React component.</p></div>
+<ul class="content-list">
+<li><strong>Use Azure AD / Entra ID or Managed Identity</strong> for authenticated calls.</li>
+<li><strong>Mint short-lived SAS tokens server-side</strong>, or front the map with a <strong>token proxy</strong> that holds the secret and issues scoped tokens to the browser.</li>
+<li><strong>Track SDK security fixes</strong> — use a caret range (<code>^</code>) in <code>package.json</code> so patch/minor fixes are picked up on install, and keep the lockfile refreshed; a CDN <code>&lt;script&gt;</code> SDK must bump the versioned URL instead (package.json semver has no effect there).</li>
+</ul>
+<div class="iq">"The subscription key can never reach the browser. I'd stand up a token endpoint using the app's Managed Identity that returns a short-lived SAS token scoped to the Maps account, and the client authenticates the SDK with that."</div>
+
+<h3 class="sub">8 &middot; Common Bugs (fast to spot, high signal)</h3>
+<table class="tbl">
+<thead><tr><th>Bug</th><th>Symptom</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td><strong>Coordinate order</strong></td><td>Data lands on the opposite side of the globe / in the ocean</td><td>Azure Maps GeoJSON is <code>[longitude, latitude]</code> &mdash; not <code>[lat, lng]</code></td></tr>
+<tr><td>Marker anchor / <code>pixelOffset</code></td><td>Pin tip points to the wrong spot</td><td>Set correct anchor (e.g. <code>'bottom'</code>) and offset for the icon</td></tr>
+<tr><td>Missing auth</td><td>Blank map + <strong>401</strong> in network tab</td><td>Auth options not set / expired token &mdash; wire up AAD/SAS</td></tr>
+<tr><td>Layer/source recreated each render</td><td>Flicker, memory growth, listener leaks</td><td>Create once; update data/options (see &sect;4)</td></tr>
+</tbody>
+</table>
+<div class="warn"><div class="warnl">WATCH</div><p>The <code>[lng, lat]</code> reversal is the single most common Azure Maps mistake &mdash; if a demo shows points off the coast of Africa (0,0-ish) or on the wrong continent, check order first.</p></div>
+
+<div class="skill-box"><h4>30-second recall for the design round</h4>
+<ul>
+<li>Big data &rarr; VectorTileSource; small/editable &rarr; GeoJSON DataSource.</li>
+<li>Many points &rarr; bubble layer + clustering; avoid HTML markers past a few hundred.</li>
+<li>Updates &rarr; batch <code>add</code> / <code>setShapes</code>, separate live source, reuse layers.</li>
+<li>Load &rarr; <code>ready</code> event, init camera/style in constructor, lazy-load SDK.</li>
+<li>Security &rarr; no client keys; Managed Identity / SAS / token proxy; latest SDK.</li>
+<li>Bug radar &rarr; <code>[lng, lat]</code> order, 401 = auth, recreated layers.</li>
+</ul>
+</div>
+
+</div>
+<div class="sec" id="tab-geo-ref"><h2 class="stitle">Geospatial Indexing &amp; Map Tiling — Reference</h2><div class="sdesc">Tile pyramids, geohash, quadtree, S2, H3 — the vocabulary that wins bonus points.</div>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Tiling is THE scaling primitive for maps. The instant you say "the map is a pre-computed pyramid of 256px tiles addressed by <code>z/x/y</code>, so any viewport is a bounded set of cacheable, CDN-frontable keys" you have reframed an unbounded "render the whole planet" problem into a bounded, cacheable, shardable one — that reframing is what earns the bonus points in the Azure Maps system-design round.</p></div>
+
+<h3 class="sub">1) Map Tile Pyramid (z/x/y &amp; quadkey)</h3>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">z/x/y</span><span class="ct">The slippy-map tile pyramid</span><span class="db de">CORE</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>What it is:</strong> The world (Web Mercator, EPSG:3857) is cut into a pyramid of square tiles. At zoom <code>z</code> there are <code>2^z &times; 2^z</code> tiles; each addressed by integer column <code>x</code> and row <code>y</code>. Standard tile is <strong>256&times;256px</strong> (raster) or a vector tile (MVT/protobuf) covering the same extent. z0 = 1 tile for the whole planet; z1 = 4; z2 = 16 … each zoom quadruples tile count and doubles linear resolution.</li>
+<li><strong>Quadkey (Bing/Azure Maps heritage):</strong> Interleave the bits of <code>x</code> and <code>y</code> at a given zoom into a single base-4 string, one digit per zoom level. A quadkey is a <em>prefix code</em> — <code>"021"</code> is a child of <code>"02"</code>. This makes the pyramid a linear key space: parent/child is string prefix, spatial locality is preserved, and it is trivially shardable and rangeable in a KV store.</li>
+<li><strong>Why 256px &amp; the pyramid:</strong> a viewport at any zoom touches only <code>~ceil(width/256)&times;ceil(height/256)</code> tiles (typically 4–20). Rendering the planet becomes "fetch this bounded set of immutable keys," and immutable keys are perfect for CDN edge caching and browser cache.</li>
+<li><strong>Azure mapping:</strong> Azure Maps Web SDK renders via a <code>TileLayer</code> (raster XYZ template <code>{z}/{x}/{y}</code>) or <code>VectorTileSource</code> feeding a <code>bubble</code>/<code>symbol</code>/<code>line</code> layer. Front Door / Azure CDN sits in front of the tile origin; tiles are immutable so cache-control is aggressive with versioned paths.</li>
+</ul>
+<div class="tip"><div class="tipl">TIP</div><p>Tile count at zoom z is <code>4^z</code>. z=15 ≈ 1 billion tiles for the planet — you never pre-render all of them; you pre-render popular low zooms and render high zooms on-demand, then cache at the edge. Say "cache-on-first-request with CDN" and you have covered the storage objection.</p></div>
+<div class="iq">"I'd model the base map as a z/x/y tile pyramid served as vector tiles through Front Door. Viewport rendering becomes a bounded fetch of immutable tile keys, which caches cleanly at the edge and lets the frontend and backend scale independently — the frontend just requests tile coordinates."</div>
+</div></div>
+
+<h3 class="sub">2) Geohash</h3>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">base32</span><span class="ct">Geohash — prefix-encoded lat/lng</span><span class="db dm">INDEX</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>What it is:</strong> Interleave bits of latitude and longitude, then base32-encode into a short string. Each added character refines the cell ~32&times;. Key property: <strong>shared prefix ⇒ spatial proximity</strong>, so it turns 2D proximity into 1D <em>prefix-range scans</em> on any lexicographically-sortable store.</li>
+<li><strong>When to use:</strong> you need a cheap spatial index on a KV/document/columnar store that has no native spatial type — a string prefix index in Cosmos DB, Redis (sorted set / prefix keys), or a partition-key strategy. Great for "bucket nearby things together."</li>
+</ul>
+<table class="tbl"><thead><tr><th>Geohash len</th><th>Cell width × height (approx, at equator)</th><th>Typical use</th></tr></thead><tbody>
+<tr><td>4</td><td>~39 km × 20 km</td><td>city / region bucket</td></tr>
+<tr><td>5</td><td>~4.9 km × 4.9 km</td><td>neighborhood</td></tr>
+<tr><td>6</td><td>~1.2 km × 0.6 km</td><td>district / radius search</td></tr>
+<tr><td>7</td><td>~153 m × 153 m</td><td>street block</td></tr>
+<tr><td>8</td><td>~38 m × 19 m</td><td>building</td></tr>
+<tr><td>9</td><td>~4.8 m × 4.8 m</td><td>door / precise pin</td></tr>
+</tbody></table>
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Edge/boundary problem:</strong> two points can be meters apart but sit in adjacent cells with totally different prefixes (worst case: near the equator/prime-meridian seams). Always query the <strong>center cell + its 8 neighbors (the 3×3 "9-tile" set)</strong> to avoid missing near matches straddling a border.</p></div>
+<div class="iq">"For a proximity lookup I'd geohash each point to precision 6 and query the 9-tile neighbor set as prefix-range scans — that gives me candidate points from one cheap index without a spatial database, then I refine with an exact haversine distance filter."</div>
+</div></div>
+
+<h3 class="sub">3) Quadtree</h3>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">tree</span><span class="ct">Quadtree — adaptive recursive subdivision</span><span class="db dm">STRUCTURE</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>What it is:</strong> A tree where each node is a square region that splits into 4 children only when it exceeds a capacity threshold (e.g., &gt;N points). Dense areas subdivide deep; empty ocean stays a single shallow node. The tile pyramid is essentially a <em>complete, uniform</em> quadtree; a "quadtree index" is the <em>adaptive</em> version.</li>
+<li><strong>When to use:</strong> <strong>non-uniform density</strong> — millions of pins in Manhattan, near-zero in the Pacific. A fixed grid wastes cells on empty space and overloads hot cells; the quadtree adapts depth to data. Ideal for point-clustering, viewport de-cluttering ("supercluster"), and dynamic marker aggregation on the frontend.</li>
+</ul>
+<div class="note"><div class="notel">NOTE</div><p>Trade-off: adaptive depth means the structure mutates on insert/delete and is harder to shard/cache than a fixed geohash/tile key space. Use it in-memory for clustering; use fixed grids (geohash/S2/H3) for the distributed, cacheable index.</p></div>
+<div class="iq">"When density is wildly uneven I reach for a quadtree so subdivision follows the data — dense cities get deep cells, empty regions stay coarse. It's what powers marker clustering as you zoom, versus a uniform grid that would either over-cluster downtown or waste cells over the ocean."</div>
+</div></div>
+
+<h3 class="sub">4) S2 (Google)</h3>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">S2</span><span class="ct">S2 — Hilbert-curve cells on a sphere</span><span class="db dm">INDEX</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>What it is:</strong> Projects the sphere onto the 6 faces of a cube, recursively subdivides each face into 4 (30 levels), and orders all cells along a <strong>Hilbert space-filling curve</strong> into a single 64-bit <code>CellId</code>. Because the Hilbert curve preserves locality, nearby cells have nearby IDs ⇒ a 2D region = a small set of 1D <strong>integer ranges</strong>.</li>
+<li><strong>Why Google/Uber-era systems use it:</strong> spherical (no Mercator distortion at poles), truly hierarchical (parent = shift the ID), and region coverage compiles to a handful of int64 ranges — perfect for range scans in Bigtable/Spanner-style stores. Cells are quadrilaterals with modest area variance.</li>
+<li><strong>When to use:</strong> planet-scale point/region indexing where you want compact integer keys, exact hierarchical roll-ups, and efficient region-cover queries.</li>
+</ul>
+<div class="iq">"S2 gives me a 64-bit cell id off a Hilbert curve, so a geographic region collapses into a few integer ranges — that's why it slots so well into range-scan datastores and why it became the go-to choice for sphere-correct global indexing."</div>
+</div></div>
+
+<h3 class="sub">5) H3 (Uber)</h3>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">H3</span><span class="ct">H3 — hexagonal hierarchical grid</span><span class="db dm">INDEX</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>What it is:</strong> A global grid that is <strong>almost entirely hexagons</strong> (16 resolutions), each a 64-bit <code>H3Index</code>, plus exactly <strong>12 pentagon cells per resolution</strong> at the icosahedron vertices. Hexagons tile with the key property that their 6 neighbors are <strong>approximately equidistant and share an edge</strong> (squares have 4 edge-neighbors + 4 diagonal-neighbors at a different distance).</li>
+<li><strong>Why hex beats square for radius/movement:</strong> uniform neighbor distance means <code>kRing(cell, k)</code> gives a near-circular disk of cells — ideal for "everything within radius R," flow/movement modeling, and smooth heatmaps. Square grids distort distance diagonally and produce blocky radius approximations.</li>
+<li><strong>When to use:</strong> ride-share supply/demand, surge zones, radius search, spatial aggregation/analytics, uniform binning for ML features. Uber built it exactly for marketplace balancing.</li>
+</ul>
+<div class="warn"><div class="warnl">WATCH</div><p>Hexagons can't perfectly, exactly nest (a parent hex isn't cleanly 7 child hexes), so H3 hierarchy is <em>approximate</em> containment — great for aggregation buckets, but if you need exact parent/child roll-up prefer S2 or a quadtree/tile pyramid.</p></div>
+<div class="iq">"For radius and 'nearby supply' queries I'd use H3 — hexagons give equidistant neighbors, so a k-ring is a clean circular disk of cells. That's why Uber uses it for surge zones; a square grid would make diagonal neighbors lie about distance."</div>
+</div></div>
+
+<h3 class="sub">6) Comparison — pick the right index</h3>
+
+<table class="tbl"><thead><tr><th>Scheme</th><th>Cell shape</th><th>Key type</th><th>Hierarchy</th><th>Neighbor quality</th><th>Best for</th></tr></thead><tbody>
+<tr><td><strong>Geohash</strong></td><td>Rectangle (varies by lat)</td><td>base32 string (prefix)</td><td>Yes, exact (prefix)</td><td>Poor — boundary/seam gaps, need 9-tile</td><td>Cheap prefix index on any KV/doc store; no spatial type needed</td></tr>
+<tr><td><strong>Quadtree</strong></td><td>Square, adaptive size</td><td>tree pointers / path</td><td>Yes, exact</td><td>Good, but variable-depth</td><td>Non-uniform density; clustering / viewport de-clutter</td></tr>
+<tr><td><strong>S2</strong></td><td>Quad (spherical, low distortion)</td><td>int64 (Hilbert order)</td><td>Yes, exact (bit-shift)</td><td>Good; region = few int ranges</td><td>Planet-scale integer keys + range-scan stores; sphere-correct</td></tr>
+<tr><td><strong>H3</strong></td><td>Hexagon (near-uniform area)</td><td>int64</td><td>Approximate containment</td><td>Best — 6 equidistant neighbors</td><td>Radius / k-ring queries, movement, analytics binning, surge zones</td></tr>
+<tr><td><strong>PostGIS (R-tree / GiST)</strong></td><td>Arbitrary geometry bboxes</td><td>DB index on <code>geometry</code></td><td>N/A (bounding-box tree)</td><td>Exact via <code>ST_DWithin</code>/<code>&amp;&amp;</code></td><td>Rich geometry: polygons, joins, exact distance, ad-hoc GIS queries</td></tr>
+<tr><td><strong>Tile pyramid (z/x/y)</strong></td><td>Square (uniform, Mercator)</td><td>z/x/y or quadkey</td><td>Yes, exact (prefix)</td><td>Uniform</td><td>Rendering &amp; edge-cached delivery of the visible map itself</td></tr>
+</tbody></table>
+
+<div class="decision-grid">
+<div class="decision-item"><div class="di-t">Rendering the map</div><p>Serve the visible world as cacheable images/vectors.</p><div class="di-key">Key: z/x/y tile pyramid + Front Door/CDN</div></div>
+<div class="decision-item"><div class="di-t">"Points near me"</div><p>Fast candidate bucket without a spatial DB.</p><div class="di-key">Key: Geohash 9-tile + haversine refine, or H3 k-ring</div></div>
+<div class="decision-item"><div class="di-t">Uneven density / clustering</div><p>Marker aggregation that adapts to zoom.</p><div class="di-key">Key: Quadtree (in-memory supercluster)</div></div>
+<div class="decision-item"><div class="di-t">Polygons, joins, exact geometry</div><p>Contains / intersects / distance on real shapes.</p><div class="di-key">Key: PostGIS GiST/R-tree</div></div>
+</div>
+
+<h3 class="sub">7) Proximity / radius queries &amp; real-time fan-out by tile</h3>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">query</span><span class="ct">Radius search pattern (the two-phase filter)</span><span class="db de">PATTERN</span><span class="chv">&#9654;</span></div><div class="cb">
+<ol class="content-list">
+<li><strong>Broad phase (index):</strong> map the query center to a cell (geohash/S2/H3), gather the covering set — geohash 9-tile, S2 region-cover ranges, or <code>H3 kRing</code> big enough to enclose radius R. This is a cheap key/range lookup that returns candidates.</li>
+<li><strong>Narrow phase (exact):</strong> for each candidate compute true great-circle (haversine) distance and drop anything &gt; R. Cell size ≈ R keeps candidate count small; tune precision so cell ≳ radius.</li>
+</ol>
+<div class="tip"><div class="tipl">TIP</div><p>Choose precision so the cell size is close to (slightly larger than) the search radius: too coarse ⇒ huge candidate set; too fine ⇒ many neighbor cells to scan. Rule of thumb: pick the level whose cell edge ≈ R.</p></div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">fanout</span><span class="ct">Real-time fan-out by tile/cell (live locations)</span><span class="db de">PATTERN</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>Cell = channel:</strong> treat each grid cell (geohash / H3 / tile) as a pub/sub topic. Moving entities publish "I'm in cell C"; viewers subscribe to the cells covering their viewport (the 9-tile / k-ring set). This scopes fan-out to a bounded, geographic slice instead of broadcasting globally.</li>
+<li><strong>Azure wiring:</strong> position updates ingest via <strong>Event Hubs</strong>; a stream processor writes current position to <strong>Azure Cache for Redis</strong> (per-cell sorted set / geo commands) as hot state and durable snapshots to <strong>Cosmos DB</strong>. Push to clients over <strong>Azure Web PubSub / SignalR</strong> with one group per cell; <strong>Event Grid</strong> routes coarse geofence-enter/exit events to downstream subscribers.</li>
+<li><strong>Viewport-scoped subscriptions:</strong> as the user pans/zooms, the frontend recomputes its visible tile/cell set and re-subscribes only to entered cells and unsubscribes exited ones — the same bounded-set trick that makes tiles cacheable makes live updates scalable.</li>
+<li><strong>Hot-cell mitigation:</strong> a downtown cell can dominate. Split hot cells to a finer level (more, smaller channels), or aggregate server-side (send cluster counts, not every pin) — this is where the quadtree/adaptive idea re-enters at the delivery layer.</li>
+<li><strong>Security:</strong> tiles/updates behind Azure AD + Managed Identity to origin; short-lived SAS tokens for direct blob/tile access; never expose raw storage keys to the browser.</li>
+</ul>
+<div class="ins"><div class="insl">INSIGHT</div><p>Notice the through-line: <em>tiling/celling turns every hard map problem — rendering, storage, proximity search, and real-time fan-out — into "operate on the bounded set of cells covering the viewport."</em> Lead with that unifying idea and the rest of the design falls out naturally.</p></div>
+<div class="iq">"For live tracking I make each H3 cell a pub/sub channel — publishers post their cell, viewers subscribe to the k-ring covering their viewport via Web PubSub, with Redis holding hot per-cell state. Fan-out stays bounded to what's on screen, and I split hot downtown cells to finer resolution to spread load."</div>
+</div></div>
+
+</div>
+
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Bubble layer</strong></td><td>Azure Maps WebGL circle layer; renders tens of thousands of points far cheaper than HTML markers or symbols.</td></tr>
+<tr><td><strong>Clustering</strong></td><td>Aggregating nearby points into a single weighted bubble to keep dense views fast and readable.</td></tr>
+<tr><td><strong>CRDT</strong></td><td>Conflict-free Replicated Data Type — data that merges convergently across regions with no global lock.</td></tr>
+<tr><td><strong>Event Hubs</strong></td><td>Azure's partitioned, durable, replayable event log (Kafka-equivalent) used for the write-accept path.</td></tr>
+<tr><td><strong>Geohash</strong></td><td>Base-32 string encoding lat/lng so a shared prefix implies proximity, enabling cheap prefix-range scans.</td></tr>
+<tr><td><strong>GeoJSON DataSource</strong></td><td>Azure Maps in-memory source holding editable features client-side; suited to small&ndash;medium sets.</td></tr>
+<tr><td><strong>H3</strong></td><td>Uber's hexagonal hierarchical global grid; equidistant neighbors make radius and k-ring queries clean.</td></tr>
+<tr><td><strong>Haversine</strong></td><td>Great-circle distance formula used to exactly refine candidates after a coarse cell lookup.</td></tr>
+<tr><td><strong>Hilbert curve</strong></td><td>Locality-preserving space-filling curve; S2 orders cells along it so a region maps to a few integer ranges.</td></tr>
+<tr><td><strong>k-anonymity</strong></td><td>Privacy floor that withholds data until at least k independent reporters exist, preventing re-identification.</td></tr>
+<tr><td><strong>k-ring</strong></td><td>H3's set of cells within k steps of a center cell, approximating a circular disk.</td></tr>
+<tr><td><strong>QPS</strong></td><td>Queries per second; here ~800k cold viewport reads is the number the whole read path is designed around.</td></tr>
+<tr><td><strong>Quadkey</strong></td><td>Base-4 prefix string encoding a tile's z/x/y; a child's key extends its parent's, giving a hierarchical key space.</td></tr>
+<tr><td><strong>Quadtree</strong></td><td>Tree that recursively splits a region into four only where density is high, adapting depth to the data.</td></tr>
+<tr><td><strong>S2</strong></td><td>Google's spherical cell system using a cube projection and Hilbert-curve 64-bit CellIds.</td></tr>
+<tr><td><strong>SAS token</strong></td><td>Short-lived, scoped Shared Access Signature minted server-side and handed to the browser instead of a key.</td></tr>
+<tr><td><strong>SignalR / Web PubSub</strong></td><td>Azure real-time push services; here topics = tiles, fanning one delta to that tile's subscribers.</td></tr>
+<tr><td><strong>Tile pyramid (z/x/y)</strong></td><td>Multi-zoom set of square map tiles addressed by zoom/column/row; each zoom level quadruples the tile count.</td></tr>
+<tr><td><strong>VectorTileSource</strong></td><td>Azure Maps source that fetches only in-view vector tiles, clipped and generalized per zoom level.</td></tr>
+<tr><td><strong>Web Mercator (EPSG:3857)</strong></td><td>The cylindrical projection the slippy-map tile pyramid is cut in.</td></tr>
+</table>
+
+</div>
+
+</div>
+
+<script>
+function go(id) {
+ document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+ const target = document.getElementById('tab-' + id);
+ if (target) target.classList.add('active');
+ document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+ if (typeof event !== 'undefined' && event.currentTarget) event.currentTarget.classList.add('active');
+ window.scrollTo(0, 0);
+}
+function toggle(el) {
+ const body = el.nextElementSibling;
+ const chevron = el.querySelector('.chv');
+ body.classList.toggle('open');
+ if (chevron) chevron.classList.toggle('open');
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="operational_excellence.html">‹ Operational Excellence &amp; SRE</a><a class="bkc" href="index.html">📖 Contents</a><a href="engprod_system_design.html">Engineering Productivity Systems ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Java Refresher — The JVM, the Language, and Modern Java</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1050px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.nav { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin: 18px 0 32px; position: sticky; top: 0; background: var(--bg); padding: 14px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 23px; font-weight: 700; margin: 28px 0 14px; color: var(--blue); }
+h3 { font-size: 17px; font-weight: 600; margin: 22px 0 10px; }
+h4, .eyebrow { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 14px 18px; overflow-x: auto; margin: 10px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #cdd6f4; white-space: pre; }
+pre .kw { color: #cba6f7; }
+pre .str { color: #a6e3a1; }
+pre .cm { color: #6c7086; }
+pre .num { color: #fab387; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.warn p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.old { background: var(--red-l); border-left: 3px solid var(--red); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.old p { color: #8a1c1c; margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 18px; padding: 22px 26px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th, td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 16px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--purple-l); color:var(--purple); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VIII · Chapter 5 — <b>Java Refresher</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Java Refresher</h1>
+  <div class="sub">The JVM, the language, and modern Java (8 → 21) — from bytecode and GC to generics, collections, concurrency, streams, and records</div>
+</header>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'jvm')">JVM &amp; bytecode</button>
+  <button class="nav-btn" onclick="showSection(event,'oop')">OOP</button>
+  <button class="nav-btn" onclick="showSection(event,'generics')">Generics</button>
+  <button class="nav-btn" onclick="showSection(event,'collections')">Collections</button>
+  <button class="nav-btn" onclick="showSection(event,'exceptions')">Exceptions</button>
+  <button class="nav-btn" onclick="showSection(event,'gc')">Memory &amp; GC</button>
+  <button class="nav-btn" onclick="showSection(event,'concurrency')">Concurrency</button>
+  <button class="nav-btn" onclick="showSection(event,'modern')">Modern Java</button>
+  <button class="nav-btn" onclick="showSection(event,'interview')">Interview Q&amp;A</button>
+</div>
+
+<!-- JVM -->
+<div class="section active" id="jvm">
+<div class="card">
+<h2>The JVM: write once, run the same everywhere</h2>
+<p>Analogy: imagine a universal <em>music player</em>. Composers don't ship sheet music tuned to one specific piano — they ship a standard file (say, a MIDI file), and every device plays it the same way. Java works like that. You write <code>.java</code> source, the compiler turns it into a portable <strong>bytecode</strong> file (<code>.class</code>), and the <strong>Java Virtual Machine (JVM)</strong> on any OS plays that bytecode. The bytecode is the MIDI file; the JVM is the player.</p>
+
+<div class="eyebrow">The tiny runnable example</div>
+<pre><span class="cm">// Hello.java</span>
+<span class="kw">public class</span> Hello {
+  <span class="kw">public static void</span> main(String[] args) {
+    System.out.println(<span class="str">"Hello, JVM!"</span>);
+  }
+}</pre>
+<pre><span class="cm"># Compile source -&gt; bytecode, then run it on the JVM</span>
+javac Hello.java     <span class="cm"># produces Hello.class (bytecode)</span>
+java Hello           <span class="cm"># JVM loads, verifies, JIT-compiles, runs</span>
+<span class="cm"># =&gt; Hello, JVM!</span></pre>
+<p>Peek at the bytecode with <code>javap -c Hello</code> and you'll see stack-machine ops like <code>getstatic</code>, <code>ldc</code>, <code>invokevirtual</code>. The JVM is a <strong>stack machine</strong>: operands are pushed/popped rather than living in named registers.</p>
+
+<h3>What actually happens when you run <code>java Hello</code></h3>
+<ol>
+  <li><strong>Class loading</strong> — the class loader finds <code>Hello.class</code>, reads the bytecode, and creates a runtime representation. Loading is <em>lazy</em>: a class is loaded the first time it's referenced.</li>
+  <li><strong>Linking</strong> — <em>verify</em> (bytecode is type-safe and can't corrupt the JVM), <em>prepare</em> (allocate static fields with defaults), <em>resolve</em> (turn symbolic references into direct ones).</li>
+  <li><strong>Initialization</strong> — run static initializers and static field assignments, exactly once, thread-safely.</li>
+  <li><strong>Execution</strong> — the interpreter starts running bytecode immediately; the JIT watches for hot code.</li>
+</ol>
+
+<h3>Class loaders and the delegation model</h3>
+<p>Class loaders form a parent chain: <strong>Bootstrap</strong> (core <code>java.*</code>) → <strong>Platform</strong> → <strong>Application/System</strong> (your classpath). Each loader <em>delegates upward first</em> — it asks its parent to load a class before trying itself. This "parent-first" rule prevents your code from shadowing core classes (you can't sneak in a fake <code>java.lang.String</code>), and it means class identity is <code>(name, defining loader)</code> — the same class name loaded by two different loaders is two <em>different</em> types at runtime (the classic <code>ClassCastException</code> in plugin/app-server land).</p>
+
+<h3>JIT: interpreter first, then compile the hot paths</h3>
+<p>The JVM starts by <strong>interpreting</strong> bytecode (fast startup). A profiler counts how often each method runs. Once a method crosses a threshold it's "hot," and the <strong>Just-In-Time compiler</strong> compiles it to native machine code. HotSpot uses <em>tiered compilation</em>: C1 (fast to compile, lightly optimized) then C2 (slow to compile, aggressively optimized) for the hottest code.</p>
+<div class="insight"><p>The JIT sees runtime behavior a static compiler never can, so it does <strong>speculative optimizations</strong>: inlining, and monomorphic call de-virtualization when a call site has only seen one concrete type. If an assumption is later violated it <em>deoptimizes</em> back to the interpreter. This is why a Java service is slow for the first few seconds (cold JIT) then speeds up — the "warm-up" you'll hear about in latency discussions.</p></div>
+
+<h3>Coming from C++ / Python</h3>
+<div class="card" style="background:var(--bg3);box-shadow:none;">
+<ul>
+  <li><strong>From C++:</strong> no separate compile-and-link-to-a-native-binary step you ship. You ship portable bytecode; the machine code is produced <em>at runtime</em> by the JIT. There's no <code>#include</code>/header/translation-unit model — the unit is the class file, resolved lazily by name.</li>
+  <li><strong>From Python:</strong> Java is statically typed and compiled ahead of time to bytecode (like <code>.pyc</code>), but then JIT-compiled to native code, so steady-state throughput is far higher than CPython. There's no GIL — real threads run in parallel (see Concurrency).</li>
+</ul>
+</div>
+
+<h3 style="margin-top:22px;">Interview angle</h3>
+<div class="tip"><p>Be able to narrate the pipeline in one breath: "<code>javac</code> emits portable bytecode; the JVM loads classes lazily through a parent-first loader chain, verifies them, interprets first for fast startup, and the JIT compiles hot methods to native code with speculative inlining and de-virtualization, deoptimizing if assumptions break." Then connect it to a real concern (cold-start latency, warm-up before load tests). That shows you understand <em>why</em>, not just <em>what</em>.</p></div>
+</div>
+</div>
+
+<!-- OOP -->
+<div class="section" id="oop">
+<div class="card">
+<h2>OOP in Java: classes, interfaces, abstraction</h2>
+<p>Analogy: an <strong>interface</strong> is a job description ("must be able to <code>start()</code> and <code>stop()</code>"); a <strong>class</strong> is a specific employee who can actually do the job. You can hire anyone who fits the description without caring who they are — that's polymorphism.</p>
+
+<div class="eyebrow">Tiny runnable example</div>
+<pre><span class="kw">interface</span> Shape { <span class="kw">double</span> area(); }          <span class="cm">// the "job description"</span>
+
+<span class="kw">record</span> Circle(<span class="kw">double</span> r) <span class="kw">implements</span> Shape {   <span class="cm">// a concrete doer</span>
+  <span class="kw">public double</span> area() { <span class="kw">return</span> Math.PI * r * r; }
+}
+<span class="kw">record</span> Square(<span class="kw">double</span> s) <span class="kw">implements</span> Shape {
+  <span class="kw">public double</span> area() { <span class="kw">return</span> s * s; }
+}
+
+Shape shape = <span class="kw">new</span> Circle(<span class="num">2</span>);
+System.out.println(shape.area());   <span class="cm">// 12.566... — dispatched at runtime</span></pre>
+<p>Every non-primitive is a reference to a heap object; every method (unless <code>static</code>, <code>private</code>, or <code>final</code>) is <strong>virtual by default</strong> — dispatched dynamically via the object's class. This is the opposite of C++, where you opt <em>in</em> to virtual.</p>
+
+<h3>class vs abstract class vs interface</h3>
+<table>
+<tr><th>Construct</th><th>State (fields)</th><th>Constructors</th><th>Method bodies</th><th>Multiple?</th><th>Use when</th></tr>
+<tr><td><code>class</code></td><td>yes</td><td>yes</td><td>yes</td><td>extends one</td><td>a concrete thing</td></tr>
+<tr><td><code>abstract class</code></td><td>yes</td><td>yes (for subclasses)</td><td>some abstract, some concrete</td><td>extends one</td><td>shared state + partial impl</td></tr>
+<tr><td><code>interface</code></td><td>constants + <code>default</code>/<code>static</code> bodies only, no instance state</td><td>no</td><td>via <code>default</code>/<code>static</code></td><td>implements many</td><td>a capability / contract</td></tr>
+</table>
+<p>Since Java 8 interfaces can carry <code>default</code> methods (a body) so APIs can evolve without breaking implementers, and <code>static</code> helpers. They still hold no instance fields — that's the line that keeps "multiple interfaces, single class inheritance" free of the C++ diamond-of-state problem.</p>
+
+<h3>Inheritance vs composition</h3>
+<p>Inheritance models <em>is-a</em>; composition models <em>has-a</em>. The industry lesson (and a common interview topic) is <strong>"prefer composition over inheritance."</strong> Deep inheritance trees are fragile: a subclass depends on its parent's internal call sequence, so a harmless parent change silently breaks children (the "fragile base class" problem).</p>
+<pre><span class="cm">// Inheritance — tight coupling, is-a</span>
+<span class="kw">class</span> Stack&lt;E&gt; <span class="kw">extends</span> ArrayList&lt;E&gt; { ... }   <span class="cm">// BAD: exposes add(index), remove...</span>
+
+<span class="cm">// Composition — delegate to a field, has-a. Expose only what you mean to.</span>
+<span class="kw">class</span> Stack&lt;E&gt; {
+  <span class="kw">private final</span> List&lt;E&gt; items = <span class="kw">new</span> ArrayList&lt;&gt;();
+  <span class="kw">public void</span> push(E e) { items.add(e); }
+  <span class="kw">public</span> E pop() { <span class="kw">return</span> items.remove(items.size() - <span class="num">1</span>); }
+}</pre>
+<div class="tip"><p>Rule of thumb: use inheritance only for a genuine, stable <em>is-a</em> where you also control the superclass (or it's designed for extension). Otherwise compose. Program to interfaces (<code>List&lt;E&gt; x = new ArrayList&lt;&gt;()</code>), not implementations.</p></div>
+
+<h3>equals / hashCode / the object contract</h3>
+<p>If you override <code>equals</code> you <em>must</em> override <code>hashCode</code> consistently, or hash-based collections break. Records generate both for you (value-based) — one more reason to reach for them.</p>
+
+<h3>Coming from C++ / Python</h3>
+<div class="card" style="background:var(--bg3);box-shadow:none;">
+<ul>
+  <li><strong>From C++:</strong> no multiple <em>class</em> inheritance and no diamond problem — you get multiple <em>interface</em> inheritance instead. Methods are virtual by default; mark <code>final</code> to lock. No destructors — cleanup is GC + <code>try-with-resources</code>, not RAII.</li>
+  <li><strong>From Python:</strong> no duck typing — a type must formally <code>implements</code>/<code>extends</code> to be substitutable. There's no multiple inheritance of state; <code>interface</code> + <code>default</code> methods is the closest analog to mixins.</li>
+</ul>
+</div>
+
+<h3 style="margin-top:22px;">Interview angle</h3>
+<div class="tip"><p>When asked "abstract class or interface?", answer by intent: <em>interface</em> for a capability many unrelated types can offer (and you may want multiple of), <em>abstract class</em> when subclasses genuinely share state and partial implementation. Then volunteer "prefer composition over inheritance" with the fragile-base-class reason — it signals you've maintained real systems, not just passed a syntax quiz.</p></div>
+</div>
+</div>
+
+<!-- GENERICS -->
+<div class="section" id="generics">
+<div class="card">
+<h2>Generics &amp; type erasure</h2>
+<p>Analogy: generics are a <em>labeled container</em>. A box marked "APPLES ONLY" lets the compiler stop you at packing time from dropping in an orange — but once it's on the truck, the label is peeled off and every box is just "a box." That peeling-off is <strong>type erasure</strong>.</p>
+
+<div class="eyebrow">Tiny runnable example</div>
+<pre>List&lt;String&gt; names = <span class="kw">new</span> ArrayList&lt;&gt;();
+names.add(<span class="str">"Ada"</span>);
+<span class="cm">// names.add(42);   // compile error — the label is checked at compile time</span>
+String first = names.get(<span class="num">0</span>);   <span class="cm">// no cast needed; compiler knows it's a String</span>
+
+<span class="kw">static</span> &lt;T&gt; T firstOf(List&lt;T&gt; xs) { <span class="kw">return</span> xs.get(<span class="num">0</span>); }  <span class="cm">// generic method</span></pre>
+
+<h3>Type erasure: what the JVM actually sees</h3>
+<p>Generics are a <strong>compile-time only</strong> feature. After type-checking, the compiler <em>erases</em> type parameters: <code>List&lt;String&gt;</code> and <code>List&lt;Integer&gt;</code> both become plain <code>List</code> at runtime, and <code>T</code> becomes its bound (<code>Object</code> if unbounded). The compiler inserts the casts for you. This kept generics backward-compatible with pre-2004 bytecode — but it has sharp edges:</p>
+<pre><span class="cm">// Both print "true" — same runtime class, the &lt;...&gt; is gone</span>
+System.out.println(<span class="kw">new</span> ArrayList&lt;String&gt;().getClass()
+    == <span class="kw">new</span> ArrayList&lt;Integer&gt;().getClass());
+
+<span class="cm">// Cannot do these because the type isn't there at runtime:</span>
+<span class="cm">// if (x instanceof List&lt;String&gt;) ...   // illegal</span>
+<span class="cm">// new T[10];                            // cannot create generic array</span>
+<span class="cm">// T.class / new T();                    // no reified type</span></pre>
+<div class="warn"><p>Because arrays are <em>reified</em> (they know their element type at runtime) but generics are erased, mixing them is unsafe — that's why <code>List&lt;String&gt;[]</code> is disallowed and you get "unchecked" warnings. Prefer <code>List&lt;List&lt;String&gt;&gt;</code> over generic arrays.</p></div>
+
+<h3>Bounded types and wildcards (PECS)</h3>
+<pre>&lt;T <span class="kw">extends</span> Comparable&lt;T&gt;&gt; T max(List&lt;T&gt; xs)   <span class="cm">// upper bound: T must be Comparable</span>
+
+<span class="cm">// PECS: Producer Extends, Consumer Super</span>
+<span class="kw">void</span> copy(List&lt;? <span class="kw">extends</span> Src&gt; from,   <span class="cm">// producer: we READ Src out of it</span>
+          List&lt;? <span class="kw">super</span>   Src&gt; to) {   <span class="cm">// consumer: we WRITE Src into it</span>
+  <span class="kw">for</span> (Src s : from) to.add(s);
+}</pre>
+<p><code>? extends T</code> is a read-only view (you can get a <code>T</code> out, but can't add — the compiler doesn't know the exact subtype). <code>? super T</code> is write-friendly (you can put a <code>T</code> in). Mnemonic: <strong>PECS — Producer Extends, Consumer Super.</strong></p>
+<div class="insight"><p>Generics are <strong>invariant</strong>: <code>List&lt;String&gt;</code> is <em>not</em> a <code>List&lt;Object&gt;</code>, even though <code>String</code> is an <code>Object</code>. Wildcards (<code>? extends</code>/<code>? super</code>) are how you regain flexible variance safely. (Arrays, by contrast, are covariant and can throw <code>ArrayStoreException</code> at runtime — a known Java flaw.)</p></div>
+
+<h3>Coming from C++ / Python</h3>
+<div class="card" style="background:var(--bg3);box-shadow:none;">
+<ul>
+  <li><strong>From C++:</strong> generics are <em>not</em> templates. No per-type code generation, no monomorphization, no template metaprogramming — one erased implementation serves all types. You can't compute on the type or specialize; the payoff is smaller code and no template-bloat, the cost is no reified <code>T</code>.</li>
+  <li><strong>From Python:</strong> think of it as type hints the compiler actually enforces — but unlike Python, they're checked at compile time and then erased at runtime, so runtime introspection of the parameter type isn't available.</li>
+</ul>
+</div>
+
+<h3 style="margin-top:22px;">Interview angle</h3>
+<div class="tip"><p>The classic question is "what is type erasure and what can't you do because of it?" Get the list right: no <code>new T[]</code>, no <code>new T()</code>, no <code>instanceof List&lt;String&gt;</code>, both parameterizations share one <code>Class</code>. Then show depth with PECS and invariance. Bonus: explain <em>why</em> — backward compatibility with legacy bytecode — which reframes it as a deliberate trade-off, not a bug.</p></div>
+</div>
+</div>
+
+<!-- COLLECTIONS -->
+<div class="section" id="collections">
+<div class="card">
+<h2>The Collections framework</h2>
+<p>Analogy: choosing a collection is like choosing storage furniture. A <strong>List</strong> is a numbered row of lockers (position matters, duplicates fine). A <strong>Set</strong> is a guest list (each name once, order maybe irrelevant). A <strong>Map</strong> is a phone book (look up a value by a unique key).</p>
+
+<div class="eyebrow">Tiny runnable example</div>
+<pre>List&lt;String&gt; list = <span class="kw">new</span> ArrayList&lt;&gt;(List.of(<span class="str">"a"</span>, <span class="str">"b"</span>, <span class="str">"a"</span>)); <span class="cm">// [a, b, a]</span>
+Set&lt;String&gt;  set  = <span class="kw">new</span> HashSet&lt;&gt;(list);                    <span class="cm">// {a, b}</span>
+Map&lt;String,Integer&gt; freq = <span class="kw">new</span> HashMap&lt;&gt;();
+<span class="kw">for</span> (String s : list) freq.merge(s, <span class="num">1</span>, Integer::sum);       <span class="cm">// {a=2, b=1}</span></pre>
+
+<h3>The three big interfaces and their implementations</h3>
+<table>
+<tr><th>Interface</th><th>Impl</th><th>Backing structure</th><th>Ordering</th><th>Key ops (avg)</th><th>Reach for it when</th></tr>
+<tr><td rowspan="2"><code>List</code></td><td><code>ArrayList</code></td><td>dynamic array</td><td>insertion</td><td>get O(1), add-end amortized O(1), insert-mid O(n)</td><td>the default list; index access, iteration</td></tr>
+<tr><td><code>LinkedList</code></td><td>doubly linked</td><td>insertion</td><td>get O(n), add-ends O(1)</td><td>a <code>Deque</code>/queue; rarely worth it as a List</td></tr>
+<tr><td rowspan="3"><code>Set</code></td><td><code>HashSet</code></td><td>hash table</td><td>none</td><td>add/contains O(1)</td><td>membership / dedup, order irrelevant</td></tr>
+<tr><td><code>LinkedHashSet</code></td><td>hash + linked list</td><td>insertion</td><td>O(1)</td><td>dedup but keep insertion order</td></tr>
+<tr><td><code>TreeSet</code></td><td>red-black tree</td><td>sorted</td><td>O(log n)</td><td>sorted iteration, range queries (<code>headSet</code>, <code>ceiling</code>)</td></tr>
+<tr><td rowspan="3"><code>Map</code></td><td><code>HashMap</code></td><td>hash table</td><td>none</td><td>get/put O(1)</td><td>the default map; general lookup</td></tr>
+<tr><td><code>LinkedHashMap</code></td><td>hash + linked list</td><td>insertion (or access)</td><td>O(1)</td><td>predictable iteration; easy LRU cache</td></tr>
+<tr><td><code>TreeMap</code></td><td>red-black tree</td><td>sorted by key</td><td>O(log n)</td><td>sorted keys, floor/ceiling/range</td></tr>
+</table>
+<p><code>ArrayDeque</code> (backed by a circular array) is the modern choice for both stacks and queues — faster than <code>LinkedList</code> and than the legacy <code>Stack</code>. For a heap, use <code>PriorityQueue</code>.</p>
+
+<div class="insight"><p><strong>How HashMap works (a common follow-up):</strong> keys are bucketed by <code>hashCode()</code> (then spread and masked to an index). Collisions chain in a bucket; since Java 8 a bucket that grows past a threshold <em>treeifies</em> into a red-black tree, so worst case is O(log n) instead of O(n). This is exactly why a broken <code>hashCode</code>/<code>equals</code> pair silently destroys performance and correctness.</p></div>
+
+<h3>Iteration and fail-fast</h3>
+<pre><span class="cm">// Structurally modifying a collection while iterating it =&gt; ConcurrentModificationException</span>
+<span class="kw">for</span> (String s : list) {
+  <span class="kw">if</span> (s.equals(<span class="str">"a"</span>)) list.remove(s);   <span class="cm">// throws!</span>
+}
+<span class="cm">// Correct: iterator.remove(), or removeIf, or collect into a new list</span>
+list.removeIf(s -&gt; s.equals(<span class="str">"a"</span>));</pre>
+
+<h3>Coming from C++ / Python</h3>
+<div class="card" style="background:var(--bg3);box-shadow:none;">
+<ul>
+  <li><strong>From C++:</strong> <code>ArrayList</code> ≈ <code>vector</code>, <code>HashMap</code> ≈ <code>unordered_map</code>, <code>TreeMap</code> ≈ <code>map</code>, <code>ArrayDeque</code> ≈ <code>deque</code>, <code>PriorityQueue</code> ≈ <code>priority_queue</code>. But Java collections hold <em>boxed</em> objects (<code>Integer</code>, not <code>int</code>) — no value semantics, everything is a reference, so watch autoboxing cost in hot loops.</li>
+  <li><strong>From Python:</strong> <code>ArrayList</code> ≈ <code>list</code>, <code>HashMap</code> ≈ <code>dict</code>, <code>HashSet</code> ≈ <code>set</code>. Java's are typed and you pick the implementation explicitly, trading Python's one-size-fits-all for control over ordering and complexity.</li>
+</ul>
+</div>
+
+<h3 style="margin-top:22px;">Interview angle</h3>
+<div class="tip"><p>A common question is "which collection and why?" Answer in terms of the operation you optimize for and the ordering you need: <code>ArrayList</code> for indexed/iterated data, <code>HashMap</code> for O(1) lookup, <code>TreeMap</code> when you need sorted keys or range queries, <code>LinkedHashMap</code> for LRU. Have the HashMap-internals story (buckets, chaining, Java 8 treeify, <code>hashCode</code>/<code>equals</code> contract) ready — it's a core Java topic worth being fluent in.</p></div>
+</div>
+</div>
+
+<!-- EXCEPTIONS -->
+<div class="section" id="exceptions">
+<div class="card">
+<h2>Exceptions: checked vs unchecked</h2>
+<p>Analogy: a <strong>checked exception</strong> is a form your method must file in advance — "this call may fail to reach the network, and callers are legally warned." An <strong>unchecked exception</strong> is a slip-and-fall: nobody signs a waiver for it, it just means a bug or a broken precondition.</p>
+
+<div class="eyebrow">Tiny runnable example</div>
+<pre><span class="cm">// try-with-resources auto-closes the reader, even on exception</span>
+<span class="kw">try</span> (var in = Files.newBufferedReader(path)) {   <span class="cm">// IOException is CHECKED</span>
+  <span class="kw">return</span> in.readLine();
+} <span class="kw">catch</span> (IOException e) {
+  <span class="kw">throw new</span> UncheckedIOException(e);            <span class="cm">// wrap + rethrow, keep the cause</span>
+}</pre>
+
+<h3>The hierarchy</h3>
+<pre>Throwable
+├─ Error                 <span class="cm">// JVM-level, don't catch (OutOfMemoryError, StackOverflowError)</span>
+└─ Exception
+   ├─ IOException, SQLException, ...   <span class="cm">// CHECKED: must declare or handle</span>
+   └─ RuntimeException                 <span class="cm">// UNCHECKED: not required to declare</span>
+      ├─ NullPointerException
+      ├─ IllegalArgumentException
+      └─ IndexOutOfBoundsException, ...</pre>
+<table>
+<tr><th></th><th>Checked</th><th>Unchecked (RuntimeException)</th></tr>
+<tr><td>Compiler forces handling?</td><td>Yes — declare <code>throws</code> or <code>catch</code></td><td>No</td></tr>
+<tr><td>Represents</td><td>recoverable, expected external failure</td><td>programming error / broken precondition</td></tr>
+<tr><td>Examples</td><td><code>IOException</code>, <code>SQLException</code></td><td><code>NullPointerException</code>, <code>IllegalArgumentException</code></td></tr>
+<tr><td>Guidance</td><td>use when a caller can reasonably recover</td><td>use for bugs and contract violations</td></tr>
+</table>
+
+<h3>Doing it well</h3>
+<ul>
+  <li><strong>Throw specific, catch specific.</strong> Never <code>catch (Exception e) {}</code> and swallow — you'll hide the bug. Catch the narrowest type you can act on.</li>
+  <li><strong>Preserve the cause.</strong> When wrapping, pass the original: <code>throw new ServiceException("load failed", e)</code>. You keep the full stack trace.</li>
+  <li><strong>Clean up with <code>try-with-resources</code>,</strong> not <code>finally { close(); }</code> — any <code>AutoCloseable</code> is closed automatically in reverse order, and suppressed exceptions are attached rather than lost.</li>
+  <li><strong>Don't use exceptions for control flow</strong> — they're expensive (stack capture) and obscure intent.</li>
+</ul>
+<div class="warn"><p>The checked-vs-unchecked debate is real: overusing checked exceptions leads to boilerplate <code>catch</code>/rethrow noise, and they don't compose with lambdas/streams (a <code>Function</code> can't throw a checked exception). Many modern APIs favor unchecked exceptions or <code>Optional</code>/result types. Know both sides.</p></div>
+
+<h3>Coming from C++ / Python</h3>
+<div class="card" style="background:var(--bg3);box-shadow:none;">
+<ul>
+  <li><strong>From C++:</strong> Java has no <code>noexcept</code>; instead the <em>checked</em> exception is enforced in the method signature (<code>throws</code>) at compile time — closer to old-style C++ exception specs but actually enforced. There are no exception <em>values</em> to slice; everything is a reference to a <code>Throwable</code>.</li>
+  <li><strong>From Python:</strong> Python's exceptions are all "unchecked" — Java adds a compiler-enforced checked category. <code>try-with-resources</code> is Java's <code>with</code>-statement; both guarantee cleanup.</li>
+</ul>
+</div>
+
+<h3 style="margin-top:22px;">Interview angle</h3>
+<div class="tip"><p>Define both categories precisely, then give the design rule: checked for recoverable external conditions a caller can act on, unchecked for programmer errors. Show maturity by naming the trade-off (checked-exception boilerplate, poor lambda/stream interop) and your habits: preserve causes, catch narrowly, never swallow, use try-with-resources. That balanced take reads as senior.</p></div>
+</div>
+</div>
+
+<!-- GC -->
+<div class="section" id="gc">
+<div class="card">
+<h2>Memory &amp; garbage collection</h2>
+<p>You don't <code>free()</code> in Java. Objects live on the <strong>heap</strong>; the <strong>garbage collector</strong> reclaims those no longer reachable from live roots (stack locals, statics, active threads). The key insight that makes GC fast is the <strong>generational hypothesis</strong>: <em>most objects die young.</em></p>
+
+<h3>The JVM runtime memory areas</h3>
+<p>Here's the memory the JVM manages while your program runs. The heap (shared, GC'd) is split into generations; each thread gets its own stack; class metadata lives in Metaspace (native memory).</p>
+
+<svg viewBox="0 0 720 380" style="max-width:100%;height:auto;font-family:'Inter',sans-serif;" role="img" aria-label="Diagram of JVM runtime memory areas: heap with young and old generations, per-thread stacks, and metaspace">
+  <rect x="0" y="0" width="720" height="380" fill="#ffffff"/>
+  <!-- Heap outer -->
+  <rect x="20" y="40" width="440" height="320" rx="10" fill="#e7f5ff" stroke="#1971c2" stroke-width="2"/>
+  <text x="40" y="30" font-size="15" font-weight="700" fill="#1971c2">Heap  (shared across all threads · garbage-collected)</text>
+
+  <!-- Young generation -->
+  <rect x="40" y="60" width="400" height="150" rx="8" fill="#d3f9d8" stroke="#2f9e44" stroke-width="1.5"/>
+  <text x="52" y="80" font-size="13" font-weight="700" fill="#1d6b2e">Young Generation  (minor GC — frequent, fast)</text>
+  <rect x="52" y="92" width="180" height="100" rx="6" fill="#ffffff" stroke="#2f9e44"/>
+  <text x="142" y="120" font-size="12" font-weight="600" fill="#1d6b2e" text-anchor="middle">Eden</text>
+  <text x="142" y="140" font-size="10" fill="#495057" text-anchor="middle">new objects</text>
+  <text x="142" y="156" font-size="10" fill="#495057" text-anchor="middle">allocate here</text>
+  <rect x="244" y="92" width="88" height="100" rx="6" fill="#ffffff" stroke="#2f9e44"/>
+  <text x="288" y="120" font-size="11" font-weight="600" fill="#1d6b2e" text-anchor="middle">Survivor</text>
+  <text x="288" y="138" font-size="11" fill="#495057" text-anchor="middle">S0</text>
+  <rect x="344" y="92" width="84" height="100" rx="6" fill="#ffffff" stroke="#2f9e44"/>
+  <text x="386" y="120" font-size="11" font-weight="600" fill="#1d6b2e" text-anchor="middle">Survivor</text>
+  <text x="386" y="138" font-size="11" fill="#495057" text-anchor="middle">S1</text>
+
+  <!-- promotion arrow -->
+  <line x1="240" y1="230" x2="240" y2="255" stroke="#7048e8" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="250" y="248" font-size="10.5" fill="#7048e8">survives enough minor GCs → promote</text>
+
+  <!-- Old generation -->
+  <rect x="40" y="260" width="400" height="86" rx="8" fill="#fff3bf" stroke="#e67700" stroke-width="1.5"/>
+  <text x="52" y="282" font-size="13" font-weight="700" fill="#a85700">Old Generation / Tenured  (major GC — rare, slower)</text>
+  <text x="52" y="306" font-size="11" fill="#495057">long-lived objects: caches, singletons, session state</text>
+  <text x="52" y="326" font-size="11" fill="#495057">a full GC here is the expensive "stop-the-world" pause</text>
+
+  <!-- Thread stacks -->
+  <rect x="480" y="40" width="110" height="200" rx="10" fill="#e5dbff" stroke="#7048e8" stroke-width="2"/>
+  <text x="490" y="30" font-size="12.5" font-weight="700" fill="#7048e8">Per-thread</text>
+  <text x="535" y="62" font-size="11" font-weight="600" fill="#5f3dc4" text-anchor="middle">Thread 1</text>
+  <rect x="492" y="72" width="86" height="22" fill="#ffffff" stroke="#7048e8"/><text x="535" y="87" font-size="9.5" fill="#495057" text-anchor="middle">stack frame</text>
+  <rect x="492" y="96" width="86" height="22" fill="#ffffff" stroke="#7048e8"/><text x="535" y="111" font-size="9.5" fill="#495057" text-anchor="middle">stack frame</text>
+  <text x="535" y="150" font-size="11" font-weight="600" fill="#5f3dc4" text-anchor="middle">Thread 2</text>
+  <rect x="492" y="160" width="86" height="22" fill="#ffffff" stroke="#7048e8"/><text x="535" y="175" font-size="9.5" fill="#495057" text-anchor="middle">stack frame</text>
+  <rect x="492" y="184" width="86" height="22" fill="#ffffff" stroke="#7048e8"/><text x="535" y="199" font-size="9.5" fill="#495057" text-anchor="middle">stack frame</text>
+  <text x="535" y="226" font-size="9" fill="#495057" text-anchor="middle">locals · PC · operands</text>
+
+  <!-- Metaspace -->
+  <rect x="610" y="40" width="96" height="200" rx="10" fill="#ffe3e3" stroke="#c92a2a" stroke-width="2"/>
+  <text x="658" y="30" font-size="12.5" font-weight="700" fill="#c92a2a" text-anchor="middle">Metaspace</text>
+  <text x="658" y="70" font-size="10" fill="#495057" text-anchor="middle">(native mem,</text>
+  <text x="658" y="85" font-size="10" fill="#495057" text-anchor="middle">not the heap)</text>
+  <text x="658" y="115" font-size="10" fill="#495057" text-anchor="middle">class</text>
+  <text x="658" y="130" font-size="10" fill="#495057" text-anchor="middle">metadata</text>
+  <text x="658" y="150" font-size="10" fill="#495057" text-anchor="middle">method</text>
+  <text x="658" y="165" font-size="10" fill="#495057" text-anchor="middle">bytecode</text>
+  <text x="658" y="185" font-size="10" fill="#495057" text-anchor="middle">runtime</text>
+  <text x="658" y="200" font-size="10" fill="#495057" text-anchor="middle">constant pool</text>
+
+  <text x="480" y="272" font-size="10.5" fill="#495057" width="220">Metaspace replaced the old fixed-</text>
+  <text x="480" y="288" font-size="10.5" fill="#495057">size "PermGen" (removed in Java 8);</text>
+  <text x="480" y="304" font-size="10.5" fill="#495057">it grows in native memory instead.</text>
+
+  <defs>
+    <marker id="arr" markerWidth="9" markerHeight="9" refX="5" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#7048e8"/>
+    </marker>
+  </defs>
+</svg>
+
+<h3>Generational GC: young → old promotion, step by step</h3>
+<p>New objects are allocated in <strong>Eden</strong>. When Eden fills, a fast <strong>minor GC</strong> copies the few survivors into a Survivor space and discards the rest. Each survival bumps the object's <em>age</em>; once an object is old enough (the tenuring threshold), it's <strong>promoted</strong> to the Old generation. Press <em>Step</em> to watch one object's journey.</p>
+
+<!-- ===== Replayable GC stepper (namespaced IIFE, unique ids) ===== -->
+<div id="gcx-root" style="border:1px solid var(--border);border-radius:12px;padding:18px;background:var(--bg2);">
+  <svg id="gcx-svg" viewBox="0 0 640 220" style="max-width:100%;height:auto;font-family:'Inter',sans-serif;" role="img" aria-label="Animated stepper showing an object being allocated in Eden, surviving minor collections in Survivor spaces, then being promoted to the Old generation">
+    <!-- Eden -->
+    <rect x="20" y="50" width="150" height="110" rx="8" fill="#f1f3f5" stroke="#2f9e44" stroke-width="1.5"/>
+    <text x="95" y="42" font-size="12" font-weight="700" fill="#1d6b2e" text-anchor="middle">Eden</text>
+    <!-- Survivor -->
+    <rect x="200" y="50" width="150" height="110" rx="8" fill="#f1f3f5" stroke="#2f9e44" stroke-width="1.5"/>
+    <text x="275" y="42" font-size="12" font-weight="700" fill="#1d6b2e" text-anchor="middle">Survivor (S0/S1)</text>
+    <!-- Old -->
+    <rect x="380" y="50" width="150" height="110" rx="8" fill="#fff9db" stroke="#e67700" stroke-width="1.5"/>
+    <text x="455" y="42" font-size="12" font-weight="700" fill="#a85700" text-anchor="middle">Old Generation</text>
+    <!-- Garbage bin -->
+    <rect x="560" y="50" width="60" height="110" rx="8" fill="#ffe3e3" stroke="#c92a2a" stroke-width="1.5"/>
+    <text x="590" y="42" font-size="11" font-weight="700" fill="#c92a2a" text-anchor="middle">GC'd</text>
+
+    <!-- tracked object -->
+    <circle id="gcx-obj" cx="60" cy="105" r="16" fill="#1971c2"/>
+    <text id="gcx-age" x="60" y="110" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">0</text>
+    <!-- neighbor garbage objects (die at first minor GC) -->
+    <circle id="gcx-g1" cx="110" cy="80" r="10" fill="#7a828a"/>
+    <circle id="gcx-g2" cx="130" cy="130" r="10" fill="#7a828a"/>
+  </svg>
+  <div id="gcx-caption" style="min-height:44px;margin:10px 2px;color:var(--text2);font-size:13.5px;"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button id="gcx-step" style="padding:9px 18px;border-radius:8px;border:1px solid var(--blue);background:var(--blue-l);color:var(--blue);font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;">Step ▶</button>
+    <button id="gcx-reset" style="padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;">Reset ↺</button>
+    <span id="gcx-count" style="align-self:center;color:var(--text3);font-size:12.5px;"></span>
+  </div>
+</div>
+<script>
+(function () {
+  var svg = document.getElementById('gcx-svg');
+  if (!svg) return;
+  var obj = document.getElementById('gcx-obj');
+  var ageT = document.getElementById('gcx-age');
+  var g1 = document.getElementById('gcx-g1');
+  var g2 = document.getElementById('gcx-g2');
+  var cap = document.getElementById('gcx-caption');
+  var count = document.getElementById('gcx-count');
+  var stepBtn = document.getElementById('gcx-step');
+  var resetBtn = document.getElementById('gcx-reset');
+
+  // each step: [cx, cy, age, garbageVisible, caption]
+  var steps = [
+    [60,105,0,true,  '<b>Allocate.</b> A new object is created in Eden alongside short-lived neighbours (grey). Allocation is just a pointer bump — very cheap.'],
+    [275,90,1,false, '<b>Minor GC #1.</b> Eden filled up. The grey neighbours are unreachable and reclaimed; our object is still referenced, so it is copied to a Survivor space and its age becomes 1.'],
+    [275,120,2,false,'<b>Minor GC #2.</b> Still alive. It is copied to the other Survivor space (S0↔S1 flip) and aged again. Copying also compacts — no fragmentation in the young gen.'],
+    [275,105,3,false,'<b>Minor GC #3.</b> Age reaches the tenuring threshold. Long-lived objects should stop being copied on every minor GC — time to promote.'],
+    [455,105,3,false,'<b>Promotion.</b> The object is moved to the Old generation. Minor GCs no longer touch it; only a rarer, costlier major/full GC scans it. Generational GC pays off: most objects never make it this far.']
+  ];
+  var i = -1;
+
+  function render(showGarbageOverride) {
+    var atStart = i < 0;
+    var s = atStart ? steps[0] : steps[i];
+    // object position/age only after first Step; before that show initial allocate frame minus caption
+    obj.setAttribute('cx', s[0]);
+    obj.setAttribute('cy', s[1]);
+    ageT.setAttribute('x', s[0]);
+    ageT.setAttribute('y', s[1] + 5);
+    ageT.textContent = s[2];
+    var showG = atStart ? true : s[3];
+    g1.style.display = showG ? '' : 'none';
+    g2.style.display = showG ? '' : 'none';
+    cap.innerHTML = atStart
+      ? 'Press <b>Step</b> to allocate an object and follow it through the generations.'
+      : s[4];
+    count.textContent = atStart ? '' : ('step ' + (i + 1) + ' / ' + steps.length);
+    stepBtn.disabled = (i >= steps.length - 1);
+    stepBtn.style.opacity = stepBtn.disabled ? '0.45' : '1';
+    stepBtn.style.cursor = stepBtn.disabled ? 'default' : 'pointer';
+  }
+  function reset() { i = -1; render(); }
+  stepBtn.addEventListener('click', function () {
+    if (i < steps.length - 1) { i++; render(); }
+  });
+  resetBtn.addEventListener('click', reset);
+  reset();
+})();
+</script>
+<!-- ===== end stepper ===== -->
+
+<h3>Collectors you should be able to name</h3>
+<table>
+<tr><th>Collector</th><th>Optimizes for</th><th>Note</th></tr>
+<tr><td><strong>G1</strong> (default since 9)</td><td>balanced throughput + bounded pauses</td><td>region-based; targets a pause goal</td></tr>
+<tr><td><strong>Parallel</strong></td><td>raw throughput</td><td>batch jobs; longer pauses OK</td></tr>
+<tr><td><strong>ZGC / Shenandoah</strong></td><td>ultra-low pause (sub-ms), huge heaps</td><td>mostly concurrent, low pause independent of heap size</td></tr>
+<tr><td><strong>Serial</strong></td><td>small heaps / single core</td><td>simplest, stop-the-world</td></tr>
+</table>
+<div class="insight"><p>Mechanically, most collectors are <strong>mark-sweep(-compact)</strong>: from GC roots, <em>mark</em> everything reachable, <em>sweep</em> the unmarked, and <em>compact</em> to remove fragmentation. The young-gen collector above is a <em>copying</em> collector — a special, very cheap case because so little survives. A <strong>memory leak in Java</strong> isn't a missing <code>free</code>; it's an unintended reference that keeps an object reachable (e.g. a growing static <code>Map</code> or an unremoved listener).</p></div>
+
+<h3>Coming from C++ / Python</h3>
+<div class="card" style="background:var(--bg3);box-shadow:none;">
+<ul>
+  <li><strong>From C++:</strong> no <code>delete</code>, no manual ownership, no RAII destructors. Deterministic cleanup of non-memory resources uses <code>try-with-resources</code>/<code>AutoCloseable</code>, not destructors. <code>finalize()</code> is deprecated — never rely on it. The cost you trade for safety is GC pauses.</li>
+  <li><strong>From Python:</strong> CPython uses reference counting plus a cycle collector, so cleanup is often prompt; the JVM uses tracing GC, so timing is non-deterministic but cycles are collected for free and throughput is far higher.</li>
+</ul>
+</div>
+
+<h3 style="margin-top:22px;">Interview angle</h3>
+<div class="tip"><p>Lead with the generational hypothesis ("most objects die young"), then explain minor vs major GC, Eden→Survivor→Old promotion, and mark-sweep-compact. Define a Java memory leak correctly (unintended reachability, not a missing free) and name a real cause. If asked about tuning, mention G1 as the default and pause-goal collectors (ZGC/Shenandoah) for latency-sensitive services — but say you'd measure before tuning.</p></div>
+</div>
+</div>
+
+<!-- CONCURRENCY -->
+<div class="section" id="concurrency">
+<div class="card">
+<h2>Concurrency &amp; the memory model</h2>
+<p>Analogy: shared mutable state across threads is a shared whiteboard. If two people write at once without a rule for taking turns, you get garbled results — and worse, each may be looking at a <em>cached photo</em> of the board rather than the live board. Locks give turn-taking; <code>volatile</code> forces everyone to read the live board.</p>
+
+<div class="eyebrow">Tiny runnable example</div>
+<pre>var pool = Executors.newFixedThreadPool(<span class="num">4</span>);
+Future&lt;Integer&gt; f = pool.submit(() -&gt; <span class="num">1</span> + <span class="num">1</span>);  <span class="cm">// run on a worker thread</span>
+System.out.println(f.get());   <span class="cm">// 2  — blocks until the result is ready</span>
+pool.shutdown();</pre>
+<div class="insight"><p>Java threads are real OS threads and run in parallel on multiple cores — <strong>there is no GIL</strong> (unlike CPython). That's power and responsibility: you get true parallelism, and you own the correctness of shared state.</p></div>
+
+<h3>The race, and the two fixes</h3>
+<pre><span class="cm">// BROKEN: count++ is read-modify-write, not atomic; two threads lose updates</span>
+<span class="kw">int</span> count = <span class="num">0</span>;
+<span class="kw">void</span> inc() { count++; }
+
+<span class="cm">// FIX 1: mutual exclusion — one thread in the critical section at a time</span>
+<span class="kw">synchronized void</span> inc() { count++; }   <span class="cm">// intrinsic lock on 'this'</span>
+
+<span class="cm">// FIX 2: lock-free atomic for this simple case</span>
+<span class="kw">final</span> AtomicInteger count = <span class="kw">new</span> AtomicInteger();
+<span class="kw">void</span> inc() { count.incrementAndGet(); }   <span class="cm">// CAS (compare-and-swap) under the hood</span></pre>
+
+<h3>synchronized vs volatile — different jobs</h3>
+<table>
+<tr><th></th><th><code>synchronized</code></th><th><code>volatile</code></th></tr>
+<tr><td>Guarantees</td><td>mutual exclusion <em>and</em> visibility</td><td>visibility <em>only</em> (no atomicity)</td></tr>
+<tr><td>Blocks?</td><td>yes (waits for the lock)</td><td>no</td></tr>
+<tr><td>Use for</td><td>compound actions (check-then-act, count++)</td><td>a single flag/reference read by many threads</td></tr>
+</table>
+<pre><span class="cm">// volatile is right here: a one-way flag, no compound update</span>
+<span class="kw">private volatile boolean</span> running = <span class="kw">true</span>;
+<span class="kw">public void</span> stop() { running = <span class="kw">false</span>; }        <span class="cm">// write is seen by the loop thread</span>
+<span class="kw">public void</span> loop() { <span class="kw">while</span> (running) { work(); } } <span class="cm">// without volatile, may spin forever</span></pre>
+<div class="warn"><p><code>volatile</code> does <em>not</em> make <code>count++</code> safe — that's read-modify-write, three operations. Use <code>synchronized</code>, an <code>Atomic*</code>, or a lock for compound updates.</p></div>
+
+<h3>The Java Memory Model (JMM), at a high level</h3>
+<p>The compiler, JIT, and CPU are all free to reorder and cache operations for speed. The JMM is the contract that says <em>when</em> one thread's writes are guaranteed visible to another — the <strong>happens-before</strong> relationship:</p>
+<ul>
+  <li>Everything before releasing a lock <em>happens-before</em> the next thread that acquires it.</li>
+  <li>A write to a <code>volatile</code> field <em>happens-before</em> every later read of it.</li>
+  <li><code>Thread.start()</code> happens-before the thread's code; the thread's code happens-before another thread's <code>join()</code> returning.</li>
+</ul>
+<p>Without a happens-before edge, there is <strong>no guarantee</strong> another thread ever sees your write — even hours later. Data races aren't just "sometimes wrong values"; they're undefined behavior in the model.</p>
+
+<h3>java.util.concurrent — don't hand-roll it</h3>
+<table>
+<tr><th>Tool</th><th>Use</th></tr>
+<tr><td><code>ExecutorService</code> / thread pools</td><td>manage threads; never <code>new Thread()</code> per task in real code</td></tr>
+<tr><td><code>ConcurrentHashMap</code></td><td>high-throughput concurrent map (fine-grained per-bucket locking — CAS on empty bins, synchronized on the bin head node since Java 8; no full-map lock)</td></tr>
+<tr><td><code>AtomicInteger</code>/<code>AtomicReference</code></td><td>lock-free counters/refs via CAS</td></tr>
+<tr><td><code>ReentrantLock</code> / <code>ReadWriteLock</code></td><td>explicit locking with tryLock, fairness, condition vars</td></tr>
+<tr><td><code>BlockingQueue</code></td><td>producer/consumer hand-off</td></tr>
+<tr><td><code>CountDownLatch</code> / <code>CompletableFuture</code></td><td>coordination; async composition</td></tr>
+</table>
+<div class="tip"><p>Modern default: express work as tasks on an <code>ExecutorService</code> and compose async results with <code>CompletableFuture</code>, rather than managing raw threads and locks. Java 21 adds <strong>virtual threads</strong> (Project Loom) — cheap threads that make blocking-style code scale to millions of concurrent tasks.</p></div>
+
+<h3>Coming from C++ / Python</h3>
+<div class="card" style="background:var(--bg3);box-shadow:none;">
+<ul>
+  <li><strong>From C++:</strong> <code>synchronized</code> ≈ a scoped <code>lock_guard</code> on an intrinsic monitor; <code>volatile</code> in Java is a real memory-model fence (visibility + ordering) — <em>not</em> C/C++ <code>volatile</code>, which only stops the compiler from optimizing away an access (its classic use is memory-mapped I/O; also signal handlers) and gives no thread guarantees. The JMM plays the role of the C++11 memory model.</li>
+  <li><strong>From Python:</strong> no GIL, so threads give true CPU parallelism — but you must synchronize shared state yourself (Python leaned on the GIL for coarse safety). <code>ExecutorService</code> ≈ <code>concurrent.futures.ThreadPoolExecutor</code>.</li>
+</ul>
+</div>
+
+<h3 style="margin-top:22px;">Interview angle</h3>
+<div class="tip"><p>Distinguish the two guarantees crisply: <em>atomicity/mutual exclusion</em> (locks, atomics) vs <em>visibility/ordering</em> (<code>volatile</code>, happens-before). The trap question is "will <code>volatile</code> fix <code>count++</code>?" — no, it's a compound op. Then reach for <code>java.util.concurrent</code> instead of hand-rolling locks, and mention happens-before as the reason a correctly-synchronized program sees consistent state. Naming virtual threads shows you're current.</p></div>
+</div>
+</div>
+
+<!-- MODERN -->
+<div class="section" id="modern">
+<div class="card">
+<h2>Modern Java: streams, lambdas, records, var</h2>
+<p>Analogy: streams are an <em>assembly line</em> for data. Raw items go in one end; each station transforms or filters them; a final station collects the finished result. You describe <em>what</em> each station does, not <em>how</em> to loop.</p>
+
+<div class="eyebrow">Tiny runnable example</div>
+<pre>List&lt;String&gt; names = List.of(<span class="str">"Ada"</span>, <span class="str">"Bob"</span>, <span class="str">"Cara"</span>, <span class="str">"Al"</span>);
+
+List&lt;String&gt; result = names.stream()
+    .filter(n -&gt; n.length() &gt; <span class="num">2</span>)      <span class="cm">// keep longer names</span>
+    .map(String::toUpperCase)          <span class="cm">// transform</span>
+    .sorted()                          <span class="cm">// order</span>
+    .toList();                         <span class="cm">// terminal: collect (Java 16+)</span>
+<span class="cm">// =&gt; [ADA, BOB, CARA]</span></pre>
+
+<h3>Lambdas &amp; functional interfaces</h3>
+<p>A lambda is an instance of a <strong>functional interface</strong> (one abstract method). Method references (<code>String::toUpperCase</code>) are shorthand. The common built-ins live in <code>java.util.function</code>:</p>
+<pre>Function&lt;String,Integer&gt; len = String::length;     <span class="cm">// T -&gt; R</span>
+Predicate&lt;String&gt;   nonEmpty = s -&gt; !s.isEmpty();   <span class="cm">// T -&gt; boolean</span>
+Supplier&lt;List&lt;String&gt;&gt; make = ArrayList::new;       <span class="cm">// () -&gt; T</span>
+Consumer&lt;String&gt;    print = System.out::println;    <span class="cm">// T -&gt; void</span>
+BiFunction&lt;Integer,Integer,Integer&gt; add = Integer::sum;</pre>
+
+<h3>Streams: intermediate vs terminal, and laziness</h3>
+<p>Intermediate ops (<code>filter</code>, <code>map</code>, <code>sorted</code>) are <strong>lazy</strong> — they build a pipeline and do nothing until a <strong>terminal</strong> op (<code>toList</code>, <code>collect</code>, <code>reduce</code>, <code>forEach</code>, <code>count</code>) runs it. This lets the runtime fuse operations and short-circuit.</p>
+<pre>Map&lt;Boolean,List&lt;Integer&gt;&gt; parts = nums.stream()
+    .collect(Collectors.partitioningBy(n -&gt; n % <span class="num">2</span> == <span class="num">0</span>));
+
+Map&lt;Integer,List&lt;String&gt;&gt; byLen = words.stream()
+    .collect(Collectors.groupingBy(String::length));
+
+<span class="kw">int</span> total = nums.stream().mapToInt(Integer::intValue).sum();  <span class="cm">// primitive stream, no boxing</span></pre>
+<div class="warn"><p>Streams are single-use (consume once), shouldn't mutate external state from lambdas, and <code>parallelStream()</code> is not free — only worth it for large, CPU-bound, side-effect-free work on splittable sources. For a trivial loop, a plain <code>for</code> is clearer and often faster.</p></div>
+
+<h3>Optional — model "maybe absent" without null</h3>
+<pre>Optional&lt;User&gt; u = repo.findById(id);
+<span class="kw">return</span> u.map(User::name).orElse(<span class="str">"unknown"</span>);   <span class="cm">// no NullPointerException path</span></pre>
+
+<h3><code>var</code> — local type inference (Java 10)</h3>
+<pre><span class="kw">var</span> list = <span class="kw">new</span> ArrayList&lt;String&gt;();   <span class="cm">// inferred ArrayList&lt;String&gt;</span>
+<span class="kw">var</span> entry = map.entrySet().iterator().next();  <span class="cm">// avoids a verbose type name</span>
+<span class="cm">// Still statically typed! var is inference, not dynamic typing.</span>
+<span class="cm">// Local variables only — not fields, params, or return types.</span></pre>
+
+<h3>Records — immutable data carriers (Java 16)</h3>
+<pre><span class="kw">record</span> Point(<span class="kw">int</span> x, <span class="kw">int</span> y) {}   <span class="cm">// that's the whole class</span>
+<span class="cm">// auto-generated: constructor, x()/y() accessors, equals, hashCode, toString</span>
+<span class="kw">var</span> p = <span class="kw">new</span> Point(<span class="num">3</span>, <span class="num">4</span>);
+System.out.println(p);            <span class="cm">// Point[x=3, y=4]</span>
+System.out.println(p.equals(<span class="kw">new</span> Point(<span class="num">3</span>, <span class="num">4</span>)));  <span class="cm">// true — value equality</span>
+
+<span class="cm">// compact constructor for validation:</span>
+<span class="kw">record</span> Range(<span class="kw">int</span> lo, <span class="kw">int</span> hi) {
+  Range { <span class="kw">if</span> (lo &gt; hi) <span class="kw">throw new</span> IllegalArgumentException(<span class="str">"lo &gt; hi"</span>); }
+}</pre>
+<p>Records shine as DTOs (data transfer objects), map keys, and pattern-matching targets. Recent Java pairs them with <strong>sealed</strong> types, <strong>pattern matching for <code>switch</code></strong>, and <strong>text blocks</strong>:</p>
+<pre><span class="kw">sealed interface</span> Shape <span class="kw">permits</span> Circle, Square {}
+<span class="kw">record</span> Circle(<span class="kw">double</span> r) <span class="kw">implements</span> Shape {}
+<span class="kw">record</span> Square(<span class="kw">double</span> s) <span class="kw">implements</span> Shape {}
+
+<span class="kw">double</span> area = <span class="kw">switch</span> (shape) {                 <span class="cm">// exhaustive — compiler checks all cases</span>
+  <span class="kw">case</span> Circle c -&gt; Math.PI * c.r() * c.r();     <span class="cm">// pattern matching + binding</span>
+  <span class="kw">case</span> Square s -&gt; s.s() * s.s();
+};
+
+String json = <span class="str">"""
+  { "ok": true }"""</span>;                          <span class="cm">// text block (multi-line string)</span></pre>
+
+<h3>Coming from C++ / Python</h3>
+<div class="card" style="background:var(--bg3);box-shadow:none;">
+<ul>
+  <li><strong>From C++:</strong> streams ≈ ranges/views pipelines; lambdas are similar but capture by value of the reference (effectively-final locals only — no <code>[&amp;]</code> by-reference capture). <code>record</code> ≈ an aggregate <code>struct</code> with auto <code>==</code>; <code>var</code> ≈ <code>auto</code> (locals only).</li>
+  <li><strong>From Python:</strong> streams ≈ generator/comprehension pipelines (<code>filter</code>/<code>map</code>), <code>record</code> ≈ <code>@dataclass</code>/<code>namedtuple</code>, <code>Optional</code> ≈ <code>Optional[T]</code>, <code>var</code> is still statically typed (inference), not Python's dynamic binding.</li>
+</ul>
+</div>
+
+<h3 style="margin-top:22px;">Interview angle</h3>
+<div class="tip"><p>Explain stream laziness (intermediate vs terminal, short-circuiting) and when <em>not</em> to use streams or <code>parallelStream</code>. Know that <code>var</code> and records are still fully static typing. If you can sketch <code>sealed</code> + record + pattern-matched <code>switch</code> as exhaustive, type-safe modeling of a closed set of cases, you'll read as current on Java 17–21, which many candidates aren't.</p></div>
+</div>
+</div>
+
+<!-- INTERVIEW -->
+<div class="section" id="interview">
+<div class="card">
+<h2>Interview Q&amp;A — likely Java questions</h2>
+
+<div class="qa"><div class="q">"What happens when you run <code>java MyClass</code>?"</div>
+<p>The class loader (parent-first delegation) loads the bytecode; the JVM verifies, prepares, and initializes it; the interpreter starts executing bytecode immediately; the JIT profiles and compiles hot methods to native code with speculative optimizations, deoptimizing if assumptions break. Portable bytecode in, native code out — at runtime.</p></div>
+
+<div class="qa"><div class="q">"Checked vs unchecked exceptions?"</div>
+<p>Checked (subclasses of <code>Exception</code> except <code>RuntimeException</code>) must be declared or caught — use for recoverable external failures. Unchecked (<code>RuntimeException</code>) needn't be declared — use for programming errors/broken preconditions. <code>Error</code> is JVM-level; don't catch it. Best practice: catch narrowly, preserve the cause, never swallow, use try-with-resources.</p></div>
+
+<div class="qa"><div class="q">"What is type erasure?"</div>
+<p>Generics are compile-time only; type parameters are erased to their bounds at runtime, and the compiler inserts casts. So <code>List&lt;String&gt;</code> and <code>List&lt;Integer&gt;</code> share one runtime class, and you can't do <code>new T[]</code>, <code>new T()</code>, or <code>instanceof List&lt;String&gt;</code>. It exists for backward compatibility with pre-generics bytecode.</p></div>
+
+<div class="qa"><div class="q">"HashMap vs TreeMap vs LinkedHashMap?"</div>
+<p><code>HashMap</code>: O(1) average, no order. <code>TreeMap</code>: red-black tree, O(log n), sorted keys and range queries. <code>LinkedHashMap</code>: O(1) with predictable insertion (or access) order — great for LRU. Follow-up: HashMap buckets by hashCode, chains collisions, and treeifies long buckets (Java 8) to O(log n).</p></div>
+
+<div class="qa"><div class="q">"How does garbage collection work?"</div>
+<p>Tracing GC reclaims unreachable objects. Generational hypothesis: most die young, so the heap is split into young (Eden + Survivors, cheap copying minor GC) and old (rare, costlier major GC). Survivors are aged and promoted past a threshold. Mark-sweep-compact for the old gen. A "leak" is unintended reachability, not a missing free.</p></div>
+
+<div class="qa"><div class="q">"synchronized vs volatile?"</div>
+<p><code>synchronized</code> gives mutual exclusion <em>and</em> visibility and blocks; use for compound actions. <code>volatile</code> gives visibility/ordering only, no atomicity, doesn't block; use for a single flag. <code>volatile</code> does not make <code>count++</code> safe — that's read-modify-write; use an <code>Atomic*</code> or a lock.</p></div>
+
+<div class="qa"><div class="q">"Explain happens-before / the memory model."</div>
+<p>Compilers and CPUs reorder and cache. Happens-before defines when one thread's writes are guaranteed visible to another: unlock→lock, volatile write→read, <code>start</code>→thread, thread→<code>join</code>. Without such an edge, there's no visibility guarantee — a data race is undefined behavior, not merely a stale value.</p></div>
+
+<div class="qa"><div class="q">"Interface vs abstract class?"</div>
+<p>Interface: a capability/contract, no instance state, implement many, has <code>default</code>/<code>static</code> bodies since Java 8. Abstract class: shared state + partial implementation, single inheritance, constructors. Choose interface for flexible capability, abstract class when subclasses genuinely share state. And prefer composition over inheritance to avoid the fragile base class problem.</p></div>
+
+<div class="qa"><div class="q">"What are records and why use them?"</div>
+<p>Immutable, transparent data carriers: declare the components and get the constructor, accessors, <code>equals</code>/<code>hashCode</code>/<code>toString</code> for free (value semantics). Great for DTOs, map keys, and pattern matching. Compact constructors validate. With <code>sealed</code> types they enable exhaustive pattern-matched <code>switch</code>.</p></div>
+
+<div class="qa"><div class="q">"Does Java have a GIL?"</div>
+<p>No. Java threads are OS threads and run truly in parallel across cores — unlike CPython. That means real parallelism but you own the correctness of shared mutable state (locks/atomics for atomicity, volatile/happens-before for visibility). Java 21 virtual threads add cheap, massively scalable threads for blocking-style code.</p></div>
+
+<div class="tip"><p><strong>Positioning:</strong> if you're coming from C++ or Python, lead with the transferable core (memory model, data structures, concurrency reasoning) and show you've internalized the Java-specific shifts: GC instead of manual/RAII lifetime, erasure instead of templates, checked exceptions, virtual-by-default methods, and the modern language (streams, records, sealed types, virtual threads). Depth on the JVM and the memory model is what separates senior Java candidates from syntax-level ones.</p></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>JVM (Java Virtual Machine)</strong></td><td>Runtime that loads, verifies, and executes portable bytecode identically on any OS.</td></tr>
+<tr><td><strong>Bytecode</strong></td><td>Portable <code>.class</code> instructions the compiler emits; run by the JVM's stack machine.</td></tr>
+<tr><td><strong>JIT (Just-In-Time compiler)</strong></td><td>Compiles frequently run ("hot") bytecode methods to native machine code at runtime.</td></tr>
+<tr><td><strong>Tiered compilation (C1/C2)</strong></td><td>HotSpot's scheme: C1 compiles fast and lightly, C2 slowly but aggressively, for the hottest code.</td></tr>
+<tr><td><strong>Deoptimization</strong></td><td>JIT falling back to the interpreter when a speculative assumption is later violated.</td></tr>
+<tr><td><strong>Type erasure</strong></td><td>Generic type parameters are checked at compile time, then removed (erased to bounds) at runtime.</td></tr>
+<tr><td><strong>PECS</strong></td><td>Producer Extends, Consumer Super — the wildcard rule for reading vs writing generic collections.</td></tr>
+<tr><td><strong>Fail-fast iterator</strong></td><td>Iterator that throws <code>ConcurrentModificationException</code> on structural change during iteration.</td></tr>
+<tr><td><strong>GC (garbage collection)</strong></td><td>Automatic reclamation of heap objects no longer reachable from live roots.</td></tr>
+<tr><td><strong>Generational hypothesis</strong></td><td>The observation that most objects die young, motivating the young/old heap split.</td></tr>
+<tr><td><strong>Minor / major GC</strong></td><td>Frequent, cheap young-generation collection vs rarer, costlier old-generation collection.</td></tr>
+<tr><td><strong>Metaspace</strong></td><td>Native-memory area holding class metadata; replaced the fixed-size PermGen in Java 8.</td></tr>
+<tr><td><strong>G1 (Garbage-First)</strong></td><td>Region-based default collector balancing throughput against a bounded pause goal.</td></tr>
+<tr><td><strong>ZGC (Z Garbage Collector)</strong></td><td>Mostly-concurrent collector with sub-millisecond pauses on huge heaps (Shenandoah is similar).</td></tr>
+<tr><td><strong>GIL (Global Interpreter Lock)</strong></td><td>CPython's single-thread lock; the JVM has none, so Java threads run truly in parallel.</td></tr>
+<tr><td><strong>CAS (compare-and-swap)</strong></td><td>Lock-free atomic update primitive underlying the <code>Atomic*</code> classes.</td></tr>
+<tr><td><strong>JMM (Java Memory Model)</strong></td><td>The contract defining when one thread's writes become visible to other threads.</td></tr>
+<tr><td><strong>happens-before</strong></td><td>The ordering relation (unlock&rarr;lock, volatile write&rarr;read, start, join) that guarantees cross-thread visibility.</td></tr>
+<tr><td><strong>Virtual threads (Project Loom)</strong></td><td>Lightweight JVM threads (Java 21) that scale blocking-style code to millions of concurrent tasks.</td></tr>
+<tr><td><strong>Record</strong></td><td>Immutable data carrier that auto-generates the constructor, accessors, and <code>equals</code>/<code>hashCode</code>/<code>toString</code>.</td></tr>
+</table>
+</div>
+
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  evt.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="go_refresher.html">‹ Go Refresher</a><a class="bkc" href="index.html">📖 Contents</a><a href="python_refresher.html">Python Refresher ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

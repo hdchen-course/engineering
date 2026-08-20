@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study: How Discord Stores Billions (then Trillions) of Messages — Real-World Engineering Case Studies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XII · Chapter 1 — <b>Case Study: Discord Message Storage</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Case Study: How Discord Stores Billions (then Trillions) of Messages</h1>
+  <div class="sub">A single real system, told twice: the ~2016 move from MongoDB to Cassandra (documented in a January 2017 post), and the 2022 cut-over to ScyllaDB after Cassandra broke down at scale. Rewritten in our own words from Discord's two public engineering posts — every number below is quoted from those posts and cited in §8. When a fact wasn't stated, we leave it out rather than guess.</div>
+</header>
+
+<div class="ins"><div class="insl">Why this case study is worth memorizing</div><p>It is the canonical "design a chat / message store" interview answer with real numbers attached. It shows the full arc a good candidate should narrate: a first datastore that fit the deadline, the specific way it broke, a principled second choice, the concrete pains <em>that</em> choice created, and finally a migration whose payoff you can quote in exact node counts and latencies. Read it as a template for how to reason about a datastore under growth.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. The Problem — Message Storage at Scale</h2>
+
+<p class="lead">A chat product's central table is its <strong>messages</strong>. Every message must be stored durably, and — crucially — read back in two shapes: "give me the most recent messages in this channel," and "let me scroll backward through history." Discord's first version was, in their words, built in <strong>just under two months in early 2015</strong>, on <strong>a single MongoDB replica set</strong>, with everything indexed by <strong>a single compound index on <code>channel_id</code> and <code>created_at</code></strong>.</p>
+
+<h3>The read/write shape that makes this hard</h3>
+<ul>
+  <li><strong>Reads are extremely random, and the read/write ratio is roughly 50/50.</strong> Unlike a feed you write once and read millions of times, a chat channel is read and written at similar rates, and users jump around to arbitrary points in history — so caching helps far less than you'd hope.</li>
+  <li><strong>Per-channel volume varies enormously.</strong> Discord noted that voice-heavy servers are unlikely to send even <strong>1,000 messages a year</strong>, private chats land in the <strong>100 thousand to 1 million messages a year</strong> range, and large public servers <strong>easily accumulate millions of messages a year</strong>. Any data model has to hold both the tiny and the enormous channel gracefully.</li>
+</ul>
+
+<h3>Where MongoDB reached its limit</h3>
+<p>Overall message volume kept climbing for years: <strong>40 million messages/day</strong> by July 2016, <strong>100 million messages/day</strong> by December 2016, and <strong>well past 120 million a day</strong> by early 2017. But the MongoDB store hit its wall much earlier — and the breaking point was memory-bound, not disk-bound:</p>
+<div class="trap"><div class="trapl">The failure, precisely</div><p>Around <strong>100 million total stored messages</strong> (about November 2015), <strong>the data and its index could no longer fit in RAM</strong>, and <strong>latencies started to become unpredictable</strong>. When the working set stops fitting in memory, a random-read workload slows dramatically — every miss becomes a disk seek. That, not a single dramatic outage, is what forced the search for a new store.</p></div>
+<p>So the requirements for the replacement were obvious: linear, predictable scaling as data grows past RAM; no single point of failure; self-healing operations a tiny team could run; and first-class support for the "read a range of recent messages in a channel" access pattern.</p>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. Why Cassandra (~2016) — the Data Model</h2>
+
+<p>Discord chose <strong>Cassandra</strong>: an open-source, wide-column store with no single point of failure (every node is equal), linear scalability by adding nodes, and automatic replication and repair — exactly the operational profile a 4-engineer team needs. They describe Cassandra as a <strong>"KKV" store</strong>: a two-part key made of a <strong>partition key</strong> that decides <em>which node(s)</em> hold the data, plus a <strong>clustering key</strong> that sorts rows <em>within</em> that partition.</p>
+
+<h3>First cut: <code>(channel_id, message_id)</code></h3>
+<p>The natural primary key made <code>channel_id</code> the partition (so one channel's messages live together) and <code>message_id</code> the clustering key. The trick is that <code>message_id</code> is a <strong>Snowflake</strong> — a 64-bit, time-ordered ID — so ordering rows by <code>message_id</code> is the same as ordering them by time. "Give me the latest N messages" becomes a cheap, contiguous range scan from the end of the partition. No secondary time index needed.</p>
+
+<div class="warn"><div class="warnl">The unbounded-partition problem</div><p>Partitioning purely by <code>channel_id</code> means a busy channel's partition grows forever. Cassandra <em>advertises</em> support for <strong>2GB partitions</strong>, but Discord saw performance <strong>warnings once a partition passed 100MB</strong>. A single ever-growing partition also concentrates all of one channel's read and write load onto the same replica set — a hot spot waiting to happen.</p></div>
+
+<h3>The fix: bucketing by time</h3>
+<p>Discord added a <strong>bucket</strong> to the partition key — a static time window. They sized the bucket at roughly <strong>10 days of messages</strong>, chosen so a typical partition stays comfortably <strong>under 100MB</strong>. The final compound primary key became:</p>
+<div class="formula">
+PRIMARY KEY <b>( (channel_id, bucket) , message_id )</b><br>
+<span class="cm"># partition key = (channel_id, bucket)   → which node(s) hold the rows</span><br>
+<span class="cm"># clustering key = message_id (Snowflake) → time-sorted order within the partition</span>
+</div>
+<p>To read a channel you compute the buckets spanning the time range you want and query those partitions. Because Snowflake IDs embed a timestamp, the client can derive bucket numbers directly from an ID or a time — no lookup table.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+  <!-- primary key box -->
+  <rect x="20" y="20" width="780" height="52" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="410" y="42" text-anchor="middle" font-size="12.5" font-weight="700" fill="#5b21b6">PRIMARY KEY = ( (channel_id, bucket) , message_id )</text>
+  <text x="410" y="60" text-anchor="middle" font-size="10" fill="#6d28d9">partition key chooses the node · clustering key sorts rows inside it</text>
+  <line x1="230" y1="72" x2="180" y2="104" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="590" y1="72" x2="640" y2="104" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah)"/>
+  <!-- partition key -->
+  <rect x="40" y="108" width="300" height="44" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="190" y="128" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">partition key = (channel_id, bucket)</text>
+  <text x="190" y="144" text-anchor="middle" font-size="9" fill="#526176">bucket ≈ 10 days → partition &lt; 100MB</text>
+  <!-- clustering key -->
+  <rect x="480" y="108" width="300" height="44" rx="8" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="630" y="128" text-anchor="middle" font-size="11" font-weight="700" fill="#0d7a6f">clustering key = message_id</text>
+  <text x="630" y="144" text-anchor="middle" font-size="9" fill="#526176">Snowflake = time-sortable</text>
+  <!-- one partition with sorted rows -->
+  <rect x="120" y="180" width="580" height="96" rx="9" fill="#eff6ff" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="410" y="200" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">one partition (channel 42, bucket 373) — rows sorted by message_id</text>
+  <rect x="140" y="212" width="120" height="46" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.2"/>
+  <text x="200" y="232" text-anchor="middle" font-size="9.5" font-weight="700" fill="#334155">msg 8801</text>
+  <text x="200" y="247" text-anchor="middle" font-size="8.5" fill="#526176">earliest</text>
+  <rect x="270" y="212" width="120" height="46" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.2"/>
+  <text x="330" y="232" text-anchor="middle" font-size="9.5" font-weight="700" fill="#334155">msg 8802</text>
+  <rect x="400" y="212" width="120" height="46" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.2"/>
+  <text x="460" y="232" text-anchor="middle" font-size="9.5" font-weight="700" fill="#334155">msg 8803</text>
+  <rect x="530" y="212" width="150" height="46" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.3"/>
+  <text x="605" y="232" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">msg 8804</text>
+  <text x="605" y="247" text-anchor="middle" font-size="8.5" fill="#166534">latest → read from here</text>
+</svg>
+<div class="svg-cap">The wide-column layout: <code>(channel_id, bucket)</code> places rows on a node; <code>message_id</code> keeps them time-sorted, so "latest N" is a tail range scan.</div>
+</div>
+
+<h3>What worked</h3>
+<p>The migration itself was fast and the win was immediate. Discord ran a small <strong>12-node cluster with a replication factor of 3</strong>, carrying <strong>nearly 1 TB of compressed data on each node</strong>, operated by <strong>only 4 backend engineers</strong> with no dedicated DevOps. MongoDB was <strong>phased out within a week</strong> of the Cassandra rollout. Steady-state performance was strong: <strong>sub-millisecond writes</strong> and <strong>reads under 5 milliseconds</strong>, with alerts configured to fire only if the <strong>95th-percentile response time went above 80&nbsp;ms</strong>. The schema was lean — the full table had <strong>16 columns</strong>, but an average message populated only <strong>4 of them</strong>.</p>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. The Pain Points — Where Cassandra Hurt</h2>
+
+<p>Cassandra ran well for years, but as the cluster grew toward <strong>177 nodes and trillions of messages</strong> by early 2022, a host of problems — most rooted in Cassandra being a JVM database with a garbage collector — turned operations into constant firefighting. The two public posts name them concretely.</p>
+
+<h3>Tombstones and deletes</h3>
+<p>Cassandra never deletes in place. A delete writes a <strong>tombstone</strong> — a marker that says "this is gone" — and tombstones live for a configurable window (<strong>10 days by default</strong>) until compaction removes them. Two problems followed:</p>
+<ul>
+  <li><strong>Accidental tombstones.</strong> Writing a <code>null</code> into a column creates a tombstone. Discord's writes were <strong>generating 12 tombstones at a time, most of the time for no reason</strong> — because unset fields were being written as null. Reads then had to scan through those tombstones.</li>
+  <li><strong>Reading through a graveyard.</strong> A now-famous incident: the <em>Puzzles &amp; Dragons Subreddit</em> server deleted <strong>millions of messages</strong>, leaving a channel with essentially <strong>a single visible message</strong>. Loading that one message took <strong>20 seconds</strong>, because Cassandra had to scan and skip millions of tombstones to find it. In the trillions post they add that the final token ranges held <strong>gigantic accumulations of tombstones that were never compacted away</strong>.</li>
+</ul>
+<p>Discord's mitigations: they <strong>lowered the tombstone lifespan from 10 days to 2 days</strong>, ran <strong>repairs nightly</strong>, and taught the app to <strong>track and avoid reading empty buckets</strong>.</p>
+
+<h3>Hot partitions</h3>
+<div class="trap"><div class="trapl">The cascading hot partition</div><p>When a single channel/bucket partition took heavy <strong>read</strong> traffic — a popular channel, or many users hammering the same message — the replicas holding it became a hot spot, and because reads and writes used a <strong>quorum consistency level</strong>, the latency of that hot partition <strong>spread to every query hitting those serving nodes</strong>. One popular channel could degrade a whole slice of the cluster.</p></div>
+
+<h3>Compaction and GC — the operational tax</h3>
+<ul>
+  <li><strong>Compactions fell behind.</strong> Cassandra merges its on-disk files (SSTables) in the background; when that work couldn't keep up, engineers had to perform a manual <strong>"gossip dance"</strong> — taking nodes out of rotation so they could catch up on compaction without serving traffic.</li>
+  <li><strong>Stop-the-world GC.</strong> Because Cassandra runs on the JVM, garbage collection pauses the node. Discord describes a pathological channel triggering a <strong>10-second stop-the-world GC constantly</strong>, and, at fleet scale, <strong>super-long consecutive GC pauses</strong> that sometimes forced them to <strong>manually reboot nodes</strong> to recover.</li>
+</ul>
+<div class="note"><div class="notel">The common root cause</div><p>Tombstone scans, unpredictable compaction, and GC pauses are all symptoms of the same thing: a JVM datastore whose latency is at the mercy of a garbage collector and background housekeeping. Tuning bought time, but the team was, in their words, spending too much of it babysitting the database. That framing is the bridge to the next decision.</p></div>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. The Migration to ScyllaDB</h2>
+
+<p>The replacement was <strong>ScyllaDB</strong>: a <strong>Cassandra-compatible database written in C++</strong>. Compatibility mattered enormously — the data model above could carry over — but the implementation is what solved the pain.</p>
+
+<h3>Why ScyllaDB</h3>
+<ul>
+  <li><strong>No garbage collector.</strong> Being written in C++ instead of Java, ScyllaDB <strong>has no garbage collector</strong> — which directly removes the stop-the-world pauses that were rebooting Cassandra nodes.</li>
+  <li><strong>Shard-per-core architecture.</strong> ScyllaDB pins a shard to each CPU core, giving <strong>stronger workload isolation</strong> so one hot shard is less able to drag down the rest — a structural answer to the hot-partition cascade.</li>
+  <li><strong>Faster repairs</strong>, easing the operational burden that a small team felt most.</li>
+  <li>Discord had already migrated <strong>all of their other databases to ScyllaDB by 2020</strong>; <strong>messages was the last holdout</strong>. The final blocker was performance of reverse-order reads, so Discord had ScyllaDB implement <strong>performant reverse queries</strong>, clearing the path.</li>
+</ul>
+
+<h3>The data services layer (Rust)</h3>
+<p>Rather than let the API talk to the database directly, Discord inserted intermediary <strong>data services</strong> written in <strong>Rust</strong> (on the Tokio async runtime), sitting between the API monolith and the database clusters. They contain <strong>no business logic</strong> — roughly <strong>one gRPC endpoint per database query</strong> — and exist to control how the datastore is accessed.</p>
+<div class="tip"><div class="tipl">The key trick: request coalescing</div><p>The data services do <strong>request coalescing</strong>: <em>if multiple users request the same row at the same time, the database is only queried once.</em> Requests are steered with <strong>consistent hash-based routing keyed on the channel ID</strong>, so all requests for the same channel land on the same data-service instance and can be merged. This is precisely what defuses the hot-partition problem — a stampede on one popular channel collapses into a single backend read.</p></div>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ah2" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+  <!-- users -->
+  <rect x="16" y="70" width="110" height="40" rx="7" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="71" y="88" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">User A</text>
+  <text x="71" y="102" text-anchor="middle" font-size="8.5" fill="#526176">read channel 42</text>
+  <rect x="16" y="130" width="110" height="40" rx="7" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="71" y="148" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">User B</text>
+  <text x="71" y="162" text-anchor="middle" font-size="8.5" fill="#526176">read channel 42</text>
+  <rect x="16" y="190" width="110" height="40" rx="7" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="71" y="208" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">User C</text>
+  <text x="71" y="222" text-anchor="middle" font-size="8.5" fill="#526176">read channel 42</text>
+  <!-- api monolith -->
+  <line x1="126" y1="90" x2="174" y2="140" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#ah2)"/>
+  <line x1="126" y1="150" x2="174" y2="150" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#ah2)"/>
+  <line x1="126" y1="210" x2="174" y2="160" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#ah2)"/>
+  <rect x="178" y="118" width="120" height="64" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="238" y="146" text-anchor="middle" font-size="10.5" font-weight="700" fill="#92400e">API monolith</text>
+  <text x="238" y="162" text-anchor="middle" font-size="8.5" fill="#526176">routes by channel_id</text>
+  <!-- data service -->
+  <line x1="298" y1="150" x2="346" y2="150" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#ah2)"/>
+  <rect x="350" y="104" width="180" height="92" rx="9" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.7"/>
+  <text x="440" y="128" text-anchor="middle" font-size="11" font-weight="700" fill="#0d7a6f">Data Service (Rust)</text>
+  <text x="440" y="146" text-anchor="middle" font-size="9" fill="#526176">consistent-hash routed</text>
+  <text x="440" y="160" text-anchor="middle" font-size="9" font-weight="700" fill="#0f766e">request coalescing:</text>
+  <text x="440" y="174" text-anchor="middle" font-size="8.5" fill="#526176">3 identical reads → 1 query</text>
+  <!-- single query -->
+  <line x1="530" y1="150" x2="600" y2="150" stroke="#16a34a" stroke-width="2" marker-end="url(#ah2)"/>
+  <text x="565" y="142" text-anchor="middle" font-size="8.5" font-weight="700" fill="#166534">1 query</text>
+  <!-- scylla -->
+  <rect x="604" y="112" width="150" height="76" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.7"/>
+  <text x="679" y="138" text-anchor="middle" font-size="11" font-weight="700" fill="#5b21b6">ScyllaDB</text>
+  <text x="679" y="154" text-anchor="middle" font-size="8.5" fill="#6d28d9">C++ · no GC</text>
+  <text x="679" y="168" text-anchor="middle" font-size="8.5" fill="#6d28d9">shard-per-core</text>
+  <text x="430" y="250" text-anchor="middle" font-size="9.5" fill="#526176">Same-channel requests hash to one data service, which merges a read stampede into a single ScyllaDB query.</text>
+</svg>
+<div class="svg-cap">Request path after the migration: coalescing at the Rust data-service layer shields ScyllaDB from hot-partition stampedes.</div>
+</div>
+
+<h3>The migration approach and speed</h3>
+<p>Discord provisioned a fresh ScyllaDB cluster on a <strong>"super-disk" storage topology</strong> (fast Local SSDs fronting persistent disk via RAID mirroring). Then came the data move. The out-of-the-box ScyllaDB <strong>Spark migrator</strong> estimated <strong>three months</strong>. The team instead <strong>rewrote the migrator in Rust in an afternoon</strong>, reusing their data-service library: it <strong>reads token ranges, checkpoints them locally in SQLite, and firehoses them into ScyllaDB</strong>. The new estimate dropped to <strong>nine days</strong>, running at speeds of <strong>up to 3.2 million messages per second</strong>. They validated by <strong>dual-reading a small percentage</strong> of traffic and comparing results before cutting over.</p>
+<p><strong>ScyllaDB became the primary messages database in May 2022.</strong></p>
+
+<h3>The results</h3>
+<table class="tbl">
+  <tr><th>Metric</th><th>Cassandra (before)</th><th>ScyllaDB (after)</th></tr>
+  <tr><td>Cluster size</td><td>177 nodes</td><td><strong>72 nodes</strong></td></tr>
+  <tr><td>Disk per node (avg)</td><td>~4 TB</td><td>9 TB</td></tr>
+  <tr><td>Historical message fetch — p99</td><td>40–125 ms</td><td><strong>15 ms</strong></td></tr>
+  <tr><td>Message insert — p99</td><td>5–70 ms</td><td><strong>steady 5 ms</strong></td></tr>
+</table>
+<div class="tip"><div class="tipl">The headline</div><p>From <strong>177 nodes to 72</strong> carrying the same trillions of messages, with tail latencies that went from erratic (40–125 ms reads) to tight and predictable (15 ms reads, steady 5 ms inserts). Discord also reported the system smoothly handled the <strong>2022 World Cup Final</strong>, whose message-send graph showed nine distinct traffic spikes, "handling it perfectly."</p></div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. Architecture &amp; Data Model — Before and After</h2>
+
+<p>Zooming out, the two eras share a data model but differ in what sits in front of the store and what the store is made of. The partition/clustering design is the durable idea; the front door and the engine are what changed.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 340" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ah3" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+  <!-- BEFORE lane -->
+  <text x="215" y="28" text-anchor="middle" font-size="12" font-weight="800" fill="#334155">BEFORE — Cassandra (~2016–2022)</text>
+  <rect x="30" y="44" width="110" height="46" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="85" y="72" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">API</text>
+  <line x1="140" y1="67" x2="188" y2="67" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah3)"/>
+  <rect x="192" y="44" width="200" height="46" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="292" y="66" text-anchor="middle" font-size="10.5" font-weight="700" fill="#991b1b">Cassandra · 177 nodes</text>
+  <text x="292" y="81" text-anchor="middle" font-size="8.5" fill="#991b1b">JVM · GC pauses · tombstones</text>
+  <text x="215" y="118" text-anchor="middle" font-size="9" fill="#526176">API talks straight to the cluster; hot partitions + quorum reads spread latency fleet-wide.</text>
+  <!-- divider -->
+  <line x1="30" y1="146" x2="400" y2="146" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4"/>
+  <!-- AFTER lane -->
+  <text x="215" y="176" text-anchor="middle" font-size="12" font-weight="800" fill="#334155">AFTER — ScyllaDB (2022+)</text>
+  <rect x="20" y="196" width="86" height="46" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="63" y="224" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">API</text>
+  <line x1="106" y1="219" x2="142" y2="219" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah3)"/>
+  <rect x="146" y="196" width="120" height="46" rx="8" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="206" y="218" text-anchor="middle" font-size="10" font-weight="700" fill="#0d7a6f">Data Service</text>
+  <text x="206" y="232" text-anchor="middle" font-size="8.5" fill="#526176">Rust · coalescing</text>
+  <line x1="266" y1="219" x2="302" y2="219" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah3)"/>
+  <rect x="306" y="196" width="120" height="46" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="366" y="218" text-anchor="middle" font-size="10" font-weight="700" fill="#5b21b6">ScyllaDB · 72</text>
+  <text x="366" y="232" text-anchor="middle" font-size="8.5" fill="#6d28d9">C++ · no GC</text>
+  <text x="215" y="268" text-anchor="middle" font-size="9" fill="#526176">A Rust data-service tier coalesces same-channel reads before the store; fewer, faster nodes.</text>
+  <!-- shared data model panel -->
+  <rect x="450" y="44" width="386" height="264" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.3"/>
+  <text x="643" y="70" text-anchor="middle" font-size="11.5" font-weight="800" fill="#334155">UNCHANGED — the data model</text>
+  <rect x="470" y="86" width="346" height="40" rx="7" fill="#eff6ff" stroke="#2563eb" stroke-width="1.3"/>
+  <text x="643" y="103" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">partition key = (channel_id, bucket)</text>
+  <text x="643" y="118" text-anchor="middle" font-size="8.5" fill="#526176">bucket ≈ 10 days → keep partitions &lt; 100MB</text>
+  <rect x="470" y="134" width="346" height="40" rx="7" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.3"/>
+  <text x="643" y="151" text-anchor="middle" font-size="10" font-weight="700" fill="#0d7a6f">clustering key = message_id (Snowflake)</text>
+  <text x="643" y="166" text-anchor="middle" font-size="8.5" fill="#526176">time-sorted → "latest N" is a tail range scan</text>
+  <rect x="470" y="182" width="346" height="40" rx="7" fill="#dcfce7" stroke="#16a34a" stroke-width="1.3"/>
+  <text x="643" y="199" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">reads/writes at QUORUM</text>
+  <text x="643" y="214" text-anchor="middle" font-size="8.5" fill="#526176">strong-enough consistency for chat</text>
+  <text x="643" y="248" text-anchor="middle" font-size="9" fill="#526176">Cassandra-compatible ScyllaDB let this</text>
+  <text x="643" y="262" text-anchor="middle" font-size="9" fill="#526176">schema carry over almost verbatim —</text>
+  <text x="643" y="276" text-anchor="middle" font-size="9" fill="#526176">the migration changed the engine and the</text>
+  <text x="643" y="290" text-anchor="middle" font-size="9" fill="#526176">front door, not the modeling.</text>
+</svg>
+<div class="svg-cap">Two eras, one data model: bucketed partition key + Snowflake clustering key survived; the store engine (JVM→C++) and the access layer (direct→Rust coalescing tier) changed.</div>
+</div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. Trade-offs &amp; Lessons That Generalize</h2>
+
+<p>Strip away the brand names and this case study is a compact syllabus of message-store design. The transferable lessons:</p>
+<ul>
+  <li><strong>Design partitions so they can't grow without bound.</strong> A pure <code>channel_id</code> partition grows forever and concentrates load; adding a time <strong>bucket</strong> caps partition size (Discord's target: under 100MB) and spreads load across time. Any "per-entity time-series" (chat, feeds, IoT, logs) wants a composite <code>(entity, time_bucket)</code> partition key.</li>
+  <li><strong>Make your sort key double as your access pattern.</strong> Using a time-ordered ID (Snowflake) as the clustering key means the dominant query — "latest N" — is a cheap contiguous scan, with no separate index to maintain.</li>
+  <li><strong>Model with the storage engine's delete semantics in mind.</strong> In an LSM/tombstone store, deletes and even <code>null</code> writes are not free — they leave markers reads must scan. Avoid writing nulls, keep tombstone lifetimes short, and steer reads away from empty ranges.</li>
+  <li><strong>Beware the cost of GC at the datastore layer.</strong> A garbage-collected datastore couples tail latency to GC pauses; at scale those pauses become outages you reboot your way out of. A non-GC engine (C++) and a shard-per-core design removed a whole class of incidents.</li>
+  <li><strong>Put a smart access tier in front of a dumb store.</strong> The Rust data services hold no business logic but add <strong>request coalescing</strong> and consistent-hash routing — turning a read stampede on a hot key into a single query. Solving hot partitions <em>above</em> the database is often cheaper than solving them inside it.</li>
+  <li><strong>Buy-and-tune has a ceiling; sometimes you re-platform.</strong> Discord tuned Cassandra hard for years (tombstone TTLs, nightly repairs, the gossip dance) before concluding the pains were structural. Knowing when tuning is exhausted — and choosing a <em>compatible</em> replacement so the data model carries over — is the senior judgment call.</li>
+  <li><strong>Right-size your tooling.</strong> An afternoon spent rewriting the migrator in a language they controlled turned a three-month migration into a nine-day one. Owning the critical-path tool paid for itself many times over.</li>
+</ul>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Interview Angle — How to Use This</h2>
+
+<p>This case study maps directly onto the classic prompt <strong>"design a chat / message store"</strong> (and its cousins: design Slack, design comments, design a DM system). Citing a real system's numbers and evolution sends a strong signal.</p>
+
+<h3>What signal it sends</h3>
+<ul>
+  <li>You reason about <strong>access patterns first</strong> (read/write ratio, "latest N" vs. history scroll) and let them drive the data model.</li>
+  <li>You know <strong>partition-key design</strong> cold — including the unbounded-partition trap and bucketing as the fix.</li>
+  <li>You can talk about a datastore's <strong>failure modes</strong> (tombstones, hot partitions, GC) rather than treating it as a black box.</li>
+  <li>You understand that <strong>migrations and operational cost</strong> are first-class design concerns, not afterthoughts.</li>
+</ul>
+
+<h3>Probe questions and crisp answers</h3>
+<div class="card">
+<p><strong>Q: How would you store chat messages so "load the latest 50 in a channel" is cheap?</strong><br>Partition by channel, cluster (sort) by a time-ordered message ID such as a Snowflake, so recent messages are a contiguous tail range within the partition. Read the tail; page backward for history. No secondary time index needed.</p>
+<p><strong>Q: A busy channel's partition grows forever — what breaks and how do you fix it?</strong><br>An unbounded partition blows past the store's comfortable size (Discord saw warnings past ~100MB) and concentrates all of that channel's read/write load on one replica set. Fix it by adding a time <strong>bucket</strong> to the partition key — e.g. ~10 days of messages per bucket — so partitions stay bounded and load spreads across time. Derive the bucket from the message's timestamp so no lookup is needed.</p>
+<p><strong>Q: One popular channel is spiking latency for unrelated queries. Why, and what do you do?</strong><br>That's a hot partition: heavy reads on one partition overload its serving nodes, and with quorum reads the latency bleeds into every query on those nodes. Put an access tier in front that does <strong>request coalescing</strong> (collapse concurrent identical reads into one backend query) with consistent-hash routing so same-key requests merge — and/or pick a store with shard-per-core isolation so a hot shard can't starve the rest.</p>
+<p><strong>Q: Why can deletes make a database <em>slower</em>?</strong><br>In LSM/tombstone stores a delete writes a tombstone that reads must scan over until compaction reclaims it; even writing nulls creates them. A channel with millions of deleted messages made Discord's single-surviving-message read take ~20 seconds. Mitigate by not writing nulls, shortening tombstone TTLs, running repairs, and skipping known-empty ranges — or choose a delete-friendlier model.</p>
+<p><strong>Q: When do you re-platform a database instead of tuning it?</strong><br>When the pain is <em>structural</em>, not configurational. Discord tuned Cassandra for years, but GC pauses, compaction backlogs, and tombstone scans were inherent to a JVM LSM store at their scale. They moved to a Cassandra-compatible C++ engine (ScyllaDB) so the data model carried over, cutting 177 nodes to 72 and tightening p99s. The sign: you're rebooting nodes and babysitting background work rather than shipping features.</p>
+</div>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Sources</h2>
+<p>This chapter is a <strong>summary rewritten in our own words</strong> from Discord's two public engineering blog posts. All numbers, dates, and design details above are drawn from those posts, and reflect the systems <strong>as described on the posts' publication dates</strong> — the live architecture may have changed since. Where a detail wasn't stated in the posts, we omitted it rather than infer it.</p>
+<ul>
+  <li><strong>"How Discord Stores Billions of Messages"</strong> — Discord engineering blog (Stanislav Vishnevskiy, January 13, 2017). The MongoDB origin, the move to Cassandra, the bucketed data model, tombstones, and the 12-node cluster. <br><code>https://discord.com/blog/how-discord-stores-billions-of-messages</code></li>
+  <li><strong>"How Discord Stores Trillions of Messages"</strong> — Discord engineering blog (2023). The Cassandra pain points at 177 nodes, the Rust data-services layer with request coalescing, the ScyllaDB migration (primary in May 2022), the Rust migrator, and the before/after node-count and latency results. <br><code>https://discord.com/blog/how-discord-stores-trillions-of-messages</code></li>
+</ul>
+<div class="note"><div class="notel">Attribution note</div><p>Discord is named here because this is <strong>public, published</strong> engineering information with the primary sources cited above. No confidential or internal material is used — everything traces back to the two linked posts.</p></div>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>MongoDB</strong></td><td>Document-oriented NoSQL database; Discord's original message store on a single replica set.</td></tr>
+<tr><td><strong>Cassandra</strong></td><td>Open-source, JVM-based wide-column store with no single point of failure; Discord's 2016–2022 store.</td></tr>
+<tr><td><strong>ScyllaDB</strong></td><td>Cassandra-compatible wide-column store written in C++ with no garbage collector; Discord's 2022 store.</td></tr>
+<tr><td><strong>Wide-column store</strong></td><td>NoSQL database that groups rows into partitions, each holding many time- or key-sorted rows.</td></tr>
+<tr><td><strong>KKV store</strong></td><td>Key-key-value model: a partition key plus a clustering key together address a value.</td></tr>
+<tr><td><strong>Partition key</strong></td><td>Key component that decides which node(s) hold a row; here <code>(channel_id, bucket)</code>.</td></tr>
+<tr><td><strong>Clustering key</strong></td><td>Key component that sorts rows within a partition; here <code>message_id</code>.</td></tr>
+<tr><td><strong>Snowflake</strong></td><td>A 64-bit, time-ordered ID; sorting by it is equivalent to sorting by time.</td></tr>
+<tr><td><strong>Bucket</strong></td><td>Static time window (about 10 days) added to the partition key to cap partition size.</td></tr>
+<tr><td><strong>Replication factor (RF)</strong></td><td>Number of nodes each row is copied to; Discord's Cassandra cluster used 3.</td></tr>
+<tr><td><strong>p95 / p99</strong></td><td>95th / 99th percentile latency — the slow-tail response time, not the average.</td></tr>
+<tr><td><strong>Tombstone</strong></td><td>Marker written on a delete (or a null write) that reads must scan until compaction removes it.</td></tr>
+<tr><td><strong>Compaction</strong></td><td>Background merging of a store's immutable on-disk files (SSTables) that reclaims tombstones and space.</td></tr>
+<tr><td><strong>LSM tree</strong></td><td>Log-structured merge-tree — the write-optimized storage design behind tombstones and compaction.</td></tr>
+<tr><td><strong>Quorum</strong></td><td>Consistency level requiring a majority of replicas to respond to a read or write.</td></tr>
+<tr><td><strong>Hot partition</strong></td><td>A single partition taking disproportionate traffic, overloading the nodes that serve it.</td></tr>
+<tr><td><strong>Garbage collector (GC)</strong></td><td>Automatic memory reclamation on the JVM; its stop-the-world pauses stalled Cassandra nodes.</td></tr>
+<tr><td><strong>JVM</strong></td><td>Java Virtual Machine — the runtime Cassandra runs on, and the source of its GC pauses.</td></tr>
+<tr><td><strong>Shard-per-core</strong></td><td>ScyllaDB design pinning one shard to each CPU core, isolating a hot shard from the rest.</td></tr>
+<tr><td><strong>Request coalescing</strong></td><td>Merging multiple concurrent identical reads into a single backend query.</td></tr>
+<tr><td><strong>Consistent hashing</strong></td><td>Routing scheme mapping a key (channel ID) to a fixed instance so same-key requests converge.</td></tr>
+</table>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="sd_video_platform.html">&lsaquo; Design a Video Platform (video-sharing / short-video-style)</a><a class="bkc" href="index.html">📖 Contents</a><a href="cs_uber_mysql.html">Case Study: Why Uber Migrated from Postgres to MySQL &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

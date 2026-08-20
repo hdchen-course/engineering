@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rust Refresher — Ownership, Borrowing &amp; Fearless Concurrency for Interviews</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #114f8c; --blue-l: #d0ebff; --green: #1d6b2e; --green-l: #d3f9d8;
+  --yellow: #a85700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #4a2fa8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1050px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.nav { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin: 18px 0 32px; position: sticky; top: 0; background: var(--bg); padding: 14px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 23px; font-weight: 700; margin: 28px 0 14px; color: var(--blue); }
+h3 { font-size: 17px; font-weight: 600; margin: 22px 0 10px; }
+h4 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 14px 18px; overflow-x: auto; margin: 10px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #cdd6f4; white-space: pre; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.warn p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.old { background: var(--red-l); border-left: 3px solid var(--red); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.old p { color: #8a1c1c; margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 18px; padding: 22px 26px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th, td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 16px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--purple-l); color:var(--purple); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VIII · Chapter 9 — <b>Rust Refresher</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Rust Refresher</h1>
+  <div class="sub">Rust's distinctive model and the syntax around it — ownership, borrowing, lifetimes, sum types, the <code>Option</code>/<code>Result</code> error model, traits, iterators, and fearless concurrency — a tight brush-up for a programmer coming from another language</div>
+</header>
+
+<style id="rs-code-hl">
+.container pre .kw{color:#cba6f7}
+.container pre .cm{color:#9aa0bd;font-style:italic}
+.container pre .str{color:#a6e3a1}
+.container pre .num{color:#fab387}
+.container pre .fn{color:#89b4fa}
+.container pre .type{color:#f9e2af}
+</style>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'ownership')">Ownership &amp; moves</button>
+  <button class="nav-btn" onclick="showSection(event,'borrows')">Borrowing</button>
+  <button class="nav-btn" onclick="showSection(event,'lifetimes')">Lifetimes</button>
+  <button class="nav-btn" onclick="showSection(event,'enums')">Enums &amp; matching</button>
+  <button class="nav-btn" onclick="showSection(event,'errors')">Option &amp; Result</button>
+  <button class="nav-btn" onclick="showSection(event,'traits')">Traits &amp; generics</button>
+  <button class="nav-btn" onclick="showSection(event,'iterators')">Collections &amp; iterators</button>
+  <button class="nav-btn" onclick="showSection(event,'strings')">Strings</button>
+  <button class="nav-btn" onclick="showSection(event,'concurrency')">Concurrency</button>
+  <button class="nav-btn" onclick="showSection(event,'pitfalls')">Pitfalls</button>
+  <button class="nav-btn" onclick="showSection(event,'tooling')">Tooling</button>
+</div>
+
+<!-- OWNERSHIP & MOVES -->
+<div class="section active" id="ownership">
+<div class="card">
+<h2>Ownership &amp; move semantics — the core model</h2>
+<p>Rust has no garbage collector and no manual <code>free</code>. Instead, every value has exactly one <strong>owner</strong>; when the owner goes out of scope the value is <em>dropped</em> (its memory freed) automatically. Assigning or passing a value that lives on the heap <strong>moves</strong> ownership — the source binding is invalidated, and using it afterward is a <em>compile</em> error, not a runtime crash. Small, fixed-size types (integers, <code>bool</code>, <code>char</code>, <code>f64</code>) instead implement <code>Copy</code>: they are duplicated bit-for-bit, so the original stays valid.</p>
+<pre><span class="kw">let</span> s1 = <span class="type">String</span>::<span class="fn">from</span>(<span class="str">"hello"</span>);
+<span class="kw">let</span> s2 = s1;              <span class="cm">// MOVE: the heap buffer now belongs to s2</span>
+<span class="cm">// println!("{}", s1);   // would not compile — s1 was moved</span>
+<span class="fn">println!</span>(<span class="str">"{}"</span>, s2);      <span class="cm">// ok</span>
+
+<span class="kw">let</span> x = <span class="num">5</span>;
+<span class="kw">let</span> y = x;               <span class="cm">// i32 is Copy — x is still valid</span>
+<span class="fn">println!</span>(<span class="str">"x={x} y={y}"</span>);   <span class="cm">// inline captures (Rust 1.58+, all editions)</span></pre>
+<pre><span class="cm">// → output:</span>
+hello
+x=5 y=5</pre>
+<div class="insight"><p>The rule "one owner, dropped at end of scope" is what lets Rust free memory deterministically without a GC and without <code>free</code>. Passing a value into a function moves it too — so a function signature tells you, at a glance, whether it <em>consumes</em> its argument (<code>fn f(s: String)</code>) or merely <em>borrows</em> it (<code>fn f(s: &amp;str)</code>, next section).</p></div>
+
+<h3>Use-after-move is caught at compile time (E0382)</h3>
+<p>Touching a binding after its value has moved is rejected by the compiler with a precise diagnostic — the whole class of use-after-free / double-free bugs is gone before the program ever runs.</p>
+<pre><span class="kw">let</span> s1 = <span class="type">String</span>::<span class="fn">from</span>(<span class="str">"hello"</span>);
+<span class="kw">let</span> s2 = s1;             <span class="cm">// s1 moved into s2</span>
+<span class="fn">println!</span>(<span class="str">"{}"</span>, s1);      <span class="cm">// ← use after move</span></pre>
+<pre><span class="cm">// → rustc output (does not compile):</span>
+error[E0382]: borrow of moved value: `s1`
+ |
+2 |     let s2 = s1;
+ |              -- value moved here
+3 |     println!("{}", s1);
+ |                    ^^ value borrowed here after move
+ = note: move occurs because `s1` has type `String`,
+         which does not implement the `Copy` trait</pre>
+<div class="tip"><p>Two escape hatches when you genuinely need both: <code>s1.clone()</code> makes a deep copy (explicit, so the cost is visible), or borrow instead of moving (<code>&amp;s1</code>). Reach for <code>clone()</code> deliberately, not reflexively — an unnecessary <code>.clone()</code> to "make the borrow checker happy" is a common beginner smell.</p></div>
+</div>
+</div>
+
+<!-- BORROWING -->
+<div class="section" id="borrows">
+<div class="card">
+<h2>Borrowing &amp; references</h2>
+<p>Instead of moving a value, you can lend a <strong>reference</strong> to it. Two kinds exist, and the borrow checker enforces one iron rule between them: at any given time you may have <strong>either</strong> any number of shared references <code>&amp;T</code> (read-only) <strong>or</strong> exactly one mutable reference <code>&amp;mut T</code> (read-write) — never both. "Many readers XOR one writer" is what makes data races impossible.</p>
+<pre><span class="kw">let</span> <span class="kw">mut</span> v = <span class="fn">vec!</span>[<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>];
+<span class="kw">let</span> r1 = &amp;v;             <span class="cm">// shared borrow</span>
+<span class="kw">let</span> r2 = &amp;v;             <span class="cm">// many shared borrows are fine</span>
+<span class="fn">println!</span>(<span class="str">"{:?} {:?}"</span>, r1, r2);
+<span class="kw">let</span> m = &amp;<span class="kw">mut</span> v;         <span class="cm">// exclusive borrow (r1/r2 no longer used)</span>
+m.<span class="fn">push</span>(<span class="num">4</span>);
+<span class="fn">println!</span>(<span class="str">"{:?}"</span>, m);</pre>
+<pre><span class="cm">// → output:</span>
+[1, 2, 3] [1, 2, 3]
+[1, 2, 3, 4]</pre>
+<div class="insight"><p>Since Rust 2018, borrows end at their <em>last use</em>, not at the end of the enclosing block ("non-lexical lifetimes"). That is why the shared borrows above can coexist with the later <code>&amp;mut v</code>: <code>r1</code> and <code>r2</code> are done being read before <code>m</code> is created.</p></div>
+
+<h3>A shared and a mutable borrow at once won't compile (E0502)</h3>
+<pre><span class="kw">let</span> <span class="kw">mut</span> s = <span class="type">String</span>::<span class="fn">from</span>(<span class="str">"hi"</span>);
+<span class="kw">let</span> r = &amp;s;              <span class="cm">// immutable borrow starts</span>
+<span class="kw">let</span> w = &amp;<span class="kw">mut</span> s;          <span class="cm">// ← mutable borrow while r is still live</span>
+<span class="fn">println!</span>(<span class="str">"{r} {w}"</span>);       <span class="cm">// both used here</span></pre>
+<pre><span class="cm">// → rustc output (does not compile):</span>
+error[E0502]: cannot borrow `s` as mutable because it is
+              also borrowed as immutable
+ |
+2 |     let r = &s;
+ |             -- immutable borrow occurs here
+3 |     let w = &mut s;
+ |             ^^^^^^ mutable borrow occurs here
+4 |     println!("{r} {w}");
+ |               --- immutable borrow later used here</pre>
+<div class="warn"><p>This is the rule people mean by "fighting the borrow checker." The fix is almost never <code>clone()</code> — it is to <em>shorten</em> a borrow (compute the read result, then mutate), split the data into disjoint pieces, or restructure so a value isn't read and written through two aliases simultaneously. The compiler is pointing at a real aliasing hazard.</p></div>
+</div>
+</div>
+
+<!-- LIFETIMES -->
+<div class="section" id="lifetimes">
+<div class="card">
+<h2>Lifetimes — why they exist</h2>
+<p>A reference must never outlive the data it points to. A <strong>lifetime</strong> is the compiler's name for "the region of code during which a reference is valid"; annotations like <code>'a</code> don't change how long anything lives — they <em>relate</em> the lifetimes of inputs and outputs so the compiler can prove no reference dangles. When a function returns a reference derived from its arguments, you often must say <em>which</em> argument it borrows from.</p>
+<pre><span class="cm">// 'a ties the result's lifetime to BOTH inputs:</span>
+<span class="cm">// the returned &str lives no longer than the shorter of x, y.</span>
+<span class="kw">fn</span> <span class="fn">longest</span>&lt;<span class="type">'a</span>&gt;(x: &amp;<span class="type">'a</span> <span class="type">str</span>, y: &amp;<span class="type">'a</span> <span class="type">str</span>) -&gt; &amp;<span class="type">'a</span> <span class="type">str</span> {
+    <span class="kw">if</span> x.<span class="fn">len</span>() &gt;= y.<span class="fn">len</span>() { x } <span class="kw">else</span> { y }
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> a = <span class="type">String</span>::<span class="fn">from</span>(<span class="str">"long string"</span>);
+    <span class="kw">let</span> b = <span class="type">String</span>::<span class="fn">from</span>(<span class="str">"short"</span>);
+    <span class="fn">println!</span>(<span class="str">"{}"</span>, <span class="fn">longest</span>(&amp;a, &amp;b));
+}</pre>
+<pre><span class="cm">// → output:</span>
+long string</pre>
+
+<h3>The check has teeth: dangling references are rejected</h3>
+<p>Returning a reference to a local is a classic C trap (a pointer to freed stack memory). Rust rejects it — there is no lifetime that could make it sound.</p>
+<pre><span class="kw">fn</span> <span class="fn">dangle</span>() -&gt; &amp;<span class="type">String</span> {   <span class="cm">// no input to borrow from</span>
+    <span class="kw">let</span> s = <span class="type">String</span>::<span class="fn">from</span>(<span class="str">"oops"</span>);
+    &amp;s                        <span class="cm">// s is dropped when the fn returns</span>
+}</pre>
+<pre><span class="cm">// → rustc output (does not compile):</span>
+error[E0106]: missing lifetime specifier
+error[E0515]: cannot return reference to local variable `s`
+ |
+3 |     &s
+ |     ^^ returns a reference to data owned by the
+ |        current function</pre>
+<div class="tip"><p><strong>Elision</strong> keeps most code annotation-free. When there is exactly one input reference, its lifetime is given to all output references automatically — so <code>fn first_word(s: &amp;str) -&gt; &amp;str</code> needs no <code>'a</code>. You only write lifetimes when the compiler genuinely can't tell which input an output borrows from (as in <code>longest</code> above). Most day-to-day Rust has none.</p></div>
+</div>
+</div>
+
+<!-- ENUMS & MATCHING -->
+<div class="section" id="enums">
+<div class="card">
+<h2>Structs, enums &amp; pattern matching</h2>
+<p><code>struct</code>s group related data; <code>enum</code>s are true <strong>sum types</strong> — a value is exactly one of several variants, and each variant can carry its own data. <code>match</code> destructures them and is <strong>exhaustive</strong>: the compiler forces you to handle every variant (or add a <code>_</code> catch-all), so adding a case later can't be silently forgotten.</p>
+<pre><span class="cm">#[derive(Debug)]</span>
+<span class="kw">struct</span> <span class="type">Point</span> { x: <span class="type">i32</span>, y: <span class="type">i32</span> }
+
+<span class="kw">enum</span> <span class="type">Shape</span> {
+    <span class="type">Circle</span>(<span class="type">f64</span>),               <span class="cm">// tuple-like variant</span>
+    <span class="type">Rect</span> { w: <span class="type">f64</span>, h: <span class="type">f64</span> },     <span class="cm">// struct-like variant</span>
+}
+
+<span class="kw">fn</span> <span class="fn">area</span>(s: &amp;<span class="type">Shape</span>) -&gt; <span class="type">f64</span> {
+    <span class="kw">match</span> s {
+        <span class="type">Shape</span>::<span class="type">Circle</span>(r) =&gt; <span class="type">std</span>::<span class="type">f64</span>::consts::PI * r * r,
+        <span class="type">Shape</span>::<span class="type">Rect</span> { w, h } =&gt; w * h,
+    }
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> p = <span class="type">Point</span> { x: <span class="num">1</span>, y: <span class="num">2</span> };
+    <span class="fn">println!</span>(<span class="str">"{:?}"</span>, p);          <span class="cm">// Debug print via derive</span>
+    <span class="kw">let</span> shapes = [<span class="type">Shape</span>::<span class="type">Circle</span>(<span class="num">1.0</span>),
+                  <span class="type">Shape</span>::<span class="type">Rect</span> { w: <span class="num">2.0</span>, h: <span class="num">3.0</span> }];
+    <span class="kw">for</span> s <span class="kw">in</span> &amp;shapes {
+        <span class="fn">println!</span>(<span class="str">"{:.3}"</span>, <span class="fn">area</span>(s));
+    }
+    <span class="kw">let</span> maybe = <span class="type">Some</span>(<span class="num">7</span>);
+    <span class="kw">if</span> <span class="kw">let</span> <span class="type">Some</span>(n) = maybe {   <span class="cm">// match just one variant</span>
+        <span class="fn">println!</span>(<span class="str">"got {n}"</span>);
+    }
+}</pre>
+<pre><span class="cm">// → output:</span>
+Point { x: 1, y: 2 }
+3.142
+6.000
+got 7</pre>
+<div class="insight"><p><code>if let</code> is sugar for a <code>match</code> with one interesting arm and an ignored rest — ideal when you care about a single variant. Its cousin <code>while let</code> loops until a pattern stops matching. When you <em>do</em> want the compiler to enforce total coverage, prefer a full <code>match</code>: add a variant to the enum and every non-exhaustive <code>match</code> becomes a compile error pointing you at what to update.</p></div>
+</div>
+</div>
+
+<!-- OPTION & RESULT -->
+<div class="section" id="errors">
+<div class="card">
+<h2><code>Option&lt;T&gt;</code>, <code>Result&lt;T,E&gt;</code> &amp; the <code>?</code> operator</h2>
+<p>Rust has <strong>no null</strong>. Absence is modeled by the enum <code>Option&lt;T&gt;</code> = <code>Some(T) | None</code>, and recoverable failure by <code>Result&lt;T, E&gt;</code> = <code>Ok(T) | Err(E)</code>. Because these are ordinary enums, the compiler forces you to acknowledge the empty / error case — you cannot accidentally dereference a "null." The <code>?</code> operator makes propagation ergonomic: on <code>Ok</code>/<code>Some</code> it unwraps the value; on <code>Err</code>/<code>None</code> it returns early from the function with that error.</p>
+<pre><span class="kw">use</span> <span class="type">std</span>::num::<span class="type">ParseIntError</span>;
+
+<span class="kw">fn</span> <span class="fn">parse_sum</span>(a: &amp;<span class="type">str</span>, b: &amp;<span class="type">str</span>) -&gt; <span class="type">Result</span>&lt;<span class="type">i32</span>, <span class="type">ParseIntError</span>&gt; {
+    <span class="kw">let</span> x: <span class="type">i32</span> = a.<span class="fn">parse</span>()?;   <span class="cm">// ? returns early on Err</span>
+    <span class="kw">let</span> y: <span class="type">i32</span> = b.<span class="fn">parse</span>()?;
+    <span class="type">Ok</span>(x + y)
+}
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">match</span> <span class="fn">parse_sum</span>(<span class="str">"2"</span>, <span class="str">"40"</span>) {
+        <span class="type">Ok</span>(n)  =&gt; <span class="fn">println!</span>(<span class="str">"sum = {n}"</span>),
+        <span class="type">Err</span>(e) =&gt; <span class="fn">println!</span>(<span class="str">"error: {e}"</span>),
+    }
+    <span class="kw">match</span> <span class="fn">parse_sum</span>(<span class="str">"2"</span>, <span class="str">"oops"</span>) {
+        <span class="type">Ok</span>(n)  =&gt; <span class="fn">println!</span>(<span class="str">"sum = {n}"</span>),
+        <span class="type">Err</span>(e) =&gt; <span class="fn">println!</span>(<span class="str">"error: {e}"</span>),
+    }
+    <span class="kw">let</span> v = <span class="fn">vec!</span>[<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>];
+    <span class="fn">println!</span>(<span class="str">"{:?}"</span>, v.<span class="fn">get</span>(<span class="num">1</span>));   <span class="cm">// Some(20) — no panic</span>
+    <span class="fn">println!</span>(<span class="str">"{:?}"</span>, v.<span class="fn">get</span>(<span class="num">9</span>));   <span class="cm">// None    — out of range</span>
+}</pre>
+<pre><span class="cm">// → output:</span>
+sum = 42
+error: invalid digit found in string
+Some(20)
+None</pre>
+<div class="warn"><p><code>.unwrap()</code> and <code>.expect("…")</code> extract the inner value but <strong>panic</strong> on <code>None</code>/<code>Err</code> — fine in tests, examples, and prototypes, a liability in production paths. Prefer <code>?</code> to propagate, <code>match</code>/<code>if let</code> to handle, or <code>.unwrap_or(default)</code> / <code>.unwrap_or_else(..)</code> to supply a fallback. In real code, model your own error type (or use crates like <code>anyhow</code>/<code>thiserror</code>) and let <code>?</code> convert into it.</p></div>
+</div>
+</div>
+
+<!-- TRAITS & GENERICS -->
+<div class="section" id="traits">
+<div class="card">
+<h2>Traits &amp; generics</h2>
+<p>A <strong>trait</strong> is a set of behavior (like an interface); types <code>impl</code> it. Generics with <strong>trait bounds</strong> give you polymorphism with <em>zero runtime cost</em> — the compiler monomorphizes a specialized copy per concrete type (<strong>static dispatch</strong>). When you need a heterogeneous collection or to erase the type, a <code>dyn Trait</code> object dispatches through a vtable (<strong>dynamic dispatch</strong>).</p>
+<pre><span class="kw">trait</span> <span class="type">Greet</span> {
+    <span class="kw">fn</span> <span class="fn">hello</span>(&amp;<span class="kw">self</span>) -&gt; <span class="type">String</span>;
+}
+<span class="kw">struct</span> <span class="type">En</span>;
+<span class="kw">struct</span> <span class="type">Fr</span>;
+<span class="kw">impl</span> <span class="type">Greet</span> <span class="kw">for</span> <span class="type">En</span> { <span class="kw">fn</span> <span class="fn">hello</span>(&amp;<span class="kw">self</span>) -&gt; <span class="type">String</span> { <span class="str">"Hello"</span>.<span class="fn">into</span>() } }
+<span class="kw">impl</span> <span class="type">Greet</span> <span class="kw">for</span> <span class="type">Fr</span> { <span class="kw">fn</span> <span class="fn">hello</span>(&amp;<span class="kw">self</span>) -&gt; <span class="type">String</span> { <span class="str">"Bonjour"</span>.<span class="fn">into</span>() } }
+
+<span class="kw">fn</span> <span class="fn">greet_static</span>&lt;<span class="type">T</span>: <span class="type">Greet</span>&gt;(g: &amp;<span class="type">T</span>) { <span class="fn">println!</span>(<span class="str">"{}"</span>, g.<span class="fn">hello</span>()); }  <span class="cm">// bound</span>
+<span class="kw">fn</span> <span class="fn">greet_impl</span>(g: &amp;<span class="kw">impl</span> <span class="type">Greet</span>)   { <span class="fn">println!</span>(<span class="str">"{}"</span>, g.<span class="fn">hello</span>()); }  <span class="cm">// impl Trait</span>
+<span class="kw">fn</span> <span class="fn">greet_dyn</span>(g: &amp;<span class="kw">dyn</span> <span class="type">Greet</span>)    { <span class="fn">println!</span>(<span class="str">"{}"</span>, g.<span class="fn">hello</span>()); }  <span class="cm">// trait object</span>
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="fn">greet_static</span>(&amp;<span class="type">En</span>);
+    <span class="fn">greet_impl</span>(&amp;<span class="type">Fr</span>);
+    <span class="kw">let</span> langs: <span class="type">Vec</span>&lt;<span class="type">Box</span>&lt;<span class="kw">dyn</span> <span class="type">Greet</span>&gt;&gt; = <span class="fn">vec!</span>[<span class="type">Box</span>::<span class="fn">new</span>(<span class="type">En</span>), <span class="type">Box</span>::<span class="fn">new</span>(<span class="type">Fr</span>)];
+    <span class="kw">for</span> l <span class="kw">in</span> &amp;langs { <span class="fn">greet_dyn</span>(l.<span class="fn">as_ref</span>()); }
+}</pre>
+<pre><span class="cm">// → output:</span>
+Hello
+Bonjour
+Hello
+Bonjour</pre>
+<div class="insight"><p><strong>Static vs dynamic:</strong> generics / <code>impl Trait</code> compile to concrete, inlinable code (fast, larger binary, type known at compile time); <code>dyn Trait</code> stores a pointer + vtable and resolves the method at run time (one code copy, needed when the concrete type varies at run time, e.g. a <code>Vec&lt;Box&lt;dyn Trait&gt;&gt;</code>). <code>#[derive(Debug, Clone, PartialEq, …)]</code> auto-implements common traits so you rarely write that boilerplate by hand.</p></div>
+</div>
+</div>
+
+<!-- COLLECTIONS & ITERATORS -->
+<div class="section" id="iterators">
+<div class="card">
+<h2>Collections &amp; iterators</h2>
+<p>The everyday collections are the growable <code>Vec&lt;T&gt;</code> and the <code>HashMap&lt;K, V&gt;</code>. Iterators are <strong>lazy</strong> and <strong>zero-cost</strong>: adapters like <code>map</code>, <code>filter</code>, and <code>take</code> build a pipeline that does nothing until a <em>consumer</em> such as <code>collect</code>, <code>sum</code>, or a <code>for</code> loop drives it — and the whole chain compiles down to roughly the same machine code as a hand-written loop.</p>
+<pre><span class="kw">use</span> <span class="type">std</span>::collections::<span class="type">HashMap</span>;
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> nums = <span class="fn">vec!</span>[<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>];
+    <span class="kw">let</span> evens_sq: <span class="type">Vec</span>&lt;<span class="type">i32</span>&gt; = nums.<span class="fn">iter</span>()
+        .<span class="fn">filter</span>(|&amp;&amp;n| n % <span class="num">2</span> == <span class="num">0</span>)   <span class="cm">// keep evens</span>
+        .<span class="fn">map</span>(|&amp;n| n * n)             <span class="cm">// square them</span>
+        .<span class="fn">collect</span>();                    <span class="cm">// materialize into a Vec</span>
+    <span class="fn">println!</span>(<span class="str">"{:?}"</span>, evens_sq);
+    <span class="kw">let</span> sum: <span class="type">i32</span> = nums.<span class="fn">iter</span>().<span class="fn">sum</span>();
+    <span class="fn">println!</span>(<span class="str">"sum = {sum}"</span>);
+
+    <span class="kw">let</span> <span class="kw">mut</span> counts: <span class="type">HashMap</span>&lt;&amp;<span class="type">str</span>, <span class="type">i32</span>&gt; = <span class="type">HashMap</span>::<span class="fn">new</span>();
+    <span class="kw">for</span> w <span class="kw">in</span> [<span class="str">"a"</span>, <span class="str">"b"</span>, <span class="str">"a"</span>, <span class="str">"c"</span>, <span class="str">"b"</span>, <span class="str">"a"</span>] {
+        *counts.<span class="fn">entry</span>(w).<span class="fn">or_insert</span>(<span class="num">0</span>) += <span class="num">1</span>;   <span class="cm">// upsert</span>
+    }
+    <span class="fn">println!</span>(<span class="str">"a = {}"</span>, counts[<span class="str">"a"</span>]);
+}</pre>
+<pre><span class="cm">// → output:</span>
+[4, 16, 36]
+sum = 21
+a = 3</pre>
+<div class="tip"><p>The <code>entry(k).or_insert(default)</code> pattern is the idiomatic "insert-or-update" — it avoids a double lookup and returns a <code>&amp;mut V</code> you can modify in place. Note <code>iter()</code> yields shared references (<code>&amp;T</code>); use <code>into_iter()</code> to consume the collection by value, or <code>iter_mut()</code> to get <code>&amp;mut T</code>.</p></div>
+</div>
+</div>
+
+<!-- STRINGS -->
+<div class="section" id="strings">
+<div class="card">
+<h2>Strings: <code>String</code> vs <code>&amp;str</code></h2>
+<p>There are two string types for the same reason there are owned values and borrows. <code>String</code> is an owned, growable, heap-allocated buffer; <code>&amp;str</code> is a borrowed <em>slice</em> — a view (pointer + length) into string data owned by someone else (a <code>String</code>, or a <code>"literal"</code> baked into the binary). Both are guaranteed <strong>UTF-8</strong>, which is why indexing is by <em>byte offset</em>, not character.</p>
+<pre><span class="cm">// Take &str at API boundaries: it accepts both a</span>
+<span class="cm">// borrowed String and a literal without allocating.</span>
+<span class="kw">fn</span> <span class="fn">shout</span>(s: &amp;<span class="type">str</span>) -&gt; <span class="type">String</span> { s.<span class="fn">to_uppercase</span>() }
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> owned: <span class="type">String</span> = <span class="type">String</span>::<span class="fn">from</span>(<span class="str">"héllo"</span>);
+    <span class="kw">let</span> slice: &amp;<span class="type">str</span> = &amp;owned[<span class="num">0</span>..<span class="num">1</span>];   <span class="cm">// byte range, not char index</span>
+    <span class="fn">println!</span>(<span class="str">"slice = {slice}"</span>);
+    <span class="fn">println!</span>(<span class="str">"bytes = {}, chars = {}"</span>,
+             owned.<span class="fn">len</span>(), owned.<span class="fn">chars</span>().<span class="fn">count</span>());
+    <span class="kw">for</span> c <span class="kw">in</span> <span class="str">"ab"</span>.<span class="fn">chars</span>() { <span class="fn">print!</span>(<span class="str">"[{c}]"</span>); }
+    <span class="fn">println!</span>();
+    <span class="fn">println!</span>(<span class="str">"{}"</span>, <span class="fn">shout</span>(&amp;owned));   <span class="cm">// &String coerces to &str</span>
+}</pre>
+<pre><span class="cm">// → output (é is 2 bytes in UTF-8: 6 bytes, 5 chars):</span>
+slice = h
+bytes = 6, chars = 5
+[a][b]
+HÉLLO</pre>
+<div class="warn"><p>Because indices are byte offsets, slicing in the middle of a multi-byte character (e.g. <code>&amp;owned[0..2]</code> here, which would split the <code>é</code>) <strong>panics</strong> at run time — Rust won't hand you invalid UTF-8. Iterate with <code>.chars()</code> for Unicode scalar values or <code>.bytes()</code> for raw bytes; there is deliberately no <code>s[i]</code> integer indexing on strings.</p></div>
+<div class="insight"><p><strong>API rule of thumb:</strong> accept <code>&amp;str</code> (most flexible — a <code>String</code> derefs to it for free), return or store <code>String</code> when you need ownership. This mirrors the owned-vs-borrowed distinction from collections (<code>Vec&lt;T&gt;</code> vs <code>&amp;[T]</code>).</p></div>
+</div>
+</div>
+
+<!-- CONCURRENCY -->
+<div class="section" id="concurrency">
+<div class="card">
+<h2>Concurrency — data races caught at compile time</h2>
+<p>Rust's headline concurrency claim ("fearless concurrency") falls straight out of the ownership rules plus two marker traits. <code>Send</code> means a type is safe to <em>move</em> to another thread; <code>Sync</code> means it is safe to <em>share</em> by reference across threads. The compiler auto-derives them and refuses to compile a program that would share mutable state unsafely — a data race becomes a type error, not a Heisenbug.</p>
+<p>To share <em>mutable</em> state across threads you combine two pieces: <code>Arc&lt;T&gt;</code> (atomically reference-counted shared ownership) around a <code>Mutex&lt;T&gt;</code> (mutual exclusion). This <code>Arc&lt;Mutex&lt;T&gt;&gt;</code> pattern is the standard building block.</p>
+<pre><span class="kw">use</span> <span class="type">std</span>::sync::{<span class="type">Arc</span>, <span class="type">Mutex</span>};
+<span class="kw">use</span> <span class="type">std</span>::thread;
+
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> counter = <span class="type">Arc</span>::<span class="fn">new</span>(<span class="type">Mutex</span>::<span class="fn">new</span>(<span class="num">0</span>));
+    <span class="kw">let</span> <span class="kw">mut</span> handles = <span class="fn">vec!</span>[];
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="num">0</span>..<span class="num">8</span> {
+        <span class="kw">let</span> c = <span class="type">Arc</span>::<span class="fn">clone</span>(&amp;counter);   <span class="cm">// bump refcount, share owner</span>
+        handles.<span class="fn">push</span>(thread::<span class="fn">spawn</span>(<span class="kw">move</span> || {
+            <span class="kw">let</span> <span class="kw">mut</span> n = c.<span class="fn">lock</span>().<span class="fn">unwrap</span>();   <span class="cm">// lock guard; unlocks on drop</span>
+            *n += <span class="num">1</span>;
+        }));
+    }
+    <span class="kw">for</span> h <span class="kw">in</span> handles { h.<span class="fn">join</span>().<span class="fn">unwrap</span>(); }
+    <span class="fn">println!</span>(<span class="str">"total = {}"</span>, *counter.<span class="fn">lock</span>().<span class="fn">unwrap</span>());
+}</pre>
+<pre><span class="cm">// → output (deterministic — the Mutex serializes the increments):</span>
+total = 8</pre>
+<div class="insight"><p>Try to remove the <code>Arc</code>/<code>Mutex</code> and share a plain <code>&amp;mut</code> across threads, and the code simply won't compile — <code>thread::spawn</code> requires the borrowed data to outlive the thread (a <code>'static</code> bound a stack borrow can't meet), and an exclusive <code>&amp;mut</code> can't be aliased into more than one thread anyway. The lock <strong>guard</strong> returned by <code>lock()</code> releases the mutex automatically when it goes out of scope (RAII), so there is no "forgot to unlock" bug. For lock-free counters, <code>std::sync::atomic</code> types are the lighter-weight choice.</p></div>
+</div>
+</div>
+
+<!-- PITFALLS -->
+<div class="section" id="pitfalls">
+<div class="card">
+<h2>Common pitfalls (and their fixes)</h2>
+
+<h3>1 · Fighting the borrow checker with <code>clone()</code></h3>
+<p>The reflex when an <code>E0502</code>/<code>E0382</code> appears is to sprinkle <code>.clone()</code> until it compiles. That works but hides the design: you're paying for a deep copy to dodge an aliasing question. Usually the right fix is to <em>shorten</em> a borrow — read what you need into a local, then mutate — or to split the data so the reads and writes touch disjoint parts. Clone when you genuinely need a second owned copy, not as a borrow-checker silencer.</p>
+
+<h3>2 · Moving out of a borrow</h3>
+<p>You can't take ownership of something you've only borrowed. Trying to move a field out of a <code>&amp;</code> reference is rejected.</p>
+<pre><span class="kw">fn</span> <span class="fn">take</span>(p: &amp;(<span class="type">String</span>, <span class="type">i32</span>)) -&gt; <span class="type">String</span> {
+    p.<span class="num">0</span>                     <span class="cm">// ← tries to MOVE the String out of a &borrow</span>
+}</pre>
+<pre><span class="cm">// → rustc output (does not compile):</span>
+error[E0507]: cannot move out of `p.0` which is behind
+              a shared reference</pre>
+<p>Fix by borrowing or copying the piece instead: <code>&amp;p.0</code>, <code>p.0.clone()</code>, or <code>p.1</code> (an <code>i32</code> is <code>Copy</code>, so reading it is fine).</p>
+
+<h3>3 · Indexing vs <code>.get()</code></h3>
+<p>Indexing a <code>Vec</code> out of range <strong>panics</strong>; <code>.get()</code> returns an <code>Option</code> you can handle. Prefer <code>.get()</code> whenever the index might be out of bounds.</p>
+<pre><span class="kw">let</span> v = <span class="fn">vec!</span>[<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>];
+<span class="cm">// v[10]  →  panics: "index out of bounds: the len is 3 but the index is 10"</span>
+<span class="kw">match</span> v.<span class="fn">get</span>(<span class="num">10</span>) {
+    <span class="type">Some</span>(x) =&gt; <span class="fn">println!</span>(<span class="str">"{x}"</span>),
+    <span class="type">None</span>    =&gt; <span class="fn">println!</span>(<span class="str">"no element at 10 (get returns None)"</span>),
+}</pre>
+<pre><span class="cm">// → output:</span>
+no element at 10 (get returns None)</pre>
+
+<h3>4 · <code>unwrap()</code> in production</h3>
+<p>Every <code>.unwrap()</code> / <code>.expect()</code> is a potential panic. They're perfectly idiomatic in tests and quick scripts, but on a request path they turn a recoverable <code>Err</code> into a crash. Propagate with <code>?</code>, or handle explicitly. <code>clippy</code> can be configured to deny <code>unwrap</code> in a crate.</p>
+
+<h3>5 · <code>String</code> vs <code>&amp;str</code> at API boundaries</h3>
+<p>Taking a <code>String</code> parameter forces every caller to hand over ownership (often an extra allocation via <code>.to_string()</code>). Take <code>&amp;str</code> instead — a <code>String</code> coerces to it automatically, and so does a literal. Same idea for slices: prefer <code>&amp;[T]</code> over <code>&amp;Vec&lt;T&gt;</code>.</p>
+<div class="warn"><p>A meta-pitfall: treating the borrow checker as an adversary. Its errors are almost always pointing at a genuine ownership/aliasing question you haven't answered yet. The fastest way out of the "fighting" phase is to read the diagnostic (rustc's messages are unusually good, often with a suggested fix) and let it teach the model, rather than reaching for <code>clone()</code> / <code>unwrap()</code> / <code>unsafe</code> to make the red text disappear.</p></div>
+</div>
+</div>
+
+<!-- TOOLING -->
+<div class="section" id="tooling">
+<div class="card">
+<h2>Tooling &amp; editions</h2>
+<p>Rust ships a famously integrated toolchain. You install and switch versions with <strong>rustup</strong>, and almost everything else goes through <strong>cargo</strong>, the build tool and package manager.</p>
+<table>
+<tr><th>Command</th><th>What it does</th></tr>
+<tr><td><code>cargo new</code> / <code>cargo init</code></td><td>Scaffold a new project (or initialize the current directory).</td></tr>
+<tr><td><code>cargo build</code> / <code>--release</code></td><td>Compile (debug, fast build) or optimize (<code>--release</code>).</td></tr>
+<tr><td><code>cargo run</code></td><td>Build then run the binary.</td></tr>
+<tr><td><code>cargo test</code></td><td>Run <code>#[test]</code> functions and doc-tests.</td></tr>
+<tr><td><code>cargo clippy</code></td><td>Lint: hundreds of idiom &amp; correctness checks.</td></tr>
+<tr><td><code>cargo fmt</code></td><td>Auto-format to the community style (rustfmt).</td></tr>
+</table>
+<p>Dependencies are declared in <code>Cargo.toml</code> and pulled from <code>crates.io</code>; <code>Cargo.lock</code> pins exact versions for reproducible builds.</p>
+<pre><span class="cm"># Cargo.toml</span>
+[package]
+name = <span class="str">"demo"</span>
+version = <span class="str">"0.1.0"</span>
+edition = <span class="str">"2021"</span>
+
+[dependencies]
+serde = { version = <span class="str">"1"</span>, features = [<span class="str">"derive"</span>] }</pre>
+
+<h3>clippy catches idiom problems the compiler allows</h3>
+<p>Code can compile cleanly yet still be non-idiomatic. <code>clippy</code> flags those with an explanation and usually a fix.</p>
+<pre><span class="cm">// compiles fine, but clippy objects:</span>
+<span class="kw">let</span> v = <span class="fn">vec!</span>[<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>];
+<span class="kw">if</span> v.<span class="fn">len</span>() == <span class="num">0</span> { <span class="fn">println!</span>(<span class="str">"empty"</span>); }</pre>
+<pre><span class="cm"># → cargo clippy</span>
+warning: length comparison to zero
+ |
+ |     if v.len() == 0 {
+ |        ^^^^^^^^^^^^ help: using `is_empty` is clearer
+ |                    and more explicit: `v.is_empty()`
+ = note: `#[warn(clippy::len_zero)]` on by default</pre>
+
+<h3>Editions</h3>
+<p>An <strong>edition</strong> (2015, 2018, 2021, 2024) is an opt-in language epoch set per crate in <code>Cargo.toml</code>. It lets Rust make small breaking syntax changes — new keywords, new defaults — <em>without</em> splitting the ecosystem: crates on different editions interoperate, so upgrading is per-crate and never forced. For example, the 2018 edition added the <code>async</code>/<code>await</code> and <code>dyn</code> keywords and changed module-path rules; the 2021 edition made closures capture disjoint fields and arrays implement <code>IntoIterator</code> by value. (The inline <code>"{var}"</code> format captures used throughout this chapter are <em>not</em> edition-gated — they are a Rust <strong>1.58+</strong> compiler feature available in every edition.)</p>
+<div class="insight"><p><strong>Interview angle.</strong> A strong "why Rust?" answer connects the pieces: ownership + borrowing give memory safety <em>and</em> data-race freedom with no garbage collector, checked at compile time; <code>Option</code>/<code>Result</code> replace null and exceptions with values the type system forces you to handle; traits + generics give zero-cost abstraction. The cost is a steeper learning curve and longer compiles — worth it where safety and predictable performance both matter (systems code, infrastructure, embedded, high-scale services).</p></div>
+<div class="tip"><p>Wire <code>cargo fmt --check</code> and <code>cargo clippy -- -D warnings</code> into CI, and install <strong>rust-analyzer</strong> in your editor for inline types, jump-to-definition, and quick fixes — it turns the compiler's rich diagnostics into a fast feedback loop while you type.</p></div>
+</div>
+</div>
+
+<!-- TERMINOLOGY & ACRONYMS -->
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p>Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Ownership</strong></td><td>Each value has exactly one owner; when the owner leaves scope the value is dropped (freed) automatically — no GC, no manual <code>free</code>.</td></tr>
+<tr><td><strong>Move</strong></td><td>Assigning or passing a heap value transfers ownership; the source binding is invalidated and using it afterward is a compile error.</td></tr>
+<tr><td><strong>Copy</strong></td><td>Trait for small fixed-size types (integers, <code>bool</code>, <code>char</code>, <code>f64</code>) that are duplicated bit-for-bit instead of moved.</td></tr>
+<tr><td><strong>Drop</strong></td><td>The automatic release of a value's resources when its owner goes out of scope.</td></tr>
+<tr><td><strong>Borrow (<code>&amp;T</code> / <code>&amp;mut T</code>)</strong></td><td>Lending a reference to a value instead of moving it: shared read-only <code>&amp;T</code>, or exclusive read-write <code>&amp;mut T</code>.</td></tr>
+<tr><td><strong>Borrow checker</strong></td><td>The compiler pass enforcing "many shared readers XOR one mutable writer," which makes data races impossible.</td></tr>
+<tr><td><strong>NLL (non-lexical lifetimes)</strong></td><td>The rule that a borrow ends at its last use, not at the end of the enclosing block.</td></tr>
+<tr><td><strong>Lifetime (<code>'a</code>)</strong></td><td>The compiler's name for the region of code where a reference is valid; annotations relate input and output lifetimes.</td></tr>
+<tr><td><strong>Elision</strong></td><td>Automatic inference of lifetimes, so most code needs no explicit <code>'a</code> annotation.</td></tr>
+<tr><td><strong>enum / sum type</strong></td><td>A type whose value is exactly one of several variants, each able to carry its own data.</td></tr>
+<tr><td><strong><code>match</code></strong></td><td>Pattern-matching construct that is exhaustive: every variant must be handled, or a <code>_</code> catch-all added.</td></tr>
+<tr><td><strong><code>Option&lt;T&gt;</code></strong></td><td>Enum <code>Some(T) | None</code> modeling presence or absence — Rust's replacement for null.</td></tr>
+<tr><td><strong><code>Result&lt;T, E&gt;</code></strong></td><td>Enum <code>Ok(T) | Err(E)</code> modeling success or recoverable failure.</td></tr>
+<tr><td><strong><code>?</code> operator</strong></td><td>Unwraps <code>Ok</code>/<code>Some</code>, or returns early from the function on <code>Err</code>/<code>None</code>.</td></tr>
+<tr><td><strong>panic</strong></td><td>An unrecoverable error that unwinds (or aborts) the current thread; triggered by <code>unwrap()</code>/<code>expect()</code> on <code>None</code>/<code>Err</code>, out-of-range indexing, or slicing mid-character.</td></tr>
+<tr><td><strong>Trait</strong></td><td>A named set of behavior (like an interface) that types implement with <code>impl</code>.</td></tr>
+<tr><td><strong>Trait bound</strong></td><td>A constraint (e.g. <code>T: Greet</code>) requiring a generic type to implement a given trait.</td></tr>
+<tr><td><strong>Static dispatch</strong></td><td>Generics / <code>impl Trait</code> monomorphized into a specialized, inlinable copy per concrete type — zero runtime cost.</td></tr>
+<tr><td><strong><code>dyn Trait</code> (dynamic dispatch)</strong></td><td>A trait object that resolves methods through a vtable at run time, for when the concrete type varies.</td></tr>
+<tr><td><strong>Iterator</strong></td><td>A lazy, zero-cost sequence: adapters (<code>map</code>, <code>filter</code>) build a pipeline a consumer (<code>collect</code>, <code>sum</code>) drives.</td></tr>
+<tr><td><strong><code>String</code> vs <code>&amp;str</code></strong></td><td><code>String</code> is an owned, growable heap buffer; <code>&amp;str</code> is a borrowed, UTF-8 slice view into string data.</td></tr>
+<tr><td><strong>UTF-8</strong></td><td>The variable-width text encoding all Rust strings are guaranteed to be; indexing is by byte offset, not character.</td></tr>
+<tr><td><strong>Send / Sync</strong></td><td>Marker traits: <code>Send</code> = safe to move to another thread; <code>Sync</code> = safe to share by reference across threads.</td></tr>
+<tr><td><strong><code>Arc&lt;T&gt;</code></strong></td><td>Atomically reference-counted pointer giving shared ownership of a value across threads.</td></tr>
+<tr><td><strong><code>Mutex&lt;T&gt;</code></strong></td><td>A mutual-exclusion lock; <code>lock()</code> returns a guard that unlocks automatically when dropped (RAII — Resource Acquisition Is Initialization).</td></tr>
+<tr><td><strong>cargo / rustup</strong></td><td><code>cargo</code> is Rust's build tool and package manager; <code>rustup</code> installs and switches toolchain versions.</td></tr>
+<tr><td><strong>clippy</strong></td><td>The linter that flags non-idiomatic or incorrect code the compiler otherwise accepts.</td></tr>
+<tr><td><strong>Edition</strong></td><td>An opt-in language epoch (2015 / 2018 / 2021 / 2024) set per crate, allowing small breaking changes without splitting the ecosystem.</td></tr>
+</table>
+</div>
+
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  evt.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="shell_refresher.html">‹ Shell / Bash Scripting Refresher</a><a class="bkc" href="index.html">📖 Contents</a><a href="kotlin_refresher.html">Kotlin Refresher ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

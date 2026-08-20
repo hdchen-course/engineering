@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Google Papers: GFS, MapReduce &amp; Bigtable — System Design Interview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --sw: 260px;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* MAIN — normal document flow, centered like the rest of the book */
+#main { background: var(--bg); }
+.container { max-width: 1080px; margin: 0 auto; padding: 20px 20px 0; }
+
+/* TOP SECTION NAV (site style, sticky) */
+.nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 14px 0; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; font-family: 'Inter', sans-serif; transition: all .2s; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue-d); border-color: var(--blue); }
+
+/* HEADER */
+.ph {
+  background: linear-gradient(135deg, #0f2a4a 0%, #1e40af 45%, #6d28d9 100%);
+  padding: 40px 44px;
+  border-radius: var(--r);
+  margin: 8px 0 4px;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #93c5fd; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 720px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+.sec { padding: 28px 4px; display: none; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: #fff; border-radius: var(--r); margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--blue-l); color: var(--blue-d); font-size: 11px; font-weight: 600; margin: 2px; }
+.tag-gfs { background: var(--blue-l); color: var(--blue-d); }
+.tag-mr { background: var(--green-l); color: var(--green); }
+.tag-bt { background: var(--purple-l); color: var(--purple); }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* INTERVIEW QUOTE */
+.iq {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--text2);
+  font-size: 13px;
+  position: relative;
+}
+.iq::before {
+  content: 'SAY THIS';
+  position: absolute;
+  top: -8px; left: 14px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  background: var(--blue);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+h4.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* SVG CONTAINERS */
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg3); padding: 1px 5px; border-radius: 4px; color: var(--blue-d); }
+
+pre, pre.codeblock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+  line-height: 1.6;
+  color: var(--text2);
+  white-space: pre;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: 12px; }
+
+/* LIST STYLING */
+.content-list { padding-left: 20px; margin: 8px 0; }
+.content-list li { margin-bottom: 6px; font-size: 13px; color: var(--text2); }
+.content-list li strong { color: var(--text); }
+
+a.lc { color: var(--blue); text-decoration: none; font-weight: 500; }
+a.lc:hover { text-decoration: underline; color: var(--blue-d); }
+
+@media (max-width: 768px) {
+  .sec { padding: 20px 16px; }
+  .ph { padding: 24px 16px; }
+}
+</style>
+
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+
+<style id="chapter-extra">
+/* Syntax highlighting spans for code blocks */
+.kw  { color: #7c3aed; font-weight: 600; }
+.cm  { color: #64748b; font-style: italic; }
+.num { color: #ea580c; }
+.str { color: #16a34a; }
+.fn  { color: #2563eb; }
+
+/* MapReduce replayable step player (namespaced) */
+.mr-player { border: 1px solid var(--border); border-radius: var(--r); padding: 16px; margin: 18px 0; background: #fff; box-shadow: var(--shadow-sm); }
+.mr-stage-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 12px 0; }
+@media (max-width: 820px){ .mr-stage-grid { grid-template-columns: 1fr; } }
+.mr-col { border: 1px solid var(--border); border-radius: 8px; padding: 8px 8px 10px; background: var(--bg3); transition: all .35s ease; opacity: .38; }
+.mr-col.on { opacity: 1; background: #fff; border-color: var(--blue); box-shadow: 0 0 0 2px rgba(37,99,235,.12); }
+.mr-col .mrh { font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; color: var(--text3); margin-bottom: 6px; text-align: center; font-weight: 700; }
+.mr-col.on .mrh { color: var(--blue-d); }
+.mr-kv { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 3px 7px; margin: 4px 0; display: block; opacity: 0; transform: translateY(5px); transition: all .3s ease; color: var(--text2); }
+.mr-kv.show { opacity: 1; transform: none; }
+.mr-kv b { color: var(--purple); }
+.mr-kv .v { color: var(--orange); }
+.mr-sub { font-size: 9.5px; color: var(--text3); text-align: center; margin: 4px 0 2px; font-weight: 600; }
+.mr-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+.mr-btn { padding: 8px 18px; border-radius: 8px; border: 1px solid var(--blue); background: var(--blue); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; font-family: 'Inter', sans-serif; }
+.mr-btn.secd { background: #fff; color: var(--blue-d); }
+.mr-btn:disabled { opacity: .4; cursor: not-allowed; }
+.mr-step-ind { font-size: 12px; color: var(--text3); font-weight: 700; margin-left: auto; font-family: 'JetBrains Mono', monospace; }
+.mr-caption { font-size: 13px; color: var(--text); background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 10px 12px; margin-top: 12px; }
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part IV · Chapter 7 — <b>The Google Papers: GFS · MapReduce · Bigtable</b></span><span class="bkspacer"></span></nav>
+
+<div id="main">
+<div class="container">
+
+<div class="ph">
+  <div class="htag">System Design Interview Preparation</div>
+  <div class="ht">The Google Papers &mdash; <span>GFS, MapReduce &amp; Bigtable</span></div>
+  <div class="hd">Three papers (2003&ndash;2006) that taught the industry how to store, process, and serve web-scale data on cheap, failure-prone machines. For each one: the problem it solved, the core design, and what it inspired (GFS&rarr;HDFS, MapReduce&rarr;Hadoop/Spark, Bigtable&rarr;HBase/Cassandra). Explained so a curious high-schooler follows the big idea &mdash; then taken to the trade-off depth a senior interview expects.</div>
+  <div class="hm">
+    <span class="chip"><b>3</b> Foundational Papers</span>
+    <span class="chip">GFS <b>2003</b></span>
+    <span class="chip">MapReduce <b>2004</b></span>
+    <span class="chip">Bigtable <b>2006</b></span>
+    <span class="chip">Replayable animation</span>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="go('overview')">Overview &amp; The Stack</button>
+  <button class="nav-btn" onclick="go('gfs')">GFS</button>
+  <button class="nav-btn" onclick="go('mapreduce')">MapReduce</button>
+  <button class="nav-btn" onclick="go('bigtable')">Bigtable</button>
+  <button class="nav-btn" onclick="go('connect')">Fit Together &amp; Interview</button>
+</nav>
+
+<!-- ============================================================ -->
+<!-- OVERVIEW -->
+<!-- ============================================================ -->
+<div class="sec active" id="tab-overview">
+  <h2 class="stitle">Why Three Old Papers Still Rule the Interview</h2>
+  <p class="sdesc">A warehouse analogy, the stack the three papers form together, and the one design idea they all share.</p>
+
+  <h3 class="sub">The one-sentence idea (start here)</h3>
+  <p>Imagine you must store and search every book ever written, but the only shelves you can afford are cheap wooden ones that collapse a few times a day. You would not buy one gold-plated unbreakable shelf &mdash; you would buy <strong>thousands of cheap shelves, keep three copies of every book, and hire software robots to notice a collapse and re-shelve the copies automatically</strong>. That is the whole philosophy behind all three Google papers.</p>
+
+  <div class="ins"><div class="insl">The core philosophy (memorize this)</div><p>All three papers share one radical bet: <strong>hardware failure is normal, not exceptional &mdash; so tolerate it in software.</strong> Instead of expensive reliable machines, use thousands of cheap ones and let the software detect failures, re-replicate data, and re-run work. In 2003 this was a genuinely new way to build systems. Today it is simply how the cloud works.</p></div>
+
+  <h3 class="sub">The stack: each paper is a layer</h3>
+  <p>They were not three unrelated projects. GFS sits at the bottom; <strong>MapReduce and Bigtable both sit on top of GFS as siblings</strong> (Bigtable also uses Chubby for locks) &mdash; the diagram orders them by abstraction level, not by a dependency of one on the other:</p>
+
+  <div class="svg-container">
+  <svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" style="max-width:720px;" role="img" aria-label="The Google stack: commodity hardware, GFS, MapReduce, Bigtable, applications">
+    <rect x="20" y="10" width="680" height="52" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="360" y="33" text-anchor="middle" fill="#6d28d9" font-family="Inter,sans-serif" font-size="13" font-weight="700">Applications</text>
+    <text x="360" y="51" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="11">Web index, Gmail, Maps, Analytics &hellip;</text>
+
+    <rect x="20" y="72" width="680" height="52" rx="8" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+    <text x="360" y="95" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="13" font-weight="700">Bigtable (2006) &mdash; structured serving</text>
+    <text x="360" y="113" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="11">sorted map: (row, column, timestamp) &rarr; value</text>
+
+    <rect x="20" y="134" width="680" height="52" rx="8" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+    <text x="360" y="157" text-anchor="middle" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="13" font-weight="700">MapReduce (2004) &mdash; batch computation</text>
+    <text x="360" y="175" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="11">map &rarr; shuffle/group-by-key &rarr; reduce</text>
+
+    <rect x="20" y="196" width="680" height="52" rx="8" fill="#ffedd5" stroke="#b74509" stroke-width="1.5"/>
+    <text x="360" y="219" text-anchor="middle" fill="#b74509" font-family="Inter,sans-serif" font-size="13" font-weight="700">GFS (2003) &mdash; distributed file system</text>
+    <text x="360" y="237" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="11">huge files split into 64&nbsp;MB chunks, each replicated 3&times;</text>
+
+    <rect x="20" y="258" width="680" height="52" rx="8" fill="#f1f5f9" stroke="#6c88aa" stroke-width="1.5"/>
+    <text x="360" y="281" text-anchor="middle" fill="#334155" font-family="Inter,sans-serif" font-size="13" font-weight="700">Commodity hardware</text>
+    <text x="360" y="299" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="11">thousands of cheap Linux machines &mdash; disks WILL fail</text>
+
+    <text x="360" y="326" text-anchor="middle" fill="#5f6673" font-family="Inter,sans-serif" font-size="10">Ordering shows abstraction level, not a dependency: Bigtable and MapReduce are siblings on GFS, not stacked.</text>
+    <text x="360" y="338" text-anchor="middle" fill="#5f6673" font-family="Inter,sans-serif" font-size="10">Bigtable depends on GFS + Chubby (not MapReduce); each layer trusts the one below to hide failures.</text>
+  </svg>
+  </div>
+
+  <h3 class="sub">The dependency chain</h3>
+  <table class="tbl">
+    <thead><tr><th>System</th><th>Builds on</th><th>Gives to the layer above</th><th>Key abstraction</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag tag-gfs">GFS</span></td><td>Local Linux disks on many machines</td><td>MapReduce, Bigtable</td><td>One fault-tolerant file that spans the cluster</td></tr>
+      <tr><td><span class="tag tag-mr">MapReduce</span></td><td>GFS (reads input, writes output)</td><td>Apps; bulk index-building jobs that read/write Bigtable</td><td>Parallel computation without writing distribution code</td></tr>
+      <tr><td><span class="tag tag-bt">Bigtable</span></td><td>GFS (stores files) + Chubby (locks)</td><td>Applications that need low-latency lookups</td><td>Sorted, versioned key-value at petabyte scale</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">Why interviewers still care in 2026</h3>
+  <p>You will almost never be asked to "explain GFS." Instead, these papers are the <em>source code</em> of the vocabulary a system-design interview runs on. When you propose sharding, replication, a write-ahead log, an LSM tree, or speculative execution, you are quoting these papers &mdash; and naming the lineage signals depth.</p>
+  <ul class="content-list">
+    <li><strong>Partitioning / sharding</strong> &mdash; GFS chunks, Bigtable tablets.</li>
+    <li><strong>Replication &amp; leader-based writes</strong> &mdash; GFS chunk replicas + leases.</li>
+    <li><strong>Write-ahead log + checkpoint</strong> &mdash; GFS operation log, Bigtable commit log.</li>
+    <li><strong>LSM trees &amp; compaction</strong> &mdash; Bigtable memtable &rarr; SSTable (see also <a class="lc" href="cassandra_deep_dive.html">Cassandra</a>).</li>
+    <li><strong>Data locality &amp; speculative execution</strong> &mdash; MapReduce scheduling.</li>
+  </ul>
+
+  <div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>If asked "where do these ideas come from?", answer in one breath: <em>"Google published three papers &mdash; GFS for storage, MapReduce for batch compute, Bigtable for structured serving. Together they proved you can run at web scale on cheap hardware by tolerating failure in software. HDFS, Hadoop/Spark, and HBase/Cassandra are the open-source descendants."</em> That single sentence frames the whole chapter.</p></div>
+
+  <h3 class="sub">A 60-second timeline</h3>
+  <table class="tbl">
+    <thead><tr><th>Year</th><th>Event</th></tr></thead>
+    <tbody>
+      <tr><td>2003</td><td>GFS paper published (already ~2 years in production internally).</td></tr>
+      <tr><td>2004</td><td>MapReduce paper. Adoption explodes &mdash; hundreds of programs within a year.</td></tr>
+      <tr><td>2005&ndash;06</td><td>Bigtable in production powering dozens of products; paper published 2006.</td></tr>
+      <tr><td>2006</td><td>Doug Cutting builds Hadoop (HDFS + MapReduce) as an open-source clone.</td></tr>
+      <tr><td>2008&ndash;10</td><td>HBase (Bigtable-style) and Cassandra (Bigtable data model + Dynamo replication) arrive.</td></tr>
+      <tr><td>2010s</td><td>Spark replaces most MapReduce; internally Google moves to Colossus, Dremel/BigQuery, Spanner. The <em>concepts</em> outlive the systems.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- GFS -->
+<!-- ============================================================ -->
+<div class="sec" id="tab-gfs">
+  <h2 class="stitle"><span class="tag tag-gfs">GFS</span> The Google File System (2003)</h2>
+  <p class="sdesc">A shared drive so large it lives on thousands of machines &mdash; and keeps working while some of them die.</p>
+
+  <h3 class="sub">The problem, in one picture</h3>
+  <p>Google needed to store the crawled web: files that are tens of gigabytes, mostly written by <em>appending</em> to the end, read by big sequential scans, on a cluster where at any moment <strong>some machine is broken</strong>. Ordinary filesystems assume one reliable disk and lots of small files &mdash; the exact opposite. GFS was designed backwards from Google's real workload.</p>
+
+  <div class="ins"><div class="insl">Tiny mental model</div><p>Think of a giant book that is too big for one shelf. GFS tears it into fixed 64&nbsp;MB pages ("chunks"), photocopies each page 3 times, and scatters the copies across many shelves. A single <strong>librarian (the master)</strong> keeps only the index card &mdash; "page 5 of book X is on shelves 2, 7, and 11" &mdash; and never touches the pages themselves. Readers get the shelf numbers from the librarian, then walk straight to a shelf.</p></div>
+
+  <h3 class="sub">Design assumptions drove every choice</h3>
+  <table class="tbl">
+    <thead><tr><th>Assumption</th><th>Design consequence</th></tr></thead>
+    <tbody>
+      <tr><td>Failures are the norm, not the exception</td><td>Self-healing: detect dead machines, re-replicate automatically</td></tr>
+      <tr><td>Files are huge (multi-GB)</td><td>Optimize for big sequential I/O; large 64&nbsp;MB chunks</td></tr>
+      <tr><td>Most writes append; few overwrite</td><td>A special atomic <code>record append</code>; relaxed consistency elsewhere</td></tr>
+      <tr><td>Sustained bandwidth beats low latency</td><td>Batch and pipeline data; don't optimize per-op latency</td></tr>
+      <tr><td>Apps and FS are co-designed</td><td>GFS can expose a weaker, cheaper consistency model</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">Architecture: single master + chunkservers</h3>
+  <div class="svg-container">
+  <svg viewBox="0 0 740 430" xmlns="http://www.w3.org/2000/svg" style="max-width:740px;" role="img" aria-label="GFS architecture: one master holds metadata, chunkservers hold data, client talks to both">
+    <defs>
+      <marker id="gfsBlue" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#1658ea"/></marker>
+      <marker id="gfsGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#117e39"/></marker>
+      <marker id="gfsGreenR" markerWidth="8" markerHeight="6" refX="0" refY="3" orient="auto"><path d="M8,0 L0,3 L8,6" fill="#117e39"/></marker>
+    </defs>
+
+    <rect x="40" y="20" width="200" height="120" rx="8" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+    <text x="140" y="44" text-anchor="middle" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="14" font-weight="700">GFS Master</text>
+    <text x="140" y="66" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="11">&bull; file &rarr; chunk namespace</text>
+    <text x="140" y="84" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="11">&bull; chunk &rarr; replica locations</text>
+    <text x="140" y="102" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="11">&bull; lease &amp; replication control</text>
+    <text x="140" y="123" text-anchor="middle" fill="#c62020" font-family="Inter,sans-serif" font-size="11" font-weight="700">metadata only &mdash; no file data</text>
+
+    <text x="470" y="46" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="11.5">&#9312; Client asks master: "chunks for file X?"</text>
+    <text x="470" y="68" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="11.5">&#9313; Master returns chunk handles + locations</text>
+    <text x="470" y="90" fill="#117e39" font-family="Inter,sans-serif" font-size="11.5">&#9314; Client reads/writes chunkservers directly</text>
+    <text x="470" y="116" fill="#c62020" font-family="Inter,sans-serif" font-size="11.5" font-weight="700">Bulk data never flows through the master.</text>
+
+    <rect x="40" y="185" width="660" height="140" rx="8" fill="none" stroke="#6c88aa" stroke-width="1" stroke-dasharray="4"/>
+    <text x="370" y="205" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="11" font-weight="700">CHUNKSERVERS (every chunk is replicated 3&times; across them)</text>
+    <rect x="70" y="218" width="130" height="90" rx="6" fill="#f1f5f9" stroke="#117e39" stroke-width="1"/>
+    <text x="135" y="240" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="12" font-weight="700">CS 1</text>
+    <text x="135" y="262" text-anchor="middle" fill="#59677c" font-family="JetBrains Mono,monospace" font-size="10">A&middot;1  B&middot;2  D&middot;1</text>
+    <rect x="230" y="218" width="130" height="90" rx="6" fill="#f1f5f9" stroke="#117e39" stroke-width="1"/>
+    <text x="295" y="240" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="12" font-weight="700">CS 2</text>
+    <text x="295" y="262" text-anchor="middle" fill="#59677c" font-family="JetBrains Mono,monospace" font-size="10">A&middot;2  C&middot;1  D&middot;2</text>
+    <rect x="390" y="218" width="130" height="90" rx="6" fill="#f1f5f9" stroke="#117e39" stroke-width="1"/>
+    <text x="455" y="240" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="12" font-weight="700">CS 3</text>
+    <text x="455" y="262" text-anchor="middle" fill="#59677c" font-family="JetBrains Mono,monospace" font-size="10">A&middot;3  B&middot;3</text>
+    <rect x="550" y="218" width="130" height="90" rx="6" fill="#f1f5f9" stroke="#117e39" stroke-width="1"/>
+    <text x="615" y="240" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="12" font-weight="700">CS N</text>
+    <text x="615" y="262" text-anchor="middle" fill="#59677c" font-family="JetBrains Mono,monospace" font-size="10">B&middot;1  C&middot;2  D&middot;3</text>
+
+    <rect x="40" y="360" width="200" height="56" rx="8" fill="#ffedd5" stroke="#b74509" stroke-width="1.5"/>
+    <text x="140" y="393" text-anchor="middle" fill="#b74509" font-family="Inter,sans-serif" font-size="14" font-weight="700">Client</text>
+
+    <path d="M110 360 L110 335 L55 335 L55 150 L120 150 L120 142" fill="none" stroke="#1658ea" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#gfsBlue)"/>
+    <text x="58" y="175" fill="#1658ea" font-family="Inter,sans-serif" font-size="10">&#9312;&#9313; metadata</text>
+    <path d="M240 388 L360 312" fill="none" stroke="#117e39" stroke-width="2" marker-end="url(#gfsGreen)" marker-start="url(#gfsGreenR)"/>
+    <text x="300" y="372" fill="#117e39" font-family="Inter,sans-serif" font-size="10" font-weight="700">&#9314; data (direct)</text>
+    <path d="M240 95 L150 218" fill="none" stroke="#5f6673" stroke-width="1" stroke-dasharray="3,3"/>
+    <text x="215" y="148" fill="#5f6673" font-family="Inter,sans-serif" font-size="10">heartbeats + chunk reports</text>
+  </svg>
+  </div>
+
+  <h4 class="sub2">Why a single master is a feature, not a bug</h4>
+  <p>One master sounds fragile, but it makes the whole design tractable: one authoritative place for all metadata, no distributed consensus for namespace operations. Google made it safe with four moves:</p>
+  <ul class="content-list">
+    <li><strong>It never touches data</strong> &mdash; only metadata, so it is not a bandwidth bottleneck.</li>
+    <li><strong>Metadata fits in RAM</strong> &mdash; roughly 64 bytes per chunk, so millions of chunks are cheap to track.</li>
+    <li><strong>Operation log + checkpoints</strong> &mdash; every metadata change is logged (and replicated) before responding, so the master can rebuild its state after a crash.</li>
+    <li><strong>Shadow masters</strong> serve read-only metadata during a failover.</li>
+  </ul>
+
+  <div class="warn"><div class="warnl">LIMITATION TO NAME</div><p>The single master caps namespace operations per second and is a scaling ceiling. Google's successor, Colossus, distributed the master. In an interview: <em>"Single master keeps metadata consistent and simple; for higher scale I'd shard the metadata itself (like Colossus) or use a metadata DHT (a hash-based lookup spread across nodes)."</em></p></div>
+
+  <h3 class="sub">Why 64&nbsp;MB chunks?</h3>
+  <table class="tbl">
+    <thead><tr><th>Benefit of large chunks</th><th>Why it matters</th></tr></thead>
+    <tbody>
+      <tr><td>Tiny metadata</td><td>A 1&nbsp;TB file is only ~16K chunk entries &mdash; not millions of 4&nbsp;KB blocks</td></tr>
+      <tr><td>Fewer master round-trips</td><td>Ask once, then stream 64&nbsp;MB without re-consulting the master</td></tr>
+      <tr><td>Efficient network use</td><td>One long-lived TCP connection moves a lot of sequential data</td></tr>
+    </tbody>
+  </table>
+  <p>The cost: a small file wastes a chunk handle, and a popular small file becomes a hotspot on the few servers that hold it (mitigated by raising its replication factor).</p>
+
+  <h3 class="sub">Read path (control vs. data)</h3>
+  <div class="svg-container">
+  <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" style="max-width:700px;" role="img" aria-label="GFS read path: client gets locations from master then reads a chunkserver directly">
+    <defs><marker id="rdA" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#1658ea"/></marker>
+    <marker id="rdG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#117e39"/></marker></defs>
+    <rect x="70" y="12" width="110" height="30" rx="6" fill="#ffedd5" stroke="#b74509" stroke-width="1.5"/>
+    <text x="125" y="32" text-anchor="middle" fill="#b74509" font-family="Inter,sans-serif" font-size="12" font-weight="700">Client</text>
+    <line x1="125" y1="42" x2="125" y2="285" stroke="#6c88aa" stroke-dasharray="4"/>
+    <rect x="290" y="12" width="110" height="30" rx="6" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+    <text x="345" y="32" text-anchor="middle" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="12" font-weight="700">Master</text>
+    <line x1="345" y1="42" x2="345" y2="285" stroke="#6c88aa" stroke-dasharray="4"/>
+    <rect x="520" y="12" width="120" height="30" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+    <text x="580" y="32" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="12" font-weight="700">Chunkserver</text>
+    <line x1="580" y1="42" x2="580" y2="285" stroke="#6c88aa" stroke-dasharray="4"/>
+
+    <line x1="130" y1="72" x2="340" y2="72" stroke="#1658ea" stroke-width="1.5" marker-end="url(#rdA)"/>
+    <text x="235" y="65" text-anchor="middle" fill="#1658ea" font-family="Inter,sans-serif" font-size="11">&#9312; read(file, byte offset)</text>
+    <line x1="340" y1="118" x2="130" y2="118" stroke="#1658ea" stroke-width="1.5" marker-end="url(#rdA)"/>
+    <text x="235" y="100" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="10">chunk_index = offset / 64MB</text>
+    <text x="235" y="112" text-anchor="middle" fill="#1658ea" font-family="Inter,sans-serif" font-size="11">&#9313; handle + replica list [CS3, CS7&hellip;]</text>
+    <line x1="130" y1="164" x2="575" y2="164" stroke="#117e39" stroke-width="2" marker-end="url(#rdG)"/>
+    <text x="350" y="157" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="11">&#9314; read chunk from the closest replica</text>
+    <line x1="575" y1="210" x2="130" y2="210" stroke="#117e39" stroke-width="2" marker-end="url(#rdG)"/>
+    <text x="350" y="203" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="11">&#9315; chunk bytes returned</text>
+    <rect x="55" y="245" width="220" height="40" rx="6" fill="#f1f5f9" stroke="#6c88aa"/>
+    <text x="165" y="262" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="10">Client caches locations, so repeat</text>
+    <text x="165" y="276" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="10">reads skip steps &#9312;&#9313;.</text>
+  </svg>
+  </div>
+
+  <h3 class="sub">Write path: leases &amp; a single mutation order</h3>
+  <p>The hard part: several clients may write the same chunk at once, and all 3 replicas must apply those writes in the <em>same order</em>. GFS solves it by separating <strong>control flow</strong> (who decides the order) from <strong>data flow</strong> (how bytes travel).</p>
+
+  <div class="svg-container">
+  <svg viewBox="0 0 760 400" xmlns="http://www.w3.org/2000/svg" style="max-width:760px;" role="img" aria-label="GFS write path with lease, pipelined data push, and primary-ordered writes">
+    <defs>
+      <marker id="wA" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#1658ea"/></marker>
+      <marker id="wG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#117e39"/></marker>
+      <marker id="wO" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#b74509"/></marker>
+      <marker id="wP" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#7c3aed"/></marker>
+    </defs>
+    <rect x="40" y="12" width="80" height="26" rx="5" fill="#ffedd5" stroke="#b74509" stroke-width="1.5"/><text x="80" y="30" text-anchor="middle" fill="#b74509" font-family="Inter,sans-serif" font-size="11" font-weight="700">Client</text>
+    <line x1="80" y1="38" x2="80" y2="392" stroke="#6c88aa" stroke-dasharray="4"/>
+    <rect x="210" y="12" width="80" height="26" rx="5" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/><text x="250" y="30" text-anchor="middle" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="11" font-weight="700">Master</text>
+    <line x1="250" y1="38" x2="250" y2="392" stroke="#6c88aa" stroke-dasharray="4"/>
+    <rect x="380" y="12" width="110" height="26" rx="5" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/><text x="435" y="30" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="11" font-weight="700">Primary</text>
+    <line x1="435" y1="38" x2="435" y2="392" stroke="#6c88aa" stroke-dasharray="4"/>
+    <rect x="560" y="12" width="150" height="26" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/><text x="635" y="30" text-anchor="middle" fill="#6d28d9" font-family="Inter,sans-serif" font-size="11" font-weight="700">Secondaries</text>
+    <line x1="635" y1="38" x2="635" y2="392" stroke="#6c88aa" stroke-dasharray="4"/>
+
+    <line x1="85" y1="62" x2="245" y2="62" stroke="#1658ea" stroke-width="1.5" marker-end="url(#wA)"/><text x="165" y="56" text-anchor="middle" fill="#1658ea" font-family="Inter,sans-serif" font-size="10">&#9312; who holds the lease?</text>
+    <line x1="245" y1="90" x2="85" y2="90" stroke="#1658ea" stroke-width="1.5" marker-end="url(#wA)"/><text x="165" y="84" text-anchor="middle" fill="#1658ea" font-family="Inter,sans-serif" font-size="10">&#9313; primary = CS-a (60s lease)</text>
+    <line x1="85" y1="126" x2="430" y2="126" stroke="#117e39" stroke-width="2" marker-end="url(#wG)"/>
+    <line x1="440" y1="138" x2="630" y2="138" stroke="#117e39" stroke-width="2" marker-end="url(#wG)"/>
+    <text x="360" y="118" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="10" font-weight="700">&#9314; push data to all replicas along a pipelined chain</text>
+    <line x1="630" y1="168" x2="85" y2="168" stroke="#5f6673" stroke-width="1" stroke-dasharray="3" marker-end="url(#wA)"/><text x="360" y="162" text-anchor="middle" fill="#5f6673" font-family="Inter,sans-serif" font-size="10">&#9315; all ACK "data buffered"</text>
+    <line x1="85" y1="204" x2="430" y2="204" stroke="#b74509" stroke-width="2" marker-end="url(#wO)"/><text x="255" y="198" text-anchor="middle" fill="#b74509" font-family="Inter,sans-serif" font-size="10" font-weight="700">&#9316; WRITE command &rarr; primary</text>
+    <rect x="378" y="222" width="120" height="44" rx="4" fill="#f1f5f9" stroke="#117e39"/><text x="438" y="240" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="9">&#9317; assign serial #,</text><text x="438" y="255" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="9">apply locally</text>
+    <line x1="438" y1="278" x2="630" y2="296" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#wP)"/><text x="540" y="282" text-anchor="middle" fill="#7c3aed" font-family="Inter,sans-serif" font-size="10">forward in same order</text>
+    <line x1="630" y1="322" x2="440" y2="322" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#wP)"/><text x="540" y="316" text-anchor="middle" fill="#7c3aed" font-family="Inter,sans-serif" font-size="10">&#9318; applied, ACK</text>
+    <line x1="430" y1="352" x2="85" y2="352" stroke="#117e39" stroke-width="2" marker-end="url(#wG)"/><text x="255" y="346" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="10" font-weight="700">&#9319; success</text>
+    <rect x="40" y="372" width="680" height="24" rx="5" fill="#fee2e2" stroke="#c62020"/><text x="380" y="388" text-anchor="middle" fill="#c62020" font-family="Inter,sans-serif" font-size="10.5">Data (&#9314;) pipelines for bandwidth; control (&#9316;&ndash;&#9319;) goes through the primary for one global order.</text>
+  </svg>
+  </div>
+
+  <div class="g2">
+    <div class="ins"><div class="insl">Data flow (&#9314;)</div><p>The client pushes bytes to the <em>nearest</em> replica, which forwards to the next nearest, chaining down the line. Each machine uses its full outbound bandwidth &mdash; bytes are not multiplied at any single sender.</p></div>
+    <div class="ins"><div class="insl">Control flow (&#9316;&ndash;&#9318;)</div><p>The write <em>command</em> goes only to the primary. It stamps every mutation with a serial number and tells the secondaries the exact order &mdash; so all replicas end up byte-identical.</p></div>
+  </div>
+
+  <div class="note"><div class="notel">THE LEASE PATTERN</div><p>The master grants a 60-second <strong>lease</strong> making one replica the primary. During the lease the primary orders writes without asking the master again (cheap!). Leases renew via heartbeat; if the primary dies, the lease simply expires and the master safely appoints another. A lease is <em>time-bounded delegated authority</em> &mdash; the same idea powers distributed locks, leader election, and cache TTLs.</p></div>
+
+  <h3 class="sub">Relaxed consistency &amp; atomic record append</h3>
+  <p>GFS deliberately offers weaker guarantees than a normal filesystem, because the workload allows it and it makes writes far cheaper.</p>
+  <table class="tbl">
+    <thead><tr><th>Operation</th><th>Guarantee</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Write at a given offset (succeeds)</td><td>Defined</td><td>All replicas hold identical bytes there</td></tr>
+      <tr><td>Concurrent writes to one region</td><td>Consistent but undefined</td><td>Replicas agree, but content is an interleaving no single writer intended</td></tr>
+      <tr><td><code>record append</code></td><td>At-least-once, at a GFS-chosen offset</td><td>The record appears at least once (maybe with duplicates/padding); GFS, not the client, picks where</td></tr>
+    </tbody>
+  </table>
+  <p>Why accept "at least once"? If an append fails on one replica, the client retries &mdash; and the replicas that already succeeded now hold the record twice. GFS chose this because appends are the dominant write, the alternative (distributed transactions) is far too expensive, and applications can dedupe using record IDs/checksums. Append is atomic up to a size limit: a record appears whole or not at all &mdash; never half-written.</p>
+
+  <div class="iq">"For a high-throughput log or event store, I'd use append-only writes with at-least-once semantics and client-side dedup by event ID &mdash; the exact trade-off GFS made. It collapses the write path at the cost of requiring idempotent consumers."</div>
+
+  <h3 class="sub">Fault tolerance in software</h3>
+  <table class="tbl">
+    <thead><tr><th>Failure</th><th>Detected by</th><th>Recovery</th></tr></thead>
+    <tbody>
+      <tr><td>Chunkserver crash</td><td>Missed heartbeats</td><td>Master re-replicates under-replicated chunks elsewhere</td></tr>
+      <tr><td>Silent disk corruption</td><td>Per-64&nbsp;KB-block checksums, verified on read</td><td>Serve from a healthy replica; re-replicate the bad one</td></tr>
+      <tr><td>Master crash</td><td>External monitoring</td><td>Rebuild from operation log + latest checkpoint; shadows serve reads</td></tr>
+      <tr><td>Network partition</td><td>Lease expiry (60s)</td><td>Old primary stops accepting writes; master grants a fresh lease once healed</td></tr>
+    </tbody>
+  </table>
+
+  <div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Expect "design a distributed file system / blob store." Cover these points: fixed-size chunks (64&ndash;128&nbsp;MB), 3&times; replication across racks, a metadata master with <strong>operation log + checkpoints</strong>, <strong>data flows client&harr;chunkserver directly</strong> (master out of the data path), and <strong>lease-based primaries</strong> for write ordering. Then volunteer the ceiling: <em>"single master limits namespace ops; at higher scale I'd shard metadata."</em> GFS's open-source twin is <strong>HDFS</strong> (NameNode = master, DataNodes = chunkservers); cloud object stores like S3/GCS dropped POSIX-ish file semantics (the standard open/read/write file interface) for a simpler key&rarr;blob API.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MAPREDUCE -->
+<!-- ============================================================ -->
+<div class="sec" id="tab-mapreduce">
+  <h2 class="stitle"><span class="tag tag-mr">MapReduce</span> Simplified Data Processing on Large Clusters (2004)</h2>
+  <p class="sdesc">Write code for one record; the framework runs it on a thousand machines and cleans up after every failure.</p>
+
+  <h3 class="sub">The problem, in one picture</h3>
+  <p>Suppose you must count how many times each word appears across a billion web pages. The counting is trivial; the <em>hard</em> part is splitting the data across machines, scheduling work, handling the machine that dies mid-job, and moving intermediate results around. Before MapReduce, every team re-wrote that plumbing by hand. MapReduce lets you write just two small functions and hides all the distribution.</p>
+
+  <pre><span class="cm">// You write only these two functions:</span>
+<span class="kw">map</span>(key, value)    <span class="cm">// e.g. (docName, docText)</span>
+    <span class="kw">for</span> word <span class="kw">in</span> value:
+        emit(word, <span class="num">1</span>)                 <span class="cm">// intermediate (key, value)</span>
+
+<span class="kw">reduce</span>(key, values)  <span class="cm">// e.g. ("the", [1,1,1,...])</span>
+    emit(key, sum(values))          <span class="cm">// final (key, value)</span></pre>
+
+  <div class="ins"><div class="insl">The genius is NOT the math</div><p>"map" and "reduce" are decades-old functional-programming ideas. The contribution is the <strong>execution framework</strong>: automatic parallelization, fault tolerance, data-locality scheduling, and load balancing. You write sequential per-record code; the framework turns it into a distributed job.</p></div>
+
+  <h3 class="sub">Watch it run: word count, step by step</h3>
+  <p class="sdesc">Press <strong>Step</strong> to walk records from map, through shuffle/group-by-key, into reduce and out to storage. Press <strong>Reset</strong> to replay.</p>
+
+  <div class="mr-player" id="mr-player-1">
+    <div class="mr-stage-grid">
+      <div class="mr-col" data-phase="1">
+        <div class="mrh">Input (on GFS)</div>
+        <div class="mr-sub">Map task A</div>
+        <span class="mr-kv" data-phase="1">doc&#8321;: "the cat sat"</span>
+        <div class="mr-sub">Map task B</div>
+        <span class="mr-kv" data-phase="1">doc&#8322;: "the dog sat"</span>
+      </div>
+      <div class="mr-col" data-phase="2">
+        <div class="mrh">Map emits (word, 1)</div>
+        <div class="mr-sub">from doc&#8321;</div>
+        <span class="mr-kv" data-phase="2">(<b>the</b>, <span class="v">1</span>)</span>
+        <span class="mr-kv" data-phase="2">(<b>cat</b>, <span class="v">1</span>)</span>
+        <span class="mr-kv" data-phase="2">(<b>sat</b>, <span class="v">1</span>)</span>
+        <div class="mr-sub">from doc&#8322;</div>
+        <span class="mr-kv" data-phase="2">(<b>the</b>, <span class="v">1</span>)</span>
+        <span class="mr-kv" data-phase="2">(<b>dog</b>, <span class="v">1</span>)</span>
+        <span class="mr-kv" data-phase="2">(<b>sat</b>, <span class="v">1</span>)</span>
+      </div>
+      <div class="mr-col" data-phase="3">
+        <div class="mrh">Shuffle &amp; group-by-key</div>
+        <div class="mr-sub">reducer 0 = hash%2</div>
+        <span class="mr-kv" data-phase="3"><b>the</b> &rarr; [<span class="v">1,1</span>]</span>
+        <span class="mr-kv" data-phase="3"><b>cat</b> &rarr; [<span class="v">1</span>]</span>
+        <div class="mr-sub">reducer 1</div>
+        <span class="mr-kv" data-phase="3"><b>sat</b> &rarr; [<span class="v">1,1</span>]</span>
+        <span class="mr-kv" data-phase="3"><b>dog</b> &rarr; [<span class="v">1</span>]</span>
+      </div>
+      <div class="mr-col" data-phase="4">
+        <div class="mrh">Reduce (sum)</div>
+        <div class="mr-sub">reducer 0</div>
+        <span class="mr-kv" data-phase="4"><b>the</b> = <span class="v">2</span></span>
+        <span class="mr-kv" data-phase="4"><b>cat</b> = <span class="v">1</span></span>
+        <div class="mr-sub">reducer 1</div>
+        <span class="mr-kv" data-phase="4"><b>sat</b> = <span class="v">2</span></span>
+        <span class="mr-kv" data-phase="4"><b>dog</b> = <span class="v">1</span></span>
+      </div>
+      <div class="mr-col" data-phase="5">
+        <div class="mrh">Output (on GFS)</div>
+        <div class="mr-sub">part-00000</div>
+        <span class="mr-kv" data-phase="5">the&nbsp;&nbsp;2</span>
+        <span class="mr-kv" data-phase="5">cat&nbsp;&nbsp;1</span>
+        <div class="mr-sub">part-00001</div>
+        <span class="mr-kv" data-phase="5">sat&nbsp;&nbsp;2</span>
+        <span class="mr-kv" data-phase="5">dog&nbsp;&nbsp;1</span>
+      </div>
+    </div>
+    <div class="mr-controls">
+      <button class="mr-btn" data-act="step">Step &#9654;</button>
+      <button class="mr-btn secd" data-act="reset">Reset &#8635;</button>
+      <span class="mr-step-ind">Step 0 / 5</span>
+    </div>
+    <div class="mr-caption">Press <strong>Step</strong> to run a MapReduce word-count over two tiny documents.</div>
+  </div>
+
+  <h3 class="sub">Execution flow, in words</h3>
+  <ol class="content-list">
+    <li><strong>Split:</strong> input on GFS is cut into M pieces (16&ndash;64&nbsp;MB) &mdash; M map tasks.</li>
+    <li><strong>Assign:</strong> the master hands tasks to idle workers &mdash; assigning each <em>map</em> task to a worker that already holds its input split (data locality). Reduce tasks get no locality preference since their input arrives over the network via shuffle.</li>
+    <li><strong>Map:</strong> each worker runs <code>map()</code> on its split and buffers emitted pairs in memory.</li>
+    <li><strong>Partition &amp; spill:</strong> buffered pairs are partitioned into R regions by <code>hash(key) mod R</code> and written to <em>local</em> disk. Locations are reported to the master.</li>
+    <li><strong>Shuffle:</strong> each reduce worker pulls its partition from <em>every</em> map worker's local disk over RPC.</li>
+    <li><strong>Sort/group:</strong> the reducer sorts by key so all values for a key sit together.</li>
+    <li><strong>Reduce:</strong> for each key, run <code>reduce(key, values)</code>; write output to GFS (one file per reducer).</li>
+  </ol>
+
+  <div class="ins"><div class="insl">Why intermediate data lives on LOCAL disk (not GFS)</div><p>Writing map output to GFS would triple the I/O (3&times; replication) for data that is thrown away at the end of the job. Keeping it local is cheaper &mdash; the price is that if a worker dies, its map output is gone and those maps must be re-run. A deliberate trade-off: cheap common case, more work on failure.</p></div>
+
+  <h3 class="sub">Fault tolerance = just re-execute</h3>
+  <table class="tbl">
+    <thead><tr><th>Failure</th><th>Recovery</th></tr></thead>
+    <tbody>
+      <tr><td>Map worker dies</td><td>Re-run <em>all</em> its map tasks &mdash; even completed ones, since their output was on the dead worker's local disk</td></tr>
+      <tr><td>Reduce worker dies</td><td>Re-run only in-progress reduces (completed ones already wrote to GFS)</td></tr>
+      <tr><td>Master dies</td><td>Abort and restart the job (rare enough that the paper accepts it)</td></tr>
+    </tbody>
+  </table>
+  <p>Because map and reduce are deterministic and output files are published by atomic rename, a re-executed job produces the same result as a failure-free run &mdash; "exactly-once" output even with "at-least-once" execution.</p>
+
+  <h3 class="sub">Two optimizations worth naming</h3>
+  <h4 class="sub2">Combiner &mdash; a local mini-reduce</h4>
+  <p>For associative/commutative reduces (like sum), run a "combiner" on the map worker before shuffling. Instead of shipping <code>("the",1)</code> a thousand times, ship <code>("the",1000)</code> once &mdash; slashing network traffic.</p>
+  <pre><span class="cm">// without combiner: map emits ("the",1) x1000  -> all cross the network</span>
+<span class="cm">// with combiner:    ("the",1) x1000 -> combiner -> ("the",1000) sent once</span></pre>
+
+  <h4 class="sub2">Backup tasks &mdash; beating the straggler</h4>
+  <p>One slow machine (a "straggler") can hold up a whole 1000-machine job &mdash; the classic long tail. Near the end, the master launches <strong>backup copies</strong> of the remaining in-flight tasks; whichever finishes first wins. This can cut total job time by tens of percent for a small amount of extra compute.</p>
+
+  <div class="iq">"For tail latency I'd use speculative execution &mdash; duplicate the last few slow tasks and take the first to finish. Same idea as hedged requests in latency-sensitive services: spend a little extra compute to kill the long tail."</div>
+
+  <h3 class="sub">What MapReduce is bad at &mdash; and what replaced it</h3>
+  <table class="tbl">
+    <thead><tr><th>Weakness</th><th>Why it hurts</th><th>Successor</th></tr></thead>
+    <tbody>
+      <tr><td>Disk materialization between every stage</td><td>Multi-stage pipelines are slow (write &amp; re-read from GFS each time)</td><td><strong>Spark</strong> &mdash; in-memory DAG of stages</td></tr>
+      <tr><td>No iteration</td><td>PageRank's 20 iterations = 20 full jobs</td><td>Spark (cached RDDs &mdash; in-memory datasets), Pregel (graph BSP &mdash; bulk-synchronous parallel)</td></tr>
+      <tr><td>High latency / batch only</td><td>Job startup overhead; no streaming</td><td>Flink, Kafka Streams, Beam/Dataflow</td></tr>
+      <tr><td>Rigid two-stage shape</td><td>Complex flows need chains of jobs</td><td>FlumeJava/Beam (arbitrary DAGs)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note"><div class="notel">"MAPREDUCE IS DEAD, LONG LIVE MAPREDUCE"</div><p>Google largely retired MapReduce internally by the mid-2010s (Flume, Dataflow, Dremel/<a class="lc" href="bigquery_deep_dive.html">BigQuery</a>). But the <em>concepts</em> &mdash; shuffle, partitioning, combiner, speculative execution, data locality &mdash; are the DNA of Spark, Flink, and every modern data pipeline. Learn MapReduce and you understand all of them.</p></div>
+
+  <div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>For "design a data-processing pipeline": partition input, map (local per-record work emitting keys), shuffle (hash-partition to reducers), reduce (aggregate per key), output. Then earn seniority points: name the <strong>combiner</strong>, <strong>data locality</strong>, and <strong>speculative execution</strong>, and add: <em>"MapReduce writes to disk between stages, so for iterative or low-latency work I'd reach for Spark's in-memory model instead."</em> Open-source lineage: Hadoop MapReduce &rarr; Spark; cloud: Dataproc/EMR/Dataflow.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- BIGTABLE -->
+<!-- ============================================================ -->
+<div class="sec" id="tab-bigtable">
+  <h2 class="stitle"><span class="tag tag-bt">Bigtable</span> A Distributed Storage System for Structured Data (2006)</h2>
+  <p class="sdesc">Not a relational database &mdash; a giant, sparse, sorted map that scales to petabytes and serves live traffic.</p>
+
+  <h3 class="sub">The problem, in one picture</h3>
+  <p>GFS stores big files; MapReduce processes them in batch. But products like Search, Maps, and Analytics need to <em>read and write individual records with low latency, all day</em> &mdash; and there are billions of them, changing constantly. A single SQL database can't hold it, and full relational features (joins, multi-row transactions) are more than these apps need. Bigtable is the middle path: a huge sorted key-value store with just enough structure.</p>
+
+  <div class="ins"><div class="insl">Tiny mental model</div><p>Picture one enormous spreadsheet, sorted by row name, where <strong>most cells are empty</strong> and empty cells cost nothing. Every cell can keep several dated versions ("what did this page look like last Tuesday?"). It's so tall it's sliced into horizontal strips ("tablets") handed to different servers. That's Bigtable.</p></div>
+
+  <h3 class="sub">The data model: (row, column, timestamp) &rarr; value</h3>
+  <p>The entire model in one line: <strong>a Bigtable is a sorted map from (row_key, column_key, timestamp) to an uninterpreted byte string.</strong></p>
+
+  <div class="svg-container">
+  <svg viewBox="0 0 740 266" xmlns="http://www.w3.org/2000/svg" style="max-width:740px;" role="img" aria-label="Bigtable webtable data model with row keys, column families, qualifiers, and timestamped versions">
+    <rect x="10" y="10" width="130" height="30" rx="4" fill="#f1f5f9" stroke="#6c88aa"/><text x="75" y="30" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="11" font-weight="700">Row Key</text>
+    <rect x="150" y="10" width="240" height="30" rx="4" fill="#dbeafe" stroke="#1658ea"/><text x="270" y="30" text-anchor="middle" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="11" font-weight="700">family "contents:"</text>
+    <rect x="400" y="10" width="330" height="30" rx="4" fill="#dcfce7" stroke="#117e39"/><text x="565" y="30" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="11" font-weight="700">family "anchor:" (one qualifier per linking site)</text>
+
+    <rect x="10" y="70" width="130" height="95" rx="4" fill="#ffedd5" stroke="#b74509"/><text x="75" y="112" text-anchor="middle" fill="#b74509" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700">com.cnn.www</text><text x="75" y="130" text-anchor="middle" fill="#5f6673" font-family="Inter,sans-serif" font-size="9">(reversed host</text><text x="75" y="143" text-anchor="middle" fill="#5f6673" font-family="Inter,sans-serif" font-size="9">groups a site)</text>
+    <rect x="150" y="70" width="240" height="95" rx="4" fill="#fff" stroke="#6c88aa"/>
+    <text x="160" y="92" fill="#59677c" font-family="JetBrains Mono,monospace" font-size="10">t&#8324;: "&lt;html&gt; ... latest"</text>
+    <text x="160" y="112" fill="#5f6673" font-family="JetBrains Mono,monospace" font-size="10">t&#8323;: "&lt;html&gt; ... older"</text>
+    <text x="160" y="132" fill="#5f6673" font-family="JetBrains Mono,monospace" font-size="10">t&#8322;: "&lt;html&gt; ... oldest"</text>
+    <text x="160" y="154" fill="#7c3aed" font-family="Inter,sans-serif" font-size="9.5">&uarr; three timestamped versions of one cell</text>
+    <rect x="400" y="70" width="160" height="95" rx="4" fill="#fff" stroke="#6c88aa"/><text x="410" y="95" fill="#334155" font-family="JetBrains Mono,monospace" font-size="10">anchor:cnnsi.com</text><text x="410" y="112" fill="#5f6673" font-family="JetBrains Mono,monospace" font-size="10">t&#8329;: "CNN"</text>
+    <rect x="570" y="70" width="160" height="95" rx="4" fill="#fff" stroke="#6c88aa"/><text x="580" y="95" fill="#334155" font-family="JetBrains Mono,monospace" font-size="10">anchor:my.look.ca</text><text x="580" y="112" fill="#5f6673" font-family="JetBrains Mono,monospace" font-size="10">t&#8328;: "CNN.com"</text>
+
+    <text x="10" y="192" fill="#334155" font-family="Inter,sans-serif" font-size="11" font-weight="600">Sparse:</text>
+    <text x="70" y="192" fill="#59677c" font-family="Inter,sans-serif" font-size="11"><tspan x="70" dy="0">absent cells store nothing. Sorted rows make range scans of one site cheap.</tspan><tspan x="70" dy="16">Column families are declared up front; qualifiers are created on the fly.</tspan></text>
+    <text x="10" y="234" fill="#334155" font-family="Inter,sans-serif" font-size="11" font-weight="600">Versioned:</text>
+    <text x="82" y="234" fill="#59677c" font-family="Inter,sans-serif" font-size="11"><tspan x="82" dy="0">each cell keeps N newest versions (or versions newer than T);</tspan><tspan x="82" dy="16">reads return the latest unless you ask for history.</tspan></text>
+  </svg>
+  </div>
+
+  <table class="tbl">
+    <thead><tr><th>Concept</th><th>What it is</th><th>Why it's designed that way</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Row key</strong></td><td>Arbitrary bytes; rows kept in sorted order</td><td>Sorting makes range scans efficient; the only index you get</td></tr>
+      <tr><td><strong>Column family</strong></td><td>A declared group of columns (few, static)</td><td>Unit of access control; storage tuning (compression, in-memory caching) is set per <em>locality group</em> &mdash; a set of families &mdash; not per family</td></tr>
+      <tr><td><strong>Column qualifier</strong></td><td>A name within a family, created dynamically</td><td>Sparse data with no cost for empty columns</td></tr>
+      <tr><td><strong>Timestamp</strong></td><td>64-bit version per cell</td><td>Time-travel reads + automatic version garbage collection</td></tr>
+      <tr><td><strong>Tablet</strong></td><td>A contiguous range of rows (~100&ndash;200&nbsp;MB)</td><td>Unit of distribution &amp; load balancing; splits automatically</td></tr>
+    </tbody>
+  </table>
+
+  <div class="warn"><div class="warnl">ROW-KEY DESIGN IS EVERYTHING</div><p>Since the sorted row key is the <em>only</em> index, it must encode your access pattern. Reverse a domain (<code>com.google.maps/p1</code>) to keep a site's pages adjacent. For time-series use <code>sensorId#timestamp</code> so one sensor scans cheaply. <strong>Anti-pattern:</strong> a bare timestamp prefix &mdash; every new write lands on the same last tablet, creating a hotspot.</p></div>
+
+  <h3 class="sub">Architecture: master, tablet servers, Chubby, GFS</h3>
+  <div class="svg-container">
+  <svg viewBox="0 0 740 340" xmlns="http://www.w3.org/2000/svg" style="max-width:740px;" role="img" aria-label="Bigtable architecture: master assigns tablets, tablet servers serve reads and writes, Chubby coordinates, GFS stores files">
+    <rect x="30" y="16" width="200" height="86" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/><text x="130" y="40" text-anchor="middle" fill="#6d28d9" font-family="Inter,sans-serif" font-size="13" font-weight="700">Bigtable Master</text><text x="130" y="60" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="10">assigns tablets, balances load,</text><text x="130" y="75" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="10">GCs old files</text><text x="130" y="93" text-anchor="middle" fill="#c62020" font-family="Inter,sans-serif" font-size="10" font-weight="700">NOT in the read/write path</text>
+    <rect x="270" y="16" width="200" height="86" rx="8" fill="#fef3c7" stroke="#a35905" stroke-width="1.5"/><text x="370" y="40" text-anchor="middle" fill="#b45309" font-family="Inter,sans-serif" font-size="13" font-weight="700">Chubby (lock service)</text><text x="370" y="60" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="10">master election, tablet-server</text><text x="370" y="75" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="10">liveness, schema/ACL, root location</text>
+    <rect x="560" y="26" width="150" height="42" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/><text x="635" y="52" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="12" font-weight="700">Client</text>
+
+    <rect x="30" y="140" width="680" height="120" rx="8" fill="none" stroke="#6c88aa" stroke-dasharray="4"/><text x="370" y="160" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="11" font-weight="700">TABLET SERVERS (each serves many tablets)</text>
+    <rect x="50" y="172" width="150" height="72" rx="6" fill="#f1f5f9" stroke="#117e39"/><text x="125" y="192" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="11" font-weight="700">TS 1</text><text x="125" y="212" text-anchor="middle" fill="#59677c" font-family="JetBrains Mono,monospace" font-size="10">tablet A, B, C</text>
+    <rect x="215" y="172" width="150" height="72" rx="6" fill="#f1f5f9" stroke="#117e39"/><text x="290" y="192" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="11" font-weight="700">TS 2</text><text x="290" y="212" text-anchor="middle" fill="#59677c" font-family="JetBrains Mono,monospace" font-size="10">tablet D, E</text>
+    <rect x="380" y="172" width="150" height="72" rx="6" fill="#f1f5f9" stroke="#117e39"/><text x="455" y="192" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="11" font-weight="700">TS 3</text><text x="455" y="212" text-anchor="middle" fill="#59677c" font-family="JetBrains Mono,monospace" font-size="10">tablet F, G</text>
+    <rect x="545" y="172" width="150" height="72" rx="6" fill="#f1f5f9" stroke="#117e39"/><text x="620" y="192" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="11" font-weight="700">TS N</text><text x="620" y="212" text-anchor="middle" fill="#59677c" font-family="JetBrains Mono,monospace" font-size="10">tablet H, I</text>
+
+    <rect x="210" y="288" width="320" height="44" rx="8" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/><text x="370" y="308" text-anchor="middle" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="12" font-weight="700">GFS</text><text x="370" y="324" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="10">stores SSTables + commit logs (durable)</text>
+
+    <line x1="130" y1="102" x2="130" y2="138" stroke="#7c3aed" stroke-width="1.5"/><text x="150" y="126" fill="#7c3aed" font-family="Inter,sans-serif" font-size="9">assigns tablets</text>
+    <line x1="370" y1="244" x2="370" y2="286" stroke="#1658ea" stroke-width="1.5"/><text x="380" y="270" fill="#59677c" font-family="Inter,sans-serif" font-size="9">read/write files</text>
+    <line x1="620" y1="68" x2="470" y2="170" stroke="#117e39" stroke-width="1.5"/><text x="560" y="120" fill="#117e39" font-family="Inter,sans-serif" font-size="9">reads/writes go straight to a tablet server</text>
+  </svg>
+  </div>
+
+  <table class="tbl">
+    <thead><tr><th>Component</th><th>Job</th><th>If it fails</th></tr></thead>
+    <tbody>
+      <tr><td>Master</td><td>Assign tablets, balance load, GC files</td><td>Existing serving continues (it's off the data path); no new assignments</td></tr>
+      <tr><td>Tablet server</td><td>Serve reads/writes for its tablets</td><td>Its tablets are unavailable until the master reassigns them</td></tr>
+      <tr><td>Chubby</td><td>Elect master, track live servers, store schema/root location</td><td>Bigtable becomes unavailable (hard dependency)</td></tr>
+      <tr><td>GFS</td><td>Durable storage for all files</td><td>Data at risk only if all replicas fail (very unlikely)</td></tr>
+    </tbody>
+  </table>
+  <div class="warn"><div class="warnl">CHUBBY DEPENDENCY</div><p>If a tablet server loses its Chubby session it kills itself, to avoid split-brain (two servers thinking they own the same tablet). Strong consistency needs coordination, and Chubby (a Paxos-backed lock service) supplies it. In interviews: <em>"I'd use a coordination service &mdash; ZooKeeper or etcd &mdash; for leader election and liveness, the role Chubby plays for Bigtable."</em></p></div>
+
+  <h3 class="sub">The storage engine: LSM (memtable + SSTables)</h3>
+  <p>This is the most reused idea in the paper. Writes go to memory first and to immutable sorted files later; reads merge memory and files. It's a <strong>Log-Structured Merge tree</strong>.</p>
+
+  <div class="svg-container">
+  <svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" style="max-width:720px;" role="img" aria-label="Bigtable LSM write path: commit log to memtable, memtable flushes to immutable SSTables on GFS">
+    <defs><marker id="lsm" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#1658ea"/></marker></defs>
+    <rect x="20" y="120" width="90" height="40" rx="6" fill="#ffedd5" stroke="#b74509" stroke-width="1.5"/><text x="65" y="145" text-anchor="middle" fill="#b74509" font-family="Inter,sans-serif" font-size="12" font-weight="700">write</text>
+
+    <line x1="110" y1="140" x2="155" y2="110" stroke="#1658ea" stroke-width="1.5" marker-end="url(#lsm)"/>
+    <line x1="110" y1="140" x2="155" y2="175" stroke="#1658ea" stroke-width="1.5" marker-end="url(#lsm)"/>
+    <rect x="160" y="80" width="170" height="52" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/><text x="245" y="102" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="12" font-weight="700">&#9312; Commit log (WAL)</text><text x="245" y="120" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="10">append to GFS &mdash; durable</text>
+    <rect x="160" y="150" width="170" height="52" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/><text x="245" y="172" text-anchor="middle" fill="#6d28d9" font-family="Inter,sans-serif" font-size="12" font-weight="700">&#9313; Memtable (RAM)</text><text x="245" y="190" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="10">sorted, in-memory buffer</text>
+
+    <line x1="330" y1="176" x2="400" y2="176" stroke="#1658ea" stroke-width="1.5" marker-end="url(#lsm)"/><text x="365" y="168" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="9">when full:</text><text x="365" y="196" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="9">minor compaction</text>
+
+    <rect x="405" y="70" width="300" height="150" rx="8" fill="none" stroke="#1658ea" stroke-dasharray="4"/><text x="555" y="60" text-anchor="middle" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="11" font-weight="700">Immutable SSTables on GFS (newest &rarr; oldest)</text>
+    <rect x="420" y="90" width="120" height="36" rx="5" fill="#dbeafe" stroke="#1658ea"/><text x="480" y="113" text-anchor="middle" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="11">SSTable 3</text>
+    <rect x="420" y="134" width="120" height="36" rx="5" fill="#dbeafe" stroke="#1658ea"/><text x="480" y="157" text-anchor="middle" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="11">SSTable 2</text>
+    <rect x="420" y="178" width="120" height="36" rx="5" fill="#dbeafe" stroke="#1658ea"/><text x="480" y="201" text-anchor="middle" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="11">SSTable 1</text>
+    <rect x="560" y="112" width="130" height="80" rx="6" fill="#f1f5f9" stroke="#59677c"/><text x="625" y="132" text-anchor="middle" fill="#334155" font-family="Inter,sans-serif" font-size="10" font-weight="700">each SSTable</text><text x="625" y="150" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="9">sorted data blocks</text><text x="625" y="164" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="9">+ block index</text><text x="625" y="178" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="9">+ bloom filter</text>
+
+    <text x="360" y="246" text-anchor="middle" fill="#334155" font-family="Inter,sans-serif" font-size="11" font-weight="600"><tspan x="360" dy="0">Write = log then memtable (fast, sequential).</tspan><tspan x="360" dy="16">Read = merge memtable + SSTables, newest timestamp wins.</tspan></text>
+    <text x="360" y="284" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="10.5"><tspan x="360" dy="0">A crash loses only the RAM memtable &mdash; replay the commit log to rebuild it.</tspan><tspan x="360" dy="15">Bloom filters skip SSTables that can't hold the key.</tspan></text>
+  </svg>
+  </div>
+
+  <h4 class="sub2">Why write to the log first?</h4>
+  <p>If the server crashes after updating the RAM memtable but before flushing an SSTable, the memtable is gone. The commit log (durable on GFS) lets the new server replay entries and rebuild the memtable &mdash; zero data loss. One commit log per tablet server (not per tablet) keeps it a single sequential write stream; the price is a more complex, sort-by-tablet recovery.</p>
+
+  <h4 class="sub2">SSTables are immutable &mdash; so deletes are "tombstones"</h4>
+  <p>You never edit an SSTable. A delete writes a <strong>tombstone</strong> marker that shadows older values; the data is physically removed only during a major compaction. Consequence: a delete-heavy workload can temporarily <em>grow</em> on disk.</p>
+
+  <h3 class="sub">Compaction &amp; tablet splitting</h3>
+  <table class="tbl">
+    <thead><tr><th>Compaction</th><th>Does</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>Minor</td><td>Flush memtable &rarr; new SSTable</td><td>Frees RAM; adds one SSTable</td></tr>
+      <tr><td>Merging</td><td>Merge several SSTables into one</td><td>Fewer files &rarr; less read amplification (fewer files to check per read)</td></tr>
+      <tr><td>Major</td><td>Merge all into one SSTable</td><td>Permanently drops tombstoned data; reclaims space</td></tr>
+    </tbody>
+  </table>
+  <p>When a tablet grows past ~100&ndash;200&nbsp;MB the server <strong>splits</strong> it: pick a middle row key, write two entries into the METADATA table, tell the master. It's metadata-only &mdash; no data is copied; both halves reference the same SSTables with narrowed ranges. To find any tablet, clients follow a 3-level hierarchy (Chubby &rarr; root tablet &rarr; METADATA tablets &rarr; user tablet) &mdash; at most a few RPCs, and clients cache aggressively so warm lookups are free.</p>
+
+  <div class="ins"><div class="insl">This IS every modern NoSQL engine</div><p>Memtable + WAL + immutable SSTables + compaction + bloom filters is the storage engine of LevelDB, RocksDB, HBase, and <a class="lc" href="cassandra_deep_dive.html">Cassandra</a>. Understand Bigtable's engine and you understand all of them. The big fork: Bigtable/HBase are <strong>CP</strong> (single owner per tablet, strong single-row consistency), while Cassandra took Bigtable's data model but Dynamo's <strong>AP</strong> replication (eventual consistency, no single owner).</p></div>
+
+  <div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>For "design a scalable key-value / time-series / wide-column store": write path = <strong>WAL &rarr; memtable</strong>, flush to <strong>immutable SSTables</strong>; read path = memtable then SSTables newest-first with <strong>bloom filters</strong>; <strong>compaction</strong> to bound read amplification; range-partition by row key into <strong>tablets/shards</strong> that split and rebalance; and stress that <strong>row-key design encodes the access pattern</strong>. Trade-off to state: <em>"LSM favors write throughput at the cost of read amplification; for read-heavy loads I'd compact more aggressively or use a B-tree engine."</em> See the <a class="lc" href="database_selection_guide.html">database selection guide</a> for when a wide-column store beats relational or document stores.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- CONNECT -->
+<!-- ============================================================ -->
+<div class="sec" id="tab-connect">
+  <h2 class="stitle">How They Fit Together &mdash; and How to Talk About Them</h2>
+  <p class="sdesc">The stack in motion, the shared design principles, the modern descendants, and a crisp interview cheat sheet.</p>
+
+  <h3 class="sub">The three papers, working as one system</h3>
+  <p>The canonical example is web search: crawl the web, build an index, serve queries &mdash; each paper owns one stage, and they lean on each other.</p>
+
+  <div class="svg-container">
+  <svg viewBox="0 0 760 190" xmlns="http://www.w3.org/2000/svg" style="max-width:760px;" role="img" aria-label="Crawler stores pages in GFS, MapReduce builds an index, Bigtable serves queries to search results">
+    <defs><marker id="cf" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#334155"/></marker></defs>
+    <rect x="10" y="56" width="100" height="52" rx="6" fill="#f1f5f9" stroke="#6c88aa"/><text x="60" y="78" text-anchor="middle" fill="#334155" font-family="Inter,sans-serif" font-size="11" font-weight="700">Web crawler</text><text x="60" y="95" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="9">fetches pages</text>
+    <rect x="145" y="56" width="120" height="52" rx="6" fill="#ffedd5" stroke="#b74509"/><text x="205" y="78" text-anchor="middle" fill="#b74509" font-family="Inter,sans-serif" font-size="12" font-weight="700">GFS</text><text x="205" y="95" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="9">stores raw pages</text>
+    <rect x="300" y="56" width="130" height="52" rx="6" fill="#dbeafe" stroke="#1658ea"/><text x="365" y="78" text-anchor="middle" fill="#1d4ed8" font-family="Inter,sans-serif" font-size="12" font-weight="700">MapReduce</text><text x="365" y="95" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="9">builds the index</text>
+    <rect x="465" y="56" width="130" height="52" rx="6" fill="#ede9fe" stroke="#7c3aed"/><text x="530" y="78" text-anchor="middle" fill="#6d28d9" font-family="Inter,sans-serif" font-size="12" font-weight="700">Bigtable</text><text x="530" y="95" text-anchor="middle" fill="#59677c" font-family="Inter,sans-serif" font-size="9">serves lookups</text>
+    <rect x="630" y="56" width="120" height="52" rx="6" fill="#dcfce7" stroke="#117e39"/><text x="690" y="78" text-anchor="middle" fill="#117e39" font-family="Inter,sans-serif" font-size="11" font-weight="700">Search results</text>
+
+    <line x1="110" y1="82" x2="143" y2="82" stroke="#334155" stroke-width="1.5" marker-end="url(#cf)"/>
+    <line x1="265" y1="82" x2="298" y2="82" stroke="#334155" stroke-width="1.5" marker-end="url(#cf)"/>
+    <line x1="430" y1="82" x2="463" y2="82" stroke="#334155" stroke-width="1.5" marker-end="url(#cf)"/>
+    <line x1="595" y1="82" x2="628" y2="82" stroke="#334155" stroke-width="1.5" marker-end="url(#cf)"/>
+    <path d="M530 108 C530 150, 205 150, 205 110" fill="none" stroke="#5f6673" stroke-width="1" stroke-dasharray="4"/>
+    <text x="367" y="168" text-anchor="middle" fill="#5f6673" font-family="Inter,sans-serif" font-size="10">Bigtable's SSTables live on GFS; MapReduce reads/writes Bigtable for bulk index-building jobs (compaction is internal to tablet servers).</text>
+  </svg>
+  </div>
+
+  <h3 class="sub">Shared design principles (the real takeaways)</h3>
+  <table class="tbl">
+    <thead><tr><th>Principle</th><th>GFS</th><th>MapReduce</th><th>Bigtable</th></tr></thead>
+    <tbody>
+      <tr><td>Tolerate failure in software</td><td>Replicas, checksums, re-replication</td><td>Re-execute tasks, backup tasks</td><td>Tablet reassignment, WAL replay</td></tr>
+      <tr><td>Single master for simplicity</td><td>Metadata master</td><td>Job scheduler master</td><td>Tablet-assignment master</td></tr>
+      <tr><td>Move compute to data</td><td>Replicas across racks</td><td>Schedule maps where input lives</td><td>Tablet served near its files</td></tr>
+      <tr><td>Sequential &gt; random I/O</td><td>64&nbsp;MB chunks, append</td><td>Full scans, sorted output</td><td>LSM: sequential writes</td></tr>
+      <tr><td>Immutability for concurrency</td><td>Chunks written once</td><td>Intermediate files write-once</td><td>SSTables immutable</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">Modern descendants</h3>
+  <table class="tbl">
+    <thead><tr><th>Paper</th><th>Open-source clone</th><th>Cloud service</th><th>Key divergence</th></tr></thead>
+    <tbody>
+      <tr><td>GFS</td><td>HDFS</td><td>S3, GCS, Azure Blob</td><td>Object stores dropped file semantics for a simpler key&rarr;blob API</td></tr>
+      <tr><td>MapReduce</td><td>Hadoop MR &rarr; Spark</td><td>Dataproc, EMR, Dataflow</td><td>Spark keeps data in memory; Beam/Dataflow unify batch + streaming</td></tr>
+      <tr><td>Bigtable</td><td>HBase, Cassandra (RocksDB/LevelDB is the embedded, single-node storage engine only, not a distributed clone)</td><td>Cloud Bigtable</td><td>Cassandra picked AP (eventual consistency); it inherits its ring/gossip from Amazon's <em>Dynamo</em> (the ancestor of DynamoDB), not from Bigtable</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub">Interview quick reference</h3>
+
+  <div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">Q1</span><span class="ct">"Design a distributed file system / blob store"</span><span class="db de">GFS</span><span class="chv">&#9654;</span></div>
+  <div class="cb"><ul class="content-list">
+    <li>Fixed-size chunks (64&ndash;128&nbsp;MB), replicated 3&times; across racks.</li>
+    <li>A metadata master with operation log + checkpoints; shadows for read failover.</li>
+    <li>Data flows client&harr;chunkserver directly; master is out of the data path.</li>
+    <li>Lease-based primary per chunk for a single mutation order.</li>
+    <li>State the ceiling: <em>"single master limits namespace ops; shard metadata (Colossus) to scale."</em></li>
+  </ul></div></div>
+
+  <div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">Q2</span><span class="ct">"Design a large-scale data-processing pipeline"</span><span class="db de">MapReduce</span><span class="chv">&#9654;</span></div>
+  <div class="cb"><ul class="content-list">
+    <li>Partition input; map does local per-record work emitting keys; hash-partition to reducers; reduce aggregates per key.</li>
+    <li>Name the combiner (local pre-aggregation), data locality, and speculative execution for stragglers.</li>
+    <li>For iterative/low-latency work: <em>"MapReduce materializes to disk between stages; use Spark's in-memory model or a streaming engine."</em></li>
+  </ul></div></div>
+
+  <div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">Q3</span><span class="ct">"Design a scalable key-value / wide-column / time-series store"</span><span class="db de">Bigtable</span><span class="chv">&#9654;</span></div>
+  <div class="cb"><ul class="content-list">
+    <li>Write path: WAL &rarr; memtable, flush to immutable SSTables.</li>
+    <li>Read path: memtable then SSTables newest-first, bloom filters to skip; compaction to bound read amplification.</li>
+    <li>Range-partition by row key into tablets that split and rebalance.</li>
+    <li>Row-key design encodes access patterns; avoid monotonic prefixes (hotspots).</li>
+    <li>Trade-off: <em>"LSM favors writes over reads; tune compaction or pick a B-tree engine for read-heavy loads."</em></li>
+  </ul></div></div>
+
+  <div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">Q4</span><span class="ct">Common trade-offs to volunteer</span><span class="db dm">ALL THREE</span><span class="chv">&#9654;</span></div>
+  <div class="cb">
+    <table class="tbl">
+      <thead><tr><th>Trade-off</th><th>The papers' choice</th></tr></thead>
+      <tbody>
+        <tr><td>Consistency vs. availability</td><td>GFS/Bigtable chose CP; say you'd weigh AP (eventual) for a globally available system &mdash; that's the Cassandra path</td></tr>
+        <tr><td>Write speed vs. read speed</td><td>Bigtable's LSM favors writes; B-trees favor reads</td></tr>
+        <tr><td>Single master vs. distributed</td><td>All chose single master for simplicity; all later distributed it</td></tr>
+        <tr><td>In-place update vs. append + GC</td><td>All append-only (GFS append, MR write-once, SSTable immutable)</td></tr>
+        <tr><td>Move data vs. move compute</td><td>MapReduce ships compute to where data already lives</td></tr>
+      </tbody>
+    </table>
+  </div></div>
+
+  <h3 class="sub">Vocabulary to use naturally</h3>
+  <table class="tbl">
+    <thead><tr><th>Term</th><th>Meaning</th><th>From</th></tr></thead>
+    <tbody>
+      <tr><td>Chunk / shard / tablet</td><td>Fixed piece of data spread across nodes</td><td>GFS / Bigtable</td></tr>
+      <tr><td>Lease</td><td>Time-bounded delegated authority (avoids polling the master)</td><td>GFS</td></tr>
+      <tr><td>WAL</td><td>Write-ahead log &mdash; log before apply, for durability</td><td>Bigtable / GFS op log</td></tr>
+      <tr><td>Memtable / SSTable / LSM</td><td>In-RAM buffer / immutable sorted file / the whole engine</td><td>Bigtable</td></tr>
+      <tr><td>Compaction / tombstone</td><td>Merge sorted files / deletion marker in an append-only store</td><td>Bigtable</td></tr>
+      <tr><td>Bloom filter</td><td>Probabilistic "definitely not here" to skip disk reads</td><td>Bigtable</td></tr>
+      <tr><td>Combiner / speculative execution / data locality</td><td>Local pre-aggregation / backup slow tasks / compute where data lives</td><td>MapReduce</td></tr>
+    </tbody>
+  </table>
+
+  <div class="iq">"Google's three papers taught the industry to treat failure as normal and handle it in software: GFS for storage, MapReduce for batch compute, Bigtable for structured serving. The systems evolved &mdash; Colossus, Spark, Spanner &mdash; but sharding, replication, WALs, LSM trees, and speculative execution all trace straight back here."</div>
+
+  <div class="note"><div class="notel">KEEP READING</div><p>Next up: <a class="lc" href="database_selection_guide.html">Choosing the Right Database</a> puts these engines in context &mdash; when a wide-column LSM store (Bigtable/<a class="lc" href="cassandra_deep_dive.html">Cassandra</a>) beats relational, document, or a columnar warehouse like <a class="lc" href="bigquery_deep_dive.html">BigQuery</a>.</p></div>
+
+  <h2 class="stitle">Terminology &amp; Acronyms</h2>
+  <p class="sdesc">Quick reference for the key terms in this chapter.</p>
+  <table class="tbl">
+    <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><strong>GFS (Google File System)</strong></td><td>Distributed file system storing huge files as fixed-size chunks replicated across commodity machines.</td></tr>
+      <tr><td><strong>MapReduce</strong></td><td>Programming model and framework for parallel batch processing via user-written map and reduce functions.</td></tr>
+      <tr><td><strong>Bigtable</strong></td><td>Distributed, sparse, sorted, versioned key-value store for structured data at petabyte scale.</td></tr>
+      <tr><td><strong>Chubby</strong></td><td>Google's Paxos-backed distributed lock and coordination service used for master election and liveness.</td></tr>
+      <tr><td><strong>Chunk</strong></td><td>GFS's fixed-size (64&nbsp;MB) unit of file storage, replicated 3&times; across chunkservers.</td></tr>
+      <tr><td><strong>Chunkserver</strong></td><td>A GFS machine that stores and serves chunk data directly from local disk.</td></tr>
+      <tr><td><strong>Master</strong></td><td>Single coordinating node holding metadata &mdash; GFS namespace, MapReduce scheduling, or Bigtable tablet assignment.</td></tr>
+      <tr><td><strong>Lease</strong></td><td>Time-bounded delegated authority; GFS grants one replica primary status to order writes.</td></tr>
+      <tr><td><strong>WAL (write-ahead log)</strong></td><td>Durable log written before applying a change, enabling crash recovery by replay.</td></tr>
+      <tr><td><strong>Record append</strong></td><td>GFS's atomic, at-least-once append at a server-chosen offset in a file.</td></tr>
+      <tr><td><strong>Combiner</strong></td><td>A local mini-reduce on the map worker that pre-aggregates output to cut shuffle traffic.</td></tr>
+      <tr><td><strong>Shuffle</strong></td><td>The phase that routes and groups map output by key to the reducers.</td></tr>
+      <tr><td><strong>Speculative execution</strong></td><td>Launching backup copies of slow tasks (stragglers); the first copy to finish wins.</td></tr>
+      <tr><td><strong>Data locality</strong></td><td>Scheduling computation on the machine that already holds its input, avoiding network transfer.</td></tr>
+      <tr><td><strong>Tablet</strong></td><td>A contiguous, sorted range of Bigtable rows (~100&ndash;200&nbsp;MB); the unit of distribution.</td></tr>
+      <tr><td><strong>Row key</strong></td><td>Bigtable's sole, sorted index; its design must encode the access pattern.</td></tr>
+      <tr><td><strong>Column family</strong></td><td>A declared, static group of related columns in Bigtable; the unit of access control, with storage tuning set per locality group (a set of families).</td></tr>
+      <tr><td><strong>Memtable</strong></td><td>Sorted in-RAM write buffer that is later flushed to an SSTable.</td></tr>
+      <tr><td><strong>SSTable (Sorted String Table)</strong></td><td>Immutable, sorted on-disk file of key-value data with a block index and bloom filter.</td></tr>
+      <tr><td><strong>LSM tree (Log-Structured Merge tree)</strong></td><td>Engine that buffers writes in RAM, flushes to immutable sorted files, and merges via compaction.</td></tr>
+      <tr><td><strong>Compaction</strong></td><td>Merging SSTables to reduce read amplification and permanently drop tombstoned data.</td></tr>
+      <tr><td><strong>Tombstone</strong></td><td>A deletion marker in an append-only store; data is removed later during major compaction.</td></tr>
+      <tr><td><strong>Bloom filter</strong></td><td>Probabilistic structure answering "definitely not here," letting reads skip SSTables that lack a key.</td></tr>
+      <tr><td><strong>HDFS (Hadoop Distributed File System)</strong></td><td>Open-source clone of GFS: NameNode acts as master, DataNodes as chunkservers.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+</div>
+
+<script>
+function go(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  if (typeof event !== 'undefined' && event && event.currentTarget) event.currentTarget.classList.add('active');
+  window.scrollTo(0, 0);
+}
+function toggle(el) {
+  const body = el.nextElementSibling;
+  const chevron = el.querySelector('.chv');
+  body.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open');
+}
+</script>
+
+<script>
+/* MapReduce word-count step player — namespaced IIFE, no globals, no clash with go()/toggle()/handbook-nav */
+(function(){
+  var root = document.getElementById('mr-player-1');
+  if(!root) return;
+  var STEP = 0, MAX = 5;
+  var captions = [
+    'Press Step to run a MapReduce word-count over two tiny documents.',
+    'Step 1 — Split: input files on GFS are cut into 2 map tasks (one per document here).',
+    'Step 2 — Map: each task runs map(doc) and emits (word, 1) for every word. No coordination between tasks.',
+    'Step 3 — Shuffle & group-by-key: the framework routes each key by hash(key) mod R and gathers all values for a key into one list at its reducer.',
+    'Step 4 — Reduce: each reducer runs reduce(word, [1,1,…]) and sums the counts.',
+    'Step 5 — Output: each reducer writes one result file back to GFS. Done — press Reset to replay.'
+  ];
+  var cap = root.querySelector('.mr-caption');
+  var ind = root.querySelector('.mr-step-ind');
+  var cols = root.querySelectorAll('.mr-col');
+  var kvs = root.querySelectorAll('.mr-kv');
+  var stepBtn = root.querySelector('[data-act="step"]');
+  var resetBtn = root.querySelector('[data-act="reset"]');
+  function render(){
+    cap.innerHTML = captions[STEP];
+    ind.textContent = 'Step ' + STEP + ' / ' + MAX;
+    cols.forEach(function(c){
+      var ph = parseInt(c.getAttribute('data-phase'), 10);
+      c.classList.toggle('on', STEP >= ph);
+    });
+    kvs.forEach(function(k){
+      var ph = parseInt(k.getAttribute('data-phase'), 10);
+      k.classList.toggle('show', STEP >= ph);
+    });
+    stepBtn.disabled = (STEP >= MAX);
+  }
+  stepBtn.addEventListener('click', function(){ if(STEP < MAX){ STEP++; render(); } });
+  resetBtn.addEventListener('click', function(){ STEP = 0; render(); });
+  render();
+})();
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="test_automation_design.html">‹ Test Automation at Scale</a><a class="bkc" href="index.html">📖 Contents</a><a href="database_selection_guide.html">Choosing the Right Database ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

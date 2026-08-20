@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Refresher — Waking Up Rusty C++ + Modern C++ Catch-up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1050px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.nav { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin: 18px 0 32px; position: sticky; top: 0; background: var(--bg); padding: 14px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 23px; font-weight: 700; margin: 28px 0 14px; color: var(--blue); }
+h3 { font-size: 17px; font-weight: 600; margin: 22px 0 10px; }
+h4 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+.subh { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 14px 18px; overflow-x: auto; margin: 10px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #cdd6f4; white-space: pre; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.warn p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.old { background: var(--red-l); border-left: 3px solid var(--red); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.old p { color: #8a1c1c; margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 18px; padding: 22px 26px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th, td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 16px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--purple-l); color:var(--purple); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VIII · Chapter 3 — <b>C++ Refresher</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>C++ Refresher</h1>
+  <div class="sub">Waking up rusty C++ (for anyone who wrote production kernel/Ring-0 C++ years ago) + catching up on Modern C++ (C++11 → 20)</div>
+</header>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'strategy')">Strategy</button>
+  <button class="nav-btn" onclick="showSection(event,'modern')">Modern C++ catch-up</button>
+  <button class="nav-btn" onclick="showSection(event,'memory')">Memory &amp; RAII</button>
+  <button class="nav-btn" onclick="showSection(event,'move')">Move semantics</button>
+  <button class="nav-btn" onclick="showSection(event,'stl')">STL toolbox</button>
+  <button class="nav-btn" onclick="showSection(event,'gotchas')">Classic pitfalls</button>
+  <button class="nav-btn" onclick="showSection(event,'interview')">Interview Q&amp;A</button>
+</div>
+
+<!-- STRATEGY -->
+<div class="section active" id="strategy">
+<div class="card">
+<h2>How to use this (the situation this page assumes)</h2>
+<p>This page is written for someone who wrote <strong>real production C++</strong> years ago — kernel-mode, Ring 0, low-level systems work. If that's you, you're <em>not</em> a beginner. The gap is:</p>
+<ul>
+  <li><strong>Rustiness after years away</strong> — the fundamentals are buried, not gone. This page wakes them up.</li>
+  <li><strong>Modern C++ (C++11/14/17/20)</strong> — most of this exploded <em>after</em> the classic-C++ era. Smart pointers, move semantics, <code>auto</code>, lambdas, <code>constexpr</code>, ranges — this is the real catch-up.</li>
+</ul>
+<div class="insight"><p><strong>A strong framing for interviews:</strong> position deep C++ fundamentals from systems / kernel-level work — kernel-mode, Ring 0, low-level — as the durable core, and modern idioms (smart pointers, move semantics, the newer standard library) as the easy part to pick up. Memory, pointers, RAII, and how the code actually runs are the hard-to-teach part, and low-level systems experience is rare and worth highlighting.</p></div>
+</div>
+
+<div class="card">
+<h3>What's the same (old knowledge still valid)</h3>
+<ul>
+  <li>Pointers, references, manual memory model, the stack/heap distinction</li>
+  <li>Classes, inheritance, virtual functions, vtables (a low-level background covers this)</li>
+  <li>Undefined behavior, memory corruption, how the ABI works</li>
+  <li>Compilation model (headers, .cpp, linking) — solid from any systems background</li>
+</ul>
+<h3>What's new since then (the catch-up list)</h3>
+<table>
+<tr><th>Feature</th><th>Since</th><th>One-liner</th></tr>
+<tr><td><code>unique_ptr</code>/<code>shared_ptr</code></td><td>C++11</td><td>Smart pointers — RAII for heap; you rarely write <code>new</code>/<code>delete</code> anymore</td></tr>
+<tr><td>Move semantics <code>&amp;&amp;</code></td><td>C++11</td><td>Transfer ownership without copying — the big mental shift</td></tr>
+<tr><td><code>auto</code></td><td>C++11</td><td>Type inference; huge for readability</td></tr>
+<tr><td>Lambdas <code>[](){}</code></td><td>C++11</td><td>Inline anonymous functions</td></tr>
+<tr><td>Range-for</td><td>C++11</td><td><code>for (auto&amp; x : vec)</code></td></tr>
+<tr><td><code>nullptr</code></td><td>C++11</td><td>Replaces <code>NULL</code>/<code>0</code></td></tr>
+<tr><td><code>constexpr</code></td><td>C++11/14</td><td>Compile-time computation</td></tr>
+<tr><td>Structured bindings</td><td>C++17</td><td><code>auto [k, v] = pair;</code></td></tr>
+<tr><td><code>std::optional</code>/<code>variant</code></td><td>C++17</td><td>Maybe-a-value / type-safe union</td></tr>
+<tr><td><code>std::string_view</code></td><td>C++17</td><td>Non-owning string ref (fast, no copy)</td></tr>
+<tr><td>Concepts, ranges, coroutines</td><td>C++20</td><td>Newest; know they exist, deep-dive only if needed</td></tr>
+</table>
+</div>
+</div>
+
+<!-- MODERN -->
+<div class="section" id="modern">
+<div class="card">
+<h2>Modern C++ — the "you missed these" essentials</h2>
+
+<h3 class="subh">auto — type inference</h3>
+<pre>auto x = 42;              // int
+auto it = vec.begin();   // no more std::vector&lt;int&gt;::iterator
+auto&amp; ref = obj;         // auto with reference (keep the &amp;!)
+const auto&amp; r = getBig();// read-only, no copy</pre>
+<div class="warn"><p><code>auto</code> drops references &amp; const by default → use <code>auto&amp;</code>, <code>const auto&amp;</code> when you want them. Forgetting the <code>&amp;</code> silently makes a copy — a classic perf bug.</p></div>
+
+<h3 class="subh">Range-for</h3>
+<pre>for (const auto&amp; item : container) { use(item); }  // read-only, no copy
+for (auto&amp; item : container) { item.mutate(); }    // modify in place
+for (auto item : container) { }                     // COPY each — usually wrong</pre>
+
+<h3 class="subh">Lambdas</h3>
+<pre>auto add = [](int a, int b) { return a + b; };
+int total = 0;
+std::for_each(v.begin(), v.end(), [&amp;total](int x){ total += x; }); // [&amp;] capture by ref
+auto byVal = [=](){ return captured; };  // [=] capture by value
+// capture list: [&amp;]=all by ref, [=]=all by value, [x]=x by value, [&amp;x]=x by ref</pre>
+<div class="warn"><p>Capturing by reference <code>[&amp;]</code> and letting the lambda outlive the referenced variable = dangling reference (use-after-free). This is a familiar bug class from low-level / systems work — same trap, new syntax.</p></div>
+
+<h3 class="subh">Structured bindings (C++17)</h3>
+<pre>std::map&lt;std::string,int&gt; m;
+for (const auto&amp; [key, val] : m) { ... }   // unpack pair directly
+auto [x, y] = getPoint();</pre>
+
+<h3 class="subh">std::optional (C++17) — "maybe a value"</h3>
+<pre>std::optional&lt;int&gt; find(...) {
+  if (found) return value;
+  return std::nullopt;
+}
+if (auto r = find(...); r.has_value()) use(*r);
+int v = find(...).value_or(-1);</pre>
+
+<h3 class="subh">string_view (C++17) — non-owning, fast</h3>
+<pre>void log(std::string_view s);  // no copy, works with const char* AND std::string</pre>
+<div class="tip"><p>Pass <code>std::string_view</code> for read-only string params — avoids copying. But it doesn't own the data, so don't store it beyond the source's lifetime.</p></div>
+</div>
+</div>
+
+<!-- MEMORY -->
+<div class="section" id="memory">
+<div class="card">
+<h2>Memory &amp; RAII — the biggest shift from the old era</h2>
+<p>In older C++, <code>new</code>/<code>delete</code> were written manually. <strong>Modern C++ almost never does.</strong> This is one of the first things an interviewer is likely to check.</p>
+
+<h3 class="subh">The rule: RAII (Resource Acquisition Is Initialization)</h3>
+<p>Tie a resource's lifetime to an object's scope. When the object goes out of scope, its destructor frees the resource — automatically, even on exceptions. You already know destructors; smart pointers just apply RAII to heap memory.</p>
+
+<h3 class="subh">unique_ptr — sole ownership (the default)</h3>
+<pre>auto p = std::make_unique&lt;Widget&gt;(args);  // heap Widget, auto-freed
+p-&gt;method();
+// no delete needed — freed when p leaves scope
+// can't copy (sole owner), but can MOVE:
+auto q = std::move(p);   // p is now null, q owns it</pre>
+
+<h3 class="subh">shared_ptr — shared ownership (ref-counted)</h3>
+<pre>auto s = std::make_shared&lt;Widget&gt;();
+auto s2 = s;             // both own it; refcount = 2
+// freed when the LAST shared_ptr goes away</pre>
+<div class="warn"><p><strong>shared_ptr cycles leak.</strong> A → B → A with shared_ptr never hits refcount 0. Break the cycle with <code>std::weak_ptr</code> for the back-reference. Classic interview follow-up.</p></div>
+
+<table>
+<tr><th>Use</th><th>Pointer</th></tr>
+<tr><td>One owner (default choice)</td><td><code>unique_ptr</code></td></tr>
+<tr><td>Genuinely shared ownership</td><td><code>shared_ptr</code></td></tr>
+<tr><td>Break a shared_ptr cycle / observe without owning</td><td><code>weak_ptr</code></td></tr>
+<tr><td>Non-owning "I just look at it"</td><td>raw pointer <code>T*</code> or reference</td></tr>
+</table>
+<div class="insight"><p><strong>Say this in interview:</strong> "I reach for <code>unique_ptr</code> by default, <code>shared_ptr</code> only when ownership is genuinely shared, and I watch for reference cycles — break them with <code>weak_ptr</code>. I rarely write raw <code>new</code>/<code>delete</code> anymore; RAII handles it." That single sentence shows you've made the modern shift.</p></div>
+
+<h3 class="subh">The Rule of 0 / 3 / 5</h3>
+<ul>
+  <li><strong>Rule of 0:</strong> if your class members are all RAII types (smart pointers, vector, string), you need NO custom destructor/copy/move — the compiler does it right. <em>Aim for this.</em></li>
+  <li><strong>Rule of 3 (old):</strong> if you write one of {destructor, copy ctor, copy assign}, write all three.</li>
+  <li><strong>Rule of 5 (C++11):</strong> add move ctor + move assign to the list.</li>
+</ul>
+</div>
+</div>
+
+<!-- MOVE -->
+<div class="section" id="move">
+<div class="card">
+<h2>Move semantics — the concept that didn't exist in the old era</h2>
+<p>This is the biggest genuinely-new idea. Pre-C++11, returning a big object copied it. Move semantics lets you <strong>transfer ownership of the internals</strong> instead of copying — huge for performance.</p>
+
+<h3 class="subh">The idea</h3>
+<pre>std::vector&lt;int&gt; makeBig();
+auto v = makeBig();   // pre-C++11: copy the whole vector. C++11: MOVE it (steal the buffer). Free.</pre>
+
+<h3 class="subh">lvalue vs rvalue (the mental model)</h3>
+<ul>
+  <li><strong>lvalue</strong> = has a name, has an address (<code>x</code>, <code>vec[0]</code>)</li>
+  <li><strong>rvalue</strong> = temporary, about to die (<code>makeBig()</code>, <code>x + y</code>)</li>
+  <li><code>T&amp;&amp;</code> = rvalue reference = "I can safely steal from this, it's dying anyway"</li>
+</ul>
+
+<h3 class="subh">std::move — "I'm done with this, you can steal it"</h3>
+<pre>std::string a = "hello";
+std::string b = std::move(a);  // b steals a's buffer; a is now valid-but-unspecified (don't read its value)
+// std::move does NOT move anything — it just CASTS to rvalue ref,
+// enabling the move constructor to run. Naming is misleading.</pre>
+<div class="warn"><p>After <code>std::move(a)</code>, <code>a</code> is in a "valid but unspecified" state — don't use its value, only reassign or destroy it.</p></div>
+
+<h3 class="subh">When you write a class with a move ctor</h3>
+<pre>class Buffer {
+  char* data; size_t n;
+public:
+  // move constructor: steal, don't copy
+  Buffer(Buffer&amp;&amp; o) noexcept : data(o.data), n(o.n) {
+    o.data = nullptr; o.n = 0;   // leave source empty
+  }
+};</pre>
+<div class="tip"><p>For interviews you mostly need to <em>explain</em> move semantics, not write the ctor — and prefer <strong>Rule of 0</strong> (use vector/string/smart-ptr members so moves are auto-generated correctly).</p></div>
+</div>
+</div>
+
+<!-- STL -->
+<div class="section" id="stl">
+<div class="card">
+<h2>STL toolbox — for coding problems</h2>
+<h3 class="subh">Containers</h3>
+<table>
+<tr><th>Container</th><th>Use / note</th></tr>
+<tr><td><code>vector&lt;T&gt;</code></td><td>default dynamic array; <code>push_back</code>, <code>[]</code>, contiguous</td></tr>
+<tr><td><code>unordered_map&lt;K,V&gt;</code></td><td>hash map, O(1) avg — your go-to for counting/lookup</td></tr>
+<tr><td><code>unordered_set&lt;T&gt;</code></td><td>hash set, seen/dedup</td></tr>
+<tr><td><code>map&lt;K,V&gt;</code></td><td>ordered (red-black tree), O(log n), sorted keys</td></tr>
+<tr><td><code>deque&lt;T&gt;</code></td><td>double-ended; sliding-window-max, BFS</td></tr>
+<tr><td><code>priority_queue&lt;T&gt;</code></td><td>max-heap by default; top-K, Dijkstra</td></tr>
+<tr><td><code>stack</code>/<code>queue</code></td><td>adapters over deque</td></tr>
+</table>
+
+<h3 class="subh">Snippets (common hand-typed idioms — memorize these)</h3>
+<pre>#include &lt;bits/stdc++.h&gt;   // (contest-only; not portable, but common on judges)
+using namespace std;
+
+vector&lt;int&gt; v = {3,1,2};
+sort(v.begin(), v.end());                 // ascending
+sort(v.begin(), v.end(), greater&lt;&gt;());     // descending
+sort(v.begin(), v.end(), [](int a,int b){ return a&gt;b; }); // custom
+
+unordered_map&lt;int,int&gt; cnt;
+cnt[x]++;                                  // auto-inserts 0 then ++
+if (cnt.count(x)) ...                      // exists?
+auto it = cnt.find(x); if(it!=cnt.end()) use(it-&gt;second);
+
+priority_queue&lt;int&gt; maxh;                   // max-heap
+priority_queue&lt;int, vector&lt;int&gt;, greater&lt;&gt;&gt; minh;  // min-heap
+maxh.push(x); maxh.top(); maxh.pop();
+
+// pair / structured binding
+pair&lt;int,int&gt; p = {1,2};
+auto [a,b] = p;
+
+// string
+string s = "abc";
+s.substr(1,2); s.find('b'); reverse(s.begin(), s.end());
+for (char c : s) ...
+stoi(s); to_string(42);</pre>
+
+<h3 class="subh">Algorithms worth remembering</h3>
+<pre>sort, stable_sort, reverse, min_element, max_element,
+accumulate(v.begin(),v.end(),0),   // sum
+count, count_if, find, find_if,
+lower_bound / upper_bound,          // binary search on sorted
+unique, next_permutation</pre>
+</div>
+</div>
+
+<!-- GOTCHAS -->
+<div class="section" id="gotchas">
+<div class="card">
+<h2>Classic C++ pitfalls (a refresher on ones you likely knew)</h2>
+<table>
+<tr><th>Trap</th><th>Note</th></tr>
+<tr><td>Dangling pointer / use-after-free</td><td>Routine, everyday work for anyone with a kernel background. Smart pointers reduce it but lambdas <code>[&amp;]</code> and <code>string_view</code> reintroduce it.</td></tr>
+<tr><td>Iterator invalidation</td><td>Modifying a vector (push_back → realloc) invalidates iterators/refs into it. Classic bug.</td></tr>
+<tr><td>Copy when you meant reference</td><td><code>for (auto x : big)</code> and <code>auto x = getBig()</code> copy. Use <code>auto&amp;</code>/<code>const auto&amp;</code>.</td></tr>
+<tr><td>Integer overflow</td><td>Use <code>long long</code>; <code>lo + (hi-lo)/2</code> not <code>(lo+hi)/2</code>.</td></tr>
+<tr><td>Signed/unsigned mix</td><td><code>vec.size()</code> is unsigned; comparing to signed <code>int i</code> can wrap. Watch loops going below 0.</td></tr>
+<tr><td>Uninitialized variables</td><td>UB — reads garbage. Always initialize.</td></tr>
+<tr><td>Slicing</td><td>Assigning a derived object to a base value drops the derived part. Use pointers/refs for polymorphism.</td></tr>
+<tr><td><code>NULL</code> vs <code>nullptr</code></td><td>Use <code>nullptr</code> (type-safe).</td></tr>
+</table>
+<div class="insight"><p>A low-level systems background is an <em>asset</em> here — it brings deep intuition for memory bugs, UB, and how things break at the machine level. Most engineers who learned "modern C++" first <em>lack</em> that. That rusty-but-deep systems knowledge is the hard-to-teach part; modern idioms are the easy part to pick up.</p></div>
+</div>
+</div>
+
+<!-- INTERVIEW -->
+<div class="section" id="interview">
+<div class="card">
+<h2>Interview Q&amp;A — likely C++ questions</h2>
+
+<div class="qa"><div class="q">"Difference between unique_ptr and shared_ptr?"</div>
+<p><code>unique_ptr</code> = sole ownership, no copy (move only), zero overhead. <code>shared_ptr</code> = shared ownership via atomic reference count, freed when last owner dies, small overhead. Default to unique_ptr; use shared only when ownership is genuinely shared. Watch cycles → <code>weak_ptr</code>.</p></div>
+
+<div class="qa"><div class="q">"What is RAII?"</div>
+<p>Tie resource lifetime to object scope — acquire in constructor, release in destructor. Guarantees cleanup even on exceptions. Smart pointers, <code>std::lock_guard</code>, file wrappers all use it. It's why modern C++ rarely needs manual <code>delete</code>.</p></div>
+
+<div class="qa"><div class="q">"Explain move semantics / std::move."</div>
+<p>Move transfers ownership of an object's internals instead of copying — cheap for big objects. <code>std::move</code> doesn't move anything; it casts to an rvalue reference so the move constructor can run. After a move, the source is valid-but-unspecified. Enables returning big objects and storing them without copies.</p></div>
+
+<div class="qa"><div class="q">"lvalue vs rvalue?"</div>
+<p>lvalue has a name/address; rvalue is a temporary about to expire. <code>T&amp;&amp;</code> binds to rvalues → "safe to steal from." This is what enables move semantics.</p></div>
+
+<div class="qa"><div class="q">"virtual functions / how does polymorphism work?"</div>
+<p>Virtual functions enable runtime dispatch via a vtable — each polymorphic object has a vptr to its class's table of function pointers. (A low-level background makes this straightforward to explain — make the most of it.) Always give a polymorphic base class a <code>virtual</code> destructor, or deleting through a base pointer leaks/UB.</p></div>
+
+<div class="qa"><div class="q">"When is shared_ptr a problem?"</div>
+<p>Reference cycles (A owns B owns A) never reach refcount 0 → leak. Break with <code>weak_ptr</code>. Also atomic refcount has overhead — don't use shared_ptr when unique suffices.</p></div>
+
+<div class="qa"><div class="q">"Stack vs heap?"</div>
+<p>Stack: automatic, fast, LIFO, scope-bound, limited size. Heap: manual (or smart-ptr) lifetime, larger, slower to allocate, fragmentation risk. Prefer stack/RAII; heap via <code>make_unique</code>/<code>make_shared</code>.</p></div>
+
+<div class="qa"><div class="q">"const correctness?"</div>
+<p>Mark things <code>const</code> that don't change — params (<code>const T&amp;</code>), member functions that don't mutate (<code>void f() const</code>), pointers. Helps the compiler and documents intent. <code>const auto&amp;</code> for read-only loop/refs.</p></div>
+
+<div class="tip"><p><strong>A solid positioning to lead with:</strong> deep C++ from systems / kernel work — memory, UB, vtables, how it runs on the machine — plus a ramp on the modern standard library and idioms, with the hard-to-teach fundamentals already in place. Interviewers value the deep systems intuition; the modern syntax is the easy part to catch up.</p></div>
+</div>
+</div>
+
+<!-- GLOSSARY -->
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>vtable / vptr</strong></td><td>Per-class table of virtual-function pointers; each polymorphic object holds a hidden <code>vptr</code> to it, enabling runtime dispatch.</td></tr>
+<tr><td><strong>ABI (Application Binary Interface)</strong></td><td>Binary-level contract — calling conventions, data layout, symbol names — that lets separately compiled code link and run together.</td></tr>
+<tr><td><strong>UB (Undefined Behavior)</strong></td><td>Code the standard places no constraints on (buffer overrun, uninitialized read); may do anything, including silent corruption.</td></tr>
+<tr><td><strong>RAII (Resource Acquisition Is Initialization)</strong></td><td>Tie a resource's lifetime to an object's scope; the destructor releases it automatically, even on exceptions.</td></tr>
+<tr><td><strong><code>unique_ptr</code></strong></td><td>Smart pointer with sole ownership — move-only, zero overhead; frees the object when it leaves scope. The default choice.</td></tr>
+<tr><td><strong><code>shared_ptr</code></strong></td><td>Reference-counted smart pointer for genuinely shared ownership; frees the object when the last owner is destroyed.</td></tr>
+<tr><td><strong><code>weak_ptr</code></strong></td><td>Non-owning observer of a <code>shared_ptr</code>'s object; used to break reference cycles that would otherwise leak.</td></tr>
+<tr><td><strong>Move semantics</strong></td><td>Transferring ownership of an object's internals instead of copying them — cheap for large objects (C++11).</td></tr>
+<tr><td><strong><code>std::move</code></strong></td><td>Casts a value to an rvalue reference so a move can run; it does not itself move anything.</td></tr>
+<tr><td><strong>lvalue / rvalue</strong></td><td>An lvalue has a name and address; an rvalue is a temporary about to expire.</td></tr>
+<tr><td><strong>rvalue reference (<code>&amp;&amp;</code>)</strong></td><td>A reference that binds to rvalues, signaling "safe to steal from" — the basis for move semantics.</td></tr>
+<tr><td><strong>Rule of 0 / 3 / 5</strong></td><td>Guideline: define none, or all, of the special member functions (destructor, copy/move constructor and assignment).</td></tr>
+<tr><td><strong><code>auto</code></strong></td><td>Type inference — the compiler deduces the type; drops references and <code>const</code> unless you write <code>auto&amp;</code> / <code>const auto&amp;</code>.</td></tr>
+<tr><td><strong>Lambda</strong></td><td>Inline anonymous function object with a capture list (<code>[&amp;]</code>, <code>[=]</code>, …) for referencing surrounding variables.</td></tr>
+<tr><td><strong><code>constexpr</code></strong></td><td>Marks values or functions computable at compile time (C++11/14).</td></tr>
+<tr><td><strong>Structured bindings</strong></td><td>C++17 syntax to unpack a pair, tuple, or struct into named variables: <code>auto [k, v] = pair;</code>.</td></tr>
+<tr><td><strong><code>std::optional</code></strong></td><td>C++17 type holding either a value or nothing (<code>std::nullopt</code>) — a type-safe "maybe a value."</td></tr>
+<tr><td><strong><code>std::string_view</code></strong></td><td>C++17 non-owning, read-only view over character data; avoids copies but must not outlive its source.</td></tr>
+<tr><td><strong>STL (Standard Template Library)</strong></td><td>The standard library's containers, iterators, and algorithms (<code>vector</code>, <code>map</code>, <code>sort</code>, …).</td></tr>
+</table>
+</div>
+
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  evt.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="c_refresher.html">‹ C Refresher</a><a class="bkc" href="index.html">📖 Contents</a><a href="go_refresher.html">Go Refresher ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

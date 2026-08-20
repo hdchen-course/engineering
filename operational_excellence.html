@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operational Excellence &amp; SRE — System Design Interview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --sw: 260px;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+#sb {
+  width: var(--sw);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; bottom: 0;
+  overflow-y: auto; z-index: 100;
+  transition: width .3s ease;
+}
+#sb::-webkit-scrollbar { width: 4px; }
+#sb::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.sbh {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.sbt { font-size: 13px; font-weight: 700; color: var(--blue-d); text-transform: uppercase; letter-spacing: 1px; }
+.sbs { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.ng { padding: 12px 8px 0; }
+.ngl { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 6px; }
+.ni {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: var(--text2);
+  transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+}
+.ni:hover { background: var(--bg3); color: var(--text); }
+.ni.active { background: var(--blue-l); color: var(--blue-d); font-weight: 600; }
+.ni-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.ni-text { flex: 1; font-size: 12px; }
+.badge { margin-left: auto; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+.bh { background: var(--red-l); color: var(--red); }
+.bg { background: var(--green-l); color: var(--green); }
+.bp { background: var(--purple-l); color: var(--purple); }
+.bt { background: var(--teal-l); color: var(--teal); }
+.bo { background: var(--orange-l); color: var(--orange); }
+
+/* MAIN — normal document flow, centered like the rest of the book */
+#main { background: var(--bg); }
+.container { max-width: 1080px; margin: 0 auto; padding: 20px 20px 0; }
+
+/* TOP SECTION NAV (site style, sticky) */
+.nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 14px 0; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; font-family: 'Inter', sans-serif; transition: all .2s; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue-d); border-color: var(--blue); }
+
+/* HEADER */
+.ph {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px;
+  border-radius: var(--r);
+  margin: 8px 0 4px;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #93c5fd; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 650px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+.sec { padding: 28px 4px; display: none; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: #fff; border-radius: var(--r); margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--blue-l); color: var(--blue-d); font-size: 11px; font-weight: 500; margin: 2px; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* INTERVIEW QUOTE */
+.iq {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--text2);
+  font-size: 13px;
+  position: relative;
+}
+.iq::before {
+  content: 'SAY THIS';
+  position: absolute;
+  top: -8px; left: 14px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  background: var(--blue);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+h4.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* SKILL BOX */
+.skill-box {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 18px; margin: 10px 0; box-shadow: var(--shadow-sm);
+}
+.skill-box h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.skill-box ul { padding-left: 18px; font-size: 13px; color: var(--text2); }
+.skill-box li { margin-bottom: 4px; }
+
+/* SVG CONTAINERS */
+.svg-container {
+  margin: 20px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.svg-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* PROGRESS */
+.prog { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.pc { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow-sm); text-align: center; }
+.pc .num { font-size: 28px; font-weight: 800; color: var(--blue-d); }
+.pc .lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg3); padding: 1px 5px; border-radius: 4px; color: var(--blue-d); }
+
+pre, pre.codeblock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+  line-height: 1.6;
+  color: var(--text2);
+  white-space: pre;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: 12px; }
+
+/* LIST STYLING */
+.content-list { padding-left: 20px; margin: 8px 0; }
+.content-list li { margin-bottom: 6px; font-size: 13px; color: var(--text2); }
+.content-list li strong { color: var(--text); }
+
+/* DECISION GRID */
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.decision-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.decision-item h5 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-d);
+  margin-bottom: 6px;
+}
+.decision-item p {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.decision-item .di-key {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+@media (max-width: 768px) {
+  #sb { width: 0; overflow: hidden; }
+  #main { left: 0; }
+  .sec { padding: 20px 16px; }
+  .ph { padding: 24px 16px; }
+}
+a.lc { color: var(--blue); text-decoration: none; font-weight: 500; }
+a.lc:hover { text-decoration: underline; color: var(--blue-d); }
+</style>
+
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part IV · Chapter 3 — <b>Operational Excellence &amp; SRE</b></span><span class="bkspacer"></span></nav>
+
+<div id="main">
+<div class="container">
+
+<div class="ph">
+  <div class="htag">System Design Interview Preparation</div>
+  <div class="ht">Operational Excellence &amp; <span>Site Reliability</span></div>
+  <div class="hd">The discipline that separates seniors from juniors: keeping a system healthy in production. Reliability as a feature, error budgets that gate releases, incident response, blameless postmortems, safe deploys, disaster recovery, and chaos engineering &mdash; each with a plain-English analogy, worked numbers, and the interview angle.</div>
+  <div class="hm">
+    <div class="chip">Sections <b>12</b></div>
+    <div class="chip">Guiding principle <b>Error budgets</b></div>
+    <div class="chip">Culture <b>Blameless</b></div>
+    <div class="chip">Level <b>L5 / L6</b></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="go('foundations')">Reliability as a Feature</button>
+  <button class="nav-btn" onclick="go('slo')">SLI / SLO / SLA &amp; Error Budgets</button>
+  <button class="nav-btn" onclick="go('incident')">Incident Response</button>
+  <button class="nav-btn" onclick="go('oncall')">On-Call &amp; Rotations</button>
+  <button class="nav-btn" onclick="go('postmortem')">Blameless Postmortems</button>
+  <button class="nav-btn" onclick="go('runbooks')">Runbooks &amp; Automation</button>
+  <button class="nav-btn" onclick="go('toil')">Toil</button>
+  <button class="nav-btn" onclick="go('capacity')">Capacity, Shedding &amp; Backpressure</button>
+  <button class="nav-btn" onclick="go('deploy')">Deployment Safety</button>
+  <button class="nav-btn" onclick="go('dr')">Disaster Recovery (RTO/RPO)</button>
+  <button class="nav-btn" onclick="go('chaos')">Chaos Engineering</button>
+  <button class="nav-btn" onclick="go('loop')">The Observability Loop</button>
+</nav>
+
+<!-- ============ FOUNDATIONS ============ -->
+<div class="sec active" id="tab-foundations">
+<h2 class="stitle">Reliability as a Feature</h2>
+<div class="sdesc">Shipping code is only half the job. The other half &mdash; keeping it healthy while real users depend on it &mdash; is the operational excellence discipline. This chapter is that discipline, end to end.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>Think of a restaurant. A junior cook can plate one beautiful dish. A head chef keeps a full dining room fed on a Friday night: the fryer catches fire, a supplier is late, two cooks call in sick &mdash; and dinner still goes out. <strong>Writing the feature is the dish. Operational excellence is running the Friday-night service.</strong> Interviews for senior roles test the second skill, because in production every night is Friday night.</p></div>
+
+<h3 class="sub">Why "reliability is a feature"</h3>
+<p>Users do not experience your architecture diagram; they experience whether the button worked <em>this time</em>. A checkout page that is brilliant but down 1% of the time loses more revenue than a plain one that is always up. So reliability competes for engineering time exactly like any other feature &mdash; and, crucially, it can be <em>over</em>-built. Chasing 99.999% when users cannot tell the difference from 99.9% burns money that a new feature would have earned. The senior instinct is to make reliability a <strong>budgeted, measured trade-off</strong>, not an absolute.</p>
+
+<h4 class="sub2">Tiny worked example</h4>
+<p>A service does 10,000,000 requests/day. Compare two reliability targets over a 30-day month (300M requests):</p>
+<table class="tbl">
+<thead><tr><th>Target</th><th>Allowed failures / month</th><th>Failed user requests</th><th>Cost to reach it</th></tr></thead>
+<tbody>
+<tr><td>99.9%</td><td>0.1%</td><td>300,000</td><td>Good monitoring + safe deploys</td></tr>
+<tr><td>99.99%</td><td>0.01%</td><td>30,000</td><td>Multi-region, hot failover, heavy automation</td></tr>
+<tr><td>99.999%</td><td>0.001%</td><td>3,000</td><td>Full active-active, seconds-level failover, huge on-call load</td></tr>
+</tbody>
+</table>
+<p>Each extra "nine" cuts failures 10&times; but often multiplies cost. The question is never "can we hit five nines?" &mdash; it is "does the user, or the contract, actually need it?"</p>
+
+<h3 class="sub">The operational excellence stack</h3>
+<p>Everything in this chapter fits one loop: <strong>define what "healthy" means &rarr; measure it &rarr; protect it while changing the system &rarr; respond fast when it breaks &rarr; learn without blame &rarr; automate the lesson away.</strong></p>
+
+<div class="svg-container">
+<svg viewBox="0 0 820 200" role="img" aria-label="Operational excellence loop" style="max-width:100%;height:auto">
+  <defs><marker id="foa" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#526176"/></marker></defs>
+  <g font-family="Inter" font-size="11" text-anchor="middle">
+    <rect x="10"  y="80" width="110" height="50" rx="8" fill="#dbeafe" stroke="#2563eb"/><text x="65" y="100" fill="#1e40af" font-weight="700">Define</text><text x="65" y="116" fill="#1e40af">SLO / budget</text>
+    <rect x="150" y="80" width="110" height="50" rx="8" fill="#dcfce7" stroke="#137a39"/><text x="205" y="100" fill="#166534" font-weight="700">Measure</text><text x="205" y="116" fill="#166534">observability</text>
+    <rect x="290" y="80" width="110" height="50" rx="8" fill="#fef3c7" stroke="#a15408"/><text x="345" y="100" fill="#92400e" font-weight="700">Protect</text><text x="345" y="116" fill="#92400e">safe deploys</text>
+    <rect x="430" y="80" width="110" height="50" rx="8" fill="#fee2e2" stroke="#c21f1f"/><text x="485" y="100" fill="#c21f1f" font-weight="700">Respond</text><text x="485" y="116" fill="#c21f1f">incident mgmt</text>
+    <rect x="570" y="80" width="120" height="50" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="630" y="100" fill="#5b21b6" font-weight="700">Learn</text><text x="630" y="116" fill="#5b21b6">postmortem</text>
+    <rect x="720" y="80" width="90" height="50" rx="8" fill="#ccfbf1" stroke="#0e7268"/><text x="765" y="100" fill="#0e7268" font-weight="700">Automate</text><text x="765" y="116" fill="#0e7268">kill toil</text>
+    <line x1="120" y1="105" x2="148" y2="105" stroke="#526176" marker-end="url(#foa)"/>
+    <line x1="260" y1="105" x2="288" y2="105" stroke="#526176" marker-end="url(#foa)"/>
+    <line x1="400" y1="105" x2="428" y2="105" stroke="#526176" marker-end="url(#foa)"/>
+    <line x1="540" y1="105" x2="568" y2="105" stroke="#526176" marker-end="url(#foa)"/>
+    <line x1="690" y1="105" x2="718" y2="105" stroke="#526176" marker-end="url(#foa)"/>
+    <path d="M765 80 C765 25, 65 25, 65 78" fill="none" stroke="#0e7268" stroke-dasharray="4 3" marker-end="url(#foa)"/>
+    <text x="415" y="20" fill="#0e7268" font-size="10">feed the lesson back into the definition</text>
+  </g>
+</svg>
+</div>
+
+<div class="note"><div class="notel">DEV vs SRE MINDSET</div><p>A developer optimizes for <em>change velocity</em> (ship the feature). An SRE optimizes for <em>stability</em> (don't break prod). Left unchecked they fight forever. The error budget (next section) is the treaty that lets both win: change fast <em>while</em> you have budget, slow down when you don't.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>When an interviewer asks "how would you make this reliable?", do <strong>not</strong> jump to "add more replicas." Say: "First I'd define the reliability target as an SLO tied to the user journey, derive an error budget, and let that budget decide how much we invest &mdash; because reliability is a feature with diminishing returns, not an absolute." That single sentence signals L5+ maturity.</p></div>
+</div>
+
+<!-- ============ SLO / ERROR BUDGET ============ -->
+<div class="sec" id="tab-slo">
+<h2 class="stitle">SLI / SLO / SLA &amp; Error Budgets</h2>
+<div class="sdesc">The measurement backbone. An SLI is what you measure, an SLO is the target, an SLA is the contract &mdash; and the error budget is the number that turns reliability into a spendable resource.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>An error budget is a <strong>monthly data allowance on a phone plan</strong>. You get a fixed amount of "allowed unreliability" each month. Spend it slowly and you can keep shipping risky new things. Blow through it early &mdash; a bad launch, an outage &mdash; and you get throttled: no new features until next cycle, only reliability work. It converts a vague argument ("are we stable enough to ship?") into arithmetic.</p></div>
+
+<h3 class="sub">The three terms, precisely</h3>
+<table class="tbl">
+<thead><tr><th>Term</th><th>What it is</th><th>Example</th><th>Audience</th></tr></thead>
+<tbody>
+<tr><td><strong>SLI</strong> &mdash; Indicator</td><td>A measured ratio of good events to total events</td><td>% of requests served &lt; 300ms without a 5xx (server-error response)</td><td>Engineers</td></tr>
+<tr><td><strong>SLO</strong> &mdash; Objective</td><td>Internal target for the SLI over a window</td><td>99.9% over a rolling 28 days</td><td>Engineering + product</td></tr>
+<tr><td><strong>SLA</strong> &mdash; Agreement</td><td>External contract with penalties</td><td>99.5% or the customer gets credits</td><td>Legal + customers</td></tr>
+</tbody>
+</table>
+<p>Golden rule: <strong>SLO is stricter than SLA.</strong> If you promise customers 99.5% but internally target 99.9%, you get warned and fix things long before you owe anyone a refund.</p>
+
+<h3 class="sub">Error-budget math &mdash; work it out loud</h3>
+<p>The error budget is simply <code>100% &minus; SLO</code>, expressed as allowed downtime (or allowed bad requests) over the window. Memorize the anchor: <strong>99.9% over 30 days &approx; 43 minutes.</strong></p>
+<pre class="codeblock">Window   = 30 days = 30 &times; 24 &times; 60 = 43,200 minutes
+SLO      = 99.9%   =&gt; budget = 0.1% = 0.001
+Budget   = 0.001 &times; 43,200 = 43.2 minutes of "allowed down" per month
+
+Same window, other targets:
+  99%     -> 1.0%   -> 432 min   (~7.2 hours)
+  99.9%   -> 0.1%   -> 43.2 min
+  99.95%  -> 0.05%  -> 21.6 min
+  99.99%  -> 0.01%  -> 4.32 min
+  99.999% -> 0.001% -> 25.9 seconds  (!)</pre>
+<p>Request-based works the same way. At 300M requests/month and a 99.9% success SLO, the budget is <code>0.001 &times; 300,000,000 = 300,000 failed requests</code>. A bad deploy that errors for 6 minutes at 10k req/min burns 60,000 &mdash; a fifth of the month's budget in one release.</p>
+
+<h3 class="sub">How the budget gates releases</h3>
+<p>This is the key mechanism. The budget is a policy, automatically enforced:</p>
+<ul class="content-list">
+<li><strong>Budget healthy (&gt;25% left):</strong> ship freely, take risks, run experiments.</li>
+<li><strong>Budget low (&lt;25%):</strong> slow down &mdash; extra review, smaller canaries, no risky launches.</li>
+<li><strong>Budget exhausted (0):</strong> <strong>release freeze.</strong> Only reliability fixes ship until the rolling window earns budget back. The team that caused the burn now owns the fix &mdash; incentives aligned.</li>
+</ul>
+<p>A refinement is the <strong>burn rate</strong> alert: instead of waiting for the budget to hit zero, alert when it is draining too fast. A burn rate of 1 means you will exactly exhaust the budget at the end of the window; a burn rate of 14.4 over 1 hour means you would burn a 30-day budget in ~2 days &mdash; page immediately.</p>
+
+<h3 class="sub">Watch the budget burn (replayable)</h3>
+<p>Step through a month. Each step is a week of normal deploys plus the occasional incident eating into the 43.2-minute budget. Watch the gate flip from <span style="color:var(--green);font-weight:700">SHIP</span> to <span style="color:var(--yellow);font-weight:700">SLOW</span> to <span style="color:var(--red);font-weight:700">FREEZE</span>.</p>
+
+<div class="svg-container">
+<svg id="ebq-svg" viewBox="0 0 640 210" role="img" aria-label="Error budget burn-down animation" style="max-width:100%;height:auto">
+  <g font-family="Inter" font-size="12">
+    <text x="20" y="28" font-weight="700" fill="#0f172a">Error budget &mdash; 99.9% SLO, 30-day window</text>
+    <text x="20" y="48" fill="#526176" font-size="11">Total budget: 43.2 minutes of allowed downtime</text>
+    <!-- budget bar -->
+    <rect x="20" y="64" width="500" height="34" rx="6" fill="#e2e8f0" stroke="#cbd5e1"/>
+    <rect id="ebq-fill" x="20" y="64" width="500" height="34" rx="6" fill="#1d6b2e"/>
+    <text id="ebq-remain" x="270" y="86" text-anchor="middle" font-weight="700" fill="#fff" font-size="13">43.2 min left</text>
+    <!-- gate pill -->
+    <rect id="ebq-gate-bg" x="20" y="120" width="150" height="34" rx="17" fill="#dcfce7" stroke="#137a39"/>
+    <text id="ebq-gate" x="95" y="142" text-anchor="middle" font-weight="700" fill="#166534" font-size="13">SHIP</text>
+    <!-- narration -->
+    <text id="ebq-week" x="190" y="134" font-weight="700" fill="#0f172a" font-size="12">Start of month</text>
+    <text id="ebq-desc" x="190" y="152" fill="#334155" font-size="11">Fresh budget. Ship freely, take bets.</text>
+    <!-- progress dots -->
+    <text id="ebq-step" x="500" y="152" text-anchor="end" fill="#5f6673" font-size="10">step 0 / 5</text>
+    <text x="20" y="188" fill="#5f6673" font-size="10">Green = budget remaining. As incidents burn it, the gate tightens; at zero, feature releases freeze.</text>
+  </g>
+</svg>
+</div>
+<div style="text-align:center;margin:6px 0 16px">
+  <button class="nav-btn" onclick="ebqStep()">Step &#9654;</button>
+  <button class="nav-btn" onclick="ebqReset()">Reset &#8635;</button>
+</div>
+<script>
+(function(){
+  var TOTAL=43.2, FULLW=500;
+  var steps=[
+    {label:"Start of month", desc:"Fresh budget. Ship freely, take bets.", left:43.2},
+    {label:"Week 1", desc:"Routine deploys + minor blips burn 8 min.", left:35.2},
+    {label:"Week 2", desc:"A bad deploy errors 12 min before canary caught it.", left:23.2},
+    {label:"Week 3", desc:"Upstream dependency flaps, 15 min of 5xx.", left:8.2},
+    {label:"Week 4", desc:"One more 10-min incident. Budget is gone.", left:0},
+    {label:"Freeze in effect", desc:"Only reliability work ships until the window rolls forward.", left:0}
+  ];
+  var i=0;
+  window.ebqStep=function(){ if(i<steps.length-1) i++; ebqRender(); };
+  window.ebqReset=function(){ i=0; ebqRender(); };
+  function ebqRender(){
+    var s=steps[i];
+    var frac=Math.max(0,s.left)/TOTAL;
+    var fill=document.getElementById('ebq-fill');
+    fill.setAttribute('width', (FULLW*frac).toFixed(1));
+    var color = frac>0.25 ? '#1d6b2e' : (frac>0 ? '#a15408' : '#c21f1f');
+    fill.setAttribute('fill', color);
+    document.getElementById('ebq-remain').textContent = s.left.toFixed(1)+' min left';
+    document.getElementById('ebq-week').textContent = s.label;
+    document.getElementById('ebq-desc').textContent = s.desc;
+    document.getElementById('ebq-step').textContent = 'step '+i+' / '+(steps.length-1);
+    var gate, gtext, gbg, gstroke, gcol;
+    if(frac>0.25){ gtext='SHIP'; gbg='#dcfce7'; gstroke='#137a39'; gcol='#166534'; }
+    else if(frac>0){ gtext='SLOW'; gbg='#fef3c7'; gstroke='#a15408'; gcol='#92400e'; }
+    else { gtext='FREEZE'; gbg='#fee2e2'; gstroke='#c21f1f'; gcol='#c21f1f'; }
+    document.getElementById('ebq-gate').textContent=gtext;
+    document.getElementById('ebq-gate').setAttribute('fill',gcol);
+    var bgEl=document.getElementById('ebq-gate-bg');
+    bgEl.setAttribute('fill',gbg); bgEl.setAttribute('stroke',gstroke);
+  }
+  ebqRender();
+})();
+</script>
+
+<div class="warn"><div class="warnl">COMMON MISTAKE</div><p>Setting the SLO to 100%. That means zero error budget &mdash; every deploy, every maintenance window, every dependency hiccup is a "violation." It makes the whole system brittle and stops all change. The point of an SLO is to define <em>how much unreliability is acceptable</em>, and the honest answer is never zero.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Expect: "Your SLO is 99.9% monthly &mdash; how much downtime is that, and what happens when you exceed it?" Answer crisply: "~43 minutes a month. Exceed it and we freeze feature releases and shift to reliability work until the rolling window recovers budget. Before that, a burn-rate alert pages us if we're draining too fast to survive the month." That covers the math, the gate, and the early-warning &mdash; the full picture.</p></div>
+</div>
+
+<!-- ============ INCIDENT RESPONSE ============ -->
+<div class="sec" id="tab-incident">
+<h2 class="stitle">Incident Response</h2>
+<div class="sdesc">When production breaks, the difference between a 5-minute blip and a 5-hour outage is process, not heroics. A structured response makes chaos boring.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>Incident response is the <strong>hospital emergency room</strong>. Patients are triaged by severity (a heart attack jumps the queue over a sprained wrist). One doctor <em>runs</em> the case &mdash; they don't personally do every scan, they coordinate. Someone keeps the family updated so the team isn't interrupted. That structure is exactly the Incident Commander model, and it exists so nobody freezes or trips over each other when adrenaline is high.</p></div>
+
+<h3 class="sub">Severity levels &mdash; triage first</h3>
+<p>Before doing anything, classify the blast radius. Severity drives who gets paged and how loudly.</p>
+<table class="tbl">
+<thead><tr><th>Sev</th><th>Meaning</th><th>Example</th><th>Response</th></tr></thead>
+<tbody>
+<tr><td><strong>SEV1</strong></td><td>Critical, business-wide outage</td><td>Checkout down for all users; data loss</td><td>All-hands, IC + comms, exec updates</td></tr>
+<tr><td><strong>SEV2</strong></td><td>Major degradation, subset of users</td><td>One region down; core feature broken</td><td>On-call + IC, active bridge</td></tr>
+<tr><td><strong>SEV3</strong></td><td>Minor / partial, workaround exists</td><td>Elevated latency; non-critical feature failing</td><td>On-call handles in hours</td></tr>
+<tr><td><strong>SEV4/5</strong></td><td>Cosmetic or low-impact</td><td>Typo in UI; noisy but harmless log</td><td>Normal ticket queue</td></tr>
+</tbody>
+</table>
+
+<h3 class="sub">The roles &mdash; separate coordinating from fixing</h3>
+<div class="g3">
+<div class="skill-box"><h4 style="color:var(--red)">Incident Commander (IC)</h4><ul><li>Owns the incident, not the fix</li><li>Decides, delegates, tracks actions</li><li>Never head-down in a terminal</li><li>Declares severity &amp; resolution</li></ul></div>
+<div class="skill-box"><h4 style="color:var(--blue)">Ops / Subject-matter leads</h4><ul><li>The hands actually mitigating</li><li>Propose fixes to the IC</li><li>Own one workstream each</li><li>Report status, don't freelance</li></ul></div>
+<div class="skill-box"><h4 style="color:var(--purple)">Comms lead / Scribe</h4><ul><li>Updates stakeholders on a cadence</li><li>Shields responders from questions</li><li>Keeps a timestamped log</li><li>Posts status-page updates</li></ul></div>
+</div>
+<div class="note"><div class="notel">WHY SEPARATE THE IC</div><p>If the person fixing the database is also fielding "is it fixed yet?" from five VPs, both jobs suffer. The IC absorbs coordination so responders can focus. In small incidents one person wears all hats &mdash; but the <em>roles</em> still exist, and naming them out loud prevents the classic "everyone assumed someone else was handling it."</p></div>
+
+<h3 class="sub">The incident lifecycle &amp; the metrics that grade it</h3>
+<div class="svg-container">
+<svg viewBox="0 0 780 150" role="img" aria-label="Incident lifecycle with MTTD MTTA MTTR" style="max-width:100%;height:auto">
+  <defs><marker id="ina" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#526176"/></marker></defs>
+  <g font-family="Inter" font-size="11" text-anchor="middle">
+    <line x1="30" y1="70" x2="750" y2="70" stroke="#7d8794" stroke-width="2"/>
+    <circle cx="60" cy="70" r="6" fill="#c21f1f"/><text x="60" y="52" fill="#c21f1f" font-weight="700">Fault</text><text x="60" y="95" fill="#526176">t0</text>
+    <circle cx="230" cy="70" r="6" fill="#a15408"/><text x="230" y="52" fill="#a15408" font-weight="700">Detected</text><text x="230" y="95" fill="#526176">alert fires</text>
+    <circle cx="400" cy="70" r="6" fill="#2563eb"/><text x="400" y="52" fill="#2563eb" font-weight="700">Acknowledged</text><text x="400" y="95" fill="#526176">on-call responds</text>
+    <circle cx="620" cy="70" r="6" fill="#137a39"/><text x="620" y="52" fill="#137a39" font-weight="700">Resolved</text><text x="620" y="95" fill="#526176">service healthy</text>
+    <line x1="66" y1="118" x2="224" y2="118" stroke="#a15408" marker-end="url(#ina)"/><text x="145" y="134" fill="#a15408">MTTD (detect)</text>
+    <line x1="236" y1="118" x2="394" y2="118" stroke="#2563eb" marker-end="url(#ina)"/><text x="315" y="134" fill="#2563eb">MTTA (ack)</text>
+    <line x1="66" y1="30" x2="614" y2="30" stroke="#137a39" marker-end="url(#ina)"/><text x="330" y="22" fill="#137a39">MTTR (fault &rarr; resolved)</text>
+  </g>
+</svg>
+</div>
+<ul class="content-list">
+<li><strong>MTTD</strong> &mdash; Mean Time To Detect: fault to alert. Bad monitoring shows up here.</li>
+<li><strong>MTTA</strong> &mdash; Mean Time To Acknowledge: alert to a human on it. Bad paging/rotations show up here.</li>
+<li><strong>MTTR</strong> &mdash; Mean Time To Recover/Resolve: the headline number &mdash; total user pain. Runbooks and rollback tooling shrink it.</li>
+<li><strong>MTBF</strong> &mdash; Mean Time Between Failures: how often it breaks at all.</li>
+</ul>
+<h4 class="sub2">Worked example</h4>
+<p>Fault at 02:00. Alert fires 02:08 (MTTD = 8 min). On-call acks 02:11 (MTTA = 3 min). Rolled back and healthy 02:26 (MTTR = 26 min). If this SLO allows 43 min/month, this single incident spent 26 of it &mdash; over half. That is why cutting MTTD (better alerts) and MTTR (one-click rollback) directly buys back error budget.</p>
+
+<h3 class="sub">Mitigate first, diagnose later</h3>
+<p>The cardinal rule under fire: <strong>stop the bleeding before you understand the wound.</strong> If a deploy 10 minutes ago correlates with the spike, roll it back <em>now</em> &mdash; don't debug the root cause with users hurting. Root cause is for the postmortem; mitigation is for the incident. Common fast mitigations: roll back the last deploy, flip a feature flag off, fail over to a healthy region, shed load, or scale out.</p>
+
+<div class="trap"><div class="trapl">TRAP</div><p>"Let me just find the root cause first." During a SEV1 that is the wrong instinct &mdash; every minute of debugging is a minute of user pain and burned budget. Restore service by any safe means (rollback, flag, failover), <em>then</em> investigate on a healthy system. Diagnosing in prod under pressure also risks a second outage.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>"Your service is throwing 500s right now &mdash; walk me through the first 10 minutes." Structure the answer: (1) declare severity, (2) assign IC + comms, (3) mitigate fast &mdash; check recent deploys and roll back / flag off, (4) communicate on a cadence, (5) only then root-cause, (6) schedule a blameless postmortem. Leading with "I'd look at the logs" reads as junior; leading with "declare, mitigate, communicate" reads as senior.</p></div>
+</div>
+
+<!-- ============ ON-CALL ============ -->
+<div class="sec" id="tab-oncall">
+<h2 class="stitle">On-Call &amp; Healthy Rotations</h2>
+<div class="sdesc">On-call is how someone is always ready to respond. Done well it's sustainable and educational; done badly it burns out your best engineers and they quit.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>On-call is a <strong>lifeguard shift</strong>. Most of the time you watch a calm pool; occasionally you sprint. The job is only humane if shifts are a reasonable length, you're not the sole guard for a giant beach, and the alarm only sounds for someone actually drowning &mdash; not for every splash. A pool that blares its alarm at every ripple gets a lifeguard who ignores it, and that's when someone drowns.</p></div>
+
+<h3 class="sub">What makes a rotation healthy</h3>
+<ul class="content-list">
+<li><strong>Enough people:</strong> a rule of thumb is a minimum of 6&ndash;8 engineers per rotation so any individual is on-call roughly one week in 6&ndash;8, and follow-the-sun spreads night pages across time zones.</li>
+<li><strong>Bounded load:</strong> Google's SRE guidance caps on-call at handling &le;2 significant incidents per shift &mdash; more than that and the human can't do them justice. If pages exceed that, the fix is engineering (kill the noise), not "toughen up."</li>
+<li><strong>Comp &amp; recovery:</strong> compensate on-call time and let someone who was up at 3am rest the next day. Reliability is a marathon.</li>
+<li><strong>Primary + secondary:</strong> a backup who is paged if the primary doesn't ack within, say, 5 minutes &mdash; and an escalation path beyond that.</li>
+<li><strong>You build it, you run it:</strong> the team that writes the service is on-call for it. Nothing improves reliability faster than the authors feeling their own 3am pages.</li>
+</ul>
+
+<h3 class="sub">Every page must be actionable</h3>
+<p>The fastest way to destroy a rotation is <strong>alert fatigue</strong>: pages that are noise, not signal. If an alert fires and the on-call's correct action is "acknowledge and ignore," that alert is broken. The test for a page: <em>a human must need to do something, right now, that automation can't.</em></p>
+<table class="tbl">
+<thead><tr><th>Signal type</th><th>Route to</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>User-facing SLO burning fast</td><td><strong>Page</strong> (wake someone)</td><td>Real pain, needs a human now</td></tr>
+<tr><td>Degradation, has hours of budget</td><td><strong>Ticket</strong></td><td>Fix in business hours</td></tr>
+<tr><td>Informational / trend</td><td><strong>Dashboard</strong></td><td>Look at it when investigating</td></tr>
+</tbody>
+</table>
+<div class="warn"><div class="warnl">WATCH</div><p>Alert on <em>symptoms</em> (users see errors / latency), not <em>causes</em> (CPU is 80%). High CPU that isn't hurting anyone is not a reason to wake a human. Symptom-based, SLO-linked alerting is what keeps the page count &mdash; and the resignation count &mdash; low.</p></div>
+
+<h3 class="sub">The handoff</h3>
+<p>Ending a shift without a clean handoff is how context gets lost. A good handoff covers: ongoing incidents, flaky alerts to expect, changes in flight, and anything the next person should watch. Ten minutes here saves an hour later.</p>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>"Your on-call is getting paged 20 times a night &mdash; what do you do?" Wrong answer: build a bigger rotation to absorb it. Right answer: "That's an alerting problem. I'd audit every alert against 'is it actionable and user-impacting?', delete or downgrade the noise to tickets/dashboards, tune thresholds to symptoms, and track page volume as a first-class metric. Then, if load is still high, invest in automation and rotation size." It shows you treat operational load as an engineering problem.</p></div>
+</div>
+
+<!-- ============ POSTMORTEMS ============ -->
+<div class="sec" id="tab-postmortem">
+<h2 class="stitle">Blameless Postmortems</h2>
+<div class="sdesc">The document that turns an outage into a permanent lesson. "Blameless" is the whole point: fix the system, never the person.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>Aviation. When a plane has a near-miss, investigators don't fire the pilot &mdash; they figure out why the <em>system</em> let a trained pilot make that error, then change the checklist, the cockpit layout, or the training. That's why flying is astonishingly safe. Blameless postmortems import that culture: humans will always make mistakes, so the fix is a system that tolerates them, not a search for someone to punish.</p></div>
+
+<h3 class="sub">Why blameless is non-negotiable</h3>
+<p>If people get blamed, they hide mistakes. If they hide mistakes, you never learn the real cause, and it happens again. Blamelessness isn't about being nice &mdash; it's the only way to get honest data. The framing shifts from "who screwed up?" to "what about our system made this failure possible and easy?"</p>
+<div class="note"><div class="notel">HUMAN-ERROR REFRAME</div><p>"The engineer ran the wrong command" is never a root cause &mdash; it's a starting point. Ask: why did a wrong command have no confirmation prompt? Why did it hit prod, not staging? Why was there no undo? The person is the last, most visible link in a chain of missing guardrails. Fix the chain.</p></div>
+
+<h3 class="sub">The five whys &mdash; drill past the symptom</h3>
+<pre class="codeblock">Symptom: Checkout returned 500s for 26 minutes.
+  Why? The service ran out of database connections.
+  Why? A new query wasn't releasing connections to the pool.
+  Why? The code path missed a <code>close()</code> in an error branch.
+  Why? Code review didn't catch it &amp; no test covered that branch.
+  Why? We have no lint rule or integration test for pool leaks.
+Root causes (systemic): missing pool-leak test + no connection-count alert.
+Action items: add leak test to CI; alert on pool utilization &gt;85%.</pre>
+
+<h3 class="sub">A short sample postmortem</h3>
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">PM</span><span class="ct">Postmortem: Checkout outage, 2024-06-14</span><span class="db dh">SEV1</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+<h4 class="sub2">Summary</h4>
+<p>For 26 minutes (02:00&ndash;02:26 UTC) ~40% of checkout requests returned HTTP 500. Root cause: a deploy introduced a connection-pool leak that exhausted the database connection pool under load. Mitigated by rollback.</p>
+<h4 class="sub2">Impact</h4>
+<p>~62,000 failed checkouts; est. revenue impact ~$48k; 26 min of a 43-min monthly error budget consumed (60%).</p>
+<h4 class="sub2">Timeline (UTC)</h4>
+<ul class="content-list">
+<li><strong>01:52</strong> &mdash; Deploy v412 rolled to 100% (canary window was too short to surface the leak).</li>
+<li><strong>02:00</strong> &mdash; Pool saturates under peak traffic; 500s begin.</li>
+<li><strong>02:08</strong> &mdash; SLO burn-rate alert pages on-call (MTTD 8 min).</li>
+<li><strong>02:11</strong> &mdash; On-call acks, declares SEV1, assumes IC (MTTA 3 min).</li>
+<li><strong>02:19</strong> &mdash; Recent deploy identified as prime suspect; rollback started.</li>
+<li><strong>02:26</strong> &mdash; v411 fully restored; errors clear (MTTR 26 min).</li>
+</ul>
+<h4 class="sub2">Root cause</h4>
+<p>An error branch in the new pricing query never returned its connection. Under normal load the leak was slow; at 02:00 peak it drained the pool in minutes. Review and CI had no coverage for pool leaks.</p>
+<h4 class="sub2">What went well / poorly</h4>
+<p><strong>Well:</strong> burn-rate alert fired fast; rollback tooling was one command. <strong>Poorly:</strong> canary bake time (2 min) was far too short to expose a load-dependent leak.</p>
+<h4 class="sub2">Action items (each owned, dated, tracked)</h4>
+<table class="tbl"><thead><tr><th>Action</th><th>Type</th><th>Owner</th></tr></thead><tbody>
+<tr><td>Add connection-pool leak test to CI</td><td>Prevent</td><td>A. Rao</td></tr>
+<tr><td>Alert on pool utilization &gt; 85%</td><td>Detect faster</td><td>J. Kim</td></tr>
+<tr><td>Extend canary bake to 30 min at 5% under real load</td><td>Prevent</td><td>Platform</td></tr>
+<tr><td>Add <code>close()</code> in finally + linter rule</td><td>Prevent</td><td>A. Rao</td></tr>
+</tbody></table>
+<div class="tip"><div class="tipl">NOTE</div><p>Notice every action is <em>systemic</em> and assigned. No line says "engineer will be more careful" &mdash; that's not an action item, it's a wish.</p></div>
+</div></div>
+
+<div class="warn"><div class="warnl">ACTION-ITEM DISCIPLINE</div><p>A postmortem with no owned, tracked, dated action items is theater. The value isn't the document &mdash; it's the follow-through that makes the same failure impossible. Review open postmortem actions like any other backlog.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>"How do you run a postmortem?" Hit three beats: (1) <strong>blameless</strong> &mdash; systems, not people, because blame hides data; (2) <strong>structured</strong> &mdash; summary, impact, timeline with MTTD/MTTR, root cause via five-whys; (3) <strong>actionable</strong> &mdash; owned, tracked items that are all systemic. Bonus: mention that "human error" is a prompt to find the missing guardrail, never a conclusion.</p></div>
+</div>
+
+<!-- ============ RUNBOOKS & AUTOMATION ============ -->
+<div class="sec" id="tab-runbooks">
+<h2 class="stitle">Runbooks &amp; Automation</h2>
+<div class="sdesc">Captured knowledge that lets a half-asleep on-call engineer do the right thing at 3am &mdash; and the ladder that turns that knowledge into code.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>A runbook is the <strong>pre-flight checklist</strong>. Pilots are experts, yet they still read a printed list before every takeoff, because memory fails under stress and the cost of a missed step is catastrophic. A runbook does the same for an incident: it's the sequence of checks and actions for a known failure, written when everyone was calm, for use when nobody is.</p></div>
+
+<h3 class="sub">What a good runbook contains</h3>
+<ul class="content-list">
+<li><strong>When to use it:</strong> the exact alert/symptom that leads here.</li>
+<li><strong>How to confirm:</strong> the dashboard or query that verifies the problem.</li>
+<li><strong>How to mitigate:</strong> the concrete commands &mdash; rollback, failover, flag flip &mdash; copy-pasteable.</li>
+<li><strong>How to escalate:</strong> who to page if the steps don't work.</li>
+<li><strong>Links:</strong> the dashboard, the related postmortem, the architecture doc.</li>
+</ul>
+<p>Every actionable alert should link to its runbook. A page that says "latency high" with no runbook forces the on-call to reinvent the response at the worst possible time.</p>
+
+<h3 class="sub">The automation ladder</h3>
+<p>Runbooks are step one. The senior move is to climb the ladder from documented toward automatic &mdash; each rung removes human toil and error.</p>
+<div class="svg-container">
+<svg viewBox="0 0 620 240" role="img" aria-label="Automation ladder" style="max-width:100%;height:auto">
+  <g font-family="Inter" font-size="12">
+    <rect x="40"  y="190" width="360" height="34" rx="6" fill="#fee2e2" stroke="#c21f1f"/><text x="52" y="212" fill="#c21f1f" font-weight="700">1. Manual &mdash; tribal knowledge in someone's head</text>
+    <rect x="80"  y="150" width="360" height="34" rx="6" fill="#ffedd5" stroke="#ea580c"/><text x="92" y="172" fill="#c2410c" font-weight="700">2. Documented &mdash; a written runbook</text>
+    <rect x="120" y="110" width="360" height="34" rx="6" fill="#fef3c7" stroke="#a15408"/><text x="132" y="132" fill="#92400e" font-weight="700">3. Scripted &mdash; a script does the steps</text>
+    <rect x="160" y="70"  width="360" height="34" rx="6" fill="#dbeafe" stroke="#2563eb"/><text x="172" y="92" fill="#1e40af" font-weight="700">4. Self-service &mdash; one-click / chatops trigger</text>
+    <rect x="200" y="30"  width="360" height="34" rx="6" fill="#dcfce7" stroke="#137a39"/><text x="212" y="52" fill="#166534" font-weight="700">5. Automatic &mdash; system remediates, no human</text>
+    <text x="590" y="26" text-anchor="end" fill="#137a39" font-size="10">less toil &uarr;</text>
+  </g>
+</svg>
+</div>
+<p>Example climb: an on-call used to <em>manually restart</em> a stuck worker (rung 1). Someone wrote it down (rung 2), then scripted it (rung 3), then wired a "restart worker" chatops command (rung 4 &mdash; chatops = trigger it straight from a chat message), then finally a health check auto-restarts on failure and only pages if it recurs 3&times; (rung 5). The 3am page disappears.</p>
+
+<div class="warn"><div class="warnl">AUTOMATION CAUTION</div><p>Automation that acts without limits can amplify a mistake to catastrophe &mdash; an auto-remediation that reboots "unhealthy" hosts can reboot the whole fleet during a monitoring glitch. Give automation guardrails: rate limits, blast-radius caps, and a human circuit-breaker for anything destructive.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Show you think in the ladder. "For a recurring failure I'd first write a runbook so any on-call can handle it, then automate the runbook into a script, then a one-click action, and ultimately self-healing &mdash; with guardrails so the automation can't run away." That progression signals you reduce operational load systematically, not just react.</p></div>
+</div>
+
+<!-- ============ TOIL ============ -->
+<div class="sec" id="tab-toil">
+<h2 class="stitle">Toil &amp; How to Reduce It</h2>
+<div class="sdesc">Toil is the repetitive, manual, automatable work that scales with your system but adds no lasting value. Left unchecked it eats the team alive.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>Toil is <strong>doing the dishes by hand for a restaurant that keeps adding tables</strong>. Each plate is easy, but the work grows with the business and never ends. Buying a dishwasher (automation) costs a day now and frees an hour every night forever. A kitchen that never buys the dishwasher drowns as it grows &mdash; that's a system that never invests against toil.</p></div>
+
+<h3 class="sub">What counts as toil (the checklist)</h3>
+<p>Toil has a precise definition. Work is toil if it is:</p>
+<ul class="content-list">
+<li><strong>Manual</strong> &mdash; a human does it by hand.</li>
+<li><strong>Repetitive</strong> &mdash; done again and again, not one-off.</li>
+<li><strong>Automatable</strong> &mdash; a machine could do it.</li>
+<li><strong>Tactical / reactive</strong> &mdash; interrupt-driven, not strategic.</li>
+<li><strong>No enduring value</strong> &mdash; the service is no better after than before.</li>
+<li><strong>Scales linearly</strong> with the system &mdash; 2&times; traffic means 2&times; the work.</li>
+</ul>
+<p>Manually approving each deploy, restarting a service by hand, copy-pasting a metric into a weekly report, provisioning a user account by ticket &mdash; all toil. Note: not all manual work is toil. Design work, a genuinely one-off migration, and postmortems create lasting value.</p>
+
+<h3 class="sub">Cap it, then attack it</h3>
+<p>Google's SRE model caps toil at <strong>~50% of an SRE's time</strong>; the rest must be engineering that reduces future toil. Above the cap, the team is a "human ops" service that can never get ahead. The mechanism: measure toil (track it like any workload), set the cap, and when it's exceeded, <em>redirect work to automation</em> instead of hiring more people to shovel.</p>
+
+<h4 class="sub2">Worked example &mdash; when does automating pay off?</h4>
+<pre class="codeblock">Task: manual cert rotation, done 2&times;/month, 45 min each.
+Toil per year   = 2 &times; 12 &times; 45 min = 1,080 min &asymp; 18 hours/year.
+Automation cost = ~3 days to build &amp; test &asymp; 24 hours, once.
+Payback         = 24 / 18 &asymp; 1.3 years... borderline on time alone.
+But add: eliminates 3am human error, frees focus, scales to N services.
+=&gt; Automate, especially since it scales across every service.</pre>
+<p>The senior nuance: don't automate purely on hours saved &mdash; weigh error reduction, on-call relief, and how the toil <em>grows</em>. A task that's 18 hours today but doubles yearly is worth automating even if today's math is marginal.</p>
+
+<div class="trap"><div class="trapl">TRAP</div><p>"We're too busy with ops to automate the ops." That's the toil death spiral &mdash; the busier you are with manual work, the less time you have to eliminate it, so it grows. Breaking out requires <em>protecting</em> engineering time (the 50% cap is a rule that forces you to make time for it) even while the fire feels urgent.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Define toil crisply (manual, repetitive, automatable, no lasting value, scales with the system), then show the discipline: "I'd measure it, cap it around 50%, and when we breach the cap, treat that as a signal to invest in automation &mdash; not to hire more people to do the same manual work." Naming the 50% cap and the death-spiral shows real familiarity.</p></div>
+</div>
+
+<!-- ============ CAPACITY ============ -->
+<div class="sec" id="tab-capacity">
+<h2 class="stitle">Capacity Planning, Load Shedding &amp; Backpressure</h2>
+<div class="sdesc">Making sure you have enough resources for expected demand &mdash; and degrading gracefully instead of collapsing when demand exceeds supply.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>A restaurant on a holiday. <strong>Capacity planning</strong> is staffing and stocking for the expected rush plus a safety margin. <strong>Load shedding</strong> is the host politely turning away walk-ins once the kitchen is full &mdash; serving 100 diners well beats seating 200 and giving everyone cold, late food. <strong>Backpressure</strong> is the kitchen telling the front to stop sending orders until it catches up. All three keep a full house from becoming a meltdown.</p></div>
+
+<h3 class="sub">Capacity planning</h3>
+<p>The goal: enough capacity for peak demand plus headroom, without paying for idle machines all year. Inputs are your traffic forecast, per-request cost, and a safety margin for spikes and failures.</p>
+<h4 class="sub2">Worked example (with Little's Law)</h4>
+<pre class="codeblock">Little's Law:  concurrency L = arrival rate &lambda; &times; latency W
+Peak traffic  &lambda; = 10,000 req/s,  avg latency W = 0.2 s
+=&gt; in-flight  L = 10,000 &times; 0.2 = 2,000 concurrent requests
+One server handles ~200 concurrent =&gt; 2,000 / 200 = 10 servers at peak.
+Add N+2 redundancy (2 spare servers beyond peak need) + 30% headroom =&gt; ~15 servers.
+Provision for PEAK (plus margin), forecast from historical peaks, not averages.</pre>
+<p>Two dials: <strong>vertical</strong> (bigger machines &mdash; simple, has a ceiling) and <strong>horizontal</strong> (more machines &mdash; scales far, needs statelessness). Autoscaling adjusts horizontally to real-time demand, but it isn't instant &mdash; scale-up has a lag (boot + warm-up), so you still need buffer for sudden spikes.</p>
+
+<h3 class="sub">When demand exceeds capacity: degrade, don't die</h3>
+<p>No amount of planning prevents the surprise 10&times; spike. The senior skill is choosing what happens at the limit. The failure mode to avoid is <strong>congestion collapse</strong>: as load climbs, throughput actually <em>drops</em> because the system spends all its time on retries, context-switching, and timeouts &mdash; a full parking lot where nobody can move.</p>
+
+<div class="g2">
+<div class="skill-box"><h4 style="color:var(--red)">Load shedding</h4><ul><li>Reject <em>some</em> requests early to protect the rest</li><li>Drop low-priority traffic first (e.g. batch before checkout)</li><li>Fail fast with a clear 429/503 (rate-limit / unavailable status), don't queue forever</li><li>Serving 80% well beats serving 100% not at all</li></ul></div>
+<div class="skill-box"><h4 style="color:var(--blue)">Backpressure</h4><ul><li>Signal upstream to <em>slow down</em> sending</li><li>Bounded queues: when full, producers block or get rejected</li><li>Propagates the limit up the chain instead of hiding it</li><li>Prevents an unbounded queue eating all memory</li></ul></div>
+</div>
+<p>Related guards: <strong>rate limiting</strong> (cap per-client requests), <strong>circuit breakers</strong> (stop calling a failing dependency so you don't pile on), and <strong>graceful degradation</strong> (serve a cached or reduced result instead of an error &mdash; e.g. show stale recommendations rather than a blank page).</p>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Unbounded queues are a trap. "We'll just queue the overflow" feels safe but a queue with no limit grows until it exhausts memory and crashes &mdash; and every request in it may have already timed out on the client, so you do work nobody is waiting for. Bound every queue, and shed or apply backpressure when it fills.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>"Traffic spikes 5&times; your capacity &mdash; what happens?" Weak answer: "autoscale." Strong answer: "Autoscaling helps but lags, so I design for graceful degradation: rate-limit and shed low-priority load early, apply backpressure with bounded queues, use circuit breakers on dependencies, and serve degraded results over errors. The goal is to keep the core journey healthy for as many users as possible instead of collapsing for everyone." Name congestion collapse as the thing you're preventing.</p></div>
+</div>
+
+<!-- ============ DEPLOYMENT SAFETY ============ -->
+<div class="sec" id="tab-deploy">
+<h2 class="stitle">Deployment Safety</h2>
+<div class="sdesc">Most outages are self-inflicted &mdash; a bad deploy. Safe-deploy techniques limit the blast radius of a bad change and make undo instant.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>Releasing to all users at once is <strong>cooking a new recipe for 500 wedding guests without tasting it</strong>. A canary release is tasting one spoonful first: serve the new dish to 1% of guests, watch for anyone getting sick, and only then serve the room. If the spoonful is bad, 1% got a slightly off bite &mdash; not 500 people with food poisoning.</p></div>
+
+<h3 class="sub">The safe-deploy toolkit</h3>
+<table class="tbl">
+<thead><tr><th>Technique</th><th>How it works</th><th>Rollback</th><th>Best for</th></tr></thead>
+<tbody>
+<tr><td><strong>Canary</strong></td><td>Send a small % of traffic to the new version, watch metrics, ramp up</td><td>Route traffic back to old version</td><td>Catching bad releases early with tiny blast radius</td></tr>
+<tr><td><strong>Blue-Green</strong></td><td>Two full environments; switch all traffic from blue to green at once</td><td>Flip back to blue instantly</td><td>Fast, atomic cutover + instant rollback</td></tr>
+<tr><td><strong>Rolling</strong></td><td>Replace instances in batches</td><td>Roll batches back</td><td>Resource-efficient, no double infra</td></tr>
+<tr><td><strong>Feature flag</strong></td><td>Ship code dark, toggle behavior at runtime per user/%</td><td>Flip the flag off &mdash; no redeploy</td><td>Decoupling deploy from release; instant kill switch</td></tr>
+</tbody>
+</table>
+<p><strong>Progressive rollout</strong> ties these together: 1% &rarr; 5% &rarr; 25% &rarr; 50% &rarr; 100%, with an automated <em>bake</em> at each stage where you watch SLIs (error rate, latency). If a stage breaches the threshold, halt and auto-rollback. Feature flags decouple <em>deploy</em> (code is on the servers) from <em>release</em> (behavior is on for users) &mdash; so you can deploy at noon calmly and release behind a flag, and kill a bad feature without a redeploy.</p>
+
+<h3 class="sub">Watch a canary advance &mdash; then roll back (replayable)</h3>
+<p>Step through a progressive rollout. The canary ramps while error rate stays healthy; at 25% a spike breaches the SLO and the system auto-rolls-back, protecting the other 75% of users.</p>
+
+<div class="svg-container">
+<svg id="can-svg" viewBox="0 0 640 240" role="img" aria-label="Canary rollout animation" style="max-width:100%;height:auto">
+  <g font-family="Inter" font-size="12">
+    <text x="20" y="26" font-weight="700" fill="#0f172a">Progressive canary rollout: v2 vs v1</text>
+    <!-- traffic split bar -->
+    <text x="20" y="58" fill="#526176" font-size="11">Traffic split</text>
+    <rect x="20" y="66" width="500" height="30" rx="5" fill="#dbeafe" stroke="#2563eb"/>
+    <rect id="can-v2" x="20" y="66" width="0" height="30" rx="5" fill="#7c3aed"/>
+    <text id="can-v1lbl" x="480" y="86" text-anchor="middle" fill="#1e40af" font-size="11" font-weight="700">v1 100%</text>
+    <text id="can-v2lbl" x="60" y="86" text-anchor="middle" fill="#fff" font-size="11" font-weight="700"></text>
+    <!-- error rate gauge -->
+    <text x="20" y="128" fill="#526176" font-size="11">Canary error rate (SLO threshold 1.0%)</text>
+    <rect x="20" y="136" width="500" height="20" rx="4" fill="#e2e8f0"/>
+    <line x1="120" y1="132" x2="120" y2="160" stroke="#c21f1f" stroke-dasharray="3 2"/><text x="124" y="170" fill="#c21f1f" font-size="9">1.0% SLO</text>
+    <rect id="can-err" x="20" y="136" width="10" height="20" rx="4" fill="#137a39"/>
+    <text id="can-errlbl" x="530" y="151" fill="#0f172a" font-size="11" font-weight="700">0.1%</text>
+    <!-- status -->
+    <rect id="can-stat-bg" x="20" y="180" width="150" height="34" rx="17" fill="#dcfce7" stroke="#137a39"/>
+    <text id="can-stat" x="95" y="202" text-anchor="middle" font-weight="700" fill="#166534" font-size="13">HEALTHY</text>
+    <text id="can-desc" x="185" y="194" fill="#334155" font-size="11">Baseline. All traffic on v1.</text>
+    <text id="can-stage" x="185" y="211" fill="#5f6673" font-size="10">stage 0 / 5</text>
+  </g>
+</svg>
+</div>
+<div style="text-align:center;margin:6px 0 16px">
+  <button class="nav-btn" onclick="canStep()">Step &#9654;</button>
+  <button class="nav-btn" onclick="canReset()">Reset &#8635;</button>
+</div>
+<script>
+(function(){
+  var FULLW=500, ERRMAX=5.0, THRESH=1.0;
+  var stages=[
+    {pct:0,  err:0.1, ok:true,  desc:"Baseline. All traffic on v1."},
+    {pct:1,  err:0.1, ok:true,  desc:"v2 at 1%. Bake 10 min — error rate matches baseline."},
+    {pct:5,  err:0.2, ok:true,  desc:"v2 at 5%. Still healthy, ramp continues."},
+    {pct:25, err:4.2, ok:false, desc:"v2 at 25% — error rate spikes to 4.2%, breaching the 1% SLO!"},
+    {pct:0,  err:0.3, ok:true,  desc:"AUTO-ROLLBACK: traffic returns to v1. 75% of users never saw v2."},
+    {pct:0,  err:0.1, ok:true,  desc:"Recovered on v1. Postmortem opened; v2 fix queued."}
+  ];
+  var i=0;
+  window.canStep=function(){ if(i<stages.length-1) i++; canRender(); };
+  window.canReset=function(){ i=0; canRender(); };
+  function canRender(){
+    var s=stages[i];
+    document.getElementById('can-v2').setAttribute('width',(FULLW*s.pct/100).toFixed(1));
+    var v2lbl=document.getElementById('can-v2lbl');
+    if(s.pct>0){ v2lbl.textContent='v2 '+s.pct+'%'; v2lbl.setAttribute('x', (20+FULLW*s.pct/200).toFixed(0)); }
+    else { v2lbl.textContent=''; }
+    document.getElementById('can-v1lbl').textContent='v1 '+(100-s.pct)+'%';
+    var ew=Math.max(8,FULLW*Math.min(s.err,ERRMAX)/ERRMAX);
+    var eEl=document.getElementById('can-err');
+    eEl.setAttribute('width',ew.toFixed(1));
+    eEl.setAttribute('fill', s.err>THRESH ? '#c21f1f' : '#137a39');
+    document.getElementById('can-errlbl').textContent=s.err.toFixed(1)+'%';
+    var stat, col, bg, stroke;
+    if(!s.ok){ stat='ROLLBACK!'; col='#c21f1f'; bg='#fee2e2'; stroke='#c21f1f'; }
+    else if(i===4||i===5){ stat='ROLLED BACK'; col='#92400e'; bg='#fef3c7'; stroke='#a15408'; }
+    else { stat='HEALTHY'; col='#166534'; bg='#dcfce7'; stroke='#137a39'; }
+    document.getElementById('can-stat').textContent=stat;
+    document.getElementById('can-stat').setAttribute('fill',col);
+    document.getElementById('can-stat-bg').setAttribute('fill',bg);
+    document.getElementById('can-stat-bg').setAttribute('stroke',stroke);
+    document.getElementById('can-desc').textContent=s.desc;
+    document.getElementById('can-stage').textContent='stage '+i+' / '+(stages.length-1);
+  }
+  canRender();
+})();
+</script>
+
+<div class="warn"><div class="warnl">DEPLOY HYGIENE</div><p>Every deploy should be <strong>reversible</strong> and <strong>observable</strong>. Reversible: you can roll back in one action (which is why blue-green and flags are loved). Observable: the canary is judged by real SLIs, not a human eyeballing it. And beware database migrations &mdash; they're often <em>not</em> trivially reversible, so use expand/contract (backward-compatible) schema changes so old and new code coexist during the rollout.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>"How do you deploy safely?" Cover blast radius and undo: "Progressive canary &mdash; ramp 1&rarr;100% with automated SLI checks and auto-rollback &mdash; so a bad release hits 1% of users, not 100%. I decouple deploy from release with feature flags for an instant kill switch, and keep schema changes backward-compatible so rollback is always safe." That names the two properties graders want: limited blast radius and instant, safe rollback.</p></div>
+</div>
+
+<!-- ============ DR / BACKUPS ============ -->
+<div class="sec" id="tab-dr">
+<h2 class="stitle">Disaster Recovery, Backups &amp; RTO/RPO</h2>
+<div class="sdesc">Planning for the big, rare failures &mdash; a region down, a corrupted database, a bad delete &mdash; and defining, in numbers, how fast you recover and how much data you can lose.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>DR is <strong>insurance and fire drills for your data</strong>. Backups are the insurance policy. But an untested backup is like an insurance policy you never read &mdash; you find out it doesn't cover the fire only when the house is burning. So the drill (restore testing) matters as much as the policy (the backup itself).</p></div>
+
+<h3 class="sub">The two numbers that define DR: RTO &amp; RPO</h3>
+<div class="g2">
+<div class="skill-box"><h4 style="color:var(--blue)">RTO &mdash; Recovery Time Objective</h4><ul><li><strong>How long</strong> can you be down?</li><li>"Back online within 1 hour"</li><li>Drives failover speed &amp; automation</li><li>Answer to: how fast must we recover?</li></ul></div>
+<div class="skill-box"><h4 style="color:var(--purple)">RPO &mdash; Recovery Point Objective</h4><ul><li><strong>How much data</strong> can you lose?</li><li>"At most 5 minutes of writes"</li><li>Drives backup / replication frequency</li><li>Answer to: how far back is the last good copy?</li></ul></div>
+</div>
+<h4 class="sub2">Worked example</h4>
+<pre class="codeblock">Disaster: primary database is corrupted at 14:00.
+RPO = 5 min  =&gt; last good copy must be no older than 13:55
+              =&gt; need continuous replication or &le;5-min backups.
+RTO = 1 hour =&gt; must be serving again by 15:00
+              =&gt; need automated failover to a standby, not a manual
+                 "restore from S3" that takes 4 hours.
+
+Tighter targets cost more:
+  RPO 24h, RTO 24h  -> nightly backup, restore by hand      (cheap)
+  RPO 5m,  RTO 1h   -> continuous replication + warm standby (mid)
+  RPO ~0,  RTO ~0   -> active-active multi-region            (expensive)</pre>
+<p>Set these from business impact, not ambition. A billing ledger may demand RPO near zero (losing a payment is unacceptable); a recommendations cache can tolerate hours (rebuild it). Different data classes get different targets.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 780 170" role="img" aria-label="Disaster recovery timeline showing RPO and RTO around a 14:00 corruption event" style="max-width:100%;height:auto">
+  <defs><marker id="dra" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#526176"/></marker></defs>
+  <g font-family="Inter" font-size="11" text-anchor="middle">
+    <text x="390" y="24" fill="#526176">RPO looks backward (data lost); RTO looks forward (time to recover)</text>
+    <line x1="40" y1="82" x2="740" y2="82" stroke="#7d8794" stroke-width="2"/>
+    <circle cx="150" cy="82" r="6" fill="#137a39"/><text x="150" y="64" fill="#166534" font-weight="700">Last good copy</text><text x="150" y="106" fill="#526176">13:55</text>
+    <circle cx="280" cy="82" r="6" fill="#c21f1f"/><text x="280" y="64" fill="#c21f1f" font-weight="700">Corruption</text><text x="280" y="106" fill="#526176">14:00</text>
+    <circle cx="640" cy="82" r="6" fill="#2563eb"/><text x="640" y="64" fill="#1e40af" font-weight="700">Service restored</text><text x="640" y="106" fill="#526176">15:00</text>
+    <line x1="274" y1="134" x2="156" y2="134" stroke="#7c3aed" marker-end="url(#dra)"/><text x="215" y="150" fill="#7c3aed">RPO = 5 min of data at risk</text>
+    <line x1="286" y1="134" x2="634" y2="134" stroke="#ea580c" marker-end="url(#dra)"/><text x="460" y="150" fill="#c2410c">RTO = 1 hour of downtime</text>
+  </g>
+</svg>
+</div>
+
+<h3 class="sub">Backup discipline &mdash; the 3-2-1 rule</h3>
+<ul class="content-list">
+<li><strong>3</strong> copies of the data, <strong>2</strong> different media/storage types, <strong>1</strong> off-site (different region/provider).</li>
+<li><strong>Test restores regularly.</strong> A backup you've never restored is a hope, not a plan. Schedule game-day restore drills.</li>
+<li><strong>Protect against logical errors, not just hardware.</strong> Replication faithfully copies a bad <code>DROP TABLE</code> to every replica instantly &mdash; only point-in-time backups let you recover from a bad delete.</li>
+<li><strong>Guard the backups themselves</strong> &mdash; immutable/versioned storage so ransomware or a bad actor can't delete your recovery path.</li>
+</ul>
+
+<h3 class="sub">DR strategies by cost/speed</h3>
+<table class="tbl">
+<thead><tr><th>Strategy</th><th>RTO</th><th>RPO</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>Backup &amp; restore</td><td>Hours&ndash;days</td><td>Hours</td><td>$</td></tr>
+<tr><td>Pilot light (core minimal, scale on failover)</td><td>~1 hour</td><td>Minutes</td><td>$$</td></tr>
+<tr><td>Warm standby (scaled-down live copy)</td><td>Minutes</td><td>Seconds</td><td>$$$</td></tr>
+<tr><td>Active-active (multi-region live)</td><td>Near-zero</td><td>Near-zero</td><td>$$$$</td></tr>
+</tbody>
+</table>
+
+<div class="trap"><div class="trapl">TRAP</div><p>"We have backups, so we're covered." The two classic failures: (1) the backup was never restore-tested and is corrupt/incomplete; (2) replication is mistaken for backup &mdash; it protects against hardware loss but faithfully replicates a bad delete or corruption everywhere. You need <em>point-in-time</em> backups <em>and</em> tested restores, not just replicas.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>"How would you make this survive a region outage?" Lead with the two numbers: "First I'd pin the RTO and RPO from business impact &mdash; say RTO 1h, RPO 5min &mdash; because those decide the architecture. That points to continuous cross-region replication plus automated failover, not nightly backups. I'd also test failover regularly, because an untested DR plan is a guess." Naming RTO/RPO up front is what marks a senior answer.</p></div>
+</div>
+
+<!-- ============ CHAOS ============ -->
+<div class="sec" id="tab-chaos">
+<h2 class="stitle">Chaos Engineering</h2>
+<div class="sdesc">Deliberately injecting failure into production-like systems to find weaknesses <em>before</em> they find you. You don't rise to the occasion; you fall to your level of preparation.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>A <strong>fire drill</strong>. You don't wait for a real fire to discover the exits are locked and nobody knows the assembly point. You start a controlled, safe "fire" on a Tuesday afternoon so that when a real one comes, the response is muscle memory. Chaos engineering runs fire drills on your infrastructure: kill a server on purpose, in daylight, with everyone watching, so you learn while it's cheap.</p></div>
+
+<h3 class="sub">The method &mdash; it's a science experiment, not vandalism</h3>
+<ol class="content-list">
+<li><strong>Define steady state:</strong> a metric that means "healthy" (e.g. checkout success &ge; 99%).</li>
+<li><strong>Hypothesize:</strong> "If we kill one payment node, steady state holds because traffic reroutes."</li>
+<li><strong>Inject a real but bounded failure:</strong> terminate a node, add latency, drop a dependency &mdash; with a small blast radius.</li>
+<li><strong>Measure &amp; compare:</strong> did steady state hold? If not, you found a weakness before a customer did.</li>
+<li><strong>Have a blast radius &amp; a stop button:</strong> start tiny (one host, off-peak), and be able to abort instantly.</li>
+</ol>
+<p>The famous origin is Netflix's <strong>Chaos Monkey</strong>, which randomly kills production instances to force engineers to build services that survive instance loss by default. The philosophy: if failure is constant and expected, you're forced to design for it &mdash; you can't ship something fragile.</p>
+
+<h3 class="sub">What to inject</h3>
+<div class="g3">
+<div class="skill-box"><h4 style="color:var(--red)">Resource</h4><ul><li>Kill instances / pods</li><li>CPU / memory pressure</li><li>Disk fills up</li></ul></div>
+<div class="skill-box"><h4 style="color:var(--orange)">Network</h4><ul><li>Latency injection</li><li>Packet loss</li><li>Dependency unreachable</li></ul></div>
+<div class="skill-box"><h4 style="color:var(--purple)">State / region</h4><ul><li>Zone / region outage</li><li>Clock skew</li><li>Dependency returns errors</li></ul></div>
+</div>
+
+<div class="warn"><div class="warnl">SAFETY FIRST</div><p>Chaos engineering is controlled, not reckless. Prerequisites: good observability (so you can see the impact), a small blast radius, an abort switch, and ideally run in off-peak windows first. Injecting failure into a system you can't observe or stop isn't chaos engineering &mdash; it's just an outage you caused.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Frame it as a disciplined experiment, not "break stuff." Say: "I'd define a steady-state SLI, hypothesize that the system tolerates a specific failure, inject that failure with a bounded blast radius and an abort switch, and verify the hypothesis. It surfaces hidden coupling &mdash; a 'non-critical' dependency that actually takes down checkout &mdash; while it's cheap to fix." Mentioning steady-state + blast radius separates you from people who just name-drop Chaos Monkey.</p></div>
+</div>
+
+<!-- ============ OBSERVABILITY LOOP ============ -->
+<div class="sec" id="tab-loop">
+<h2 class="stitle">The Observability Loop</h2>
+<div class="sdesc">Every discipline in this chapter depends on one thing: being able to see what your system is doing. Operational excellence and observability are two halves of one loop.</div>
+
+<div class="ins"><div class="insl">ANALOGY</div><p>Observability is the <strong>instrument panel</strong>; operational excellence is <strong>flying the plane well</strong>. You can't hold altitude if the altimeter is broken, and a perfect panel is useless if the pilot ignores it. This chapter is the flying; the <a class="lc" href="observability_dashboard.html">Observability &amp; Dashboards</a> chapter is the instruments. They only work together.</p></div>
+
+<h3 class="sub">Where each discipline consumes observability</h3>
+<table class="tbl">
+<thead><tr><th>Operational practice</th><th>Depends on (from observability)</th></tr></thead>
+<tbody>
+<tr><td>Error budgets</td><td>SLIs computed from metrics/logs &mdash; the good/total ratio</td></tr>
+<tr><td>Incident detection (MTTD)</td><td>Symptom-based alerts on the golden signals</td></tr>
+<tr><td>Incident diagnosis (MTTR)</td><td>Dashboards, distributed traces, structured logs</td></tr>
+<tr><td>Canary / progressive rollout</td><td>Real-time SLIs to auto-judge each stage</td></tr>
+<tr><td>Capacity planning</td><td>Historical traffic &amp; saturation metrics</td></tr>
+<tr><td>Postmortems</td><td>The timestamped log &amp; metric history to reconstruct the timeline</td></tr>
+<tr><td>Chaos experiments</td><td>The steady-state metric to know if the hypothesis held</td></tr>
+</tbody>
+</table>
+
+<h3 class="sub">The unified loop</h3>
+<div class="svg-container">
+<svg viewBox="0 0 560 240" role="img" aria-label="Observability and operations feedback loop" style="max-width:100%;height:auto">
+  <defs><marker id="loa" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#526176"/></marker></defs>
+  <g font-family="Inter" font-size="12" text-anchor="middle">
+    <circle cx="280" cy="120" r="52" fill="#f1f5f9" stroke="#cbd5e1"/><text x="280" y="116" font-weight="700" fill="#0f172a">Healthy</text><text x="280" y="132" fill="#0f172a">system</text>
+    <rect x="185" y="12" width="190" height="40" rx="8" fill="#dcfce7" stroke="#137a39"/><text x="280" y="37" fill="#166534" font-weight="700">Observe (metrics/logs/traces)</text>
+    <rect x="410" y="100" width="140" height="40" rx="8" fill="#fee2e2" stroke="#c21f1f"/><text x="480" y="125" fill="#c21f1f" font-weight="700">Detect &amp; respond</text>
+    <rect x="200" y="188" width="160" height="40" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="280" y="213" fill="#5b21b6" font-weight="700">Learn (postmortem)</text>
+    <rect x="10" y="100" width="140" height="40" rx="8" fill="#dbeafe" stroke="#2563eb"/><text x="80" y="125" fill="#1e40af" font-weight="700">Improve &amp; automate</text>
+    <path d="M280 72 A52 52 0 0 1 332 108" fill="none" stroke="#526176" marker-end="url(#loa)"/>
+    <path d="M410 130 A52 52 0 0 1 320 165" fill="none" stroke="#526176" marker-end="url(#loa)"/>
+    <path d="M240 168 A52 52 0 0 1 150 132" fill="none" stroke="#526176" marker-end="url(#loa)"/>
+    <path d="M100 100 A52 52 0 0 1 210 60" fill="none" stroke="#526176" marker-end="url(#loa)"/>
+  </g>
+</svg>
+</div>
+<p>Observe what's happening &rarr; detect and respond to problems &rarr; learn from them &rarr; improve and automate &rarr; which changes what you observe next. Operational excellence is the practice of running this loop deliberately, forever. A team that closes the loop gets steadily more reliable with less effort; a team that skips a step &mdash; no postmortems, no automation, blind spots in monitoring &mdash; keeps re-fighting the same fire.</p>
+
+<div class="iq">"Operational excellence and observability are one system: I can't run an error budget without SLIs, can't hit a low MTTR without traces and dashboards, and can't auto-judge a canary without real-time metrics. I'd invest in observability first, because every reliability practice downstream is only as good as the signals feeding it."</div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Tie it together at the end of a reliability discussion: "All of this &mdash; budgets, incident response, safe deploys, chaos &mdash; runs on observability. It's the shared foundation." Showing you see the whole loop, not isolated tactics, is exactly the systems-thinking senior interviews are screening for.</p></div>
+</div>
+
+<!-- ============ TERMINOLOGY & ACRONYMS ============ -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>SRE</strong></td><td>Site Reliability Engineering &mdash; applying engineering discipline to keep production systems reliable and operable.</td></tr>
+<tr><td><strong>SLI</strong></td><td>Service Level Indicator &mdash; a measured ratio of good events to total events.</td></tr>
+<tr><td><strong>SLO</strong></td><td>Service Level Objective &mdash; the internal target for an SLI over a time window.</td></tr>
+<tr><td><strong>SLA</strong></td><td>Service Level Agreement &mdash; an external reliability contract with penalties if breached.</td></tr>
+<tr><td><strong>Error budget</strong></td><td>Allowed unreliability (100% minus the SLO); a spendable resource that gates releases.</td></tr>
+<tr><td><strong>Burn rate</strong></td><td>How fast the error budget is being consumed relative to the window's length.</td></tr>
+<tr><td><strong>IC</strong></td><td>Incident Commander &mdash; coordinates and delegates during an incident rather than fixing it personally.</td></tr>
+<tr><td><strong>SEV</strong></td><td>Severity &mdash; an incident's blast-radius classification, from SEV1 (critical) to SEV5 (cosmetic).</td></tr>
+<tr><td><strong>MTTD</strong></td><td>Mean Time To Detect &mdash; elapsed time from fault to the alert firing.</td></tr>
+<tr><td><strong>MTTA</strong></td><td>Mean Time To Acknowledge &mdash; time from alert to a human actively responding.</td></tr>
+<tr><td><strong>MTTR</strong></td><td>Mean Time To Recover/Resolve &mdash; fault to restored service; the headline user-pain metric.</td></tr>
+<tr><td><strong>Toil</strong></td><td>Manual, repetitive, automatable work that scales with the system and adds no lasting value.</td></tr>
+<tr><td><strong>Load shedding</strong></td><td>Rejecting some requests early to protect the rest when demand exceeds capacity.</td></tr>
+<tr><td><strong>Backpressure</strong></td><td>Signaling upstream senders to slow down when a system cannot keep up.</td></tr>
+<tr><td><strong>Canary release</strong></td><td>Routing a small percentage of traffic to a new version before ramping up.</td></tr>
+<tr><td><strong>Blue-green deployment</strong></td><td>Two full environments; switch all traffic between them for atomic cutover and instant rollback.</td></tr>
+<tr><td><strong>Feature flag</strong></td><td>A runtime toggle that decouples deploying code from releasing behavior to users.</td></tr>
+<tr><td><strong>RTO</strong></td><td>Recovery Time Objective &mdash; how long you can be down before recovery.</td></tr>
+<tr><td><strong>RPO</strong></td><td>Recovery Point Objective &mdash; how much recent data you can afford to lose.</td></tr>
+<tr><td><strong>DR</strong></td><td>Disaster Recovery &mdash; the plan and mechanisms for restoring service after a major outage or data loss, measured by RTO/RPO.</td></tr>
+<tr><td><strong>Runbook</strong></td><td>A step-by-step operational guide for handling a known task or alert; the precursor to automating it away.</td></tr>
+<tr><td><strong>Blameless postmortem</strong></td><td>A no-blame incident write-up that fixes the system/process, not the person &mdash; captures timeline, root cause (e.g. five whys), and action items.</td></tr>
+<tr><td><strong>Chaos engineering</strong></td><td>Deliberately injecting bounded failures to find weaknesses before real outages do.</td></tr>
+</table>
+
+</div>
+</div>
+
+<script>
+function go(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  if (typeof event !== 'undefined' && event && event.currentTarget) event.currentTarget.classList.add('active');
+  window.scrollTo(0, 0);
+}
+function toggle(el) {
+  const body = el.nextElementSibling;
+  const chevron = el.querySelector('.chv');
+  body.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open');
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="observability_dashboard.html">‹ Observability &amp; Dashboards</a><a class="bkc" href="index.html">📖 Contents</a><a href="map_system_design.html">Map &amp; Geospatial System Design ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

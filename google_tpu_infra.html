@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TPU &amp; AI Supercomputers — From Silicon to Pods</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --sw: 260px;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+#sb {
+  width: var(--sw);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; bottom: 0;
+  overflow-y: auto; z-index: 100;
+  transition: width .3s ease;
+}
+#sb::-webkit-scrollbar { width: 4px; }
+#sb::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.sbh {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.sbt { font-size: 13px; font-weight: 700; color: var(--blue-d); text-transform: uppercase; letter-spacing: 1px; }
+.sbs { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.ng { padding: 12px 8px 0; }
+.ngl { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 6px; }
+.ni {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: var(--text2);
+  transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+}
+.ni:hover { background: var(--bg3); color: var(--text); }
+.ni.active { background: var(--blue-l); color: var(--blue-d); font-weight: 600; }
+.ni-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.ni-text { flex: 1; font-size: 12px; }
+.badge { margin-left: auto; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+.bh { background: var(--red-l); color: var(--red); }
+.bg { background: var(--green-l); color: var(--green); }
+.bp { background: var(--purple-l); color: var(--purple); }
+.bt { background: var(--teal-l); color: var(--teal); }
+.bo { background: var(--orange-l); color: var(--orange); }
+
+/* MAIN — normal document flow, centered like the rest of the book */
+#main { background: var(--bg); }
+.container { max-width: 1080px; margin: 0 auto; padding: 20px 20px 0; }
+
+/* TOP SECTION NAV (site style, sticky) */
+.nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 14px 0; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; font-family: 'Inter', sans-serif; transition: all .2s; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue-d); border-color: var(--blue); }
+
+/* HEADER */
+.ph {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px;
+  border-radius: var(--r);
+  margin: 8px 0 4px;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #93c5fd; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 650px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+.sec { padding: 28px 4px; display: none; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: #fff; border-radius: var(--r); margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--blue-l); color: var(--blue-d); font-size: 11px; font-weight: 500; margin: 2px; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* INTERVIEW QUOTE */
+.iq {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--text2);
+  font-size: 13px;
+  position: relative;
+}
+.iq::before {
+  content: 'SAY THIS';
+  position: absolute;
+  top: -8px; left: 14px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  background: var(--blue);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+h4.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* SKILL BOX */
+.skill-box {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 18px; margin: 10px 0; box-shadow: var(--shadow-sm);
+}
+.skill-box h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.skill-box ul { padding-left: 18px; font-size: 13px; color: var(--text2); }
+.skill-box li { margin-bottom: 4px; }
+
+/* SVG CONTAINERS */
+.svg-container {
+  margin: 20px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.svg-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* PROGRESS */
+.prog { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.pc { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow-sm); text-align: center; }
+.pc .num { font-size: 28px; font-weight: 800; color: var(--blue-d); }
+.pc .lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg3); padding: 1px 5px; border-radius: 4px; color: var(--blue-d); }
+
+pre, pre.codeblock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+  line-height: 1.6;
+  color: var(--text2);
+  white-space: pre;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: 12px; }
+
+/* LIST STYLING */
+.content-list { padding-left: 20px; margin: 8px 0; }
+.content-list li { margin-bottom: 6px; font-size: 13px; color: var(--text2); }
+.content-list li strong { color: var(--text); }
+
+/* DECISION GRID */
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.decision-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.decision-item .di-t {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-d);
+  margin-bottom: 6px;
+}
+.decision-item p {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.decision-item .di-key {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+@media (max-width: 768px) {
+  #sb { width: 0; overflow: hidden; }
+  #main { left: 0; }
+  .sec { padding: 20px 16px; }
+  .ph { padding: 24px 16px; }
+}
+a.lc { color: var(--blue); text-decoration: none; font-weight: 500; }
+a.lc:hover { text-decoration: underline; color: var(--blue-d); }
+</style>
+
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+<style id="tpu-extra">
+/* Code syntax spans (house style) */
+pre .kw { color: var(--purple); font-weight: 600; }
+pre .cm { color: var(--text3); font-style: italic; }
+pre .num { color: var(--orange); }
+pre .str { color: var(--green); }
+pre .fn { color: var(--blue-d); }
+
+/* Replayable step-player chrome (shared look; each player is namespaced in JS) */
+.player {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 16px; margin: 16px 0; box-shadow: var(--shadow-sm);
+}
+.player-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.player-controls button {
+  font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600;
+  padding: 7px 14px; border-radius: 8px; border: 1px solid var(--blue);
+  background: var(--blue); color: #fff; cursor: pointer; transition: all .15s;
+}
+.player-controls button:hover { background: var(--blue-d); }
+.player-controls button.ghost { background: #fff; color: var(--blue-d); }
+.player-controls button.ghost:hover { background: var(--bg3); }
+.player-controls button:disabled { opacity: .4; cursor: not-allowed; }
+.player-caption {
+  font-size: 12.5px; color: var(--text2); background: var(--bg3);
+  border-radius: 8px; padding: 10px 12px; margin-top: 10px; min-height: 42px; line-height: 1.5;
+}
+.player-caption b { color: var(--text); }
+.step-pill { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); margin-left: auto; }
+</style>
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VI · Chapter 10 — <b>TPU &amp; AI Supercomputers</b></span><span class="bkspacer"></span></nav>
+
+<div id="main">
+<div class="container">
+
+<div class="ph">
+  <div class="htag">Part VI · AI Infrastructure &amp; Accelerators</div>
+  <div class="ht">TPU &amp; <span>AI Supercomputers</span> &mdash; From Silicon to Pods</div>
+  <div class="hd">How Google builds an AI supercomputer around a matrix-multiply chip: the systolic array, why a TPU sheds the CPU's caches and branch predictors, the memory-and-precision story (bf16/int8), and how thousands of chips fuse into one machine over a 3D torus with optical circuit switches. Bright-high-schooler analogies first, senior-interview depth second. Interview angles throughout.</div>
+  <div class="hm">
+    <div class="chip">Sections <b>8</b></div>
+    <div class="chip">Replayable <b>2 animations</b></div>
+    <div class="chip">Diagrams <b>Inline SVG</b></div>
+    <div class="chip">Level <b>HS &rarr; L5/L6</b></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="go('why-asic')">Why a Matrix ASIC</button>
+  <button class="nav-btn" onclick="go('vs-gpu')">TPU vs GPU</button>
+  <button class="nav-btn" onclick="go('precision')">Memory &amp; Precision</button>
+  <button class="nav-btn" onclick="go('pods')">Pods &amp; 3D Torus</button>
+  <button class="nav-btn" onclick="go('parallel')">Splitting a Model</button>
+  <button class="nav-btn" onclick="go('software')">Software Stack</button>
+  <button class="nav-btn" onclick="go('compete')">Competition</button>
+  <button class="nav-btn" onclick="go('interview')">Interview Cheat-Sheet</button>
+</nav>
+
+<!-- ==================== TAB 1: WHY A MATRIX ASIC ==================== -->
+<div class="sec active" id="tab-why-asic">
+<h2 class="stitle">Why Build a Whole Chip Just to Multiply Matrices?</h2>
+<div class="sdesc">Start with the one operation a neural network can't stop doing, then watch how a chip built only for that op wins.</div>
+
+<p><strong>The high-schooler version.</strong> A neural network is mostly one move repeated billions of times: take a list of numbers, multiply it by a big grid of numbers, add up the results, apply a simple squashing function, repeat. That "multiply-a-list-by-a-grid-and-sum" is a <em>matrix multiply</em>. If 90% of your work is one operation, it is wasteful to run it on a chip designed to do <em>everything</em> a little bit well. Instead, build a chip that does <em>that one thing</em> ridiculously well and skips the rest. That chip is a <strong>TPU (Tensor Processing Unit)</strong> &mdash; an ASIC (application-specific integrated circuit) for matrix math.</p>
+
+<div class="ins"><div class="insl">The core bet</div><p>A CPU spends most of its silicon <em>guessing what to do next</em> &mdash; branch predictors, out-of-order engines, deep caches. Deep learning doesn't need guessing; it needs the same dense multiply, over and over, in a totally predictable pattern. A TPU spends that silicon on <strong>arithmetic units and memory bandwidth</strong> instead. Same transistor budget, radically different allocation.</p></div>
+
+<h3 class="sub">A tiny worked example: one matrix multiply</h3>
+<p>Multiply a 2&times;2 activation matrix <code>A</code> by a 2&times;2 weight matrix <code>B</code>:</p>
+<pre>A = [ 1  2 ]      B = [ 5  6 ]      C = A &times; B = [ 1&middot;5+2&middot;7   1&middot;6+2&middot;8 ] = [ 19  22 ]
+    [ 3  4 ]          [ 7  8 ]                  [ 3&middot;5+4&middot;7   3&middot;6+4&middot;8 ]   [ 43  50 ]</pre>
+<p>Four output numbers, each a sum of two <em>multiply-accumulate</em> (MAC) steps. A real transformer layer does the same thing with matrices that are thousands wide &mdash; billions of MACs per layer. The question every accelerator answers is: <strong>how do you feed a grid of multipliers so none of them ever sits idle waiting for data?</strong> Google's answer is the systolic array.</p>
+
+<h3 class="sub">The systolic array: a heartbeat of arithmetic</h3>
+<p>"Systolic" comes from <em>systole</em>, the heart's pumping beat. Data marches through a grid of tiny multiply-accumulate cells (PEs, "processing elements") in lockstep, one hop per clock cycle &mdash; like a bucket brigade passing water. Each PE does one job: multiply the number flowing through it by a partner number, add it to a running total, and pass both along to its neighbors. No PE ever reads or writes main memory mid-computation; operands are <em>reused in place</em> as they stream by. That reuse is the whole trick &mdash; it's why a TPU can keep 16,384 multipliers busy without a memory system 16,384 times as fast.</p>
+
+<div class="player" id="sa-player">
+  <div class="player-controls">
+    <button id="sa-step" type="button">Step &#9654;</button>
+    <button id="sa-auto" type="button" class="ghost">Auto-play</button>
+    <button id="sa-reset" type="button" class="ghost">Reset &#8635;</button>
+    <span class="step-pill" id="sa-pill">cycle 0 / 4</span>
+  </div>
+  <div class="svg-container">
+  <svg id="sa-svg" viewBox="0 0 520 320" width="100%" role="img" aria-label="Output-stationary systolic array computing a 2x2 matrix multiply, one clock cycle per step">
+    <defs>
+      <marker id="sa-ah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#767f8d"/></marker>
+    </defs>
+    <!-- top labels: B enters from the top, flowing down -->
+    <text x="220" y="24" text-anchor="middle" font-size="12" fill="#334155" font-weight="600">B (weights) stream down &darr;</text>
+    <text x="14" y="150" text-anchor="middle" font-size="12" fill="#334155" font-weight="600" transform="rotate(-90 14 150)">A (activations) stream right &rarr;</text>
+    <!-- column feed labels -->
+    <text id="sa-topL" x="160" y="60" text-anchor="middle" font-size="12" fill="#7c3aed" font-weight="700"></text>
+    <text id="sa-topR" x="300" y="60" text-anchor="middle" font-size="12" fill="#7c3aed" font-weight="700"></text>
+    <!-- row feed labels -->
+    <text id="sa-leftT" x="60" y="112" text-anchor="middle" font-size="12" fill="#2563eb" font-weight="700"></text>
+    <text id="sa-leftB" x="60" y="232" text-anchor="middle" font-size="12" fill="#2563eb" font-weight="700"></text>
+    <!-- feed arrows -->
+    <line x1="160" y1="66" x2="160" y2="86" stroke="#767f8d" stroke-width="1.4" marker-end="url(#sa-ah)"/>
+    <line x1="300" y1="66" x2="300" y2="86" stroke="#767f8d" stroke-width="1.4" marker-end="url(#sa-ah)"/>
+    <line x1="78" y1="112" x2="98" y2="112" stroke="#767f8d" stroke-width="1.4" marker-end="url(#sa-ah)"/>
+    <line x1="78" y1="232" x2="98" y2="232" stroke="#767f8d" stroke-width="1.4" marker-end="url(#sa-ah)"/>
+    <!-- PE grid 2x2 -->
+    <g font-family="'JetBrains Mono', monospace">
+      <!-- PE00 -->
+      <rect id="sa-pe00" x="100" y="86" width="120" height="52" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="160" y="104" text-anchor="middle" font-size="10" fill="#475569">PE[0,0] &rarr; C&#8320;&#8320;</text>
+      <text id="sa-acc00" x="160" y="126" text-anchor="middle" font-size="15" fill="#0f172a" font-weight="700">0</text>
+      <!-- PE01 -->
+      <rect id="sa-pe01" x="240" y="86" width="120" height="52" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="300" y="104" text-anchor="middle" font-size="10" fill="#475569">PE[0,1] &rarr; C&#8320;&#8321;</text>
+      <text id="sa-acc01" x="300" y="126" text-anchor="middle" font-size="15" fill="#0f172a" font-weight="700">0</text>
+      <!-- PE10 -->
+      <rect id="sa-pe10" x="100" y="206" width="120" height="52" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="160" y="224" text-anchor="middle" font-size="10" fill="#475569">PE[1,0] &rarr; C&#8321;&#8320;</text>
+      <text id="sa-acc10" x="160" y="246" text-anchor="middle" font-size="15" fill="#0f172a" font-weight="700">0</text>
+      <!-- PE11 -->
+      <rect id="sa-pe11" x="240" y="206" width="120" height="52" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="300" y="224" text-anchor="middle" font-size="10" fill="#475569">PE[1,1] &rarr; C&#8321;&#8321;</text>
+      <text id="sa-acc11" x="300" y="246" text-anchor="middle" font-size="15" fill="#0f172a" font-weight="700">0</text>
+    </g>
+    <!-- result panel -->
+    <text x="440" y="150" text-anchor="middle" font-size="11" fill="#475569">result C</text>
+    <text id="sa-result" x="440" y="172" text-anchor="middle" font-size="12" fill="#15803d" font-weight="700" font-family="'JetBrains Mono', monospace">[·  ·; ·  ·]</text>
+  </svg>
+  </div>
+  <div class="player-caption" id="sa-cap">Press <b>Step</b>. Weights <b>B</b> and activations <b>A</b> both stream in (B down, A right); each cell keeps its own accumulator <code>C[i][j]</code>. On each clock, the values that meet in a cell do a multiply-accumulate. After 4 cycles the 2&times;2 product is complete.</div>
+</div>
+
+<div class="note"><div class="notel">Read the animation like this</div><p>Each cell is "output-stationary": it owns one answer, <code>C[i][j]</code>, and grows it by one MAC per cycle. The values arrive <em>skewed</em> (a diagonal wavefront) so that the right <code>A</code> element and the right <code>B</code> element land in the same cell at the same instant. A 128&times;128 MXU works on this same operand-reuse principle &mdash; 16,384 cells, ~16,384 MACs every cycle &mdash; and the data skew keeps every cell fed without a single mid-flight memory read. (The production MXU is <em>weight-stationary</em>: it preloads weights and streams only activations; we animate the output-stationary variant because the accumulators are easier to watch grow. Both share the same in-place operand-reuse idea.)</p></div>
+
+<h3 class="sub">Why this beats "just add more ALUs"</h3>
+<ul class="content-list">
+  <li><strong>Operand reuse in the wires, not in memory.</strong> A naive multiplier array reads two operands from memory per MAC. The systolic array reads each input <em>once</em> at the edge and reuses it across an entire row/column. That cuts memory traffic by ~O(N), which matters because <em>bandwidth</em>, not multipliers, is the scarce resource.</li>
+  <li><strong>Deterministic timing.</strong> Everything is a fixed pipeline; there are no cache misses or mispredicted branches to stall on, so the compiler can schedule to the cycle.</li>
+  <li><strong>Density.</strong> A MAC cell is tiny. Filling the die with them (instead of control logic) buys enormous peak throughput per mm&sup2; and per watt.</li>
+</ul>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>If asked "why does a TPU exist when GPUs already do matrix math?", don't lead with FLOPS. Lead with the <em>systolic array's operand reuse</em>: "It amortizes each memory read across a whole row and column of the array, so it hits high utilization at far lower memory bandwidth than a general SIMD (Single-Instruction, Multiple-Data) engine. The specialization is the point &mdash; it trades flexibility for MAC density and predictable scheduling." Then mention that peak FLOPS is meaningless without saying what utilization you actually sustain.</p></div>
+</div>
+
+<!-- ==================== TAB 2: TPU vs GPU ==================== -->
+<div class="sec" id="tab-vs-gpu">
+<h2 class="stitle">TPU vs GPU: Two Ways to Spend a Transistor Budget</h2>
+<div class="sdesc">Both accelerate matrix math. They disagree about how much generality is worth paying for.</div>
+
+<p><strong>The analogy.</strong> A GPU is a fleet of thousands of small, flexible workers (cores) who can each be told to do slightly different things &mdash; great for graphics, physics, and yes, ML. A TPU is a giant purpose-built assembly line (the MXU) that only makes one product but makes it faster per dollar and per watt. GPUs keep some general-purpose machinery (caches, schedulers, warps) so they can pivot to new workloads; TPUs throw most of that out.</p>
+
+<h3 class="sub">The chip anatomy that matters</h3>
+<div class="g2">
+  <div class="skill-box">
+    <h4>What a TPU keeps</h4>
+    <ul>
+      <li><strong>MXU</strong> &mdash; a large systolic matrix unit (e.g. 128&times;128 MACs) that is the beating heart.</li>
+      <li><strong>HBM</strong> &mdash; high-bandwidth memory stacked next to the chip (tens of GB, ~TB/s) holding weights &amp; activations.</li>
+      <li><strong>On-chip scratchpad (VMEM/CMEM)</strong> &mdash; explicit, compiler-managed SRAM (Static RAM &mdash; fast memory built into the chip itself). No hardware cache guessing.</li>
+      <li><strong>Vector unit + scalar unit</strong> &mdash; for the non-matmul bits (activations, norms, softmax).</li>
+      <li><strong>ICI links</strong> &mdash; dedicated chip-to-chip ports for building pods (covered in the Pods tab).</li>
+    </ul>
+  </div>
+  <div class="skill-box">
+    <h4>What a TPU throws away</h4>
+    <ul>
+      <li><strong>Branch predictors / speculation</strong> &mdash; the loop is known ahead of time; nothing to predict.</li>
+      <li><strong>Out-of-order execution</strong> &mdash; the compiler (XLA) orders everything statically.</li>
+      <li><strong>Deep multi-level caches</strong> &mdash; replaced by a scratchpad the compiler fills explicitly.</li>
+      <li><strong>Wide instruction decode / lots of control logic</strong> &mdash; a few big instructions do enormous work.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="ins"><div class="insl">Cache vs scratchpad &mdash; the deepest difference</div><p>A CPU/GPU cache is <em>reactive</em>: hardware guesses what you'll reuse and hides misses behind it. A TPU has a <strong>software-managed scratchpad</strong>: XLA knows the exact access pattern of a matmul, so it <em>schedules</em> the loads &mdash; DMA (Direct Memory Access &mdash; the chip copying a block of data itself, no CPU in the loop) this tile of weights in, compute on it, prefetch the next tile &mdash; with no guessing and no miss penalty. Predictable workload &rarr; you can replace speculation with a compiler.</p></div>
+
+<h3 class="sub">Side-by-side (order-of-magnitude; generations vary)</h3>
+<table class="tbl">
+  <thead><tr><th>Dimension</th><th>CPU</th><th>GPU (datacenter)</th><th>TPU</th></tr></thead>
+  <tbody>
+    <tr><td>Design goal</td><td>General-purpose, low latency</td><td>Massively parallel, flexible</td><td>Dense matmul, high throughput</td></tr>
+    <tr><td>Compute core</td><td>A few big out-of-order cores</td><td>Thousands of cores + tensor cores</td><td>1&ndash;2 TensorCores, each containing several 128&times;128 MXUs (e.g. 2 on v3, 4 on v4)</td></tr>
+    <tr><td>Memory hierarchy</td><td>L1/L2/L3 caches + DRAM</td><td>Registers/shared mem + big caches + HBM</td><td>Explicit scratchpad + HBM (few/no caches)</td></tr>
+    <tr><td>Control</td><td>Branch prediction, speculation</td><td>Warp scheduler, some speculation</td><td>Static schedule from the compiler</td></tr>
+    <tr><td>Chip-to-chip</td><td>PCIe / socket links</td><td>High-speed proprietary mesh + switches</td><td>Dedicated ICI links in a torus</td></tr>
+    <tr><td>Programmed via</td><td>Any language</td><td>CUDA / vendor kernels</td><td>XLA (from JAX / TensorFlow / PyTorch-XLA)</td></tr>
+    <tr><td>Preferred precision</td><td>FP64 / FP32</td><td>FP16 / BF16 / INT8 / FP8</td><td>BF16 / INT8</td></tr>
+  </tbody>
+</table>
+
+<div class="warn"><div class="warnl">DON'T OVERSTATE IT</div><p>"TPU beats GPU" is a bad interview answer. The honest framing: <strong>TPUs win on perf-per-dollar and perf-per-watt for large, regular matmul-heavy training/inference at scale</strong>, and integrate tightly with Google's stack. <strong>GPUs win on flexibility, kernel ecosystem (CUDA), and irregular or research workloads.</strong> The right chip depends on the workload's regularity, the software you already have, and how much of the datacenter you can co-design.</p></div>
+
+<h3 class="sub">Where each shines</h3>
+<div class="g2">
+  <div class="decision-item"><div class="di-t">TPU-favorable</div><p>Huge dense transformers, recommendation models, batch inference, workloads that map cleanly to big matmuls and run for a long time at scale.</p><div class="di-key">Regular · long-running · co-designed</div></div>
+  <div class="decision-item"><div class="di-t">GPU-favorable</div><p>Rapidly changing research code, custom CUDA kernels, sparse/irregular ops, small teams that need a portable ecosystem today.</p><div class="di-key">Flexible · portable · kernel-rich</div></div>
+</div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Probes here usually target the <em>cache question</em>: "Why no big caches on a TPU?" Crisp answer: "Because the access pattern of a matmul is statically known, a compiler can schedule DMAs into an explicit scratchpad better than a reactive cache can guess. Caches spend area and energy hiding unpredictability the TPU doesn't have." Bonus points for noting the tradeoff: irregular, data-dependent access patterns are exactly where that bet gets uncomfortable.</p></div>
+</div>
+
+<!-- ==================== TAB 3: MEMORY & PRECISION ==================== -->
+<div class="sec" id="tab-precision">
+<h2 class="stitle">The Memory &amp; Precision Story: bf16, int8, and the Roofline</h2>
+<div class="sdesc">Peak multipliers are useless if you can't feed them. Precision and bandwidth decide whether the MXU is fed or starved.</div>
+
+<p><strong>The analogy.</strong> Imagine a chef (the MXU) who can chop 1000 onions a minute, but the onions arrive on a single conveyor belt (memory bandwidth). If the belt only delivers 200 onions a minute, the chef idles 80% of the time. Two fixes: (1) a faster belt (HBM with huge bandwidth), and (2) <em>smaller onions</em> &mdash; use fewer bits per number so more values fit per byte moved. That second fix is <strong>reduced precision</strong>.</p>
+
+<h3 class="sub">Number formats: why bf16 and int8 exist</h3>
+<table class="tbl">
+  <thead><tr><th>Format</th><th>Bits</th><th>What it trades</th><th>Used for</th></tr></thead>
+  <tbody>
+    <tr><td>FP32</td><td>32</td><td>Full range &amp; precision; 2&times; the memory &amp; bandwidth</td><td>Baselines, some optimizer state</td></tr>
+    <tr><td><strong>BF16</strong> (bfloat16)</td><td>16</td><td>Keeps FP32's <em>exponent range</em> (8 bits), sacrifices mantissa precision (7 bits)</td><td>The default for TPU training</td></tr>
+    <tr><td>FP16</td><td>16</td><td>More mantissa, smaller range &rarr; overflow/underflow risk without loss scaling</td><td>Common on GPUs</td></tr>
+    <tr><td><strong>INT8</strong></td><td>8</td><td>Integers only; needs quantization (scale/zero-point); 4&times; smaller than FP32</td><td>Inference, quantized serving</td></tr>
+  </tbody>
+</table>
+
+<div class="ins"><div class="insl">Why bf16, not fp16, on TPUs</div><p>The killer feature of <strong>bfloat16</strong> is that it keeps the <em>same 8-bit exponent as FP32</em>. Gradients in deep nets span a huge dynamic range; bf16 can represent tiny and huge magnitudes just like FP32 (it just rounds the fine detail), so training is stable <em>without</em> the extra "loss scaling" work FP16 needs. You halve memory and bandwidth and roughly double matmul throughput, almost for free on accuracy. That's why it's the TPU default.</p></div>
+
+<h3 class="sub">The trick: matmul in bf16, accumulate in fp32</h3>
+<p>Multiplying two bf16 numbers loses detail, but summing thousands of products in bf16 would lose far more (rounding error piles up). TPUs multiply in bf16 but <strong>accumulate the running sum in fp32</strong> inside the MXU. You get the memory/throughput win of 16-bit inputs and the numerical stability of a 32-bit accumulator. Remember this &mdash; it is a classic interview detail.</p>
+
+<h3 class="sub">Worked example: is your layer compute-bound or memory-bound?</h3>
+<p>This is the <em>roofline</em> question, and it decides whether more FLOPS even help. Define <strong>arithmetic intensity</strong> = FLOPs performed &divide; bytes moved from HBM.</p>
+<pre><span class="cm"># A matmul: (M x K) x (K x N).  Take M=N=K=8192, weights in bf16 (2 bytes).</span>
+FLOPs   = 2 &times; M &times; N &times; K        = 2 &times; 8192&sup3;   &asymp; 1.1e12 FLOP   <span class="cm"># &times;2 = one multiply + one add per MAC</span>
+bytes   = 2 &times; (M&middot;K + K&middot;N + M&middot;N)   &asymp; 2 &times; 3 &times; 8192&sup2; &asymp; 4.0e8 bytes
+intensity = 1.1e12 / 4.0e8         &asymp; <span class="num">2750</span> FLOP/byte   <span class="cm"># very high &rarr; compute-bound (good!)</span></pre>
+<pre><span class="cm"># Now a memory-bound op: read a big activation, do 1 add per element.</span>
+<span class="cm"># intensity &asymp; a fraction of a FLOP/byte (well below 1) &rarr; you are limited by HBM bandwidth, not the MXU.</span>
+<span class="cm"># Rule: compare intensity to the chip's (peak FLOPS / peak bandwidth) ratio.</span>
+<span class="cm"># Below that ratio = memory-bound (feed the chef faster); above = compute-bound.</span></pre>
+
+<div class="note"><div class="notel">Why this matters operationally</div><p>Large dense matmuls are comfortably compute-bound &mdash; the whole reason the MXU pays off. But <strong>attention, layer-norm, and element-wise ops are often memory-bound</strong>. That's why XLA works so hard to <em>fuse</em> those ops (do several in one pass while data is on-chip) &mdash; fusion raises arithmetic intensity and stops the MXU from starving. Precision (bf16/int8) also raises effective intensity by shrinking the bytes moved.</p></div>
+
+<h3 class="sub">The memory that isn't HBM</h3>
+<ul class="content-list">
+  <li><strong>HBM</strong> (tens of GB/chip): holds the model's weights, activations, and optimizer state for the shard on this chip. If the model doesn't fit, you must split it across chips (next tabs).</li>
+  <li><strong>On-chip SRAM scratchpad</strong> (MB-scale): the working set the MXU actually touches; filled by DMA under compiler control. Orders of magnitude faster than HBM but tiny.</li>
+  <li><strong>The budget equation:</strong> <code>weights + activations + optimizer_state</code> must fit in aggregate HBM across your chips. Adam roughly triples weight memory (params + 2 moments). This single inequality is why big models need many chips at all.</li>
+</ul>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Expect "your matmul isn't hitting peak FLOPS &mdash; why?" The senior answer walks the roofline: compute arithmetic intensity, compare to the chip's FLOPS/bandwidth ratio, and conclude memory-bound vs compute-bound. Then name fixes by category: bigger tiles / higher batch (raise intensity), operator fusion (fewer HBM round-trips), and lower precision (fewer bytes). Naming <em>bf16-multiply / fp32-accumulate</em> unprompted signals real depth.</p></div>
+</div>
+
+<!-- ==================== TAB 4: PODS & 3D TORUS ==================== -->
+<div class="sec" id="tab-pods">
+<h2 class="stitle">Scaling Out: Pods, the 3D Torus, and Optical Switches</h2>
+<div class="sdesc">One chip is a tool. Thousands of chips wired the right way are a single supercomputer. The wiring <em>is</em> the design.</div>
+
+<p><strong>The analogy.</strong> Give 4096 people a math problem too big for one person. How you seat them and who can hand notes to whom decides everything. Seat them in isolated cubicles and they waste all day walking notes around. Seat them in a grid where every person can pass notes to four neighbors, and wrap the edges so it's a donut with no far corners &mdash; now a note reaches anyone in a few hops. That seating chart is the <strong>torus interconnect</strong>, and the note-passing is the <strong>ICI (Inter-Chip Interconnect)</strong>.</p>
+
+<h3 class="sub">Why a torus, and why 3D</h3>
+<p>A TPU chip has a handful of dedicated ICI ports (v4: <strong>6 links per chip</strong>). Wire each chip to its neighbors in a 3D grid and wrap every edge around (so dimension <em>x</em> is a ring, and so are <em>y</em> and <em>z</em>) and you get a <strong>3D torus</strong>. Properties that make it ideal for training:</p>
+<ul class="content-list">
+  <li><strong>No far corners.</strong> Wraparound halves the worst-case distance; any chip reaches any other in at most (dimension/2) hops per axis.</li>
+  <li><strong>Every link is used by collectives.</strong> The dominant communication in training &mdash; <em>AllReduce</em> of gradients &mdash; maps beautifully onto rings, and a torus is rings in three directions. Bandwidth-optimal ring algorithms saturate all links at once.</li>
+  <li><strong>Bisection bandwidth grows with the cross-section.</strong> (Bisection bandwidth = the total link capacity you'd cut if you sliced the machine in half &mdash; a measure of how fast the two halves can talk.) More chips per axis = more parallel links across any cut = more aggregate throughput for all-to-all traffic.</li>
+</ul>
+
+<div class="svg-container">
+<svg viewBox="0 0 640 340" width="100%" role="img" aria-label="A TPU pod as a 3D torus of cubes, with optical circuit switches reconfiguring inter-cube links">
+  <defs>
+    <marker id="pod-ah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#767f8d"/></marker>
+  </defs>
+  <text x="320" y="22" text-anchor="middle" font-size="13" fill="#0f172a" font-weight="700">TPU Pod &asymp; 4096 chips = 64 cubes &times; (4&times;4&times;4)</text>
+
+  <!-- a single 4x4x4 cube drawn as an isometric-ish box on the left -->
+  <text x="120" y="52" text-anchor="middle" font-size="11" fill="#334155" font-weight="600">One cube (64 chips)</text>
+  <g stroke="#2563eb" stroke-width="1.4" fill="#dbeafe" fill-opacity="0.5">
+    <rect x="60" y="70" width="90" height="90" rx="4"/>
+    <rect x="90" y="55" width="90" height="90" rx="4" fill-opacity="0.25"/>
+  </g>
+  <line x1="60" y1="70" x2="90" y2="55" stroke="#2563eb" stroke-width="1"/>
+  <line x1="150" y1="70" x2="180" y2="55" stroke="#2563eb" stroke-width="1"/>
+  <line x1="60" y1="160" x2="90" y2="145" stroke="#2563eb" stroke-width="1"/>
+  <line x1="150" y1="160" x2="180" y2="145" stroke="#2563eb" stroke-width="1"/>
+  <!-- dots for chips -->
+  <g fill="#1d4ed8">
+    <circle cx="80" cy="90" r="3"/><circle cx="105" cy="90" r="3"/><circle cx="130" cy="90" r="3"/>
+    <circle cx="80" cy="115" r="3"/><circle cx="105" cy="115" r="3"/><circle cx="130" cy="115" r="3"/>
+    <circle cx="80" cy="140" r="3"/><circle cx="105" cy="140" r="3"/><circle cx="130" cy="140" r="3"/>
+  </g>
+  <text x="120" y="182" text-anchor="middle" font-size="9.5" fill="#475569">intra-cube: fixed copper ICI</text>
+
+  <!-- OCS box in the middle -->
+  <rect x="250" y="120" width="120" height="60" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+  <text x="310" y="145" text-anchor="middle" font-size="12" fill="#5b21b6" font-weight="700">OCS</text>
+  <text x="310" y="162" text-anchor="middle" font-size="9" fill="#5b21b6">optical switch</text>
+  <text x="310" y="196" text-anchor="middle" font-size="9.5" fill="#475569">inter-cube: reconfigurable in ~10ms</text>
+
+  <line x1="185" y1="120" x2="248" y2="140" stroke="#767f8d" stroke-width="1.4" marker-end="url(#pod-ah)"/>
+
+  <!-- right: several cubes wired into a job-specific torus -->
+  <text x="510" y="52" text-anchor="middle" font-size="11" fill="#334155" font-weight="600">Cubes stitched into a job's torus</text>
+  <g fill="#dcfce7" stroke="#16a34a" stroke-width="1.4">
+    <rect x="430" y="70" width="46" height="40" rx="5"/>
+    <rect x="500" y="70" width="46" height="40" rx="5"/>
+    <rect x="570" y="70" width="46" height="40" rx="5"/>
+    <rect x="430" y="150" width="46" height="40" rx="5"/>
+    <rect x="500" y="150" width="46" height="40" rx="5"/>
+    <rect x="570" y="150" width="46" height="40" rx="5"/>
+  </g>
+  <g stroke="#7c3aed" stroke-width="1.6" stroke-dasharray="4 3">
+    <line x1="476" y1="90" x2="500" y2="90"/>
+    <line x1="546" y1="90" x2="570" y2="90"/>
+    <line x1="476" y1="170" x2="500" y2="170"/>
+    <line x1="546" y1="170" x2="570" y2="170"/>
+    <line x1="453" y1="110" x2="453" y2="150"/>
+    <line x1="523" y1="110" x2="523" y2="150"/>
+    <line x1="593" y1="110" x2="593" y2="150"/>
+  </g>
+  <!-- wraparound hint -->
+  <path d="M430 90 C410 90, 410 170, 430 170" fill="none" stroke="#7c3aed" stroke-width="1.4" stroke-dasharray="2 3"/>
+  <path d="M616 90 C636 90, 636 170, 616 170" fill="none" stroke="#7c3aed" stroke-width="1.4" stroke-dasharray="2 3"/>
+  <text x="523" y="205" text-anchor="middle" font-size="9.5" fill="#7c3aed"><tspan x="523" dy="0">dashed = optical links the OCS set up</tspan><tspan x="523" dy="13">for this job (with wraparound)</tspan></text>
+</svg>
+</div>
+
+<h3 class="sub">Optical Circuit Switches (OCS): the reconfigurable part</h3>
+<p>Inside a cube, chips are wired with <strong>fixed copper ICI</strong> &mdash; always connected, cheap, fast. But <em>between</em> cubes, TPU v4 routes links through <strong>Optical Circuit Switches</strong>. An OCS is not a packet switch; it physically steers beams of light &mdash; think of a robot that unplugs and re-plugs fiber in about <strong>10 milliseconds</strong>. Once set, it adds essentially zero latency (it's just a mirror), but you must decide the topology <em>before</em> the job runs.</p>
+
+<div class="player" id="ocs-player">
+  <div class="player-controls">
+    <button id="ocs-step" type="button">Step &#9654;</button>
+    <button id="ocs-reset" type="button" class="ghost">Reset &#8635;</button>
+    <span class="step-pill" id="ocs-pill">state 1 / 4</span>
+  </div>
+  <div class="svg-container">
+  <svg id="ocs-svg" viewBox="0 0 560 240" width="100%" role="img" aria-label="Optical circuit switch reconfiguring cubes into job-shaped slices, step by step">
+    <!-- 6 cubes in a 3x2 array -->
+    <g id="ocs-cubes" font-family="Inter" font-size="11" text-anchor="middle">
+      <g><rect id="c0" x="60"  y="50" width="70" height="55" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.6"/><text x="95"  y="82" fill="#334155">cube 0</text></g>
+      <g><rect id="c1" x="180" y="50" width="70" height="55" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.6"/><text x="215" y="82" fill="#334155">cube 1</text></g>
+      <g><rect id="c2" x="300" y="50" width="70" height="55" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.6"/><text x="335" y="82" fill="#334155">cube 2</text></g>
+      <g><rect id="c3" x="60"  y="140" width="70" height="55" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.6"/><text x="95"  y="172" fill="#334155">cube 3</text></g>
+      <g><rect id="c4" x="180" y="140" width="70" height="55" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.6"/><text x="215" y="172" fill="#334155">cube 4</text></g>
+      <g><rect id="c5" x="300" y="140" width="70" height="55" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.6"/><text x="335" y="172" fill="#334155">cube 5</text></g>
+    </g>
+    <!-- OCS-drawn links (toggled by JS) -->
+    <g id="ocs-links" stroke-width="3" fill="none" opacity="0">
+      <line id="l01" x1="130" y1="77" x2="180" y2="77"/>
+      <line id="l12" x1="250" y1="77" x2="300" y2="77"/>
+      <line id="l34" x1="130" y1="167" x2="180" y2="167"/>
+      <line id="l45" x1="250" y1="167" x2="300" y2="167"/>
+      <line id="l03" x1="95"  y1="105" x2="95"  y2="140"/>
+      <line id="l25" x1="335" y1="105" x2="335" y2="140"/>
+    </g>
+    <text x="450" y="60"  font-size="12" fill="#0f172a" font-weight="700">Legend</text>
+    <rect x="410" y="72" width="18" height="10" fill="#dcfce7" stroke="#15803d"/><text x="435" y="81" font-size="10" fill="#334155" text-anchor="start">Job A</text>
+    <rect x="410" y="90" width="18" height="10" fill="#fef3c7" stroke="#a15207"/><text x="435" y="99" font-size="10" fill="#334155" text-anchor="start">Job B</text>
+    <rect x="410" y="108" width="18" height="10" fill="#fee2e2" stroke="#dc2626"/><text x="435" y="117" font-size="10" fill="#334155" text-anchor="start">failed / drained</text>
+  </svg>
+  </div>
+  <div class="player-caption" id="ocs-cap">Six cubes, all idle. Press <b>Step</b> to watch the scheduler ask the OCS to wire cubes into job-shaped slices &mdash; and then route around a failure.</div>
+</div>
+
+<h3 class="sub">Why reconfigurability is worth the cost</h3>
+<div class="g3">
+  <div class="decision-item"><div class="di-t">Shape to the job</div><p>A job that wants a 3D box gets a box; a pipeline that wants a long ring gets a ring. The topology matches the communication pattern, so collectives run near peak.</p><div class="di-key">Topology follows workload</div></div>
+  <div class="decision-item"><div class="di-t">Fault isolation</div><p>A dead cube isn't a dead pod. The OCS rewires healthy cubes into a working slice and leaves the bad one out &mdash; huge for uptime at 4096-chip scale.</p><div class="di-key">Rewire, don't restart the pod</div></div>
+  <div class="decision-item"><div class="di-t">Multi-tenancy</div><p>Carve one pod into many independent, differently-shaped slices for different teams, with no cross-talk between them.</p><div class="di-key">One pod, many slices</div></div>
+</div>
+
+<div class="warn"><div class="warnl">THE CATCH</div><p>OCS reconfiguration takes milliseconds, so you <em>cannot</em> reshape the network inside a single training step. It's a <strong>scheduling-time</strong> decision, not a per-iteration one. And a torus's low-diameter, all-links-busy behavior only holds if the compiler maps collectives onto it well &mdash; a badly placed job can still create hot spots.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>"How do you handle a failed chip in a 4096-chip pod?" Strong answer: detect via ECC (Error-Correcting Code memory, which flags bit errors)/timeout/health-check, then <em>the OCS reconfigures healthy cubes around the fault</em> so the job reshapes onto good hardware, and training resumes from the last checkpoint. Contrast with a fixed-wired mesh where one dead node can strand a whole region. The meta-point interviewers want: <strong>at this scale, failure is routine, so the interconnect must be designed for graceful reconfiguration, not treated as an exception.</strong></p></div>
+</div>
+
+<!-- ==================== TAB 5: SPLITTING A MODEL ==================== -->
+<div class="sec" id="tab-parallel">
+<h2 class="stitle">Splitting a Big Model Across Chips</h2>
+<div class="sdesc">When the model won't fit (or won't train fast enough) on one chip, you cut it up. There are three cuts, and real systems use all three.</div>
+
+<p><strong>The analogy.</strong> A giant restaurant order. <em>Data parallelism</em>: clone the kitchen &mdash; many identical kitchens each cook different tables, then compare notes so recipes stay in sync. <em>Model (tensor) parallelism</em>: one dish is so big that several chefs each cook part of the <em>same</em> dish and combine it. <em>Pipeline parallelism</em>: an assembly line &mdash; station 1 does appetizers, station 2 mains, and plates flow down the line. Each cut trades a different resource.</p>
+
+<h3 class="sub">The three cuts</h3>
+<div class="g3">
+  <div class="skill-box"><h4>Data parallel</h4><ul>
+    <li>Full model copy per chip; each sees a different batch shard.</li>
+    <li>Sync via <strong>AllReduce</strong> of gradients every step.</li>
+    <li><b>Cost:</b> communicate ~model-size of gradients per step.</li>
+    <li><b>Limit:</b> model must fit on one chip.</li>
+  </ul></div>
+  <div class="skill-box"><h4>Model / tensor parallel</h4><ul>
+    <li>Split each big weight matrix across chips.</li>
+    <li>Chips exchange partial results <em>within</em> a layer (AllGather / ReduceScatter).</li>
+    <li><b>Cost:</b> heavy comms every layer &rarr; keep it inside a fast-linked group.</li>
+    <li><b>Wins:</b> fits layers too big for one chip.</li>
+  </ul></div>
+  <div class="skill-box"><h4>Pipeline parallel</h4><ul>
+    <li>Assign consecutive layers to different chip groups (stages).</li>
+    <li>Micro-batch so stages stay busy; mind the "bubble" at fill/drain.</li>
+    <li><b>Cost:</b> only activations cross stage boundaries (cheap).</li>
+    <li><b>Wins:</b> spreads depth &amp; memory across many chips.</li>
+  </ul></div>
+</div>
+
+<div class="svg-container">
+<svg viewBox="0 0 640 210" width="100%" role="img" aria-label="Data, tensor, and pipeline parallelism laid out over chips">
+  <text x="105" y="20" text-anchor="middle" font-size="12" fill="#0f172a" font-weight="700">Data parallel</text>
+  <g font-size="9" text-anchor="middle" font-family="Inter">
+    <rect x="40" y="35" width="130" height="40" rx="6" fill="#dbeafe" stroke="#2563eb"/><text x="105" y="52" fill="#1e40af">full model copy</text><text x="105" y="66" fill="#1e40af">batch shard 1</text>
+    <rect x="40" y="90" width="130" height="40" rx="6" fill="#dbeafe" stroke="#2563eb"/><text x="105" y="107" fill="#1e40af">full model copy</text><text x="105" y="121" fill="#1e40af">batch shard 2</text>
+    <path d="M175 55 C205 55, 205 110, 175 110" fill="none" stroke="#15803d" stroke-width="1.6"/>
+    <text x="205" y="86" fill="#15803d" text-anchor="start">AllReduce grads</text>
+  </g>
+
+  <text x="430" y="20" text-anchor="middle" font-size="12" fill="#0f172a" font-weight="700">Tensor parallel (one layer split)</text>
+  <g font-size="9" text-anchor="middle" font-family="Inter">
+    <rect x="330" y="35" width="80" height="40" rx="6" fill="#ede9fe" stroke="#7c3aed"/><text x="370" y="58" fill="#5b21b6">W left half</text>
+    <rect x="450" y="35" width="80" height="40" rx="6" fill="#ede9fe" stroke="#7c3aed"/><text x="490" y="58" fill="#5b21b6">W right half</text>
+    <line x1="410" y1="55" x2="450" y2="55" stroke="#15803d" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <text x="430" y="90" fill="#15803d">AllGather / ReduceScatter each layer</text>
+  </g>
+
+  <text x="320" y="130" text-anchor="middle" font-size="12" fill="#0f172a" font-weight="700">Pipeline parallel (layers as stages)</text>
+  <g font-size="9" text-anchor="middle" font-family="Inter">
+    <rect x="120" y="145" width="90" height="38" rx="6" fill="#dcfce7" stroke="#16a34a"/><text x="165" y="168" fill="#166534">stage 1: L1&ndash;8</text>
+    <rect x="275" y="145" width="90" height="38" rx="6" fill="#dcfce7" stroke="#16a34a"/><text x="320" y="168" fill="#166534">stage 2: L9&ndash;16</text>
+    <rect x="430" y="145" width="90" height="38" rx="6" fill="#dcfce7" stroke="#16a34a"/><text x="475" y="168" fill="#166534">stage 3: L17&ndash;24</text>
+    <line x1="210" y1="164" x2="275" y2="164" stroke="#334155" stroke-width="1.4"/>
+    <line x1="365" y1="164" x2="430" y2="164" stroke="#334155" stroke-width="1.4"/>
+    <text x="242" y="158" fill="#475569">activations</text><text x="397" y="158" fill="#475569">activations</text>
+  </g>
+</svg>
+</div>
+
+<h3 class="sub">How they combine: a concrete layout</h3>
+<p>Real large-model runs stack the cuts to match the hardware. A representative flagship-scale layout on a v4 pod:</p>
+<pre><span class="cm"># Example split of a very large model across ~3,000 chips</span>
+tensor_parallel  = <span class="num">12</span>    <span class="cm"># split each layer across 12 fast-linked chips (inside a cube)</span>
+data_parallel    = <span class="num">256</span>   <span class="cm"># 256 replicas of the whole model, fed different batches</span>
+pipeline_stages  = <span class="num">1</span>     <span class="cm"># kept simple here; pipelining adds a scheduling "bubble"</span>
+chips            = tensor_parallel &times; data_parallel   <span class="cm"># = 3072 chips (12 &times; 256)</span>
+
+<span class="cm"># Placement rule of thumb, ranked by comms cost:</span>
+<span class="cm">#   tensor-parallel group  &rarr; put on the SAME cube (highest bandwidth, every layer talks)</span>
+<span class="cm">#   pipeline stages        &rarr; adjacent cubes (only activations cross, less traffic)</span>
+<span class="cm">#   data-parallel replicas &rarr; spread across the pod (AllReduce once per step)</span></pre>
+
+<div class="ins"><div class="insl">The mapping principle</div><p>Match <strong>communication frequency to link bandwidth</strong>. Tensor parallelism talks every layer, so it belongs on the tightest links (within a cube). Data parallelism talks once per step, so it tolerates the pod-wide torus. Pipeline parallelism only ships activations between stages, so it fits neighboring cubes. Getting this placement right is a huge chunk of real-world training performance &mdash; and it's what OCS topology reconfiguration exists to enable.</p></div>
+
+<h3 class="sub">The main collective: ring AllReduce</h3>
+<p>Data-parallel training lives or dies on <strong>AllReduce</strong>: every chip ends up with the element-wise sum of everyone's gradients. The bandwidth-optimal way on a ring is two phases &mdash; <em>reduce-scatter</em> (each chip becomes the owner of one fully-summed chunk) then <em>all-gather</em> (everyone circulates their finished chunk). The cost approaches <code>2&middot;(N-1)/N &times; (data / link_bandwidth)</code> &mdash; note it barely grows with <code>N</code>, which is exactly why a torus scales.</p>
+<pre><span class="cm"># Ring AllReduce on N chips, gradient of size D bytes/chip</span>
+reduce_scatter: N-1 steps, each chip sends D/N bytes per step
+all_gather:     N-1 steps, each chip sends D/N bytes per step
+total sent/chip &asymp; 2 &times; (N-1)/N &times; D      <span class="cm"># &rarr; ~2D as N grows: near-constant per chip!</span></pre>
+
+<div class="warn"><div class="warnl">PIPELINE BUBBLE</div><p>Pipeline parallelism's tax is the <em>bubble</em>: while the pipeline fills and drains, some stages sit idle. With <code>S</code> stages and <code>m</code> micro-batches, idle fraction &asymp; <code>(S-1)/(m + S-1)</code>. Fix: use many micro-batches (large <code>m</code>) so the bubble amortizes. Be ready to state this formula.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>"You have a model 10&times; too big for one chip's HBM &mdash; how do you train it?" Structure the answer: (1) tensor-parallel to fit each layer, placed within a cube; (2) data-parallel replicas across the pod, synced by ring AllReduce; (3) pipeline only if depth/memory still doesn't fit, sizing micro-batches to shrink the bubble. Close with the placement principle &mdash; comms frequency vs link bandwidth &mdash; and note that AllReduce cost per chip is roughly constant in N, which is why it scales.</p></div>
+</div>
+
+<!-- ==================== TAB 6: SOFTWARE STACK ==================== -->
+<div class="sec" id="tab-software">
+<h2 class="stitle">The Software Stack: JAX &rarr; XLA &rarr; TPU, orchestrated by Pathways</h2>
+<div class="sdesc">You write array math in Python; a compiler turns it into TPU machine code; a runtime spreads it over the pod. Here's the whole pipe &mdash; and exactly where the engineer's control ends and the chip's begins.</div>
+
+<p><strong>The analogy.</strong> You write a recipe in plain language (JAX). A translator (XLA) rewrites it into precise machine steps for one specific kitchen &mdash; deciding which prep to batch together, what to keep on the counter vs the fridge, and when to fetch the next ingredient. A head chef (Pathways) coordinates hundreds of kitchens so the whole banquet comes out together.</p>
+
+<h3 class="sub">Layer by layer</h3>
+<pre><span class="cm"># 1) You write array math (looks like NumPy). JAX traces it into a graph (HLO).</span>
+<span class="kw">import</span> jax, jax.numpy <span class="kw">as</span> jnp
+<span class="kw">from</span> jax.sharding <span class="kw">import</span> Mesh, NamedSharding, PartitionSpec <span class="kw">as</span> P
+<span class="kw">from</span> jax.experimental <span class="kw">import</span> mesh_utils
+
+<span class="kw">def</span> <span class="fn">layer</span>(x, w):
+    <span class="kw">return</span> jax.nn.relu(x @ w)        <span class="cm"># @ = matmul &rarr; lands on the MXU</span>
+
+<span class="cm"># 2) You DECLARE how tensors are split across chips (sharding). You don't write comms.</span>
+mesh = Mesh(mesh_utils.create_device_mesh((<span class="num">4</span>, <span class="num">2</span>)), axis_names=(<span class="str">"data"</span>, <span class="str">"model"</span>))
+w = jax.device_put(w, NamedSharding(mesh, P(<span class="kw">None</span>, <span class="str">"model"</span>)))   <span class="cm"># shard weight's columns across the "model" axis</span>
+f = jax.jit(layer)                       <span class="cm"># 3) jit &rarr; XLA compiles for the TPU</span>
+<span class="cm"># 4) XLA + GSPMD infer the collectives (AllReduce/AllGather), fuse ops, plan memory,</span>
+<span class="cm">#    and emit TPU machine code. 5) Pathways dispatches it across pods.</span></pre>
+
+<table class="tbl">
+  <thead><tr><th>Layer</th><th>What it is</th><th>What it decides</th></tr></thead>
+  <tbody>
+    <tr><td><strong>JAX</strong></td><td>NumPy-like Python + autodiff + <code>jit</code>/<code>vmap</code>/sharding</td><td>The math, the gradients, and <em>how tensors are sharded</em> (your intent)</td></tr>
+    <tr><td><strong>HLO graph</strong></td><td>The traced, hardware-agnostic op graph</td><td>The logical computation, before any chip-specific choices</td></tr>
+    <tr><td><strong>XLA</strong></td><td>The optimizing compiler for accelerators</td><td>Operator <em>fusion</em>, memory layout, scratchpad/DMA scheduling, code-gen</td></tr>
+    <tr><td><strong>GSPMD / SPMD</strong></td><td>Auto-partitioning inside XLA</td><td>Turns your sharding hints into actual <em>collective</em> ops on the torus</td></tr>
+    <tr><td><strong>Pathways</strong></td><td>The distributed runtime / orchestrator</td><td>Placing &amp; dispatching programs across pods; multi-tenancy; failure reaction</td></tr>
+  </tbody>
+</table>
+
+<div class="ins"><div class="insl">What XLA actually buys you</div><p>Two things dominate. <strong>Fusion:</strong> instead of running <code>matmul &rarr; write HBM &rarr; read HBM &rarr; add bias &rarr; write &rarr; read &rarr; relu</code>, XLA does the add and relu <em>while the data is still on-chip</em>, collapsing memory round-trips (remember the roofline &mdash; this raises arithmetic intensity). <strong>Static scheduling:</strong> because the graph is known, XLA plans every DMA and every MXU issue ahead of time &mdash; the reason a TPU can skip caches and speculation.</p></div>
+
+<h3 class="sub">Pathways: from "one pod, one job" to a shared fabric</h3>
+<p>The older model was <em>SPMD, one program per pod</em>: a job locked an entire pod, and while chips did communication they sat idle on compute. <strong>Pathways</strong> reframes ML as an <em>asynchronous dataflow graph</em> executed by a single logical controller:</p>
+<ul class="content-list">
+  <li><strong>Single-controller orchestration:</strong> one client describes the whole computation; Pathways dispatches pieces to islands of TPUs &mdash; instead of every chip independently running the identical program.</li>
+  <li><strong>Asynchronous dispatch:</strong> it schedules the next op before the previous finishes (like CPU instruction pipelining, but for a cluster), keeping hardware full while other work communicates.</li>
+  <li><strong>Multi-pod &amp; multi-tenant:</strong> a job can span pods; multiple jobs can share a pod. Higher utilization = more research per dollar.</li>
+  <li><strong>Talks to Borg &amp; the infra layer:</strong> Pathways is the <em>customer</em> of the TPU hardware team &mdash; it asks the cluster manager for chips, runs on the per-host dispatchers your infra maintains, and reacts when your monitoring flags a failure.</li>
+</ul>
+
+<h3 class="sub">The hardware boundary: who controls what</h3>
+<table class="tbl">
+  <thead><tr><th>The software engineer controls</th><th>The chip / compiler / runtime does automatically</th></tr></thead>
+  <tbody>
+    <tr><td>The math &amp; model architecture (in JAX)</td><td>Executing MACs in the systolic MXU, cycle by cycle</td></tr>
+    <tr><td>Sharding <em>intent</em> (which axes split across which mesh)</td><td>Choosing &amp; inserting the actual collectives (GSPMD)</td></tr>
+    <tr><td>Batch size, precision policy (bf16/int8), checkpoint cadence</td><td>Operator fusion, memory layout, DMA/scratchpad scheduling (XLA)</td></tr>
+    <tr><td>How many chips / the mesh shape requested</td><td>Physical topology &amp; OCS wiring; routing on the torus</td></tr>
+    <tr><td>Where to place tensor/pipeline/data groups (hints)</td><td>bf16-multiply/fp32-accumulate inside the MXU; ICI link initialization/calibration</td></tr>
+  </tbody>
+</table>
+
+<div class="warn"><div class="warnl">MENTAL MODEL</div><p>You never write "send these bytes to chip 37." You <em>declare</em> how data is laid out and let the compiler synthesize the movement. The engineer's leverage is <strong>sharding strategy, precision, batching, and placement hints</strong> &mdash; get those right and the compiler does the rest; get them wrong and no amount of hardware saves you.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>"Walk me from your Python to the TPU." Hit the five stops &mdash; JAX trace &rarr; HLO &rarr; XLA (fusion + scheduling) &rarr; GSPMD (sharding &rarr; collectives) &rarr; Pathways (dispatch across pods) &mdash; and then draw the control boundary out loud: "I control the math, sharding intent, precision and placement; the compiler owns fusion, layout, and the actual collectives; the chip owns the MACs and DMAs." That boundary statement is the senior signal.</p></div>
+</div>
+
+<!-- ==================== TAB 7: COMPETITION ==================== -->
+<div class="sec" id="tab-compete">
+<h2 class="stitle">How This Competes: NVIDIA and Inference ASICs</h2>
+<div class="sdesc">The accelerator market is not one race. It's "flexible general GPUs" vs "co-designed TPUs" vs "narrow ultra-efficient inference chips" &mdash; each optimal in a different region.</div>
+
+<p><strong>The analogy.</strong> GPUs are Swiss Army knives &mdash; do almost anything, huge ecosystem, sold to everyone. TPUs are a factory line Google built for its own banquet &mdash; unbeatable perf-per-watt when the menu is known. Narrow inference ASICs are single-purpose kitchen robots &mdash; blazingly fast at one dish (serving a fixed model) and useless at anything else.</p>
+
+<h3 class="sub">The three camps</h3>
+<table class="tbl">
+  <thead><tr><th>Approach</th><th>Edge</th><th>Weakness</th><th>Best for</th></tr></thead>
+  <tbody>
+    <tr><td><strong>NVIDIA GPUs</strong></td><td>CUDA ecosystem &amp; kernel library, flexibility, buy-anywhere, fast-moving research support, NVLink/switch fabric</td><td>Perf-per-watt &amp; cost at fixed scale; you don't own the stack</td><td>Research, mixed/irregular workloads, portability, most of the market</td></tr>
+    <tr><td><strong>Google TPUs</strong></td><td>Perf-per-dollar / per-watt at scale, full-stack co-design (chip+interconnect+XLA+Pathways), OCS reconfigurability</td><td>Mostly Google Cloud &amp; internal; smaller third-party kernel ecosystem than CUDA</td><td>Large regular training/inference, long runs, Google-integrated teams</td></tr>
+    <tr><td><strong>Inference ASICs</strong></td><td>Extreme latency/throughput-per-watt for a narrow op set; often huge on-chip SRAM or dataflow designs</td><td>Rigid; poor at training or changing model shapes; ecosystem risk</td><td>High-volume serving of stable models, latency-critical inference</td></tr>
+  </tbody>
+</table>
+
+<div class="ins"><div class="insl">The moat that isn't silicon</div><p>The hardest thing to copy isn't the chip &mdash; it's the <strong>software + fleet co-design</strong>. NVIDIA's real moat is CUDA and a decade of kernels. Google's is XLA/JAX/Pathways plus owning the datacenter, so it can co-design chip, interconnect, compiler, and scheduler as one system. A startup with a faster multiplier still has to answer: <em>what compiles to it, and who operates 4096 of them?</em></p></div>
+
+<h3 class="sub">Training vs inference splits the market</h3>
+<ul class="content-list">
+  <li><strong>Training</strong> wants flexibility (models change weekly), huge memory, and fast collectives &mdash; favors general accelerators (GPU/TPU) with strong interconnect.</li>
+  <li><strong>Inference</strong> wants low latency and cost-per-query on a <em>fixed</em> model &mdash; opens the door to quantized (int8/fp8) serving and narrow ASICs. This is why "inference chips" are a distinct category, not just small training chips.</li>
+  <li><strong>Perf-per-watt is the real currency.</strong> At datacenter scale, power and cooling dominate cost. "Faster" loses to "same speed at half the watts." That framing &mdash; not peak FLOPS &mdash; is how these products actually compete.</li>
+</ul>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>"Why would anyone use a TPU over an NVIDIA GPU?" Don't take sides. Say: "For large, regular, long-running workloads inside Google's stack, TPUs win on perf-per-watt and total cost because the whole stack is co-designed; for portable, fast-changing, kernel-heavy research, GPUs win on ecosystem and flexibility. And for high-volume serving of a fixed model, a narrow inference ASIC can beat both on cost-per-query. The right answer is workload-dependent, and the deciding metric is usually perf-per-watt, not peak FLOPS."</p></div>
+</div>
+
+<!-- ==================== TAB 8: INTERVIEW CHEAT-SHEET ==================== -->
+<div class="sec" id="tab-interview">
+<h2 class="stitle">Interview Cheat-Sheet</h2>
+<div class="sdesc">The numbers to have loaded, the one-liners that read as senior, and the traps that read as junior.</div>
+
+<h3 class="sub">Numbers worth memorizing (order-of-magnitude)</h3>
+<div class="prog">
+  <div class="pc"><div class="num">128&sup2;</div><div class="lbl">MXU MACs firing per cycle (&asymp;16,384)</div></div>
+  <div class="pc"><div class="num">4096</div><div class="lbl">chips in a v4 pod (64 cubes &times; 64)</div></div>
+  <div class="pc"><div class="num">3D</div><div class="lbl">torus, 6 ICI links per chip</div></div>
+  <div class="pc"><div class="num">~10 ms</div><div class="lbl">OCS reconfiguration time</div></div>
+  <div class="pc"><div class="num">bf16</div><div class="lbl">16-bit, FP32 exponent range; accumulate in fp32</div></div>
+  <div class="pc"><div class="num">~2D</div><div class="lbl">bytes/chip for ring AllReduce (near-constant in N)</div></div>
+</div>
+
+<h3 class="sub">One-liners that signal depth</h3>
+<div class="iq">"The systolic array's win isn't raw multipliers &mdash; it's operand reuse in the wires, so it hits high utilization at far lower memory bandwidth than a general SIMD engine."</div>
+<div class="iq">"TPUs drop caches and branch prediction because a matmul's access pattern is statically known &mdash; a compiler schedules DMAs into a scratchpad better than a reactive cache can guess."</div>
+<div class="iq">"bf16 keeps FP32's exponent, so training is stable without loss scaling; multiply in bf16, accumulate in fp32 for the best of both."</div>
+<div class="iq">"Placement follows comms frequency: tensor-parallel inside a cube, pipeline across adjacent cubes, data-parallel across the pod &mdash; and that's what OCS reconfigurability exists to enable."</div>
+<div class="iq">"At 4096 chips, failure is routine, so the interconnect is designed to reconfigure around a dead cube &mdash; not to treat failure as an exception."</div>
+
+<h3 class="sub">Traps that read as junior</h3>
+<div class="trap"><div class="trapl">AVOID</div><p><strong>Leading with peak FLOPS.</strong> Peak FLOPS without sustained utilization or perf-per-watt is a marketing number. Always tie compute to the roofline and to power.</p></div>
+<div class="trap"><div class="trapl">AVOID</div><p><strong>"TPU beats GPU."</strong> The honest answer is workload-dependent. Name the axes: regularity, ecosystem, scale, power, and who owns the stack.</p></div>
+<div class="trap"><div class="trapl">AVOID</div><p><strong>Hand-waving "and then it does AllReduce."</strong> Know that it's reduce-scatter + all-gather on a ring, and that per-chip bytes are ~2D regardless of N &mdash; that's the reason it scales.</p></div>
+<div class="trap"><div class="trapl">AVOID</div><p><strong>Blurring the control boundary.</strong> You declare sharding; the compiler synthesizes collectives. Saying "I'd write the send between chips" signals you don't know the model.</p></div>
+
+<h3 class="sub">A 60-second whole-stack narrative</h3>
+<div class="iq">"A neural net is mostly matmul, so Google built an ASIC whose die is mostly a systolic MXU &mdash; 128&times;128 MACs reusing operands in-place, fed by HBM, no caches or branch prediction because a compiler schedules the known access pattern. One chip isn't enough for big models, so chips are wired into a 3D torus with optical switches that reshape the topology per job and route around failures. Models are split with tensor, pipeline, and data parallelism, placed to match comms frequency to link bandwidth, and synced with ring AllReduce. You write it in JAX, XLA fuses and schedules it, GSPMD turns your sharding hints into collectives, and Pathways dispatches it across pods. It competes with NVIDIA on perf-per-watt and full-stack co-design rather than flexibility &mdash; and with narrow inference ASICs on cost-per-query for fixed models."</div>
+
+<div class="note"><div class="notel">NEXT IN THE BOOK</div><p>This chapter stayed at the hardware and accelerator layer. The next chapter, <a class="lc" href="ml_systems_swe.html">ML Systems &amp; Cluster SWE</a>, climbs one level up: scheduling these accelerators as a fleet, checkpointing, data pipelines, and the reliability engineering that keeps thousand-chip jobs alive.</p></div>
+</div>
+
+<!-- ==================== TERMINOLOGY & ACRONYMS ==================== -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>TPU</strong></td><td>Tensor Processing Unit &mdash; Google's ASIC built to run neural-network matrix math.</td></tr>
+<tr><td><strong>ASIC</strong></td><td>Application-Specific Integrated Circuit &mdash; a chip designed for one narrow job, not general use.</td></tr>
+<tr><td><strong>MAC</strong></td><td>Multiply-Accumulate &mdash; one multiply plus one add; the core step of a matrix multiply.</td></tr>
+<tr><td><strong>Systolic array</strong></td><td>A grid of MAC cells that stream operands to neighbors in lockstep, reusing each input in place.</td></tr>
+<tr><td><strong>PE</strong></td><td>Processing Element &mdash; a single multiply-accumulate cell within the systolic array.</td></tr>
+<tr><td><strong>MXU</strong></td><td>Matrix Multiply Unit &mdash; the TPU's large systolic array (e.g. 128&times;128 MACs).</td></tr>
+<tr><td><strong>SIMD</strong></td><td>Single-Instruction, Multiple-Data &mdash; one instruction applied in parallel to many data lanes.</td></tr>
+<tr><td><strong>HBM</strong></td><td>High-Bandwidth Memory &mdash; DRAM stacked next to the chip holding weights and activations.</td></tr>
+<tr><td><strong>SRAM</strong></td><td>Static Random-Access Memory &mdash; fast on-chip scratchpad (VMEM/CMEM) filled under compiler control.</td></tr>
+<tr><td><strong>DMA</strong></td><td>Direct Memory Access &mdash; the chip copying a block of data itself, with no CPU in the loop.</td></tr>
+<tr><td><strong>ICI</strong></td><td>Inter-Chip Interconnect &mdash; dedicated chip-to-chip links used to build pods (6 per v4 chip).</td></tr>
+<tr><td><strong>XLA</strong></td><td>Accelerated Linear Algebra &mdash; the optimizing compiler that fuses ops and schedules TPU code.</td></tr>
+<tr><td><strong>bfloat16 (bf16)</strong></td><td>A 16-bit float keeping FP32's 8-bit exponent range; the default TPU training precision.</td></tr>
+<tr><td><strong>INT8</strong></td><td>8-bit integer format for quantized inference; 4&times; smaller than FP32.</td></tr>
+<tr><td><strong>Arithmetic intensity</strong></td><td>FLOPs performed divided by bytes moved from HBM; decides compute-bound vs memory-bound.</td></tr>
+<tr><td><strong>Roofline</strong></td><td>A model comparing arithmetic intensity to the chip's FLOPS/bandwidth ratio to find the limiter.</td></tr>
+<tr><td><strong>3D torus</strong></td><td>A 3D grid of chips with every edge wrapped into a ring, giving short paths and busy links.</td></tr>
+<tr><td><strong>Bisection bandwidth</strong></td><td>Total link capacity cut when the machine is sliced in half; how fast the two halves talk.</td></tr>
+<tr><td><strong>OCS</strong></td><td>Optical Circuit Switch &mdash; physically steers light to rewire inter-cube links in ~10&nbsp;ms.</td></tr>
+<tr><td><strong>ECC</strong></td><td>Error-Correcting Code memory &mdash; detects and flags bit errors, aiding fault detection.</td></tr>
+<tr><td><strong>AllReduce</strong></td><td>Collective where every chip ends with the element-wise sum of all chips' gradients.</td></tr>
+<tr><td><strong>Data parallelism</strong></td><td>Full model copy per chip, each fed a different batch shard; gradients synced by AllReduce.</td></tr>
+<tr><td><strong>Tensor (model) parallelism</strong></td><td>A single weight matrix split across chips that exchange partial results within a layer.</td></tr>
+<tr><td><strong>Pipeline parallelism</strong></td><td>Consecutive layers assigned to different chip groups (stages); only activations cross stage boundaries.</td></tr>
+<tr><td><strong>JAX</strong></td><td>A NumPy-like Python library with autodiff and <code>jit</code>/<code>vmap</code>/sharding for accelerators.</td></tr>
+<tr><td><strong>HLO</strong></td><td>High-Level Optimizer graph &mdash; XLA's hardware-agnostic op graph traced from your code.</td></tr>
+<tr><td><strong>GSPMD</strong></td><td>Auto-partitioning inside XLA that turns sharding hints into collective ops on the torus.</td></tr>
+<tr><td><strong>Pathways</strong></td><td>Google's distributed runtime that dispatches programs across pods with a single controller.</td></tr>
+</table>
+
+</div>
+</div>
+
+<script>
+function go(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  if (typeof event !== 'undefined' && event && event.currentTarget) event.currentTarget.classList.add('active');
+  window.scrollTo(0, 0);
+}
+function toggle(el) {
+  const body = el.nextElementSibling;
+  const chevron = el.querySelector('.chv');
+  body.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open');
+}
+</script>
+
+<!-- Namespaced, self-contained systolic-array step player -->
+<script>
+(function () {
+  var CYCLES = [
+    { fires: [{pe:'00', a:1, b:5}],
+      acc: {'00':5,  '01':0,  '10':0,  '11':0},
+      cap: "<b>Cycle 1.</b> A&#8320;&#8320;=1 slides into the top-left cell and meets B&#8320;&#8320;=5. PE[0,0] does its first MAC: 1&times;5 = <b>5</b>." },
+    { fires: [{pe:'00', a:2, b:7},{pe:'01', a:1, b:6},{pe:'10', a:3, b:5}],
+      acc: {'00':19, '01':6,  '10':15, '11':0},
+      cap: "<b>Cycle 2.</b> The wavefront spreads diagonally. PE[0,0] adds 2&times;7 &rarr; <b>19</b> (done). PE[0,1] starts: 1&times;6=6. PE[1,0] starts: 3&times;5=15." },
+    { fires: [{pe:'01', a:2, b:8},{pe:'10', a:4, b:7},{pe:'11', a:3, b:6}],
+      acc: {'00':19, '01':22, '10':43, '11':18},
+      cap: "<b>Cycle 3.</b> PE[0,1] adds 2&times;8 &rarr; <b>22</b> (done). PE[1,0] adds 4&times;7 &rarr; <b>43</b> (done). PE[1,1] starts: 3&times;6=18." },
+    { fires: [{pe:'11', a:4, b:8}],
+      acc: {'00':19, '01':22, '10':43, '11':50},
+      cap: "<b>Cycle 4.</b> PE[1,1] adds 4&times;8 &rarr; <b>50</b>. All four outputs done: C = [19 22; 43 50]. A 128&times;128 MXU applies this same operand-reuse principle across 16,384 cells." }
+  ];
+  var idx = 0, timer = null;
+  function $(id){ return document.getElementById(id); }
+  function paint() {
+    var pes = ['00','01','10','11'];
+    // reset fills
+    pes.forEach(function(p){
+      var box = $('sa-pe'+p); if (box) box.setAttribute('fill', '#f8fafc');
+      var box2 = box; if (box2) box2.setAttribute('stroke', '#cbd5e1');
+    });
+    // clear feed labels
+    ['sa-topL','sa-topR','sa-leftT','sa-leftB'].forEach(function(i){ var e=$(i); if(e) e.textContent=''; });
+    if (idx === 0) {
+      pes.forEach(function(p){ var e=$('sa-acc'+p); if(e){ e.textContent='0'; e.setAttribute('fill','#0f172a'); } });
+      $('sa-result').textContent = '[·  ·; ·  ·]';
+      $('sa-pill').textContent = 'cycle 0 / 4';
+      $('sa-cap').innerHTML = "Weights <b>B</b> = [5 6; 7 8] stream down and activations <b>A</b> = [1 2; 3 4] stream in from the left, skewed so the right operands meet at the right cell. Each cell holds its own accumulator. Press <b>Step</b>.";
+      return;
+    }
+    var c = CYCLES[idx-1];
+    // set accumulators
+    pes.forEach(function(p){
+      var e=$('sa-acc'+p); if(e){ e.textContent = String(c.acc[p]); }
+    });
+    // highlight firing cells + show operands feeding them
+    c.fires.forEach(function(f){
+      var box = $('sa-pe'+f.pe);
+      if (box){ box.setAttribute('fill', '#dbeafe'); box.setAttribute('stroke', '#2563eb'); }
+      var accEl = $('sa-acc'+f.pe); if (accEl) accEl.setAttribute('fill', '#1d4ed8');
+      // label the column feed (b, purple) and row feed (a, blue)
+      var col = f.pe.charAt(1), row = f.pe.charAt(0);
+      var topId = col === '0' ? 'sa-topL' : 'sa-topR';
+      var leftId = row === '0' ? 'sa-leftT' : 'sa-leftB';
+      var t = $(topId); if (t) t.textContent = 'b=' + f.b;
+      var l = $(leftId); if (l) l.textContent = 'a=' + f.a;
+    });
+    $('sa-pill').textContent = 'cycle ' + idx + ' / 4';
+    $('sa-cap').innerHTML = c.cap;
+    if (idx === CYCLES.length) {
+      $('sa-result').textContent = '[19 22; 43 50]';
+    } else {
+      $('sa-result').textContent = '[·  ·; ·  ·]';
+    }
+  }
+  function step() {
+    if (idx < CYCLES.length) { idx++; paint(); }
+    if (idx >= CYCLES.length && timer) { clearInterval(timer); timer = null; var b=$('sa-auto'); if(b) b.textContent='Auto-play'; }
+  }
+  function reset() {
+    idx = 0; if (timer){ clearInterval(timer); timer=null; var b=$('sa-auto'); if(b) b.textContent='Auto-play'; } paint();
+  }
+  function auto() {
+    var b = $('sa-auto');
+    if (timer) { clearInterval(timer); timer = null; if(b) b.textContent = 'Auto-play'; return; }
+    if (idx >= CYCLES.length) reset();
+    if (b) b.textContent = 'Pause';
+    timer = setInterval(function(){ step(); }, 1100);
+  }
+  var s=$('sa-step'), r=$('sa-reset'), a=$('sa-auto');
+  if (s) s.addEventListener('click', step);
+  if (r) r.addEventListener('click', reset);
+  if (a) a.addEventListener('click', auto);
+  paint();
+})();
+</script>
+
+<!-- Namespaced, self-contained OCS reconfiguration step player -->
+<script>
+(function () {
+  // link ids present in the SVG
+  var LINKS = ['l01','l12','l34','l45','l03','l25'];
+  var STATES = [
+    { links: {}, cubes: {}, cap: "<b>State 1 &mdash; idle pod.</b> Six cubes, no inter-cube links active. The OCS is a blank patch panel waiting for the scheduler." },
+    { links: { l01:'#15803d', l12:'#15803d' },
+      cubes: { c0:'A', c1:'A', c2:'A' },
+      cap: "<b>State 2 &mdash; Job A lands.</b> The scheduler asks the OCS to wire cubes 0-1-2 into a line for Job A. Reconfiguration takes ~10ms; after that the light path adds no latency." },
+    { links: { l01:'#15803d', l12:'#15803d', l45:'#a15207' },
+      cubes: { c0:'A', c1:'A', c2:'A', c4:'B', c5:'B' },
+      cap: "<b>State 3 &mdash; Job B shares the pod.</b> Cubes 4-5 are stitched into a separate slice for Job B, leaving cube 3 as a spare. Two jobs, one pod, no cross-talk &mdash; multi-tenancy via topology." },
+    { links: { l01:'#15803d', l03:'#15803d', l45:'#a15207' },
+      cubes: { c0:'A', c1:'A', c2:'F', c3:'A', c4:'B', c5:'B' },
+      cap: "<b>State 4 &mdash; cube 2 fails, OCS reroutes.</b> Job A drops the dead cube and the OCS wires in the spare cube 3 (1&ndash;0&ndash;3). Job A resumes from its last checkpoint and Job B is untouched; the pod never fully stopped." }
+  ];
+  var COLORS = { A:{f:'#dcfce7',s:'#15803d'}, B:{f:'#fef3c7',s:'#a15207'}, F:{f:'#fee2e2',s:'#dc2626'} };
+  var idx = 0;
+  function $(id){ return document.getElementById(id); }
+  function paint() {
+    var st = STATES[idx];
+    // reset cubes
+    ['c0','c1','c2','c3','c4','c5'].forEach(function(c){
+      var e=$(c); if(e){ e.setAttribute('fill','#f1f5f9'); e.setAttribute('stroke','#cbd5e1'); }
+    });
+    // color cubes per assignment
+    for (var c in st.cubes) {
+      var col = COLORS[st.cubes[c]]; var e=$(c);
+      if (e && col){ e.setAttribute('fill', col.f); e.setAttribute('stroke', col.s); }
+    }
+    // links: hide all, then show active
+    LINKS.forEach(function(l){ var e=$(l); if(e){ e.setAttribute('stroke','#767f8d'); e.parentNode.setAttribute('opacity','1'); e.setAttribute('opacity','0'); } });
+    var grp = $('ocs-links'); if (grp) grp.setAttribute('opacity','1');
+    for (var lk in st.links) {
+      var e2=$(lk); if(e2){ e2.setAttribute('stroke', st.links[lk]); e2.setAttribute('opacity','1'); }
+    }
+    $('ocs-pill').textContent = 'state ' + (idx+1) + ' / 4';
+    $('ocs-cap').innerHTML = st.cap;
+  }
+  function step() { idx = (idx + 1) % STATES.length; paint(); }
+  function reset() { idx = 0; paint(); }
+  var s=$('ocs-step'), r=$('ocs-reset');
+  if (s) s.addEventListener('click', step);
+  if (r) r.addEventListener('click', reset);
+  paint();
+})();
+</script>
+
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="nv_dgx_cloud_prep.html">‹ GPU Cloud Automation (DGX)</a><a class="bkc" href="index.html">📖 Contents</a><a href="ml_systems_swe.html">ML Systems &amp; Cluster SWE ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

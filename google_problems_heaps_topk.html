@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heaps, Top-K &amp; Greedy — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 3 — <b>Heaps, Top-K &amp; Greedy</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Heaps, Top-K &amp; Greedy &mdash; Google-style Problems</h1>
+  <div class="sub">Six Google-style heap, top-K &amp; greedy problems &bull; original framing, execution-tested solutions, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+
+<!-- PROBLEM: Jump Game -->
+<div class="card">
+<h2>Jump Game</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You start at index 0 of an integer array <code>nums</code>. Each element is the <em>maximum</em> forward jump length from that position &mdash; standing on a value <code>v</code> lets you move to any index from the current one up to <code>v</code> steps ahead. Decide whether it is possible to reach the last index.</p>
+<ul>
+  <li>A zero means you cannot move at all from that seat; you are stranded unless an earlier jump already carried you past it.</li>
+  <li>The array is non-empty; a single-element array is trivially "already at the end."</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>nums = [3, 1, 2, 0, 4]</code> the answer is <code>true</code> &mdash; from index 0 (value 3) you can reach index 3 directly, but that seat is a 0; instead jump 0&rarr;2 (value 2), then 2&rarr;4, landing on the last index. For <code>nums = [2, 1, 0, 0, 4]</code> the answer is <code>false</code>: the furthest you can ever reach is index 2 (0&rarr;1&rarr;2 gives reach 2); index 3 (a 0) is never landed on, so index 4 is unreachable &rarr; false.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>You never need to try individual jump lengths. Sweep left to right tracking a single number, <code>reach</code> &mdash; the furthest index reachable using everything seen so far. At each index <code>i</code>, if <code>i</code> has already slipped past <code>reach</code>, a gap of unreachable seats separates you from the goal, so return <code>false</code>. Otherwise standing on <code>i</code> extends your horizon to <code>i + nums[i]</code>; keep the maximum. If the sweep finishes without ever falling behind, the last index was reachable. This greedy frontier works because reachability is contiguous: if you can reach <code>i</code>, you can reach every index below it too.</p>
+
+<pre><span class="cm">// reach = furthest index reachable with the jumps seen so far.</span>
+<span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">canJump</span>(<span class="kw">int</span>[] nums) {
+    <span class="kw">int</span> reach = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; nums.length; i++) {
+        <span class="kw">if</span> (i &gt; reach) <span class="kw">return</span> <span class="kw">false</span>;          <span class="cm">// gap: index i is unreachable</span>
+        reach = <span class="type">Math</span>.<span class="fn">max</span>(reach, i + nums[i]);   <span class="cm">// extend the frontier</span>
+    }
+    <span class="kw">return</span> <span class="kw">true</span>;                              <span class="cm">// never fell behind -> last index reached</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; one pass, constant work per index. Space <code>O(1)</code> &mdash; a single running frontier.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Greedy beats DP here</strong> &mdash; a memoised "can I reach the end from i?" recursion is <code>O(n&sup2;)</code> (each state scans its jump targets) and uses <code>O(n)</code> space; the greedy frontier collapses it to a single <code>O(n)</code> pass with one scalar. <strong>The <code>i &gt; reach</code> guard must come first</strong> &mdash; check reachability of <code>i</code> <em>before</em> using <code>nums[i]</code>, or you extend the frontier from a seat you could never stand on. <strong>Zeros are only fatal at the frontier</strong> &mdash; a 0 you have already jumped over is harmless; a 0 exactly at <code>reach</code> with more array ahead is what strands you. <strong>Single element</strong> &mdash; <code>reach</code> starts at 0 and the loop never trips, correctly returning <code>true</code>. A classic follow-up (Jump Game II) asks for the <em>minimum</em> number of jumps, which needs a second frontier tracking the current jump's boundary.</p></div>
+</div>
+
+<!-- PROBLEM: Meeting Rooms II -->
+<div class="card">
+<h2>Meeting Rooms II</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a list of meeting time intervals <code>[start, end)</code> (start inclusive, end exclusive), return the minimum number of rooms required so that no two overlapping meetings ever share a room. Equivalently, this is the maximum number of meetings that are simultaneously in progress at any instant.</p>
+<ul>
+  <li>Two meetings that merely touch &mdash; one ends exactly when the next begins &mdash; do <em>not</em> overlap and can reuse the same room.</li>
+  <li>The list may be empty (zero rooms) and intervals arrive in no particular order.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[[1, 9], [2, 5], [6, 8], [10, 12]]</code> the answer is <code>2</code>. The <code>[1, 9]</code> meeting spans the whole morning; <code>[2, 5]</code> overlaps it (2 rooms), then <code>[6, 8]</code> also overlaps <code>[1, 9]</code> (still 2, since <code>[2, 5]</code> has ended); <code>[10, 12]</code> starts after everything else is done and reuses a room. Peak concurrency is 2.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Overlap only cares about <em>when</em> things start versus when things end, not which start pairs with which end. So split the intervals into a sorted list of start times and a sorted list of end times, then merge them chronologically with two pointers. Walk the starts: if the next meeting begins <em>before</em> the earliest not-yet-finished meeting ends (<code>start[i] &lt; end[j]</code>), it needs a fresh room, so bump the room count. Otherwise a meeting has already freed up &mdash; advance the end pointer to reuse that room. Because the count is only ever incremented (never decreased), it settles on the highest concurrency ever reached, which is exactly the rooms needed. This is a min-heap of end times in disguise, with the sorted-end array playing the heap's role.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">minMeetingRooms</span>(<span class="kw">int</span>[][] intervals) {
+    <span class="kw">int</span> n = intervals.length, rooms = <span class="num">0</span>;
+    <span class="kw">int</span>[] start = <span class="kw">new</span> <span class="kw">int</span>[n], end = <span class="kw">new</span> <span class="kw">int</span>[n];
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) {          <span class="cm">// split into start / end streams</span>
+        start[i] = intervals[i][<span class="num">0</span>];
+        end[i]   = intervals[i][<span class="num">1</span>];
+    }
+    <span class="type">Arrays</span>.<span class="fn">sort</span>(start);                     <span class="cm">// process events in time order</span>
+    <span class="type">Arrays</span>.<span class="fn">sort</span>(end);
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>, j = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="kw">if</span> (start[i] &lt; end[j]) rooms++;    <span class="cm">// starts before earliest end -> new room</span>
+        <span class="kw">else</span> j++;                          <span class="cm">// a meeting ended first -> reuse its room</span>
+    }
+    <span class="kw">return</span> rooms;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n log n)</code> &mdash; dominated by the two sorts; the merge is a single linear pass. Space <code>O(n)</code> for the two extracted arrays. The heap variant is the same <code>O(n log n)</code> time but <code>O(k)</code> extra space where <code>k</code> is the peak concurrency.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Half-open intervals</strong> &mdash; the strict <code>start[i] &lt; end[j]</code> (not <code>&lt;=</code>) is what lets a meeting ending at 5 hand its room to one starting at 5; using <code>&lt;=</code> would over-count on back-to-back meetings. <strong>Why never decrement</strong> &mdash; the <code>else</code> branch consumes one start and one end together (both pointers advance), so it leaves concurrency unchanged; only the <code>if</code> branch raises it, so <code>rooms</code> naturally records the peak. <strong>Don't pair each start with its own end</strong> &mdash; decoupling the two sorted streams is the key insight; keeping intervals whole and comparing them pairwise is the <code>O(n&sup2;)</code> trap. <strong>Empty input</strong> &mdash; <code>n = 0</code> skips the loop and returns 0; the end pointer <code>j</code> is only read when <code>i &lt; n</code>, so it never runs off the array. A common follow-up is the min-heap formulation (push each end time, pop when a room frees) or returning the actual room assignment per meeting.</p></div>
+</div>
+
+<!-- PROBLEM: K Closest Points to Origin -->
+<div class="card">
+<h2>K Closest Points to Origin</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given an array of points on the plane, <code>points[i] = [x, y]</code>, and an integer <code>k</code>, return the <code>k</code> points closest to the origin <code>(0, 0)</code> by Euclidean distance. The answer may be returned in any order, and when distances tie any valid choice is accepted.</p>
+<ul>
+  <li>Compare by <em>squared</em> distance <code>x&sup2; + y&sup2;</code> &mdash; the monotonic square root is unnecessary and only invites floating-point error.</li>
+  <li>Assume <code>1 &le; k &le; points.length</code>; when <code>k</code> equals the length, every point is returned.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>points = [[2, 3], [-1, 1], [4, 0], [0, -1]]</code> and <code>k = 2</code>, the squared distances are <code>13, 2, 16, 1</code>. The two smallest are <code>[0, -1]</code> (distance 1) and <code>[-1, 1]</code> (distance 2), so the answer is <code>[[-1, 1], [0, -1]]</code> (order irrelevant). With <code>k = 1</code> only <code>[0, -1]</code> is returned.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Maintain a bounded <strong>max-heap</strong> of size <code>k</code>, keyed on squared distance so the <em>farthest</em> of the current candidates sits at the top. Offer each point; whenever the heap grows past <code>k</code>, poll off the top to evict the current farthest. After processing every point, the heap holds exactly the <code>k</code> nearest. Because the heap never exceeds <code>k</code> elements, each insert/evict costs <code>O(log k)</code> rather than <code>O(log n)</code> &mdash; a real win when <code>k &#8810; n</code>, and the reason a size-<code>k</code> heap is preferred over sorting all points.</p>
+
+<pre><span class="cm">// Squared distance to the origin; use long so large coordinates can't overflow.</span>
+<span class="kw">private</span> <span class="kw">long</span> <span class="fn">dist</span>(<span class="kw">int</span>[] p) { <span class="kw">return</span> (<span class="kw">long</span>) p[<span class="num">0</span>] * p[<span class="num">0</span>] + (<span class="kw">long</span>) p[<span class="num">1</span>] * p[<span class="num">1</span>]; }
+
+<span class="kw">public</span> <span class="kw">int</span>[][] <span class="fn">kClosest</span>(<span class="kw">int</span>[][] points, <span class="kw">int</span> k) {
+    <span class="cm">// Max-heap: the farthest candidate seen so far is at the top.</span>
+    <span class="type">PriorityQueue</span>&lt;<span class="kw">int</span>[]&gt; heap = <span class="kw">new</span> <span class="type">PriorityQueue</span>&lt;&gt;(
+        (a, b) -&gt; <span class="type">Long</span>.<span class="fn">compare</span>(<span class="fn">dist</span>(b), <span class="fn">dist</span>(a)));
+    <span class="kw">for</span> (<span class="kw">int</span>[] p : points) {
+        heap.<span class="fn">offer</span>(p);
+        <span class="kw">if</span> (heap.<span class="fn">size</span>() &gt; k) heap.<span class="fn">poll</span>();     <span class="cm">// over capacity: drop the farthest</span>
+    }
+    <span class="kw">int</span>[][] res = <span class="kw">new</span> <span class="kw">int</span>[heap.<span class="fn">size</span>()][<span class="num">2</span>];
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; res.length; i++) res[i] = heap.<span class="fn">poll</span>();
+    <span class="kw">return</span> res;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n log k)</code> &mdash; <code>n</code> points, each an <code>O(log k)</code> heap operation. Space <code>O(k)</code> for the heap. A quickselect (Hoare partition) alternative reaches <code>O(n)</code> <em>average</em> time but degrades to <code>O(n&sup2;)</code> worst case and reorders the input in place.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Max-heap, not min-heap</strong> &mdash; to keep the <em>k smallest</em> you evict the largest, so the comparator must put the farthest on top (<code>dist(b)</code> vs <code>dist(a)</code>); flipping it keeps the k <em>farthest</em> points instead. <strong>Skip the square root</strong> &mdash; ordering by <code>x&sup2; + y&sup2;</code> gives the same ranking as true distance and avoids <code>double</code> precision bugs on ties. <strong>Overflow</strong> &mdash; compute the squared distance in <code>long</code>: although the classic <code>&plusmn;10&#8308;</code> coordinate bound keeps <code>x&sup2; + y&sup2;</code> (&le; 2&times;10&#8312;) within a 32-bit int, coordinates beyond roughly <code>&plusmn;3.3&times;10&#8308;</code> make <code>x&sup2; + y&sup2;</code> exceed <code>Integer.MAX_VALUE</code> &mdash; using <code>long</code> is the safe default and also avoids comparator-subtraction overflow. <strong>k = n</strong> &mdash; the heap never exceeds <code>n</code>, nothing is evicted, and all points are returned. Interviewers often push toward the quickselect solution for <code>O(n)</code> average time, or ask how you would handle a <em>stream</em> of points, where the bounded heap shines because it holds only <code>k</code> at a time.</p></div>
+</div>
+
+<!-- PROBLEM: Kth Largest Element in an Array -->
+<div class="card">
+<h2>Kth Largest Element in an Array</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given an integer array <code>nums</code> and an integer <code>k</code>, return the <code>k</code>-th <em>largest</em> element &mdash; the value that would sit at position <code>k</code> counting down from the maximum. This is the <strong>k-th largest by rank, not the k-th distinct value</strong>: duplicates each occupy their own rank, so in <code>[5, 5, 5]</code> the 2nd largest is still <code>5</code>. Aim for better than a full sort.</p>
+<ul>
+  <li><code>1 &le; k &le; nums.length</code>; <code>k = 1</code> asks for the maximum, <code>k = n</code> for the minimum.</li>
+  <li>Values may repeat and may be negative; the array is not sorted.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>nums = [7, 4, 10, 2, 10, 8]</code> and <code>k = 3</code> the answer is <code>8</code>. Sorted ascending the array is <code>[2, 4, 7, 8, 10, 10]</code>; the two <code>10</code>s are the 1st and 2nd largest, so the 3rd largest is <code>8</code> &mdash; note the duplicate <code>10</code> consumes a rank rather than collapsing.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>The k-th largest element is exactly the element that lands at ascending index <code>n - k</code> once the array is ordered. Rather than fully sorting, use <strong>Quickselect</strong>: partition around a pivot, which drops the pivot into its final sorted slot <code>p</code> and puts all smaller-or-equal values to its left. If <code>p</code> equals our target index <code>n - k</code> we are done; otherwise recurse into just the side that contains the target. Choosing a <em>random</em> pivot keeps the expected work linear on distinct-valued inputs; on duplicate-heavy arrays a two-way partition still degrades, so a three-way (Dutch-national-flag) partition is what keeps it linear there.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">findKthLargest</span>(<span class="kw">int</span>[] nums, <span class="kw">int</span> k) {
+    <span class="cm">// The k-th largest sits at ascending index n - k.</span>
+    <span class="kw">int</span> n = nums.length, target = n - k;
+    <span class="kw">int</span> lo = <span class="num">0</span>, hi = n - <span class="num">1</span>, p;
+    <span class="kw">while</span> (target != (p = <span class="fn">partition</span>(nums, lo, hi))) {
+        <span class="kw">if</span> (target &lt; p) hi = p - <span class="num">1</span>;   <span class="cm">// pivot too big: search left</span>
+        <span class="kw">else</span>            lo = p + <span class="num">1</span>;   <span class="cm">// pivot too small: search right</span>
+    }
+    <span class="kw">return</span> nums[target];
+}
+
+<span class="cm">// Lomuto partition around a RANDOM pivot. Returns the pivot's</span>
+<span class="cm">// final index; every value &lt;= pivot ends up on its left.</span>
+<span class="kw">private final</span> <span class="type">Random</span> rand = <span class="kw">new</span> <span class="type">Random</span>();
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">partition</span>(<span class="kw">int</span>[] nums, <span class="kw">int</span> lo, <span class="kw">int</span> hi) {
+    <span class="kw">int</span> p = lo + rand.<span class="fn">nextInt</span>(hi - lo + <span class="num">1</span>);  <span class="cm">// pick pivot</span>
+    <span class="fn">swap</span>(nums, hi, p);                        <span class="cm">// park it at hi</span>
+    <span class="kw">int</span> small = lo - <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = lo; i &lt; hi; ++i)
+        <span class="kw">if</span> (nums[i] &lt;= nums[hi]) <span class="fn">swap</span>(nums, ++small, i);
+    <span class="fn">swap</span>(nums, ++small, hi);                  <span class="cm">// pivot to its slot</span>
+    <span class="kw">return</span> small;
+}
+
+<span class="cm">// plain temp swap: idiomatic, and a self-swap (i == j) is a harmless no-op</span>
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">swap</span>(<span class="kw">int</span>[] nums, <span class="kw">int</span> i, <span class="kw">int</span> j) {
+    <span class="kw">int</span> t = nums[i];
+    nums[i] = nums[j];
+    nums[j] = t;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <strong>expected <code>O(n)</code></strong> with a random pivot (each round shrinks the search range by a constant fraction on average); worst case <code>O(n&sup2;)</code> if pivots repeatedly split off just one element &mdash; a random pivot makes that vanishingly unlikely for distinct values, but a two-way (Lomuto) partition still hits <code>O(n&sup2;)</code> on duplicate-heavy input, where a three-way partition is needed to restore linear expected time. Space <code>O(1)</code>: the selection is iterative and in place, with no recursion stack. A heap-based alternative is <code>O(n log k)</code> time and <code>O(k)</code> space.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) <strong>Rank, not distinct value</strong> &mdash; the target index is <code>n - k</code>, and duplicates each hold a rank; folding them together silently returns the wrong answer on inputs like <code>[10, 10, 8]</code>. (2) <strong>Self-swap must be safe</strong> &mdash; the random pivot can already sit at <code>hi</code>, so <code>swap(i, i)</code> happens; a plain temp swap makes it a harmless no-op (an XOR swap would instead zero the slot, which is why the idiomatic temp swap is preferred here). (3) <strong>Random, not fixed, pivot</strong> &mdash; a first/last-element pivot degrades to <code>O(n&sup2;)</code> on already-sorted input, a classic worst case interviewers reach for. (4) Recurse into <em>only</em> the side holding the target; scanning both sides re-derives a full sort and forfeits the linear expected time.</p></div>
+</div>
+
+<!-- PROBLEM: Minimum Cost to Hire K Workers -->
+<div class="card">
+<h2>Minimum Cost to Hire K Workers</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>There are <code>n</code> workers; worker <code>i</code> has a <code>quality[i]</code> and a minimum acceptable <code>wage[i]</code>. You must hire exactly <code>K</code> workers and form one pay group under two rules: (1) within the group every worker is paid <strong>in proportion to their quality</strong>, and (2) every worker is paid <strong>at least their minimum wage</strong>. Return the least total amount needed to hire any valid group of <code>K</code>.</p>
+<ul>
+  <li>A group's pay rate (money per unit quality) is forced to be at least <code>max(wage[i] / quality[i])</code> over its members &mdash; the most "expensive per quality" worker sets the rate.</li>
+  <li>Total cost of a group is therefore <code>rate &times; (sum of qualities)</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>quality = [3, 5, 8, 2]</code>, <code>wage = [15, 20, 40, 12]</code>, <code>K = 2</code> the answer is <code>30.0</code>. The wage/quality ratios are <code>5.0, 4.0, 5.0, 6.0</code>. Pairing the workers with quality 3 and quality 2 fixes the rate at <code>max(5.0, 6.0) = 6.0</code>, giving <code>6.0 &times; (3 + 2) = 30.0</code> &mdash; and each is paid at least their minimum (<code>18 &ge; 15</code>, <code>12 &ge; 12</code>). No other pair is cheaper.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Fix the pay rate by fixing <em>which worker has the highest ratio</em> in the group. Sort workers by <code>wage / quality</code> ascending and sweep; the current worker's ratio is the group rate for any group whose members all appear at or before it. Among those candidates we want the <code>K</code> with the <strong>smallest total quality</strong> (cost is <code>rate &times; sumQuality</code>). Keep a running <strong>max-heap of qualities</strong> of size <code>K</code>: whenever it overflows, evict the largest quality. Each time the heap holds exactly <code>K</code> qualities, the current ratio is a valid rate and <code>sumQuality &times; rate</code> is a candidate answer.</p>
+
+<pre><span class="kw">public</span> <span class="kw">double</span> <span class="fn">mincostToHireWorkers</span>(<span class="kw">int</span>[] quality,
+                                   <span class="kw">int</span>[] wage, <span class="kw">int</span> K) {
+    <span class="kw">int</span> n = quality.length;
+    <span class="cm">// Each worker as [ wage/quality ratio, quality ].</span>
+    <span class="kw">double</span>[][] worker = <span class="kw">new</span> <span class="kw">double</span>[n][<span class="num">2</span>];
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; ++i)
+        worker[i] = <span class="kw">new</span> <span class="kw">double</span>[]{
+            (<span class="kw">double</span>) wage[i] / quality[i], quality[i] };
+    <span class="cm">// Ascending by ratio: the current worker fixes the group's</span>
+    <span class="cm">// pay rate (the largest ratio seen so far in the window).</span>
+    <span class="type">Arrays</span>.<span class="fn">sort</span>(worker, (a, b) -&gt; <span class="type">Double</span>.<span class="fn">compare</span>(a[<span class="num">0</span>], b[<span class="num">0</span>]));
+
+    <span class="cm">// Max-heap of qualities: shed the largest to retain the K</span>
+    <span class="cm">// smallest-quality members under the current rate.</span>
+    <span class="type">PriorityQueue</span>&lt;<span class="type">Integer</span>&gt; heap =
+        <span class="kw">new</span> <span class="type">PriorityQueue</span>&lt;&gt;(<span class="type">Collections</span>.<span class="fn">reverseOrder</span>());
+    <span class="kw">double</span> best = <span class="type">Double</span>.MAX_VALUE;
+    <span class="kw">int</span> sumQ = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">double</span>[] r : worker) {
+        <span class="kw">double</span> rate = r[<span class="num">0</span>];
+        <span class="kw">int</span> q = (<span class="kw">int</span>) r[<span class="num">1</span>];
+        sumQ += q;
+        heap.<span class="fn">offer</span>(q);
+        <span class="kw">if</span> (heap.<span class="fn">size</span>() &gt; K) sumQ -= heap.<span class="fn">poll</span>();  <span class="cm">// drop worst</span>
+        <span class="kw">if</span> (heap.<span class="fn">size</span>() == K)
+            best = <span class="type">Math</span>.<span class="fn">min</span>(best, sumQ * rate);
+    }
+    <span class="kw">return</span> best;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n log n)</code> &mdash; the ratio sort dominates; the sweep does <code>n</code> heap operations, each <code>O(log K)</code>, for <code>O(n log K)</code>. Space <code>O(n)</code> for the paired ratio/quality array plus <code>O(K)</code> for the heap.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) <strong>Why sorting by ratio works</strong> &mdash; fixing the group's highest-ratio worker fixes the rate; because we sweep ratios ascending, every earlier worker is affordable at that rate, so we are free to pick the cheapest-quality <code>K</code> among them. (2) <strong>Max-heap, evict the largest quality</strong> &mdash; the rate is fixed by the ratio, so cost falls with total quality; a min-heap or keeping the largest qualities inverts the optimisation. (3) <strong>Only score when the heap is full</strong> &mdash; a group must have exactly <code>K</code> members; scoring before the heap reaches size <code>K</code> undercounts the quality sum. (4) <strong>Use floating-point comparison for the ratio sort</strong> and beware integer division &mdash; compute <code>(double) wage[i] / quality[i]</code>, not integer <code>wage[i] / quality[i]</code>, or ties and ordering collapse. A common follow-up asks for the actual roster, or to stream workers online.</p></div>
+</div>
+
+<!-- PROBLEM: Merge k Sorted Lists -->
+<div class="card">
+<h2>Merge k Sorted Lists</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You are given an array of <code>k</code> singly-linked lists, each already sorted in ascending order. Merge them into one sorted linked list and return its head. The lists may be empty, the array itself may be empty, and values may repeat across lists.</p>
+<ul>
+  <li>An empty input array returns <code>null</code>; an array of all-empty lists also yields an empty result.</li>
+  <li>Total node count <code>N</code> can be large, so an approach better than repeatedly scanning all <code>k</code> heads is expected.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for lists <code>[2&rarr;7]</code>, <code>[1&rarr;5&rarr;9]</code>, <code>[]</code>, <code>[3&rarr;4&rarr;8]</code> the merged result is <code>1&rarr;2&rarr;3&rarr;4&rarr;5&rarr;7&rarr;8&rarr;9</code>. The empty third list contributes nothing, and values interleave across the remaining three.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Merging two sorted lists is a linear zipper. To combine <code>k</code> of them cheaply, merge in a <strong>bottom-up, pairwise tournament</strong>: first merge neighbours <code>(0,1), (2,3), &hellip;</code>, then merge the results <code>(0,2), (4,6), &hellip;</code>, doubling the stride each round. After about <code>log&#8322;k</code> rounds everything has collapsed into slot <code>0</code>. Reusing the input array as scratch keeps it fully in place &mdash; no priority queue and no recursion. Each node is touched once per round, and there are <code>log&#8322;k</code> rounds.</p>
+
+<pre><span class="cm">/* ListNode: int val; ListNode next; -- standard singly-linked node. */</span>
+<span class="kw">public</span> <span class="type">ListNode</span> <span class="fn">mergeKLists</span>(<span class="type">ListNode</span>[] lists) {
+    <span class="kw">if</span> (lists.length == <span class="num">0</span>) <span class="kw">return</span> <span class="kw">null</span>;
+    <span class="kw">int</span> n = lists.length;
+    <span class="cm">// Bottom-up merge, doubling the stride each round:</span>
+    <span class="cm">// merge (0,1),(2,3)...  then (0,2),(4,6)...  in place.</span>
+    <span class="kw">for</span> (<span class="kw">int</span> step = <span class="num">1</span>; step &lt; n; step &lt;&lt;= <span class="num">1</span>)
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i + step &lt; n; i += step &lt;&lt; <span class="num">1</span>)
+            lists[i] = <span class="fn">merge</span>(lists[i], lists[i + step]);
+    <span class="kw">return</span> lists[<span class="num">0</span>];
+}
+
+<span class="cm">// Zip two sorted lists onto a dummy-headed chain.</span>
+<span class="kw">private</span> <span class="type">ListNode</span> <span class="fn">merge</span>(<span class="type">ListNode</span> a, <span class="type">ListNode</span> b) {
+    <span class="type">ListNode</span> dummy = <span class="kw">new</span> <span class="type">ListNode</span>(), tail = dummy;
+    <span class="kw">while</span> (a != <span class="kw">null</span> &amp;&amp; b != <span class="kw">null</span>) {
+        <span class="kw">if</span> (a.val &lt;= b.val) { tail.next = a; a = a.next; }
+        <span class="kw">else</span>               { tail.next = b; b = b.next; }
+        tail = tail.next;
+    }
+    tail.next = (a != <span class="kw">null</span>) ? a : b;   <span class="cm">// attach the remainder</span>
+    <span class="kw">return</span> dummy.next;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(N log k)</code> where <code>N</code> is the total number of nodes and <code>k</code> the number of lists &mdash; each of the <code>log&#8322;k</code> rounds re-touches every node once. Space <code>O(1)</code> auxiliary: merging is iterative (no recursion stack) and the input array is reused, so only the <code>dummy</code> handles and a few pointers are allocated. This beats the naive <code>O(Nk)</code> of merging one list at a time and matches the <code>O(N log k)</code> of a k-way heap while using constant extra space.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) <strong>Odd counts and stragglers</strong> &mdash; the guard <code>i + step &lt; n</code> leaves an unpaired list untouched this round; it is correctly absorbed in a later, wider round. Getting the loop bounds wrong drops or double-merges a list. (2) <strong>Empty and null cases</strong> &mdash; an empty array must return <code>null</code>, and <code>merge</code> must accept empty (<code>null</code>) operands; the dummy head plus the final <code>tail.next</code> attach handle both uniformly. (3) <strong>Terminate the tail</strong> &mdash; the surviving list is already <code>null</code>-terminated, so attaching the remainder finishes the chain; forgetting the attach truncates the result. (4) The naive alternative &mdash; merging list 2 into list 1, then list 3, &hellip; &mdash; is <code>O(Nk)</code>; the doubling schedule is what buys the <code>log k</code>. A frequent follow-up compares this against a min-heap of the <code>k</code> current heads.</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_problems_string_simulation.html">&lsaquo; String Simulation &amp; Scanning</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_graphs.html">Graphs — BFS / DFS / Union-Find / Topological Sort &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

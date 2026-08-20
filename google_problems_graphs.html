@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graphs — BFS / DFS / Union-Find / Topological Sort — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 4 — <b>Graphs — BFS / DFS / Union-Find / Topological Sort</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Graphs &mdash; BFS / DFS / Union-Find / Topological Sort</h1>
+  <div class="sub">Seven Google-style graph problems &bull; original framing, execution-tested solutions, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+<div class="tip" style="margin-bottom:24px;"><p><strong>How to read this chapter:</strong> every worked example uses inputs invented for this book, and each stated output was produced by <em>compiling and running</em> the accompanying code against a suite of edge cases (empty, single node, disconnected, cycles, duplicates, worst case) and, where practical, a brute-force differential check. The core techniques below &mdash; grid/flood-fill search, Kahn topological sort, BFS on an implicit graph, (weighted) union-find, plus DFS-with-memoization and backtracking &mdash; cover the overwhelming majority of graph interview questions.</p></div>
+
+
+<!-- PROBLEM: Number of Islands -->
+<div class="card">
+<h2>Number of Islands</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You are given a rectangular grid of characters where <code>'1'</code> marks land and <code>'0'</code> marks water. An <em>island</em> is a maximal group of land cells connected <strong>4-directionally</strong> (up, down, left, right &mdash; never diagonally). Count how many distinct islands the grid contains. All cells outside the grid are treated as water, so land on the border cannot connect to anything beyond the edge.</p>
+<ul>
+  <li>The grid may be empty (zero rows or zero columns) &mdash; the answer is then <code>0</code>.</li>
+  <li>Diagonal adjacency does <em>not</em> connect land; two cells touching only at a corner are separate islands.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for the 5&times;7 grid below the answer is <code>5</code>. The top-left 2&times;2 block, the top-right hook, the lone cell at row&nbsp;2, the bottom-left block, and the bottom-right hook are five separate landmasses; note the lone row-2 cell and the bottom-left block meet only at a diagonal corner (row&nbsp;2 col&nbsp;3 vs row&nbsp;3 col&nbsp;2), so they stay separate.</p></div>
+<pre><span class="cm">// '1' = land, '0' = water   (row 0 at the top)</span>
+1 1 0 0 1 1 0
+1 1 0 0 0 1 0
+0 0 0 1 0 0 0
+0 1 1 0 0 1 1
+0 1 1 0 0 1 0        <span class="cm">// -&gt; 5 islands</span></pre>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Counting connected components is the archetypal <strong>union-find</strong> task. Sweep the grid once in row-major order. Every time you meet a land cell, tentatively treat it as a brand-new island (<code>count++</code>), then try to merge it with the two neighbours that have <em>already</em> been processed &mdash; the one directly above and the one directly to the left. A merge that actually joins two previously separate sets means one island just disappeared, so <code>count--</code>. Because you only ever look backward (up and left), every horizontal and vertical adjacency is still examined exactly once by the time both of its endpoints exist. A plain DFS/BFS flood fill is equally valid and also <code>O(mn)</code>; union-find is shown here because it generalises cleanly to streaming and to the two later problems in this chapter.</p>
+
+<pre><span class="cm">// parent[]/rank[] index each cell as row*n + col.</span>
+<span class="kw">private</span> <span class="kw">int</span>[] parent, rank;
+
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">find</span>(<span class="kw">int</span> x) {
+    <span class="kw">while</span> (parent[x] != x) { parent[x] = parent[parent[x]]; x = parent[x]; }  <span class="cm">// path halving</span>
+    <span class="kw">return</span> x;
+}
+<span class="kw">private</span> <span class="kw">boolean</span> <span class="fn">union</span>(<span class="kw">int</span> a, <span class="kw">int</span> b) {
+    <span class="kw">int</span> ra = <span class="fn">find</span>(a), rb = <span class="fn">find</span>(b);
+    <span class="kw">if</span> (ra == rb) <span class="kw">return</span> <span class="kw">false</span>;                 <span class="cm">// already the same island</span>
+    <span class="kw">if</span> (rank[ra] &lt; rank[rb]) { <span class="kw">int</span> t = ra; ra = rb; rb = t; }
+    parent[rb] = ra;                            <span class="cm">// attach smaller tree under larger</span>
+    <span class="kw">if</span> (rank[ra] == rank[rb]) rank[ra]++;
+    <span class="kw">return</span> <span class="kw">true</span>;                              <span class="cm">// two islands merged into one</span>
+}
+<span class="kw">public</span> <span class="kw">int</span> <span class="fn">numIslands</span>(<span class="kw">char</span>[][] grid) {
+    <span class="kw">if</span> (grid == <span class="kw">null</span> || grid.length == <span class="num">0</span> || grid[<span class="num">0</span>].length == <span class="num">0</span>) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">int</span> m = grid.length, n = grid[<span class="num">0</span>].length, count = <span class="num">0</span>;
+    parent = <span class="kw">new</span> <span class="kw">int</span>[m * n];
+    rank   = <span class="kw">new</span> <span class="kw">int</span>[m * n];
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; m; i++)
+        <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; n; j++) {
+            <span class="kw">if</span> (grid[i][j] != <span class="str">'1'</span>) <span class="kw">continue</span>;
+            <span class="kw">int</span> id = i * n + j;
+            parent[id] = id;                    <span class="cm">// new land starts as its own island</span>
+            count++;
+            <span class="cm">// Merge only with the already-processed up and left neighbours;</span>
+            <span class="cm">// each successful union drops one island from the tally.</span>
+            <span class="kw">if</span> (i &gt; <span class="num">0</span> &amp;&amp; grid[i-<span class="num">1</span>][j] == <span class="str">'1'</span> &amp;&amp; <span class="fn">union</span>(id, (i-<span class="num">1</span>)*n + j)) count--;
+            <span class="kw">if</span> (j &gt; <span class="num">0</span> &amp;&amp; grid[i][j-<span class="num">1</span>] == <span class="str">'1'</span> &amp;&amp; <span class="fn">union</span>(id, i*n + j-<span class="num">1</span>)) count--;
+        }
+    <span class="kw">return</span> count;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(m&middot;n&middot;&alpha;(m&middot;n))</code> &mdash; effectively linear in the number of cells, since path halving plus union by rank make each find/union near-constant (<code>&alpha;</code> is the inverse-Ackermann function, &le; 4 for any practical size). Space <code>O(m&middot;n)</code> for the two arrays. A DFS/BFS flood fill matches the <code>O(mn)</code> time with <code>O(mn)</code> worst-case recursion/queue space.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Only merge backward.</strong> Checking all four neighbours also works but doubles the union calls; the up-and-left pair already covers every adjacency exactly once. <strong>The <code>union</code> return value carries the count.</strong> Decrement only when a union genuinely joins two distinct sets &mdash; blindly doing <code>count--</code> on every land-to-land adjacency over-counts merges when two cells are already in the same island (e.g. the fourth cell of a 2&times;2 block, which touches two neighbours that are already unified). <strong>Guard the borders.</strong> The <code>i &gt; 0</code> / <code>j &gt; 0</code> tests keep row/column indices in range; without them the first row and column read out of bounds. <strong>Empty grid.</strong> The early return handles a <code>null</code> grid, zero rows, or a zero-width first row. A frequent follow-up asks for the <em>area</em> of the largest island (track subtree sizes during union) or to handle the grid arriving as a stream of cells &mdash; union-find shines there because it never needs the whole grid materialised as a matrix.</p></div>
+</div>
+
+
+<!-- PROBLEM: Course Schedule II -->
+<div class="card">
+<h2>Course Schedule II</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>There are <code>numCourses</code> courses labelled <code>0 &hellip; numCourses-1</code>. Each prerequisite pair <code>[a, b]</code> means course <code>b</code> must be completed <em>before</em> course <code>a</code>. Return any ordering in which all courses can be taken. If the prerequisites contain a cycle no valid ordering exists, so return an <strong>empty array</strong>.</p>
+<ul>
+  <li>There may be many valid orderings; any one is accepted.</li>
+  <li>Courses with no prerequisites can appear first; isolated courses can appear anywhere.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> with <code>numCourses = 5</code> and prerequisites <code>[[1,0], [2,0], [3,1], [4,2], [4,3]]</code> one valid order is <code>[0, 1, 2, 3, 4]</code>. Course 0 unlocks 1 and 2; course 4 needs both 3 and 2 done first. Running the code yields exactly <code>[0, 1, 2, 3, 4]</code>, which a checker confirms respects every &ldquo;before&rdquo; constraint. If instead the pairs were <code>[[1,0], [0,1]]</code> (0 needs 1 and 1 needs 0), the code returns <code>[]</code> because the two courses deadlock.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>This is a <strong>topological sort</strong>, solved with <strong>Kahn&rsquo;s algorithm</strong> (BFS by in-degree). Build a directed graph with an edge <code>b &rarr; a</code> for each pair <code>[a, b]</code>, and record each node&rsquo;s <em>in-degree</em> (the number of unmet prerequisites). Seed a queue with every course whose in-degree is already <code>0</code>. Repeatedly pop a course, append it to the order, and decrement the in-degree of everything it unlocks; whenever a successor&rsquo;s in-degree hits <code>0</code> it becomes takeable and joins the queue. If the finished order contains all <code>numCourses</code> courses, it is valid; if it is short, some courses never reached in-degree <code>0</code>, which happens exactly when they sit on a cycle &mdash; so return empty. Kahn&rsquo;s method gives cycle detection for free.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span>[] <span class="fn">findOrder</span>(<span class="kw">int</span> numCourses, <span class="kw">int</span>[][] prerequisites) {
+    <span class="type">List</span>&lt;<span class="type">List</span>&lt;<span class="type">Integer</span>&gt;&gt; adj = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; numCourses; i++) adj.<span class="fn">add</span>(<span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;());
+    <span class="kw">int</span>[] indegree = <span class="kw">new</span> <span class="kw">int</span>[numCourses];
+    <span class="cm">// Edge b -&gt; a for prerequisite [a, b]: finish b before a.</span>
+    <span class="kw">for</span> (<span class="kw">int</span>[] p : prerequisites) {
+        adj.<span class="fn">get</span>(p[<span class="num">1</span>]).<span class="fn">add</span>(p[<span class="num">0</span>]);
+        indegree[p[<span class="num">0</span>]]++;
+    }
+    <span class="type">Deque</span>&lt;<span class="type">Integer</span>&gt; q = <span class="kw">new</span> <span class="type">ArrayDeque</span>&lt;&gt;();
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; numCourses; i++)
+        <span class="kw">if</span> (indegree[i] == <span class="num">0</span>) q.<span class="fn">add</span>(i);      <span class="cm">// no unmet prerequisites</span>
+    <span class="kw">int</span>[] order = <span class="kw">new</span> <span class="kw">int</span>[numCourses];
+    <span class="kw">int</span> idx = <span class="num">0</span>;
+    <span class="kw">while</span> (!q.<span class="fn">isEmpty</span>()) {
+        <span class="kw">int</span> c = q.<span class="fn">poll</span>();
+        order[idx++] = c;
+        <span class="kw">for</span> (<span class="kw">int</span> next : adj.<span class="fn">get</span>(c))
+            <span class="kw">if</span> (--indegree[next] == <span class="num">0</span>) q.<span class="fn">add</span>(next);  <span class="cm">// freed of its last prereq</span>
+    }
+    <span class="cm">// Short order =&gt; some course never hit in-degree 0 =&gt; a cycle blocks it.</span>
+    <span class="kw">return</span> idx == numCourses ? order : <span class="kw">new</span> <span class="kw">int</span>[<span class="num">0</span>];
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(V + E)</code> where <code>V = numCourses</code> and <code>E</code> is the number of prerequisite pairs &mdash; every node is enqueued once and every edge relaxed once. Space <code>O(V + E)</code> for the adjacency lists, the in-degree array, and the queue.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Edge direction.</strong> The pair <code>[a, b]</code> means <em>b before a</em>, so the edge points <code>b &rarr; a</code> and it is <code>a</code>&rsquo;s in-degree that grows; reversing this produces the exact opposite (and wrong) order. <strong>Detect the cycle by length.</strong> The <code>idx == numCourses</code> check is the whole cycle test &mdash; if you skip it you silently emit a truncated, invalid order for cyclic input. <strong>Decrement, then test for zero.</strong> Enqueue a successor only at the moment its in-degree reaches <code>0</code>, not before; enqueuing early lets a course be scheduled ahead of an unfinished prerequisite. <strong>No prerequisites.</strong> With an empty pair list every course starts at in-degree <code>0</code>, so the natural order <code>[0, 1, &hellip;]</code> comes straight out. A DFS post-order (push nodes as recursion unwinds, then reverse) is the common alternative; interviewers may ask you to contrast it with Kahn&rsquo;s and to explain how each detects a cycle.</p></div>
+</div>
+
+
+<!-- PROBLEM: Word Ladder -->
+<div class="card">
+<h2>Word Ladder</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a <code>beginWord</code>, an <code>endWord</code>, and a dictionary <code>wordList</code>, find the length of the <em>shortest</em> transformation sequence from <code>beginWord</code> to <code>endWord</code> such that (1) each step changes exactly one letter, and (2) every intermediate word is present in <code>wordList</code>. Return the number of words in that shortest sequence (begin and end inclusive), or <code>0</code> if no such sequence exists. All words share the same length and consist of lowercase letters.</p>
+<ul>
+  <li>If <code>endWord</code> is absent from <code>wordList</code>, no transformation can finish there &mdash; return <code>0</code>.</li>
+  <li><code>beginWord</code> need not appear in <code>wordList</code>; it is a free starting point.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> transforming <code>"cat"</code> into <code>"dog"</code> with word list <code>["cot", "cog", "dog", "dot", "cag", "bat", "bag"]</code> returns <code>4</code>. Running the code, the shortest ladder is <code>cat &rarr; cot &rarr; cog &rarr; dog</code> &mdash; four words, each one letter apart, all rungs in the list. (The alternative <code>cat &rarr; cag &rarr; cog &rarr; dog</code> is also length 4.) If the list lacked <code>dog</code> entirely, the answer would be <code>0</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Model each word as a vertex and connect two words with an edge when they differ in exactly one letter. Because every edge has unit cost, the shortest ladder is a <strong>breadth-first search</strong> from <code>beginWord</code>. The graph is <em>implicit</em>: rather than precompute edges, generate a word&rsquo;s neighbours on the fly by trying all <code>26</code> letters at each position and keeping only the candidates still in the dictionary. Process the queue one whole <em>layer</em> at a time so a single <code>steps</code> counter tracks the ladder length. The key efficiency trick is to <strong>remove a word from the dictionary the instant you enqueue it</strong> &mdash; that both marks it visited and prevents any later, longer path from re-adding it.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">ladderLength</span>(<span class="type">String</span> beginWord, <span class="type">String</span> endWord, <span class="type">List</span>&lt;<span class="type">String</span>&gt; wordList) {
+    <span class="type">Set</span>&lt;<span class="type">String</span>&gt; dict = <span class="kw">new</span> <span class="type">HashSet</span>&lt;&gt;(wordList);
+    <span class="kw">if</span> (!dict.<span class="fn">contains</span>(endWord)) <span class="kw">return</span> <span class="num">0</span>;       <span class="cm">// target unreachable</span>
+    <span class="type">Deque</span>&lt;<span class="type">String</span>&gt; q = <span class="kw">new</span> <span class="type">ArrayDeque</span>&lt;&gt;();
+    q.<span class="fn">add</span>(beginWord);
+    <span class="kw">int</span> steps = <span class="num">1</span>;                               <span class="cm">// count words, not edges</span>
+    <span class="kw">while</span> (!q.<span class="fn">isEmpty</span>()) {
+        <span class="kw">int</span> size = q.<span class="fn">size</span>();                     <span class="cm">// drain one BFS layer at a time</span>
+        <span class="kw">for</span> (<span class="kw">int</span> s = <span class="num">0</span>; s &lt; size; s++) {
+            <span class="type">String</span> w = q.<span class="fn">poll</span>();
+            <span class="kw">if</span> (w.<span class="fn">equals</span>(endWord)) <span class="kw">return</span> steps;
+            <span class="kw">char</span>[] ch = w.<span class="fn">toCharArray</span>();
+            <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; ch.length; i++) {
+                <span class="kw">char</span> orig = ch[i];
+                <span class="kw">for</span> (<span class="kw">char</span> c = <span class="str">'a'</span>; c &lt;= <span class="str">'z'</span>; c++) {
+                    <span class="kw">if</span> (c == orig) <span class="kw">continue</span>;
+                    ch[i] = c;
+                    <span class="type">String</span> next = <span class="kw">new</span> <span class="type">String</span>(ch);
+                    <span class="kw">if</span> (dict.<span class="fn">remove</span>(next)) q.<span class="fn">add</span>(next);  <span class="cm">// remove = mark visited</span>
+                }
+                ch[i] = orig;                    <span class="cm">// restore before next position</span>
+            }
+        }
+        steps++;
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(N &middot; L&sup2;)</code> where <code>N</code> is the dictionary size and <code>L</code> the word length &mdash; each word spawns <code>L &times; 25</code> candidate strings, and building/hashing each costs <code>O(L)</code> (the constant 26 is folded in). Space <code>O(N &middot; L)</code> for the dictionary set and queue.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Count words, not edges.</strong> The result is the number of words in the ladder, so <code>steps</code> starts at <code>1</code>; returning the edge count is off by one. <strong>Layer-synchronised BFS.</strong> Snapshot <code>q.size()</code> before draining, so all words at the same distance are processed under one <code>steps</code> value; incrementing per word instead of per layer corrupts the distance. <strong>Remove-on-enqueue prevents revisits.</strong> Deleting <code>next</code> from the dictionary the moment it is queued stops it being rediscovered on a longer path and keeps the search from looping; a separate <code>visited</code> set works too, but forgetting to mark at all makes the queue blow up. <strong>Check <code>endWord</code> up front.</strong> If it is not in the dictionary, no ladder can end there, so return <code>0</code> immediately. A standard follow-up is <strong>bidirectional BFS</strong> &mdash; expand simultaneously from both ends and stop when the frontiers meet, always growing the smaller frontier; it explores dramatically fewer nodes (roughly <code>b^(d/2)</code> instead of <code>b^d</code>) though it needs both endpoints known in advance.</p></div>
+</div>
+
+
+<!-- PROBLEM: Evaluate Division -->
+<div class="card">
+<h2>Evaluate Division</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You are given a set of equations of the form <code>A / B = k</code> (each as a pair of variable names plus a positive value) and a list of queries, each asking for the value of some <code>X / Y</code>. Return an array with one answer per query, using <code>-1.0</code> whenever the ratio cannot be determined &mdash; either because a variable never appeared in any equation, or because the two variables lie in disconnected groups.</p>
+<ul>
+  <li>A variable divided by itself is <code>1.0</code>, but only if that variable is known.</li>
+  <li>Ratios chain and invert: from <code>A/B</code> and <code>B/C</code> you can derive <code>A/C</code> and <code>C/A</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> given <code>gpu/cpu = 4.0</code>, <code>cpu/ram = 0.5</code>, <code>ram/ssd = 8.0</code>, the queries <code>[gpu/ram, gpu/ssd, ssd/gpu, cpu/cpu, gpu/x, x/y]</code> evaluate (by running the code) to <code>[2.0, 16.0, 0.0625, 1.0, -1.0, -1.0]</code>. Here <code>gpu/ram = 4.0 &times; 0.5 = 2.0</code>, <code>gpu/ssd = 2.0 &times; 8.0 = 16.0</code>, <code>ssd/gpu = 1/16 = 0.0625</code>; <code>cpu/cpu = 1.0</code>; and both <code>x</code> and <code>y</code> are unknown, so those queries return <code>-1.0</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Treat each variable as a node in a <strong>weighted union-find</strong>. Maintain, for every node <code>x</code>, a factor <code>weight[x]</code> equal to <code>value(x) / value(parent[x])</code>. Then the value of <code>x</code> relative to its set&rsquo;s <em>root</em> is the product of weights along the path to that root, and any in-set ratio <code>x / y</code> equals <code>weight[x] / weight[y]</code> once both point at the same root. <code>find</code> does path compression while multiplying the weights forward; <code>union</code> links two roots and sets the connecting weight so the known equation stays consistent. A query is <code>-1.0</code> if either variable is unknown or the two have different roots. (An equivalent solution runs a DFS/BFS over an explicit ratio graph, multiplying edge weights along the path; union-find just amortises repeated queries better.)</p>
+
+<pre><span class="cm">// weight[x] = value(x) / value(parent[x]).</span>
+<span class="kw">private</span> <span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">String</span>&gt; parent = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();
+<span class="kw">private</span> <span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">Double</span>&gt; weight = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();
+
+<span class="kw">private</span> <span class="type">String</span> <span class="fn">find</span>(<span class="type">String</span> x) {
+    <span class="type">String</span> p = parent.<span class="fn">get</span>(x);
+    <span class="kw">if</span> (!p.<span class="fn">equals</span>(x)) {
+        <span class="type">String</span> root = <span class="fn">find</span>(p);
+        weight.<span class="fn">put</span>(x, weight.<span class="fn">get</span>(x) * weight.<span class="fn">get</span>(p));  <span class="cm">// x/root = x/p * p/root</span>
+        parent.<span class="fn">put</span>(x, root);                            <span class="cm">// path compression</span>
+    }
+    <span class="kw">return</span> parent.<span class="fn">get</span>(x);
+}
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">add</span>(<span class="type">String</span> x) {
+    <span class="kw">if</span> (!parent.<span class="fn">containsKey</span>(x)) { parent.<span class="fn">put</span>(x, x); weight.<span class="fn">put</span>(x, <span class="num">1.0</span>); }
+}
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">union</span>(<span class="type">String</span> a, <span class="type">String</span> b, <span class="kw">double</span> val) {   <span class="cm">// a / b = val</span>
+    <span class="fn">add</span>(a); <span class="fn">add</span>(b);
+    <span class="type">String</span> ra = <span class="fn">find</span>(a), rb = <span class="fn">find</span>(b);
+    <span class="kw">if</span> (ra.<span class="fn">equals</span>(rb)) <span class="kw">return</span>;
+    parent.<span class="fn">put</span>(ra, rb);
+    <span class="cm">// value(ra)/value(rb) = val * weight[b] / weight[a]</span>
+    weight.<span class="fn">put</span>(ra, val * weight.<span class="fn">get</span>(b) / weight.<span class="fn">get</span>(a));
+}
+<span class="kw">public</span> <span class="kw">double</span>[] <span class="fn">calcEquation</span>(<span class="type">List</span>&lt;<span class="type">List</span>&lt;<span class="type">String</span>&gt;&gt; equations,
+                             <span class="kw">double</span>[] values, <span class="type">List</span>&lt;<span class="type">List</span>&lt;<span class="type">String</span>&gt;&gt; queries) {
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; equations.<span class="fn">size</span>(); i++)
+        <span class="fn">union</span>(equations.<span class="fn">get</span>(i).<span class="fn">get</span>(<span class="num">0</span>), equations.<span class="fn">get</span>(i).<span class="fn">get</span>(<span class="num">1</span>), values[i]);
+    <span class="kw">double</span>[] res = <span class="kw">new</span> <span class="kw">double</span>[queries.<span class="fn">size</span>()];
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; queries.<span class="fn">size</span>(); i++) {
+        <span class="type">String</span> x = queries.<span class="fn">get</span>(i).<span class="fn">get</span>(<span class="num">0</span>), y = queries.<span class="fn">get</span>(i).<span class="fn">get</span>(<span class="num">1</span>);
+        <span class="kw">if</span> (!parent.<span class="fn">containsKey</span>(x) || !parent.<span class="fn">containsKey</span>(y)
+                || !<span class="fn">find</span>(x).<span class="fn">equals</span>(<span class="fn">find</span>(y))) {
+            res[i] = -<span class="num">1.0</span>;                       <span class="cm">// unknown symbol or disconnected</span>
+        } <span class="kw">else</span> {
+            res[i] = weight.<span class="fn">get</span>(x) / weight.<span class="fn">get</span>(y);  <span class="cm">// (x/root)/(y/root) = x/y</span>
+        }
+    }
+    <span class="kw">return</span> res;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O((E + Q) &middot; log V)</code> amortized &mdash; near-linear in the number of equations <code>E</code> plus queries <code>Q</code>. This implementation uses path compression but links roots unconditionally (no union by rank/size), so the amortized cost per find/union is logarithmic; adding union by rank/size would tighten it to the near-constant inverse-Ackermann bound <code>&alpha;(V)</code>. Space <code>O(V)</code> for the two maps, where <code>V</code> is the number of distinct variables.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Update weights during compression.</strong> When <code>find</code> re-points <code>x</code> straight at the root it <em>must</em> multiply in the parent&rsquo;s weight first (<code>weight[x] *= weight[p]</code>), and in that order &mdash; using the not-yet-updated parent weight is why the recursive form is cleaner than an ad-hoc iterative one. <strong>The union weight formula.</strong> Linking root <code>ra</code> under <code>rb</code> needs <code>weight[ra] = val &middot; weight[b] / weight[a]</code> so that recomputing <code>a/b</code> still gives <code>val</code>; deriving this on the spot is the crux of the problem. <strong>Short-circuit the unknown check.</strong> Test <code>containsKey</code> for both variables <em>before</em> calling <code>find</code>, or a query naming a never-seen variable throws a null-pointer exception. <strong>Self-query needs the variable to exist.</strong> <code>x/x</code> is <code>1.0</code> only when <code>x</code> is known; an unseen <code>x</code> is still <code>-1.0</code>. Interviewers often ask you to also return the <em>path</em> of multiplications, which nudges toward the explicit-graph DFS variant.</p></div>
+</div>
+
+
+<!-- PROBLEM: Most Stones Removed with Same Row or Column -->
+<div class="card">
+<h2>Most Stones Removed with Same Row or Column</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>On an infinite 2-D plane, some stones sit at integer coordinates (at most one stone per cell). A stone may be removed if it shares its row <em>or</em> its column with another stone still on the plane. Return the maximum number of stones that can be removed.</p>
+<ul>
+  <li>Each removal is chosen after the previous one, so &ldquo;still on the plane&rdquo; shrinks as you go.</li>
+  <li>A lone stone sharing neither a row nor a column with any other can never be removed.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for stones at <code>[[0,0], [0,2], [1,1], [2,0], [2,2], [1,2]]</code> the answer is <code>5</code> (verified by running the code). All six stones are chained together through shared rows and columns &mdash; e.g. <code>(1,1)</code> shares row 1 with <code>(1,2)</code>, which shares column 2 with <code>(0,2)</code>, and so on &mdash; so they form a single connected group and all but one can be swept away.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>The decisive observation: within any group of stones connected through shared rows/columns, you can always remove every stone <em>except one</em>. So if the stones split into <code>C</code> connected components, the answer is simply <code>n - C</code>. To count components, use <strong>union-find that unifies rows with columns</strong>: for each stone at <code>(r, c)</code>, union the entity &ldquo;row&nbsp;<code>r</code>&rdquo; with the entity &ldquo;column&nbsp;<code>c</code>&rdquo;. Two stones end up in the same component exactly when their rows/columns are transitively linked. Encode a column index <code>c</code> as <code>~c</code> (bitwise NOT, i.e. <code>-c-1</code>) so row ids and column ids never collide in the same map. Finally count the distinct roots among the stones.</p>
+
+<pre><span class="kw">private</span> <span class="type">Map</span>&lt;<span class="type">Integer</span>, <span class="type">Integer</span>&gt; parent = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();
+
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">find</span>(<span class="kw">int</span> x) {
+    parent.<span class="fn">putIfAbsent</span>(x, x);
+    <span class="kw">while</span> (parent.<span class="fn">get</span>(x) != x) {
+        parent.<span class="fn">put</span>(x, parent.<span class="fn">get</span>(parent.<span class="fn">get</span>(x)));  <span class="cm">// path halving</span>
+        x = parent.<span class="fn">get</span>(x);
+    }
+    <span class="kw">return</span> x;
+}
+<span class="kw">public</span> <span class="kw">int</span> <span class="fn">removeStones</span>(<span class="kw">int</span>[][] stones) {
+    <span class="cm">// Union each stone's row id with its column id. Encode a column c</span>
+    <span class="cm">// as ~c so row ids and column ids can never collide.</span>
+    <span class="kw">for</span> (<span class="kw">int</span>[] s : stones) parent.<span class="fn">put</span>(<span class="fn">find</span>(s[<span class="num">0</span>]), <span class="fn">find</span>(~s[<span class="num">1</span>]));
+    <span class="type">Set</span>&lt;<span class="type">Integer</span>&gt; roots = <span class="kw">new</span> <span class="type">HashSet</span>&lt;&gt;();
+    <span class="kw">for</span> (<span class="kw">int</span>[] s : stones) roots.<span class="fn">add</span>(<span class="fn">find</span>(s[<span class="num">0</span>]));
+    <span class="kw">return</span> stones.length - roots.<span class="fn">size</span>();          <span class="cm">// n - number of components</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n &middot; log n)</code> amortized &mdash; a small number of find/union operations per stone. (Path halving alone, without union by rank/size, gives logarithmic amortized cost; add union by rank/size to reach the near-constant inverse-Ackermann bound <code>&alpha;(n)</code>.) Space <code>O(n)</code> for the parent map and the root set (each stone contributes at most one row id and one column id).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Why the answer is <code>n - C</code>.</strong> A connected component with <code>k</code> stones always has a removal order leaving exactly one behind (remove leaves of a spanning tree last), so it contributes <code>k - 1</code> removals; summing over components gives <code>n - C</code>. <strong>Separate the row and column namespaces.</strong> Row <code>3</code> and column <code>3</code> are different entities; mixing them (e.g. keying both by the raw integer <code>3</code>) merges unrelated stones. Encoding columns as <code>~c</code> keeps the two id spaces disjoint. <strong>Count roots over stones, not over the map.</strong> Iterate the stones and collect <code>find(row)</code>; each stone&rsquo;s row and column share a root, so counting either is fine, but tallying every key in the parent map double-counts. <strong>Integer boxing in the loop guard.</strong> The comparison <code>parent.get(x) != x</code> is safe only because <code>x</code> is a primitive <code>int</code> (the boxed <code>Integer</code> is auto-unboxed); comparing two boxed <code>Integer</code>s with <code>!=</code> would test references and break for values outside the <code>-128..127</code> cache. <strong>Single stone.</strong> One stone forms one component, giving <code>1 - 1 = 0</code> removals. A common follow-up asks you to prove the &ldquo;leave one per component&rdquo; claim rigorously.</p></div>
+</div>
+
+
+<!-- PROBLEM: Longest Increasing Path in a Matrix -->
+<div class="card">
+<h2>Longest Increasing Path in a Matrix</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given an <code>m &times; n</code> matrix of integers, return the length of the longest path along which values are <strong>strictly increasing</strong>. From any cell you may step to an adjacent cell 4-directionally (up, down, left, right), and only to a strictly larger value. Diagonal moves are not allowed and you may start and end anywhere.</p>
+<ul>
+  <li>&ldquo;Length&rdquo; counts cells, so a single cell is a path of length <code>1</code>.</li>
+  <li>Equal neighbours never connect, so a matrix of all-equal values has answer <code>1</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for the matrix <code>[[3,4,5,2],[6,1,7,8],[2,0,9,3]]</code> the answer is <code>6</code> (verified by running the code). One longest strictly-increasing path is <code>0 &rarr; 1 &rarr; 4 &rarr; 5 &rarr; 7 &rarr; 8</code>, walking from the <code>0</code> at row 2 up to <code>1</code>, up to <code>4</code>, right to <code>5</code>, down to <code>7</code>, then right to <code>8</code> &mdash; six cells, each strictly greater than the last.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Because moves only ever go from a smaller value to a strictly larger one, the &ldquo;can-step-to&rdquo; relation is <strong>acyclic</strong> &mdash; the grid is really a DAG, and we want its longest path. Define <code>f(i, j)</code> = the length of the longest increasing path <em>starting</em> at <code>(i, j)</code>. Then <code>f(i, j) = 1 + max</code> over strictly-larger neighbours of <code>f(neighbour)</code>, or <code>1</code> if none qualifies. Compute it with <strong>DFS plus memoisation</strong>: each cell&rsquo;s answer is solved once and cached, so the whole grid is evaluated in linear time. No explicit visited set is needed for correctness because the strict-increase rule already forbids revisiting a cell within one path.</p>
+
+<pre><span class="kw">private static final</span> <span class="kw">int</span>[][] DIRS = {{<span class="num">1</span>,<span class="num">0</span>}, {-<span class="num">1</span>,<span class="num">0</span>}, {<span class="num">0</span>,<span class="num">1</span>}, {<span class="num">0</span>,-<span class="num">1</span>}};
+<span class="kw">private</span> <span class="kw">int</span> m, n;
+<span class="kw">private</span> <span class="kw">int</span>[][] memo;
+
+<span class="kw">public</span> <span class="kw">int</span> <span class="fn">longestIncreasingPath</span>(<span class="kw">int</span>[][] matrix) {
+    <span class="kw">if</span> (matrix == <span class="kw">null</span> || matrix.length == <span class="num">0</span> || matrix[<span class="num">0</span>].length == <span class="num">0</span>) <span class="kw">return</span> <span class="num">0</span>;
+    m = matrix.length; n = matrix[<span class="num">0</span>].length;
+    memo = <span class="kw">new</span> <span class="kw">int</span>[m][n];
+    <span class="kw">int</span> best = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; m; i++)
+        <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; n; j++)
+            best = <span class="type">Math</span>.<span class="fn">max</span>(best, <span class="fn">dfs</span>(matrix, i, j));
+    <span class="kw">return</span> best;
+}
+<span class="cm">// Longest strictly-increasing path starting at (i, j); memoised.</span>
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">dfs</span>(<span class="kw">int</span>[][] matrix, <span class="kw">int</span> i, <span class="kw">int</span> j) {
+    <span class="kw">if</span> (memo[i][j] != <span class="num">0</span>) <span class="kw">return</span> memo[i][j];      <span class="cm">// each cell solved once</span>
+    <span class="kw">int</span> best = <span class="num">1</span>;                                <span class="cm">// the cell itself</span>
+    <span class="kw">for</span> (<span class="kw">int</span>[] d : DIRS) {
+        <span class="kw">int</span> x = i + d[<span class="num">0</span>], y = j + d[<span class="num">1</span>];
+        <span class="kw">if</span> (x &gt;= <span class="num">0</span> &amp;&amp; x &lt; m &amp;&amp; y &gt;= <span class="num">0</span> &amp;&amp; y &lt; n &amp;&amp; matrix[x][y] &gt; matrix[i][j])
+            best = <span class="type">Math</span>.<span class="fn">max</span>(best, <span class="num">1</span> + <span class="fn">dfs</span>(matrix, x, y));
+    }
+    <span class="kw">return</span> memo[i][j] = best;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(m &middot; n)</code> &mdash; each of the <code>mn</code> cells is fully computed once and thereafter returned from the cache in <code>O(1)</code>; the four-neighbour scan is constant work per cell. Space <code>O(m &middot; n)</code> for the memo table plus up to <code>O(m &middot; n)</code> recursion depth in the worst case (a single long snake).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Strictly greater, not &ge;.</strong> The path must strictly increase; allowing equal neighbours creates cycles and lets the recursion loop forever. <strong>Memoisation is what makes it linear.</strong> Without the cache the DFS re-explores overlapping suffixes and blows up to exponential; the <code>memo[i][j] != 0</code> guard collapses it to <code>O(mn)</code>. <strong>Zero is a safe &ldquo;unset&rdquo; sentinel.</strong> Every real answer is at least <code>1</code>, so <code>0</code> unambiguously means &ldquo;not yet computed.&rdquo; <strong>No separate visited set needed.</strong> The strict-increase condition guarantees a cell can never reappear on its own path, so memoisation alone is correct &mdash; a subtle point interviewers like to probe. <strong>All-equal / empty inputs.</strong> An all-equal matrix returns <code>1</code> (no move ever qualifies), and the guard handles a <code>null</code> or empty matrix. An alternative bottom-up solution peels cells in increasing-value order (a topological sort of the DAG), which also removes the recursion-depth concern.</p></div>
+</div>
+
+
+<!-- PROBLEM: Robot Room Cleaner -->
+<div class="card">
+<h2>Robot Room Cleaner</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>A robot sits in an unknown room modelled as a grid of open and blocked cells. You <em>cannot</em> see the grid or your coordinates; you may only call an abstract robot API. Clean every reachable open cell. The API exposes purely relative motion:</p>
+<pre><span class="kw">interface</span> <span class="type">Robot</span> {
+    <span class="cm">// Move one step forward if the cell ahead is open (and enter it),</span>
+    <span class="cm">// returning true; if it is blocked, stay put and return false.</span>
+    <span class="kw">boolean</span> <span class="fn">move</span>();
+    <span class="kw">void</span> <span class="fn">turnLeft</span>();   <span class="cm">// rotate 90 degrees in place</span>
+    <span class="kw">void</span> <span class="fn">turnRight</span>();
+    <span class="kw">void</span> <span class="fn">clean</span>();       <span class="cm">// clean the current cell</span>
+}</pre>
+<ul>
+  <li>The robot starts on an open cell; the room is fully enclosed by (implicit) walls.</li>
+  <li>You never learn absolute coordinates &mdash; you must impose your own coordinate frame.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for a room whose open (<code>1</code>) and blocked (<code>0</code>) cells are <code>[[1,1,1,0,1],[1,0,1,1,1],[1,1,1,0,1],[0,1,0,1,1]]</code> with the robot starting at row 1, column 3, the algorithm cleans every reachable open cell. Simulated against a mock robot, it cleaned <strong>15</strong> cells &mdash; exactly the number of open cells connected to the start &mdash; and finished back where it began.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>It is a <strong>backtracking DFS</strong> over an implicit grid. Since you cannot query position, invent your own frame: call the start <code>(0, 0)</code> facing &ldquo;up,&rdquo; and track a virtual <code>(x, y)</code> and heading as you recurse. Keep a <code>visited</code> set of the virtual coordinates already cleaned. At each cell: clean it, mark it, then try all four directions in a fixed clockwise order. For a direction, if its target cell is unvisited and <code>move()</code> succeeds, recurse into it; on return, execute a <strong>&ldquo;go back&rdquo; protocol</strong> &mdash; turn 180&deg;, move one step, turn 180&deg; again &mdash; which restores both the previous cell <em>and</em> the previous heading so the next direction is tried from a known state. After probing all four directions the robot has made a full turn and is oriented as it started. The invariant &ldquo;every call returns the robot to the exact cell and facing it began with&rdquo; is what makes the recursion compose.</p>
+
+<pre><span class="cm">// Clockwise directions starting from "up": up, right, down, left.</span>
+<span class="kw">private static final</span> <span class="kw">int</span>[][] DIRS = {{-<span class="num">1</span>,<span class="num">0</span>}, {<span class="num">0</span>,<span class="num">1</span>}, {<span class="num">1</span>,<span class="num">0</span>}, {<span class="num">0</span>,-<span class="num">1</span>}};
+<span class="kw">private</span> <span class="type">Set</span>&lt;<span class="type">String</span>&gt; visited = <span class="kw">new</span> <span class="type">HashSet</span>&lt;&gt;();
+
+<span class="kw">public</span> <span class="kw">void</span> <span class="fn">cleanRoom</span>(<span class="type">Robot</span> robot) {
+    <span class="fn">dfs</span>(robot, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>);          <span class="cm">// start at the virtual origin, facing up</span>
+}
+<span class="cm">// (x, y) = virtual coordinates relative to the start; dir = current facing.</span>
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">dfs</span>(<span class="type">Robot</span> robot, <span class="kw">int</span> x, <span class="kw">int</span> y, <span class="kw">int</span> dir) {
+    robot.<span class="fn">clean</span>();
+    visited.<span class="fn">add</span>(x + <span class="str">","</span> + y);
+    <span class="kw">for</span> (<span class="kw">int</span> k = <span class="num">0</span>; k &lt; <span class="num">4</span>; k++) {
+        <span class="kw">int</span> nd = (dir + k) % <span class="num">4</span>;                   <span class="cm">// absolute direction being tried</span>
+        <span class="kw">int</span> nx = x + DIRS[nd][<span class="num">0</span>], ny = y + DIRS[nd][<span class="num">1</span>];
+        <span class="kw">if</span> (!visited.<span class="fn">contains</span>(nx + <span class="str">","</span> + ny) &amp;&amp; robot.<span class="fn">move</span>()) {
+            <span class="fn">dfs</span>(robot, nx, ny, nd);
+            <span class="fn">goBack</span>(robot);                        <span class="cm">// undo the step, keep facing nd</span>
+        }
+        robot.<span class="fn">turnRight</span>();                        <span class="cm">// face the next direction to try</span>
+    }
+}
+<span class="cm">// Return to the previous cell and restore the pre-move facing.</span>
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">goBack</span>(<span class="type">Robot</span> robot) {
+    robot.<span class="fn">turnRight</span>();
+    robot.<span class="fn">turnRight</span>();
+    robot.<span class="fn">move</span>();
+    robot.<span class="fn">turnRight</span>();
+    robot.<span class="fn">turnRight</span>();
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(N)</code> where <code>N</code> is the number of cells reachable from the start &mdash; each is cleaned once, and the constant per-cell work is at most four direction probes plus a bounded-length backtrack. Space <code>O(N)</code> for the <code>visited</code> set and the recursion stack.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>The go-back protocol must restore heading too.</strong> Turn 180&deg;, move, then turn 180&deg; again &mdash; if you skip the second U-turn the robot faces the wrong way and the loop&rsquo;s <code>turnRight</code> bookkeeping desynchronises, corrupting every later direction. <strong>Keep the turn count and direction table consistent.</strong> The four <code>turnRight</code> calls across the loop bring the robot back to its entry heading; pairing that with a clockwise <code>DIRS</code> table is what keeps virtual and physical headings in lock-step. <strong>Check <code>visited</code> before <code>move()</code>.</strong> Testing the target cell first avoids stepping onto an already-cleaned cell and needing to walk back &mdash; and a collision-proof key matters: pack the coordinates as a string (or a large-base integer), since a naive <code>x*W + y</code> can alias for negative virtual coordinates, which occur as soon as the robot moves &ldquo;up&rdquo; or &ldquo;left&rdquo; of the origin. <strong>You cannot precompute the graph.</strong> Walls are discovered only by a failed <code>move()</code>, so exploration and traversal are inseparable. Single-cell rooms clean exactly one cell. Interviewers often ask you to walk through the exact turn sequence for one backtrack step, or to reason about why relative coordinates suffice without ever knowing the true grid.</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_problems_heaps_topk.html">&lsaquo; Heaps, Top-K &amp; Greedy</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_trees.html">Trees — Recursion, DFS &amp; Tree DP &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Server Firmware &amp; Boot: BIOS/UEFI, BMC &amp; Root of Trust — The Interview Prep Handbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XV · Chapter 1 — <b>Server Firmware &amp; Boot</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Server Firmware &amp; Boot: BIOS/UEFI, BMC &amp; Root of Trust</h1>
+  <div class="sub">What actually happens between pressing the power button and the kernel taking over — told for a backend engineer. We walk the boot chain (security microcontroller → UEFI PI phases → boot loader → kernel), the difference between <em>enforcing</em> trust (Secure Boot) and <em>attesting</em> to it (Measured Boot + TPM), the always-on management sidecar (the BMC, IPMI vs Redfish), how a fleet network-boots thousands of machines, and how you debug a server that won't even POST. Every low-level term is bridged from a concept you already use in distributed systems.</div>
+</header>
+
+<div class="ins"><div class="insl">Read this like a story</div><p>Think of a server booting as a <strong>chain of signed handoffs</strong>, each stage a tiny "init" that starts the next. §1 sets the scene: the actors and why firmware is its own discipline. §2 walks the boot chain from the first instruction to the kernel, and §3 zooms into UEFI's four PI phases and its variable store. §4 is the security core — Secure Boot (enforce) vs Measured Boot (attest) — and §5 is the hardware root of trust that anchors both, plus why anti-rollback matters. §6 introduces the BMC, the little always-on computer that manages the box even when the main OS is dead (IPMI vs Redfish). §7 is how a fleet network-boots at scale (PXE/iPXE). §8 touches PCIe enumeration and ACPI power states at boot. §9 is the debugging playbook — serial console, POST codes, the BMC event log. §10 is the interview Q&amp;A. Read it once for the story, then use the boxes as a checklist.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. Why Firmware Is Its Own World</h2>
+<p class="lead">As a backend engineer you live above the operating system: you call syscalls, the kernel schedules you, the hardware is an abstraction. Firmware is the layer <em>below</em> the OS — the code that runs on bare metal before there is a kernel, a filesystem, or even initialized RAM. When you provision, debug, or reason about the reliability of a physical fleet, this is the layer that decides whether a machine ever becomes a "server" at all.</p>
+
+<p>The mental bridge: <strong>firmware is the pre-OS "init" system</strong>, and there are several nested inits, each starting the next. Power-on doesn't jump straight to your bootloader; a sequence of ever-more-capable stages brings the hardware to life first — much like how a distributed system has a bootstrap sequence (config service → service discovery → your app) before the first request is served.</p>
+
+<table class="tbl">
+  <tr><th>Actor</th><th>What it is</th><th>Backend analogy</th></tr>
+  <tr><td><strong>BIOS / UEFI firmware</strong></td><td>The pre-OS code on a flash chip that inits hardware and loads a boot loader.</td><td>The bootstrap/init that must run before your service does.</td></tr>
+  <tr><td><strong>Boot loader</strong></td><td>A small program (e.g. GRUB, systemd-boot) that loads the OS kernel.</td><td>A launcher/supervisor that <code>exec</code>s the real process.</td></tr>
+  <tr><td><strong>BMC</strong></td><td>A tiny separate always-on computer that manages the box out-of-band.</td><td>An admin sidecar / control-plane agent that runs even when the app is down.</td></tr>
+  <tr><td><strong>Root of trust</strong></td><td>A hardware anchor that begins a chain of signature checks.</td><td>A trust anchor / root CA at the base of a certificate chain.</td></tr>
+  <tr><td><strong>TPM</strong></td><td>A security chip that records measurements of what booted.</td><td>An append-only, tamper-evident audit log of the boot.</td></tr>
+</table>
+
+<div class="ins"><div class="insl">The one-sentence frame</div><p>Booting a server is a relay race of small programs handing control to the next, ideally where every runner checks the next runner's signature before passing the baton — and where a separate referee (the BMC) can watch, restart, or replace runners even if the race stalls.</p></div>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. The Boot Chain: Power-On to Kernel</h2>
+<p>When power is applied, the main CPU cannot simply start running your OS — DRAM isn't even usable yet (its timing parameters haven't been programmed), no devices are enumerated, and there's no notion of a disk. A modern server brings itself up in stages. On many contemporary platforms the <em>very first</em> code to run isn't even on the main CPU: a small dedicated <strong>security/platform microcontroller</strong> powers up first, verifies the main firmware image, and only then releases the main CPU cores from reset.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker>
+  </defs>
+  <rect x="12"  y="70" width="120" height="52" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/>
+  <text x="72"  y="92" text-anchor="middle" font-size="10" font-weight="700" fill="#6d28d9">Security</text>
+  <text x="72"  y="106" text-anchor="middle" font-size="9" fill="#6d28d9">microcontroller</text>
+  <rect x="164" y="70" width="130" height="52" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="229" y="88" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">UEFI PI phases</text>
+  <text x="229" y="102" text-anchor="middle" font-size="8.5" fill="#1d4ed8">SEC→PEI→DXE→BDS</text>
+  <text x="229" y="114" text-anchor="middle" font-size="8" fill="#1d4ed8">(POST + mem training)</text>
+  <rect x="326" y="70" width="120" height="52" rx="6" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="386" y="92" text-anchor="middle" font-size="10" font-weight="700" fill="#0f766e">Boot loader</text>
+  <text x="386" y="106" text-anchor="middle" font-size="8.5" fill="#0f766e">from ESP</text>
+  <rect x="478" y="70" width="120" height="52" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="538" y="92" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">OS kernel</text>
+  <text x="538" y="106" text-anchor="middle" font-size="8.5" fill="#166534">+ initramfs</text>
+  <rect x="630" y="70" width="120" height="52" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.4"/>
+  <text x="690" y="92" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">User space</text>
+  <text x="690" y="106" text-anchor="middle" font-size="8.5" fill="#92400e">init / systemd</text>
+  <line x1="132" y1="96" x2="162" y2="96" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ar)"/>
+  <line x1="294" y1="96" x2="324" y2="96" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ar)"/>
+  <line x1="446" y1="96" x2="476" y2="96" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ar)"/>
+  <line x1="598" y1="96" x2="628" y2="96" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="72"  y="150" text-anchor="middle" font-size="8.5" fill="#526176">verifies + releases</text>
+  <text x="72"  y="162" text-anchor="middle" font-size="8.5" fill="#526176">main CPU from reset</text>
+  <text x="386" y="150" text-anchor="middle" font-size="8.5" fill="#526176">hands off to</text>
+  <text x="538" y="150" text-anchor="middle" font-size="8.5" fill="#526176">kernel takes over</text>
+  <text x="770" y="96" font-size="9" fill="#526176">→ ready</text>
+</svg>
+<div class="svg-cap">The server boot chain: a security microcontroller validates and releases the main CPU, UEFI firmware inits hardware through its PI phases, a boot loader loads the kernel, and the kernel hands off to user space. Each arrow is a handoff; in a secure design each is also a signature check (§4–§5).</div>
+</div>
+
+<h3>POST and memory training</h3>
+<p><strong>POST</strong> (Power-On Self-Test) is the firmware's early "does this hardware basically work?" pass: it checks the CPU, initializes and sizes DRAM, and probes core devices before handing off. The historically slow part on big servers is <strong>memory training</strong> (a.k.a. DRAM initialization): the memory controller must calibrate the electrical timing of the high-speed DDR bus — voltages, drive strength, and per-bit delays so data is sampled in the correct window. This is why a server with terabytes of RAM can take minutes to reach the boot menu while a laptop is nearly instant: training many DIMMs across many channels is genuinely time-consuming, and it's a prime target for boot-time optimization (some platforms cache trained parameters to skip full retraining on a warm reboot).</p>
+
+<h3>Legacy BIOS vs UEFI</h3>
+<p>The old <strong>BIOS</strong> (Basic Input/Output System) booted in 16-bit real mode, read the first 512-byte sector of a disk (the MBR) as boot code, and offered services through software interrupts. It worked for decades but was cramped: 2 TiB disk limit via MBR partitioning, no standard driver model, minimal security. <strong>UEFI</strong> (Unified Extensible Firmware Interface) replaced it with a structured, mostly-32/64-bit environment: a real driver model, a partition scheme (GPT) that handles huge disks, boot entries stored in non-volatile variables instead of a magic sector, and — crucially — a framework for Secure Boot. Most servers today run UEFI; "BIOS" survives mostly as a colloquial name for "the firmware setup screen."</p>
+
+<div class="tip"><div class="tipl">Interview signal</div><p>If asked "BIOS or UEFI?", don't treat them as interchangeable. UEFI is a specification with a driver model, GPT support, an EFI System Partition, a variable store, and Secure Boot; legacy BIOS is the 16-bit, MBR-sector, interrupt-service predecessor. Knowing <em>why</em> UEFI exists (large disks, standardized drivers, verified boot) shows you understand the platform, not just the buzzword.</p></div>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. Inside UEFI: The PI Phases &amp; the Variable Store</h2>
+<p>The UEFI Platform Initialization (PI) specification breaks firmware startup into named phases. You may be asked to "walk the phases" in a firmware-adjacent interview, so it is worth learning the sequence and the one-line job of each. The bridge: each phase is a progressively more capable init stage — the earliest runs with almost nothing (no RAM), the last has a full driver environment and can read a disk.</p>
+
+<table class="tbl">
+  <tr><th>Phase</th><th>Name</th><th>Job (one line)</th></tr>
+  <tr><td><strong>SEC</strong></td><td>Security</td><td>The very first code after reset; establishes a temporary root of trust and sets up "cache-as-RAM" because real DRAM isn't up yet.</td></tr>
+  <tr><td><strong>PEI</strong></td><td>Pre-EFI Initialization</td><td>Runs small "PEI modules" (PEIMs) to do the earliest init — critically, <strong>memory training</strong> — then hands a memory map forward.</td></tr>
+  <tr><td><strong>DXE</strong></td><td>Driver Execution Environment</td><td>The bulk of firmware: loads <strong>DXE drivers</strong> that bring up chipset, PCIe, storage, USB, network — this is where most devices get initialized.</td></tr>
+  <tr><td><strong>BDS</strong></td><td>Boot Device Selection</td><td>Decides <em>what</em> to boot: evaluates boot entries/boot order and launches a boot loader (or the setup UI, or a network boot).</td></tr>
+</table>
+<p>(There are later phases — TSL/RT/AL — covering the transient system load, runtime, and after-life; SEC→PEI→DXE→BDS is the sequence to memorize.)</p>
+
+<h3>Firmware volumes &amp; DXE drivers</h3>
+<p>The firmware image on the flash chip is organized into <strong>firmware volumes</strong> — containers holding firmware files (PEIMs, DXE drivers, the boot manager). Think of a firmware volume like a read-only package archive baked into ROM: the DXE dispatcher walks it, resolves dependencies, and loads drivers much as a plugin host discovers and loads modules. A <strong>DXE driver</strong> is exactly that mental model — a loadable module that publishes a "protocol" (an interface) other components can call, e.g. a disk-I/O protocol or a network protocol.</p>
+
+<h3>The EFI System Partition (ESP)</h3>
+<p>UEFI reads boot loaders from a real, OS-visible partition: the <strong>EFI System Partition</strong>, a FAT-formatted partition (conventionally mounted at <code>/boot/efi</code> on Linux) holding <code>.efi</code> executables under <code>/EFI/&lt;vendor&gt;/</code>. This is a big improvement over the MBR magic sector: boot loaders are just files on a normal filesystem the firmware knows how to read.</p>
+
+<h3>Boot entries, boot order &amp; the variable store</h3>
+<p>UEFI keeps configuration in <strong>NVRAM variables</strong> — a small key-value store in non-volatile flash. Boot configuration lives here as <code>Boot####</code> entries (each a path to an <code>.efi</code> loader) plus a <code>BootOrder</code> list. On Linux you inspect and edit these with <code>efibootmgr</code>:</p>
+<pre><span class="cm"># list boot entries and current order (conceptual output)</span>
+$ efibootmgr
+BootCurrent: 0001
+BootOrder: 0001,0000,2001
+Boot0000* Windows Boot Manager
+Boot0001* ubuntu    HD(1,GPT,...)/File(\EFI\ubuntu\shimx64.efi)
+Boot2001* UEFI: PXE Network
+
+<span class="cm"># create a new entry pointing at a loader on the ESP</span>
+$ efibootmgr --create --disk /dev/sda --part 1 \
+    --loader '\EFI\ubuntu\shimx64.efi' --label 'ubuntu'</pre>
+<div class="warn"><div class="warnl">The variable store is finite and precious</div><p>The UEFI variable store is small flash with limited endurance. Secure Boot keys, boot entries, and vendor settings all live there. Filling it or corrupting it can render a machine unbootable — there have been real cases where writing too many/too-large variables "bricked" firmware. Treat NVRAM as scarce, tamper-relevant state, not scratch space.</p></div>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. Secure Boot vs Measured Boot</h2>
+<p>Two mechanisms protect the boot chain, and the distinction matters because they solve different problems. The crisp distinction: <strong>Secure Boot <em>enforces</em></strong> — it refuses to run code that isn't signed by a trusted key. <strong>Measured Boot <em>attests</em></strong> — it lets everything run but records a tamper-evident fingerprint of exactly what ran, so a verifier can later decide whether to trust the result.</p>
+
+<div class="miniboxes">
+  <div class="mb"><div class="mbh">Secure Boot — enforce (gate)</div><ul>
+    <li>Checks each stage's signature <em>before</em> executing it.</li>
+    <li>Unsigned/untrusted code is <strong>blocked</strong> from running.</li>
+    <li>Decision happens <strong>locally, at boot time</strong>.</li>
+    <li>Analogy: a bouncer who won't let you in without a valid ticket.</li>
+  </ul></div>
+  <div class="mb"><div class="mbh">Measured Boot — attest (log)</div><ul>
+    <li>Hashes each stage and records it into the TPM <em>as it runs</em>.</li>
+    <li>Everything still runs; nothing is blocked.</li>
+    <li>A <strong>remote verifier</strong> later inspects the log/quote.</li>
+    <li>Analogy: a tamper-evident guest book auditors read afterward.</li>
+  </ul></div>
+</div>
+
+<h3>Secure Boot: the PK / KEK / db / dbx key hierarchy</h3>
+<p>UEFI Secure Boot verifies each executable (boot loader, and often the kernel) against a set of keys stored in NVRAM. There is a deliberate hierarchy so ownership and updates are controlled:</p>
+<table class="tbl">
+  <tr><th>Key/DB</th><th>Full name</th><th>Role</th></tr>
+  <tr><td><code>PK</code></td><td>Platform Key</td><td>The top owner key (usually the platform/OEM owner). Controls who may update the KEK. Establishes "who owns this machine's trust."</td></tr>
+  <tr><td><code>KEK</code></td><td>Key Exchange Key(s)</td><td>Keys authorized to update the signature databases (<code>db</code>/<code>dbx</code>). The bridge between the platform owner and the OS vendors.</td></tr>
+  <tr><td><code>db</code></td><td>Signature database (allow)</td><td>The trusted signers/hashes: if a binary is signed by something in <code>db</code>, it may run. (An allowlist.)</td></tr>
+  <tr><td><code>dbx</code></td><td>Forbidden signature db (deny)</td><td>Revoked signatures/hashes: even if otherwise valid, a match here is <strong>refused</strong>. (A denylist — how vulnerable loaders get revoked.)</td></tr>
+</table>
+<p>At boot, BDS checks the boot loader's signature against <code>db</code> (and <code>dbx</code>); a trusted, non-revoked signature is required or the loader won't execute. The chain then continues — a signed boot loader verifies the kernel, and so on. In the common Linux setup, a small first-stage loader (<code>shim</code>) signed by a widely-trusted key carries a distro key and validates the next stage, so distros can boot on machines whose <code>db</code> only trusts the mainstream keys.</p>
+
+<div class="trap"><div class="trapl">Common mistake</div><p>Saying "Secure Boot and Measured Boot are the same, both use the TPM." Secure Boot is fundamentally a <em>signature-enforcement</em> gate performed by firmware; it can function without measuring anything into a TPM. Measured Boot is fundamentally about <em>recording hashes into the TPM for later attestation</em>; it blocks nothing on its own. They're complementary — many systems run both — but conflating "enforce" with "attest" is the classic tell that a candidate hasn't used them.</p></div>
+
+<h3>Measured Boot: TPM and PCRs</h3>
+<p>A <strong>TPM</strong> (Trusted Platform Module) is a small security chip (or firmware equivalent) with special registers called <strong>PCRs</strong> (Platform Configuration Registers). A PCR cannot be freely written — it can only be <strong>extended</strong>: <code>PCR_new = Hash(PCR_old ‖ new_measurement)</code>. This one-way, order-dependent chaining makes the PCR a compact, tamper-evident summary of a sequence of events — exactly like a hash chain / append-only log where you can't rewrite history without it showing.</p>
+
+<div class="formula"><span class="cm"># Each stage hashes the NEXT thing before running it, and extends a PCR:</span>
+PCR = <b>Hash</b>( PCR <b>‖</b> measure(next_stage) )   <span class="cm"># repeated for firmware, loader, kernel, config...</span>
+<span class="cm"># Final PCR value depends on WHAT ran and IN WHAT ORDER — change anything, the value changes.</span></div>
+
+<p>Because the final PCR values are determined by exactly what booted, two powerful things become possible:</p>
+<ul>
+  <li><strong>Remote attestation.</strong> The TPM can produce a signed <em>quote</em> of its PCRs. A remote server checks the quote against known-good values before trusting the machine (e.g. before admitting it to a cluster or releasing secrets to it). This is the bridge to zero-trust fleet admission: prove what you booted, then get access.</li>
+  <li><strong>Sealing.</strong> A secret (e.g. a disk-encryption key) can be <em>sealed</em> to specific PCR values so the TPM only releases it if the machine booted the expected software. Tamper with the boot chain and the key stays locked.</li>
+</ul>
+
+<div class="ins"><div class="insl">The clean contrast</div><p><strong>Secure Boot</strong> answers "should I <em>run</em> this?" locally, before execution, by checking signatures. <strong>Measured Boot</strong> answers "what <em>did</em> run?" by recording hashes for a verifier to judge later. Enforce vs attest; gate vs audit log; local decision vs remote decision.</p></div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. The Hardware Root of Trust</h2>
+<p>Both mechanisms above rest on a question: <em>who verifies the first verifier?</em> If the firmware checks the boot loader's signature, what stops an attacker from replacing the firmware itself? The answer is a <strong>hardware root of trust</strong>: a piece of the system that is <em>immutable</em> and <em>trusted by construction</em>, from which a chain of signature checks extends outward. Each stage verifies the next before handing off, so trust flows from an anchor you cannot rewrite.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 820 170" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar2" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#16a34a"/></marker>
+  </defs>
+  <rect x="12"  y="60" width="150" height="54" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.6"/>
+  <text x="87"  y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b">Immutable ROM</text>
+  <text x="87"  y="96" text-anchor="middle" font-size="8.5" fill="#991b1b">root of trust (in silicon)</text>
+  <rect x="196" y="60" width="140" height="54" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.4"/>
+  <text x="266" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">1st-stage firmware</text>
+  <text x="266" y="96" text-anchor="middle" font-size="8.5" fill="#92400e">(signature verified)</text>
+  <rect x="370" y="60" width="120" height="54" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="430" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">UEFI / main FW</text>
+  <text x="430" y="96" text-anchor="middle" font-size="8.5" fill="#1d4ed8">(verified)</text>
+  <rect x="524" y="60" width="120" height="54" rx="6" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="584" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#0f766e">Boot loader</text>
+  <text x="584" y="96" text-anchor="middle" font-size="8.5" fill="#0f766e">(verified)</text>
+  <rect x="678" y="60" width="120" height="54" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="738" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">Kernel</text>
+  <text x="738" y="96" text-anchor="middle" font-size="8.5" fill="#166534">(verified)</text>
+  <line x1="162" y1="87" x2="194" y2="87" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <line x1="336" y1="87" x2="368" y2="87" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <line x1="490" y1="87" x2="522" y2="87" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <line x1="644" y1="87" x2="676" y2="87" stroke="#16a34a" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <text x="410" y="140" text-anchor="middle" font-size="9" fill="#526176">each stage verifies the next's signature before handing off — trust flows left→right from the immutable anchor</text>
+</svg>
+<div class="svg-cap">Chain of trust: an immutable ROM (trusted by construction) verifies the first mutable firmware, which verifies the next stage, and so on to the kernel. Break any link's signature check and the chain refuses to proceed.</div>
+</div>
+
+<p>On real platforms the anchor is often a dedicated <strong>security chip or microcontroller</strong> separate from the main CPU, holding immutable boot code and public-key hashes in fuses/ROM. Publicly, this design pattern is well-known — Google, for example, has publicly described a purpose-built security chip (Titan) that acts as a hardware root of trust to verify a machine's firmware before the main CPU runs. The generic idea is what matters for an interview: <strong>a small, immutable, hard-to-tamper element that establishes the first link so everything above it can be verified.</strong></p>
+
+<h3>Firmware signing &amp; anti-rollback</h3>
+<p>Two properties make the chain trustworthy in practice:</p>
+<ul>
+  <li><strong>Firmware signing.</strong> Firmware images are cryptographically signed; the root of trust verifies the signature before executing them. An attacker who flashes a malicious firmware image can't produce a valid signature, so it's rejected — this is what defends against persistent, below-the-OS implants that survive reinstalling the OS.</li>
+  <li><strong>Anti-rollback (version downgrade protection).</strong> Signing alone isn't enough: an attacker could flash an <em>old, legitimately-signed but vulnerable</em> version to re-open a patched hole. Anti-rollback stores a monotonic minimum-version counter (often in fuses or secure storage) and refuses to run firmware older than it. The bridge: it's like refusing to accept a request signed with a rotated-out (but once-valid) credential — the signature checks out, but policy still rejects it as stale.</li>
+</ul>
+
+<div class="tip"><div class="tipl">Interview signal</div><p>"Why sign firmware if we already have Secure Boot for the OS?" → Secure Boot protects the <em>OS</em> boot chain, but it runs on firmware that itself must be trusted. The hardware root of trust plus firmware signing protects the <em>firmware</em>, closing the "who verifies the verifier?" gap. Add anti-rollback and you also stop downgrade attacks to known-vulnerable-but-signed images. Naming all three layers — root of trust, signing, anti-rollback — is the strong answer.</p></div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. The BMC: Out-of-Band Management</h2>
+<p>Here is the actor that most surprises engineers coming from pure software: a server contains a <strong>second, independent computer</strong> whose only job is to manage the first one. It's the <strong>BMC</strong> (Baseboard Management Controller) — a small microcontroller with its own CPU, RAM, firmware, and (usually) its own dedicated network port. It's powered by standby power, so it runs <em>even when the main server is "off"</em> (as long as the PSU has AC). The mental bridge: <strong>the BMC is an always-on admin sidecar / out-of-band control-plane agent</strong> for the physical box.</p>
+
+<h3>Why "out-of-band" is the whole point</h3>
+<p>"In-band" management means managing a machine through its main OS — SSH, an agent, your normal tooling. That works only while the OS is healthy. "Out-of-band" (OOB) means a completely separate path that doesn't depend on the main OS or its NIC or its power state. This is exactly what you need when things go wrong: the main OS has kernel-panicked, hung before boot, or the machine won't POST. With a BMC you can still power-cycle it, watch its console, read its sensors, and reflash its firmware — none of which the (dead) main OS could help with.</p>
+
+<div class="ins"><div class="insl">Bridge</div><p>Think of the BMC like a control plane that stays up when the data plane is down. Your service can crash-loop, but the orchestration/agent layer still reports status and can restart it. The BMC is that layer implemented in hardware, for an entire physical machine — including its power button.</p></div>
+
+<h3>What a BMC gives you</h3>
+<ul>
+  <li><strong>Sensors &amp; health.</strong> Temperatures, fan speeds, voltages, power draw — readable even with the host off.</li>
+  <li><strong>Power &amp; reset control.</strong> Remote power-on/off, hard reset, cycle — the equivalent of physically standing at the machine.</li>
+  <li><strong>The System Event Log (SEL).</strong> A persistent log of hardware events (thermal trips, ECC memory errors, power faults, watchdog expiries). Often the first place to look when a machine misbehaved before the OS could log anything.</li>
+  <li><strong>Serial-over-LAN (SOL).</strong> Redirects the host's serial console over the network, so you can watch firmware/boot/kernel messages remotely (§9).</li>
+  <li><strong>Remote KVM.</strong> Redirects screen, keyboard, and mouse — "virtual console" — often with virtual media (mount an ISO over the network to reinstall).</li>
+  <li><strong>Out-of-band firmware update.</strong> Update BIOS/UEFI or the BMC's own firmware through the BMC, without booting the host OS.</li>
+</ul>
+
+<h3>IPMI (legacy) vs Redfish (modern)</h3>
+<p>Two protocols talk to BMCs. Know both and why the industry moved:</p>
+<table class="tbl">
+  <tr><th></th><th>IPMI</th><th>Redfish</th></tr>
+  <tr><td><strong>Style</strong></td><td>Legacy binary protocol; a defined message/command set.</td><td>Modern RESTful API — HTTPS with JSON resources.</td></tr>
+  <tr><td><strong>Interface</strong></td><td>Low-level commands over LAN (e.g. via <code>ipmitool</code>) / system interface.</td><td>HTTP verbs on a resource tree (<code>GET/POST/PATCH</code> on <code>/redfish/v1/...</code>).</td></tr>
+  <tr><td><strong>Security</strong></td><td>Aged; several well-known weaknesses in older LAN auth. Often network-isolated.</td><td>TLS, standard auth, schema'd — designed for a security-conscious era.</td></tr>
+  <tr><td><strong>Status</strong></td><td>Ubiquitous but effectively frozen/deprecated for new work.</td><td>The industry direction (DMTF standard); scriptable like any REST API.</td></tr>
+</table>
+<pre><span class="cm"># IPMI (legacy): power status &amp; a remote power cycle</span>
+$ ipmitool -I lanplus -H bmc.host -U admin -P '****' power status
+$ ipmitool -I lanplus -H bmc.host -U admin -P '****' power cycle
+$ ipmitool -I lanplus -H bmc.host -U admin -P '****' sel list   <span class="cm"># dump the event log</span>
+
+<span class="cm"># Redfish (modern): the same ideas as plain REST over HTTPS</span>
+$ curl -sk -u admin:**** https://bmc.host/redfish/v1/Systems/1 | jq .PowerState
+$ curl -sk -u admin:**** -X POST \
+    -H 'Content-Type: application/json' \
+    -d '{"ResetType":"ForceRestart"}' \
+    https://bmc.host/redfish/v1/Systems/1/Actions/ComputerSystem.Reset</pre>
+<div class="warn"><div class="warnl">The BMC is a high-value attack surface</div><p>Because the BMC can power, reflash, and see the console of the host — and runs even when the host is off — a compromised BMC is catastrophic. That's why BMCs belong on an <strong>isolated management network</strong> (never the internet), with strong credentials, and increasingly with their own root of trust and signed firmware. In an interview, noting that OOB management is powerful <em>and</em> a sensitive attack surface shows real operational maturity.</p></div>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Fleet Provisioning: Network Boot at Scale</h2>
+<p>You don't install an OS on ten thousand servers by plugging in a USB stick. Fleets <strong>network-boot</strong> (also called <em>NetBoot</em>): a freshly-racked machine with an empty disk pulls its boot program, then its OS installer, over the network. The mechanism is <strong>PXE</strong> (Preboot Execution Environment) and its modern successor <strong>iPXE</strong>.</p>
+
+<h3>The PXE boot flow (DHCP + TFTP/HTTP)</h3>
+<p>The UEFI firmware includes a network boot capability. When BDS selects "network boot," the flow is:</p>
+<div class="svg-container">
+<svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ar3" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker>
+  </defs>
+  <rect x="30"  y="90" width="150" height="46" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="105" y="110" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">New server</text>
+  <text x="105" y="124" text-anchor="middle" font-size="8.5" fill="#1d4ed8">(empty disk, PXE FW)</text>
+  <rect x="330" y="30" width="160" height="46" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.4"/>
+  <text x="410" y="50" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">DHCP server</text>
+  <text x="410" y="64" text-anchor="middle" font-size="8.5" fill="#92400e">IP + boot-file/next-server</text>
+  <rect x="330" y="150" width="160" height="46" rx="6" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="410" y="170" text-anchor="middle" font-size="10" font-weight="700" fill="#0f766e">TFTP / HTTP server</text>
+  <text x="410" y="184" text-anchor="middle" font-size="8.5" fill="#0f766e">bootloader + kernel + image</text>
+  <rect x="640" y="90" width="150" height="46" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="715" y="110" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">OS installer</text>
+  <text x="715" y="124" text-anchor="middle" font-size="8.5" fill="#166534">auto-provisions disk</text>
+  <line x1="180" y1="102" x2="328" y2="60"  stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#ar3)"/>
+  <text x="250" y="72" font-size="8" fill="#526176">1. DHCP discover</text>
+  <line x1="180" y1="118" x2="328" y2="168" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#ar3)"/>
+  <text x="250" y="158" font-size="8" fill="#526176">2. fetch boot file</text>
+  <line x1="490" y1="168" x2="638" y2="120" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#ar3)"/>
+  <text x="560" y="160" font-size="8" fill="#526176">3. boot → chain to installer</text>
+  <text x="410" y="214" text-anchor="middle" font-size="9" fill="#526176">DHCP hands out an IP plus WHERE to fetch the boot program; the server downloads and runs it, then chain-loads the OS.</text>
+</svg>
+<div class="svg-cap">Network boot: DHCP provides an address and the location of a boot program; the machine downloads it (TFTP for classic PXE, HTTP for iPXE), runs it, and chain-loads the OS installer or image.</div>
+</div>
+<ol>
+  <li><strong>DHCP.</strong> The machine broadcasts a DHCP request. The DHCP reply carries not just an IP address but PXE options: the <em>next-server</em> (where to fetch from) and a <em>boot-file name</em>.</li>
+  <li><strong>Download the boot program.</strong> Classic PXE fetches the boot file over <strong>TFTP</strong> — a tiny, simple, but slow and unencrypted transfer protocol. This is PXE's weak point at scale.</li>
+  <li><strong>iPXE improves it.</strong> <strong>iPXE</strong> is an enhanced network bootloader that speaks <strong>HTTP(S)</strong> (and can boot from iSCSI/HTTP images), supports scripting, and can make boot decisions (chain to different images by MAC, ask a provisioning service what to do). A common pattern is "PXE-chainload iPXE, then iPXE pulls everything else over fast HTTP."</li>
+  <li><strong>Install / boot.</strong> The downloaded program loads a kernel + initramfs (or an installer) that runs an <em>unattended</em> install driven by a config (kickstart/preseed/cloud-init), then the machine reboots into its provisioned OS.</li>
+</ol>
+
+<div class="tip"><div class="tipl">Interview signal</div><p>If asked "how do you install an OS on a bare server remotely?", the strong answer names the pieces and their roles: BMC to power it on and watch the console, PXE/iPXE for network boot, DHCP to hand out the boot-file location, TFTP (classic) or HTTP (iPXE) to transfer it, and an unattended-install config to make it hands-off. Mentioning that TFTP doesn't scale and iPXE-over-HTTP is the modern fix shows depth.</p></div>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. PCIe Enumeration &amp; ACPI Power States at Boot</h2>
+<p>Two topics that firmware touches at boot and that come up in server interviews. Deep PCIe is its own chapter; here is the boot-time slice.</p>
+
+<h3>PCIe enumeration &amp; config space (brief)</h3>
+<p>During DXE, firmware <strong>enumerates</strong> the PCIe topology: it walks buses, discovers devices and functions, and configures them. Each PCIe function exposes a standardized <strong>configuration space</strong> — a small register region firmware reads to identify the device (Vendor/Device ID, class code) and to program its resources. The two things worth knowing by name:</p>
+<ul>
+  <li><strong>BARs (Base Address Registers).</strong> A device advertises how much memory/IO space it needs; firmware assigns each a base address by programming its BARs, carving out non-overlapping regions of the physical address map. After this, the OS can memory-map the device's registers. The bridge: BAR assignment is like a service-discovery + port-allocation step — every device gets a non-conflicting "address" in the machine's address space.</li>
+  <li><strong>MSI-X (interrupts).</strong> Modern devices signal interrupts by writing to a special memory address (message-signaled interrupts) rather than toggling a physical pin. <strong>MSI-X</strong> lets a device have many independent interrupt vectors — essential for high-throughput NICs and accelerators that want per-queue interrupts steered to different CPUs. (Interrupts themselves are the hardware equivalent of a webhook — an asynchronous event callback into the CPU.)</li>
+</ul>
+<p>Firmware does the initial enumeration and resource assignment; the OS later re-reads config space, may re-balance resources, and attaches its own drivers. On big machines with many accelerators, enumerating and initializing every device is itself a measurable chunk of boot time.</p>
+
+<h3>ACPI power states (S-states / C-states)</h3>
+<p><strong>ACPI</strong> (Advanced Configuration and Power Interface) is the standard by which firmware describes the platform to the OS — including hardware topology and power management. Two families of states appear constantly:</p>
+<table class="tbl">
+  <tr><th>State family</th><th>What it controls</th><th>Examples</th></tr>
+  <tr><td><strong>S-states</strong> (system sleep)</td><td>The whole-system power state.</td><td><code>S0</code> working · <code>S3</code> suspend-to-RAM ("sleep") · <code>S4</code> suspend-to-disk ("hibernate") · <code>S5</code> soft-off.</td></tr>
+  <tr><td><strong>C-states</strong> (CPU idle)</td><td>How deeply an idle CPU core is powered down <em>while the system is in S0</em>.</td><td><code>C0</code> executing · <code>C1</code> halt · deeper <code>C</code>-states progressively power down caches/clocks to save energy at the cost of wake-up latency.</td></tr>
+</table>
+<div class="warn"><div class="warnl">Latency vs power — a real tuning knob</div><p>Deeper C-states save power but add <strong>wake-up latency</strong>: a core in a deep idle state takes longer to start executing again. Latency-sensitive servers (trading, real-time) often <em>limit</em> deep C-states in firmware/OS so cores stay responsive — trading energy for predictable low latency. There are also P-states (frequency/voltage scaling) — the same tension between power and performance. Firmware exposes these knobs; the OS drives them.</p></div>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Debugging Boot: When the Server Won't Come Up</h2>
+<p>A scenario many hardware-adjacent interviews reach: "A server won't boot. How do you debug it?" The key insight is that you have <em>no OS</em> to help you, so you fall back to the pre-OS and out-of-band tools. Here's the playbook.</p>
+
+<h3>Serial console &amp; Serial-over-LAN</h3>
+<p>Firmware, boot loader, and kernel can all be configured to emit their messages to a <strong>serial console</strong> — a plain, dependency-free text stream that works long before graphics or the network stack exist. On a server you rarely have a physical serial cable; instead the BMC's <strong>Serial-over-LAN</strong> redirects that stream to you over the management network. This is often the single most useful signal: you watch the boot messages live and see exactly where it stalls (memory training? a device init? the loader? a kernel panic?).</p>
+
+<h3>POST codes</h3>
+<p>When firmware is too early to print text, it emits <strong>POST codes</strong> — small numeric progress codes — historically to a diagnostic display (a two-digit hex readout) and today often readable via the BMC. Each code marks a stage of early init; if the machine hangs, the <em>last</em> POST code tells you which stage it died in (e.g. stuck in memory init points you at a bad DIMM). It's a breadcrumb trail for a boot that never got far enough to say anything human-readable.</p>
+
+<h3>The BMC System Event Log</h3>
+<p>Because the BMC runs independently and persistently, its <strong>SEL</strong> often holds the key evidence for a failure that happened before (or instead of) a successful boot: a correctable/uncorrectable ECC memory error, a thermal shutdown, a power-supply fault, a watchdog timeout. Read the SEL first — it survives across reboots and doesn't need the host OS.</p>
+
+<div class="card">
+<h3>A "won't POST" debugging checklist</h3>
+<ol>
+  <li><strong>Read the BMC SEL</strong> (out-of-band) for logged hardware faults — thermal, power, memory ECC, watchdog. Fastest possible signal.</li>
+  <li><strong>Check the last POST code</strong> via the BMC/diagnostic readout to identify which init stage it hung in (memory training is a classic culprit).</li>
+  <li><strong>Open Serial-over-LAN</strong> and power-cycle: watch the boot messages live to localize the stall (firmware vs loader vs kernel).</li>
+  <li><strong>Check power &amp; sensors</strong> via the BMC — is it even drawing the right power, are fans/voltages sane, did a rail fail?</li>
+  <li><strong>Reduce to a minimal config</strong> (one DIMM, remove add-in cards) if the POST code implicates memory or a device — a physical bisection.</li>
+  <li><strong>Suspect recent changes</strong> — a firmware update (roll back / recover via the BMC's OOB flash), an NVRAM/variable-store corruption, or a Secure Boot key change that now rejects the loader.</li>
+</ol>
+</div>
+
+<div class="iq">"First I go out-of-band: read the BMC's System Event Log for any hardware fault, and check the last POST code to see which init stage it hung in. Then I open a Serial-over-LAN console and power-cycle so I can watch the boot live — that tells me whether it's dying in memory training, device init, the boot loader, or a kernel panic. From there I bisect: minimal DIMM/card config if it's early, or roll back a recent firmware/Secure-Boot change if the timing lines up. The whole point is that I never need the main OS to be alive to debug it."</div>
+
+<h3>Boot-time optimization &amp; stability</h3>
+<p>The same tools drive optimization. The big boot-time costs on servers are <strong>memory training</strong> and <strong>device enumeration</strong>; firmware can cache trained memory parameters to skip full retraining on warm reboots, and can parallelize or skip probing of absent option ROMs (firmware that ships on an add-in card such as a NIC, RAID controller, or GPU and runs during boot). Stability work means watching the SEL for creeping correctable ECC errors (a DIMM about to fail), keeping firmware signed and current, and ensuring anti-rollback doesn't strand you on a broken version. The discipline mirrors service reliability: measure where the time and the faults actually are, then attack those, out-of-band, without needing the box to be healthy.</p>
+
+<!-- ══════════════ SECTION 10 ══════════════ -->
+<h2>10. Common Interview Questions</h2>
+<p>The questions in this area reward a clear mental model over memorized trivia. Here are the ones that come up most, with the shape of a strong answer.</p>
+
+<div class="card">
+<p><strong>Q: Walk me through what happens from pressing the power button to a login prompt.</strong><br>A dedicated security microcontroller powers up first, verifies the main firmware image, and releases the main CPU from reset. Firmware then runs the UEFI PI phases — <strong>SEC</strong> (first code, cache-as-RAM, temporary trust root), <strong>PEI</strong> (earliest init including <em>memory training</em>), <strong>DXE</strong> (load drivers, init chipset/PCIe/storage/network), <strong>BDS</strong> (evaluate boot order and pick what to boot). POST runs across these. BDS reads a boot loader (a <code>.efi</code> file) from the EFI System Partition, the loader loads the kernel + initramfs, the kernel initializes drivers and mounts the real root, then hands off to user-space init (systemd), which starts services up to a login. If Secure Boot is on, each stage's signature is checked before it runs; if Measured Boot is on, each stage is hashed into TPM PCRs.</p>
+<p><strong>Q: Secure Boot vs Measured Boot — what's the difference?</strong><br>Secure Boot <em>enforces</em>: firmware refuses to run any stage not signed by a trusted key (<code>db</code> allowlist, <code>dbx</code> denylist, under the PK/KEK hierarchy). The decision is local and at boot time. Measured Boot <em>attests</em>: it hashes each stage into TPM PCRs (extend-only, order-dependent) but blocks nothing; a remote verifier later checks a signed PCR quote, or a secret is sealed to expected PCR values. Enforce vs attest; gate vs tamper-evident audit log. They're complementary and often both on.</p>
+<p><strong>Q: What does a BMC buy you, and why "out-of-band"?</strong><br>A BMC is a small always-on computer inside the server, on standby power, with its own NIC — an admin sidecar for the physical box. Out-of-band means it manages the machine without depending on the main OS, NIC, or power state, so you can power-cycle, watch the console (Serial-over-LAN), read sensors and the System Event Log, do remote KVM, and reflash firmware <em>even when the host OS is dead or the box won't POST</em>. That's exactly the situation where in-band tools (SSH/agents) are useless. Caveat: it's a powerful attack surface, so it lives on an isolated management network with strong auth and signed firmware.</p>
+<p><strong>Q: How would you debug a server that won't POST?</strong><br>Go out-of-band. Read the BMC SEL for logged hardware faults (ECC, thermal, power, watchdog); check the last POST code to see which init stage it hung in (memory training is a frequent culprit); open Serial-over-LAN and power-cycle to watch the boot live; verify power/sensors; bisect the hardware (minimal DIMM/card config) if it's an early hang; and roll back any recent firmware or Secure Boot key change via the BMC's OOB flash. The theme: never rely on the main OS being alive.</p>
+<p><strong>Q: What is a root of trust, and why sign firmware?</strong><br>A hardware root of trust is an immutable, hard-to-tamper element (often a dedicated security chip with keys in ROM/fuses) that verifies the first mutable firmware, which verifies the next stage, and so on — trust flows from an anchor you can't rewrite, answering "who verifies the verifier?". Firmware signing lets that anchor reject malicious firmware (defending against below-the-OS implants that survive OS reinstalls), and anti-rollback stops attackers from flashing an old, signed-but-vulnerable version to reopen a patched hole.</p>
+<p><strong>Q: Why does a big server take minutes to boot when a laptop is instant?</strong><br>Mostly <strong>memory training</strong> — calibrating the electrical timing of many DIMMs across many channels — plus enumerating and initializing a large PCIe topology (lots of storage, NICs, accelerators, option ROMs). Firmware can cache trained parameters to shorten warm reboots, but a full cold train of terabytes of RAM is genuinely slow. It's a real boot-time-optimization target, not a defect.</p>
+<p><strong>Q: How do you install an OS on thousands of bare servers?</strong><br>Network boot. UEFI PXE (or chain-loaded iPXE) requests DHCP, which returns an IP plus the boot-file location; the machine downloads the boot program (TFTP for classic PXE, HTTP(S) for iPXE, which scales far better and can script boot decisions), which loads a kernel/installer that runs an unattended install from a config (kickstart/preseed/cloud-init), then reboots into the provisioned OS. The BMC powers the machines on and gives console access throughout.</p>
+</div>
+
+<div class="note"><div class="notel">One-line summary</div><p>A server boots as a chain of signed handoffs — a security microcontroller releases the CPU, UEFI's SEC→PEI→DXE→BDS phases init the hardware (memory training, PCIe enumeration) and pick a boot loader from the ESP, and the loader hands off to the kernel; Secure Boot <em>enforces</em> signatures while Measured Boot <em>attests</em> via TPM PCRs, both anchored in a hardware root of trust with firmware signing and anti-rollback; and throughout, an always-on out-of-band BMC (IPMI legacy, Redfish modern) lets you power, provision (PXE/iPXE), monitor, and debug the box — even when its main OS is dead.</p></div>
+
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>BIOS</strong></td><td>Basic Input/Output System — legacy 16-bit firmware that boots from the MBR sector and offers services via software interrupts.</td></tr>
+<tr><td><strong>UEFI</strong></td><td>Unified Extensible Firmware Interface — modern firmware spec with a driver model, GPT support, a variable store, and Secure Boot.</td></tr>
+<tr><td><strong>BMC</strong></td><td>Baseboard Management Controller — a separate always-on microcontroller that manages the server out-of-band.</td></tr>
+<tr><td><strong>Root of trust</strong></td><td>An immutable, trusted-by-construction hardware element that anchors the chain of signature checks.</td></tr>
+<tr><td><strong>TPM</strong></td><td>Trusted Platform Module — a security chip holding PCRs that record tamper-evident boot measurements.</td></tr>
+<tr><td><strong>POST</strong></td><td>Power-On Self-Test — firmware's early pass that inits and sizes DRAM and probes core devices before handoff.</td></tr>
+<tr><td><strong>Memory training</strong></td><td>Calibration of the high-speed DRAM bus's electrical timing; the slow part of large-server boot.</td></tr>
+<tr><td><strong>UEFI PI phases</strong></td><td>Platform Initialization stages SEC → PEI → DXE → BDS, each a progressively more capable init step.</td></tr>
+<tr><td><strong>ESP</strong></td><td>EFI System Partition — a FAT-formatted partition holding the <code>.efi</code> boot loaders the firmware reads directly.</td></tr>
+<tr><td><strong>NVRAM variables</strong></td><td>A small non-volatile key-value store in flash for boot entries, boot order, and Secure Boot keys.</td></tr>
+<tr><td><strong>Secure Boot</strong></td><td>A firmware gate that refuses to run code not signed by a trusted key — it <em>enforces</em>.</td></tr>
+<tr><td><strong>Measured Boot</strong></td><td>Records a hash of each boot stage into the TPM for later verification — it <em>attests</em>; it blocks nothing.</td></tr>
+<tr><td><strong>PK / KEK / db / dbx</strong></td><td>Secure Boot key hierarchy: Platform Key, Key Exchange Key(s), signature allowlist database, and forbidden (revoked) signature database.</td></tr>
+<tr><td><strong>PCR</strong></td><td>Platform Configuration Register — an extend-only TPM register summarizing a sequence of measurements.</td></tr>
+<tr><td><strong>Anti-rollback</strong></td><td>Refusing firmware older than a stored monotonic minimum version, blocking downgrade attacks to signed-but-vulnerable images.</td></tr>
+<tr><td><strong>Out-of-band (OOB)</strong></td><td>A management path independent of the host's main OS, NIC, and power state.</td></tr>
+<tr><td><strong>SEL</strong></td><td>System Event Log — the BMC's persistent record of hardware events (thermal, ECC, power, watchdog).</td></tr>
+<tr><td><strong>Serial-over-LAN (SOL)</strong></td><td>BMC redirection of the host's serial console over the management network.</td></tr>
+<tr><td><strong>IPMI</strong></td><td>Intelligent Platform Management Interface — legacy binary BMC protocol, now effectively frozen/deprecated.</td></tr>
+<tr><td><strong>Redfish</strong></td><td>Modern RESTful (HTTPS/JSON) BMC management API; the DMTF-standard direction for new work.</td></tr>
+<tr><td><strong>PXE / iPXE</strong></td><td>Preboot Execution Environment — firmware network boot; iPXE is the HTTP(S)-capable, scriptable successor.</td></tr>
+<tr><td><strong>ACPI</strong></td><td>Advanced Configuration and Power Interface — firmware-to-OS description of platform topology and power states (S/C/P-states).</td></tr>
+</table>
+</div>
+
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="ds_mobile_telemetry.html">&lsaquo; Mobile Telemetry &amp; the Data Flywheel</a><a class="bkc" href="index.html">📖 Contents</a><a href="td_kernel_hardware.html">The Linux Kernel &amp; the Hardware Boundary &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swift Refresher — Optionals, Value Types, Protocols, Generics, ARC &amp; Concurrency for Interviews</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #114f8c; --blue-l: #d0ebff; --green: #1d6b2e; --green-l: #d3f9d8;
+  --yellow: #a85700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #4a2fa8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1050px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.nav { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin: 18px 0 32px; position: sticky; top: 0; background: var(--bg); padding: 14px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 23px; font-weight: 700; margin: 28px 0 14px; color: var(--blue); }
+h3 { font-size: 17px; font-weight: 600; margin: 22px 0 10px; }
+h4 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 14px 18px; overflow-x: auto; margin: 10px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #cdd6f4; white-space: pre; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.warn p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.old { background: var(--red-l); border-left: 3px solid var(--red); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.old p { color: #8a1c1c; margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 18px; padding: 22px 26px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th, td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 16px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--purple-l); color:var(--purple); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VIII · Chapter 12 — <b>Swift Refresher</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Swift Refresher</h1>
+  <div class="sub">Swift's distinctive model and the syntax around it — <strong>value types</strong> (struct vs class) with copy semantics, <strong>optionals</strong> instead of null, exhaustive <strong>enums and pattern matching</strong>, <strong>protocol-oriented</strong> design, generics with <code>some</code>/<code>any</code>, closures and capture lists, <code>throws</code>-based error handling, <strong>ARC</strong> memory management, and modern <strong>async/await + actors</strong> concurrency — a practical brush-up for an experienced programmer working in modern iOS or server-side Swift</div>
+</header>
+
+<style id="swift-code-hl">
+.container pre .kw{color:#cba6f7}
+.container pre .cm{color:#9aa0bd;font-style:italic}
+.container pre .str{color:#a6e3a1}
+.container pre .num{color:#fab387}
+.container pre .fn{color:#89b4fa}
+.container pre .type{color:#f9e2af}
+</style>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'basics')">Basics</button>
+  <button class="nav-btn" onclick="showSection(event,'optionals')">Optionals</button>
+  <button class="nav-btn" onclick="showSection(event,'enums')">Enums</button>
+  <button class="nav-btn" onclick="showSection(event,'structs')">Struct vs Class</button>
+  <button class="nav-btn" onclick="showSection(event,'protocols')">Protocols</button>
+  <button class="nav-btn" onclick="showSection(event,'generics')">Generics</button>
+  <button class="nav-btn" onclick="showSection(event,'closures')">Closures</button>
+  <button class="nav-btn" onclick="showSection(event,'errors')">Errors</button>
+  <button class="nav-btn" onclick="showSection(event,'memory')">Memory (ARC)</button>
+  <button class="nav-btn" onclick="showSection(event,'concurrency')">Concurrency</button>
+  <button class="nav-btn" onclick="showSection(event,'pitfalls')">Pitfalls</button>
+  <button class="nav-btn" onclick="showSection(event,'tooling')">Tooling</button>
+</div>
+
+<!-- BASICS -->
+<div class="section active" id="basics">
+<div class="card">
+<h2>The basics — <code>let</code> / <code>var</code>, type inference &amp; value semantics</h2>
+<p>Swift is statically typed with aggressive <strong>type inference</strong>, so you rarely write types by hand. The single most important distinction to internalize up front — the one the rest of the language is built around — is <strong>value types vs reference types</strong>. Bindings are <strong><code>let</code></strong> (immutable) or <strong><code>var</code></strong> (mutable), and <code>let</code> is the default you should reach for. A <code>struct</code> (and every built-in like <code>Int</code>, <code>String</code>, <code>Array</code>) is a <strong>value type</strong>: assigning it or passing it makes a <em>copy</em>, so two names never secretly share mutable state.</p>
+<pre><span class="kw">let</span> name = <span class="str">"Ada"</span>           <span class="cm">// inferred String, immutable</span>
+<span class="kw">var</span> count = <span class="num">0</span>              <span class="cm">// inferred Int, mutable</span>
+count += <span class="num">1</span>
+<span class="kw">let</span> pi: <span class="type">Double</span> = <span class="num">3.14159</span>   <span class="cm">// explicit type annotation</span>
+<span class="kw">let</span> ints = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]       <span class="cm">// inferred [Int]</span>
+<span class="fn">print</span>(name, count, pi, ints.count)
+
+<span class="kw">struct</span> <span class="type">P</span> { <span class="kw">var</span> x = <span class="num">0</span> }
+<span class="kw">var</span> a = <span class="type">P</span>()
+<span class="kw">var</span> b = a                  <span class="cm">// COPY (value type)</span>
+b.x = <span class="num">9</span>
+<span class="fn">print</span>(a.x, b.x)            <span class="cm">// 0 9 — independent</span></pre>
+<pre><span class="cm">// → output:</span>
+Ada 1 3.14159 3
+0 9</pre>
+<div class="insight"><p>String interpolation is <code>\(expr)</code> inside a literal, and <code>print</code> joins its arguments with a space. Prefer <code>let</code> everywhere and only widen to <code>var</code> when you truly mutate — the compiler warns about a <code>var</code> that is never mutated, which is a useful nudge toward immutable-by-default code.</p></div>
+<div class="tip"><p><strong>Value semantics are the headline.</strong> Because <code>b = a</code> copies, function arguments can't be mutated by a callee unless you opt in, and threads can't overwrite each other's copies. This is the opposite of Java/Python object references and the key to reasoning about Swift code — the whole <em>Struct vs Class</em> section drills into it.</p></div>
+</div>
+</div>
+
+<!-- OPTIONALS -->
+<div class="section" id="optionals">
+<div class="card">
+<h2>Optionals — the type-safe replacement for <code>null</code></h2>
+<p>Swift has no implicit null. A value that may be absent has an <strong>optional</strong> type, <code>Optional&lt;T&gt;</code>, spelled <strong><code>T?</code></strong>. You cannot use an optional as if it were the wrapped value — you must first <em>unwrap</em> it. The safe tools are <strong><code>if let</code></strong> / <strong><code>guard let</code></strong> binding, the <strong>nil-coalescing</strong> operator <code>??</code> for a default, and <strong>optional chaining</strong> <code>?.</code> which short-circuits to <code>nil</code>. Force-unwrap <code>!</code> exists but crashes on <code>nil</code> — avoid it.</p>
+<pre><span class="kw">var</span> maybe: <span class="type">Int</span>? = <span class="kw">nil</span>
+maybe = <span class="num">7</span>
+<span class="kw">if</span> <span class="kw">let</span> v = maybe { <span class="fn">print</span>(<span class="str">"has \(v)"</span>) }      <span class="cm">// if let binding</span>
+
+<span class="kw">func</span> <span class="fn">describe</span>(_ s: <span class="type">String</span>?) -&gt; <span class="type">String</span> {
+    <span class="kw">guard</span> <span class="kw">let</span> s <span class="kw">else</span> { <span class="kw">return</span> <span class="str">"nil"</span> }        <span class="cm">// guard let shorthand</span>
+    <span class="kw">return</span> <span class="str">"len \(s.count)"</span>
+}
+<span class="fn">print</span>(<span class="fn">describe</span>(<span class="str">"hey"</span>))
+<span class="fn">print</span>(<span class="fn">describe</span>(<span class="kw">nil</span>))
+
+<span class="kw">let</span> n = maybe ?? -<span class="num">1</span>                          <span class="cm">// nil-coalescing default</span>
+<span class="fn">print</span>(n)
+
+<span class="kw">let</span> text: <span class="type">String</span>? = <span class="str">"hello"</span>
+<span class="fn">print</span>(text?.<span class="fn">uppercased</span>() ?? <span class="str">"none"</span>)          <span class="cm">// optional chaining</span></pre>
+<pre><span class="cm">// → output:</span>
+has 7
+len 3
+nil
+7
+HELLO</pre>
+<div class="insight"><p><code>guard let x else { … }</code> (the shorthand form, where the new binding reuses the same name) is the idiomatic early-exit: it unwraps into the <em>rest of the enclosing scope</em>, and its <code>else</code> branch must leave the scope (<code>return</code>, <code>throw</code>, <code>break</code>). This keeps the happy path un-indented, unlike <code>if let</code> which only binds inside its own braces.</p></div>
+<div class="warn"><p><strong>Force-unwrap <code>!</code> is a runtime trap.</strong> <code>maybe!</code> when <code>maybe</code> is <code>nil</code> crashes with "Unexpectedly found nil while unwrapping an Optional". So does an <strong>implicitly-unwrapped optional</strong> (<code>var x: Int!</code>), which auto-unwraps on every use. Reserve <code>!</code> for values you can prove are non-<code>nil</code> (e.g. an <code>@IBOutlet</code> after view load); everywhere else use <code>if let</code>/<code>guard let</code>/<code>??</code>.</p></div>
+</div>
+</div>
+
+<!-- ENUMS -->
+<div class="section" id="enums">
+<div class="card">
+<h2>Enums &amp; pattern matching</h2>
+<p>Swift <strong><code>enum</code></strong>s are far richer than C's integer constants. A case can carry <strong>associated values</strong> (a payload per case, making an enum a tagged union / sum type) and/or a <strong>raw value</strong> (a fixed underlying literal). You consume them with <strong><code>switch</code></strong>, which the compiler forces to be <strong>exhaustive</strong> — every case handled (or a <code>default</code>) — so adding a case surfaces every site that must change. Bind the payload in the pattern with <code>let</code>, and use <strong><code>if case</code></strong> / <strong><code>guard case</code></strong> to match a single case inline.</p>
+<pre><span class="kw">enum</span> <span class="type">Shape</span> {
+    <span class="kw">case</span> circle(radius: <span class="type">Double</span>)
+    <span class="kw">case</span> rect(w: <span class="type">Double</span>, h: <span class="type">Double</span>)
+}
+<span class="kw">func</span> <span class="fn">area</span>(_ s: <span class="type">Shape</span>) -&gt; <span class="type">Double</span> {
+    <span class="kw">switch</span> s {
+    <span class="kw">case</span> .circle(<span class="kw">let</span> r):      <span class="kw">return</span> .pi * r * r
+    <span class="kw">case</span> .rect(<span class="kw">let</span> w, <span class="kw">let</span> h): <span class="kw">return</span> w * h
+    }
+}
+<span class="fn">print</span>(<span class="fn">area</span>(.circle(radius: <span class="num">2</span>)))
+<span class="fn">print</span>(<span class="fn">area</span>(.rect(w: <span class="num">3</span>, h: <span class="num">4</span>)))
+
+<span class="kw">enum</span> <span class="type">Dir</span>: <span class="type">Int</span> { <span class="kw">case</span> n = <span class="num">0</span>, e, s, w }          <span class="cm">// raw values</span>
+<span class="fn">print</span>(<span class="type">Dir</span>.s.rawValue)                          <span class="cm">// 2</span>
+<span class="fn">print</span>(<span class="type">Dir</span>(rawValue: <span class="num">3</span>)!)                       <span class="cm">// w (failable init)</span>
+
+<span class="kw">let</span> x = <span class="type">Shape</span>.circle(radius: <span class="num">1</span>)
+<span class="kw">if</span> <span class="kw">case</span> .circle(<span class="kw">let</span> r) = x { <span class="fn">print</span>(<span class="str">"circle r=\(r)"</span>) }</pre>
+<pre><span class="cm">// → output:</span>
+12.566370614359172
+12.0
+2
+w
+circle r=1.0</pre>
+<div class="insight"><p><code>.pi</code>, <code>.circle(…)</code>, <code>.rect(…)</code> use <strong>leading-dot syntax</strong>: when the expected type is known, you can drop the type name and write just the member. <code>Dir(rawValue: 3)</code> is a <em>failable</em> initializer returning <code>Dir?</code> (an out-of-range raw value yields <code>nil</code>), which is why the example force-unwraps a value it knows is valid.</p></div>
+<div class="tip"><p>Exhaustive <code>switch</code> is a design tool: model state as an enum with associated values (e.g. <code>enum Load { case idle, loading, done(Data), failed(Error) }</code>) and the compiler will not let you forget a state. Prefer this over a struct full of optional/boolean flags that can represent impossible combinations.</p></div>
+</div>
+</div>
+
+<!-- STRUCT VS CLASS -->
+<div class="section" id="structs">
+<div class="card">
+<h2>Structs vs classes — the value/reference divide</h2>
+<p>Both <code>struct</code> and <code>class</code> bundle stored properties and methods, but their <em>semantics</em> differ sharply. A <strong><code>struct</code> is a value type</strong>: it is copied on assignment and on being passed, it gets a free <strong>memberwise initializer</strong>, and mutating a property through a method requires marking that method <strong><code>mutating</code></strong> (because it conceptually replaces the value). A <strong><code>class</code> is a reference type</strong>: assignment shares one instance, it supports inheritance and <code>deinit</code>, and you compare instances by <strong>identity</strong> with <code>===</code>. Rule of thumb: reach for <code>struct</code> by default; use <code>class</code> when you need shared mutable state, identity, or inheritance.</p>
+<pre><span class="kw">struct</span> <span class="type">Point</span> { <span class="kw">var</span> x, y: <span class="type">Int</span> }                 <span class="cm">// value type, memberwise init</span>
+<span class="kw">final</span> <span class="kw">class</span> <span class="type">Box</span> { <span class="kw">var</span> v: <span class="type">Int</span>; <span class="kw">init</span>(_ v: <span class="type">Int</span>) { self.v = v } }
+
+<span class="kw">var</span> p1 = <span class="type">Point</span>(x: <span class="num">1</span>, y: <span class="num">2</span>)
+<span class="kw">var</span> p2 = p1                                     <span class="cm">// copy</span>
+p2.x = <span class="num">99</span>
+<span class="fn">print</span>(p1.x, p2.x)                               <span class="cm">// 1 99 — independent</span>
+
+<span class="kw">let</span> b1 = <span class="type">Box</span>(<span class="num">10</span>)
+<span class="kw">let</span> b2 = b1                                      <span class="cm">// shared reference</span>
+b2.v = <span class="num">42</span>
+<span class="fn">print</span>(b1.v, b2.v)                                <span class="cm">// 42 42 — same object</span>
+<span class="fn">print</span>(b1 === b2)                                 <span class="cm">// true — identity</span>
+
+<span class="kw">struct</span> <span class="type">Counter</span> {
+    <span class="kw">private</span>(set) <span class="kw">var</span> n = <span class="num">0</span>
+    <span class="kw">mutating</span> <span class="kw">func</span> <span class="fn">tick</span>() { n += <span class="num">1</span> }              <span class="cm">// mutating on a struct</span>
+}
+<span class="kw">var</span> c = <span class="type">Counter</span>()
+c.<span class="fn">tick</span>(); c.<span class="fn">tick</span>()
+<span class="fn">print</span>(c.n)                                       <span class="cm">// 2</span></pre>
+<pre><span class="cm">// → output:</span>
+1 99
+42 42
+true
+2</pre>
+<div class="insight"><p>Note <code>b1</code> and <code>b2</code> are <code>let</code> yet <code>b2.v = 42</code> compiles: for a <em>class</em>, <code>let</code> makes the <em>reference</em> constant, not the object's properties. For a <em>struct</em>, a <code>let</code> value is fully immutable — you couldn't call <code>tick()</code> on a <code>let c</code>, because a <code>mutating</code> method needs a <code>var</code>. That asymmetry is the value/reference divide in one example.</p></div>
+<div class="tip"><p><strong>Copy-on-write (COW).</strong> Copying every <code>Array</code>/<code>String</code>/<code>Dictionary</code> eagerly would be slow, so the standard library's value-type collections share storage until a mutation happens, then copy lazily — you get value semantics at reference-copy cost. You can build the same optimization for your own types with <code>isKnownUniquelyReferenced(&amp;ref)</code> guarding a private class buffer.</p></div>
+</div>
+</div>
+
+<!-- PROTOCOLS -->
+<div class="section" id="protocols">
+<div class="card">
+<h2>Protocols &amp; protocol-oriented programming</h2>
+<p>A <strong><code>protocol</code></strong> is a set of requirements (methods, properties) a type can conform to — Swift's primary abstraction, used far more than class inheritance. The distinctively-Swift move is adding <strong>default implementations in a protocol extension</strong>, so conformers get behavior for free and only override what differs ("protocol-oriented programming"). The standard library synthesizes conformance to <strong><code>Equatable</code>, <code>Hashable</code>, and <code>Codable</code></strong> when every stored property already conforms — no boilerplate <code>==</code>/<code>hash</code>.</p>
+<pre><span class="kw">protocol</span> <span class="type">Greeter</span> {
+    <span class="kw">var</span> name: <span class="type">String</span> { <span class="kw">get</span> }
+    <span class="kw">func</span> <span class="fn">greet</span>() -&gt; <span class="type">String</span>
+}
+<span class="kw">extension</span> <span class="type">Greeter</span> {
+    <span class="kw">func</span> <span class="fn">greet</span>() -&gt; <span class="type">String</span> { <span class="str">"Hi, \(name)"</span> }     <span class="cm">// default implementation</span>
+}
+<span class="kw">struct</span> <span class="type">Person</span>: <span class="type">Greeter</span> { <span class="kw">let</span> name: <span class="type">String</span> }
+<span class="fn">print</span>(<span class="type">Person</span>(name: <span class="str">"Sam"</span>).<span class="fn">greet</span>())
+
+<span class="kw">struct</span> <span class="type">Coord</span>: <span class="type">Hashable</span> { <span class="kw">let</span> x: <span class="type">Int</span>; <span class="kw">let</span> y: <span class="type">Int</span> }  <span class="cm">// synthesized ==/hash</span>
+<span class="kw">let</span> s: <span class="type">Set</span> = [<span class="type">Coord</span>(x: <span class="num">0</span>, y: <span class="num">0</span>), <span class="type">Coord</span>(x: <span class="num">0</span>, y: <span class="num">0</span>), <span class="type">Coord</span>(x: <span class="num">1</span>, y: <span class="num">1</span>)]
+<span class="fn">print</span>(s.count)                                   <span class="cm">// 2 — deduped by synthesized conformance</span></pre>
+<pre><span class="cm">// → output:</span>
+Hi, Sam
+2</pre>
+<div class="insight"><p>A protocol with an <strong>associated type</strong> (<code>associatedtype Element</code>, as in <code>Sequence</code>/<code>Collection</code>) is a <em>generic</em> constraint, not a concrete type — you can't declare a plain <code>var xs: Sequence</code>. Such protocols are used as generic bounds (<code>&lt;S: Sequence&gt;</code>) or, since Swift 5.7, behind <code>any</code> as a boxed <strong>existential</strong> — covered next in Generics.</p></div>
+<div class="tip"><p>Synthesized <code>Codable</code> turns JSON (de)serialization into one line: <code>struct User: Codable { let id: Int; let name: String }</code> then <code>try JSONDecoder().decode(User.self, from: data)</code>. Customize key names with a nested <code>CodingKeys</code> enum. This is the everyday way Swift talks to web APIs.</p></div>
+</div>
+</div>
+
+<!-- GENERICS -->
+<div class="section" id="generics">
+<div class="card">
+<h2>Generics, opaque (<code>some</code>) &amp; existential (<code>any</code>) types</h2>
+<p>Generics let one function or type work over many concrete types with full type-safety. Constrain a type parameter with a protocol (<code>&lt;T: Comparable&gt;</code>) and refine it with a <strong><code>where</code></strong> clause. Modern Swift adds two ways to talk about a protocol as a type: <strong><code>some P</code></strong> — an <em>opaque</em> type, a single concrete type the caller can't name but the compiler tracks (zero-cost, monomorphized); and <strong><code>any P</code></strong> — an <em>existential</em>, a box that can hold any conforming type (flexible, but with dynamic-dispatch and heap-boxing overhead).</p>
+<pre><span class="kw">func</span> <span class="fn">firstOrNil</span>&lt;<span class="type">T</span>&gt;(_ xs: [<span class="type">T</span>]) -&gt; <span class="type">T</span>? { xs.first }
+<span class="fn">print</span>(<span class="fn">firstOrNil</span>([<span class="num">10</span>, <span class="num">20</span>]) ?? -<span class="num">1</span>)                <span class="cm">// 10</span>
+
+<span class="kw">func</span> <span class="fn">total</span>&lt;<span class="type">S</span>: <span class="type">Sequence</span>&gt;(_ s: <span class="type">S</span>) -&gt; <span class="type">Int</span> <span class="kw">where</span> <span class="type">S</span>.Element == <span class="type">Int</span> {
+    s.<span class="fn">reduce</span>(<span class="num">0</span>, +)
+}
+<span class="fn">print</span>(<span class="fn">total</span>([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]))                          <span class="cm">// 6</span>
+
+<span class="kw">func</span> <span class="fn">makeRange</span>() -&gt; <span class="kw">some</span> <span class="type">Sequence</span> { <span class="num">0</span>..&lt;<span class="num">3</span> }      <span class="cm">// opaque return type</span>
+<span class="fn">print</span>(<span class="type">Array</span>(<span class="fn">makeRange</span>()))                        <span class="cm">// [0, 1, 2]</span>
+
+<span class="kw">let</span> items: [<span class="kw">any</span> <span class="type">CustomStringConvertible</span>] = [<span class="num">1</span>, <span class="str">"two"</span>, <span class="num">3.0</span>]  <span class="cm">// existentials</span>
+<span class="fn">print</span>(items.<span class="fn">map</span> { <span class="str">"\($0)"</span> })                     <span class="cm">// ["1", "two", "3.0"]</span></pre>
+<pre><span class="cm">// → output:</span>
+10
+6
+[0, 1, 2]
+["1", "two", "3.0"]</pre>
+<div class="insight"><p><strong><code>some</code> vs <code>any</code> in one line:</strong> <code>some P</code> is "one specific hidden type" — the return of <code>makeRange()</code> is always the same concrete <code>Range</code>, so the compiler specializes and there's no boxing. <code>any P</code> is "any type, decided at run time" — the heterogeneous <code>items</code> array must box each element behind a protocol witness. Prefer <code>some</code> (and generic parameters) on hot paths; use <code>any</code> when you genuinely need to store mixed concrete types.</p></div>
+<div class="tip"><p><code>reduce(0, +)</code> shows Swift operators are ordinary functions you can pass as values. The <code>where S.Element == Int</code> clause constrains the sequence's associated <code>Element</code> type — the mechanism that makes generic algorithms over <code>Sequence</code>/<code>Collection</code> precise without inheritance.</p></div>
+</div>
+</div>
+
+<!-- CLOSURES -->
+<div class="section" id="closures">
+<div class="card">
+<h2>Closures — trailing syntax, capture lists &amp; escaping</h2>
+<p>A <strong>closure</strong> is an anonymous function that captures its surrounding variables. Swift's ergonomics: a closure passed as the last argument can move outside the parentheses (<strong>trailing closure</strong>), and its parameters can be referenced positionally as <code>$0</code>, <code>$1</code>. A closure that outlives the call that received it must be marked <strong><code>@escaping</code></strong> (stored, or run later/asynchronously). Because a closure <em>captures references strongly</em> by default, one that captures <code>self</code> and is also stored by <code>self</code> creates a <strong>retain cycle</strong> — broken with a <strong>capture list</strong> <code>[weak self]</code> (or <code>[unowned self]</code>).</p>
+<pre><span class="kw">let</span> nums = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>]
+<span class="kw">let</span> evens = nums.<span class="fn">filter</span> { $0 % <span class="num">2</span> == <span class="num">0</span> }    <span class="cm">// trailing closure, $0 shorthand</span>
+<span class="fn">print</span>(evens)                               <span class="cm">// [2, 4]</span>
+
+<span class="kw">var</span> stored: (() -&gt; <span class="type">Void</span>)?
+<span class="kw">func</span> <span class="fn">remember</span>(_ f: @escaping () -&gt; <span class="type">Void</span>) { stored = f }  <span class="cm">// escaping: kept for later</span>
+
+<span class="kw">final</span> <span class="kw">class</span> <span class="type">Model</span> {
+    <span class="kw">var</span> tag = <span class="str">"M"</span>
+    <span class="kw">func</span> <span class="fn">wire</span>() {
+        <span class="fn">remember</span> { [<span class="kw">weak</span> self] <span class="kw">in</span>           <span class="cm">// [weak self] lets Model deallocate — the globally-stored closure would otherwise keep it alive</span>
+            <span class="fn">print</span>(<span class="str">"tag = \(self?.tag ?? "gone")"</span>)
+        }
+    }
+}
+<span class="kw">var</span> m: <span class="type">Model</span>? = <span class="type">Model</span>()
+m?.<span class="fn">wire</span>()
+m = <span class="kw">nil</span>             <span class="cm">// release the only strong owner</span>
+stored?()           <span class="cm">// weak self is now nil → prints "gone"</span></pre>
+<pre><span class="cm">// → output:</span>
+[2, 4]
+tag = gone</pre>
+<div class="warn"><p><strong><code>weak</code> vs <code>unowned</code> in a capture list.</strong> <code>[weak self]</code> makes <code>self</code> an <em>optional</em> inside the closure (safe: it becomes <code>nil</code> if the object is gone). <code>[unowned self]</code> is non-optional and slightly faster, but is a dangling reference that <em>crashes</em> if the object was deallocated — use it only when the closure provably cannot outlive <code>self</code>. When in doubt, use <code>weak</code> and bind it (<code>guard let self else { return }</code>) at the top of the body.</p></div>
+<div class="tip"><p>Non-escaping closures (the default for synchronous higher-order functions like <code>map</code>/<code>filter</code>) <em>cannot</em> capture a retain cycle, because they can't outlive the call — so you only need capture lists for <code>@escaping</code> ones (completion handlers, stored callbacks, <code>Task {}</code>). That default is why most closures need no ceremony.</p></div>
+</div>
+</div>
+
+<!-- ERRORS -->
+<div class="section" id="errors">
+<div class="card">
+<h2>Error handling — <code>throws</code> / <code>try</code>, <code>Result</code> &amp; <code>defer</code></h2>
+<p>Swift errors are values: any type conforming to the empty <strong><code>Error</code></strong> protocol (usually an <code>enum</code>) can be <strong><code>throw</code></strong>n. A function that can fail is marked <strong><code>throws</code></strong>, and every call to it must be prefixed with <strong><code>try</code></strong>, making error-propagation points visible. Handle errors with <strong><code>do</code>/<code>catch</code></strong>; convert to an optional with <strong><code>try?</code></strong> (errors become <code>nil</code>); or assert success with <code>try!</code> (crashes on error). <strong><code>defer</code></strong> schedules cleanup that runs on <em>any</em> exit from the scope, and <strong><code>Result&lt;Success, Failure&gt;</code></strong> captures success-or-error as a first-class value.</p>
+<pre><span class="kw">enum</span> <span class="type">ParseError</span>: <span class="type">Error</span> { <span class="kw">case</span> empty, notInt(<span class="type">String</span>) }
+
+<span class="kw">func</span> <span class="fn">parse</span>(_ s: <span class="type">String</span>) <span class="kw">throws</span> -&gt; <span class="type">Int</span> {
+    <span class="kw">if</span> s.isEmpty { <span class="kw">throw</span> <span class="type">ParseError</span>.empty }
+    <span class="kw">guard</span> <span class="kw">let</span> n = <span class="type">Int</span>(s) <span class="kw">else</span> { <span class="kw">throw</span> <span class="type">ParseError</span>.notInt(s) }
+    <span class="kw">return</span> n
+}
+
+<span class="kw">do</span> {
+    <span class="fn">print</span>(<span class="str">"ok \(try parse("42"))"</span>)
+} <span class="kw">catch</span> {
+    <span class="fn">print</span>(<span class="str">"error: \(error)"</span>)              <span class="cm">// `error` is bound implicitly</span>
+}
+
+<span class="kw">let</span> maybe = <span class="kw">try</span>? <span class="fn">parse</span>(<span class="str">"nope"</span>)     <span class="cm">// returns nil instead of throwing</span>
+<span class="fn">print</span>(maybe ?? -<span class="num">1</span>)                 <span class="cm">// -1</span>
+
+<span class="kw">let</span> r: <span class="type">Result</span>&lt;<span class="type">Int</span>, <span class="type">ParseError</span>&gt; = .success(<span class="num">10</span>)
+<span class="fn">print</span>(r.<span class="fn">map</span> { $0 * <span class="num">2</span> })            <span class="cm">// success(20)</span>
+
+<span class="kw">func</span> <span class="fn">withResource</span>() {
+    <span class="kw">defer</span> { <span class="fn">print</span>(<span class="str">"cleanup runs last"</span>) }   <span class="cm">// runs on scope exit</span>
+    <span class="fn">print</span>(<span class="str">"work"</span>)
+}
+<span class="fn">withResource</span>()</pre>
+<pre><span class="cm">// → output:</span>
+ok 42
+-1
+success(20)
+work
+cleanup runs last</pre>
+<div class="insight"><p>Unlike exceptions in many languages, a Swift <code>throws</code> call is checked at compile time: you cannot ignore that a function throws — you must <code>try</code> it and either propagate (mark the caller <code>throws</code>) or handle it. This makes the failure surface explicit in the type signature, much like Rust's <code>Result</code> — indeed a <code>throws</code> function and a <code>-&gt; Result</code> function express the same thing, and <code>Result</code> has a <code>get()</code> that bridges back to <code>try</code>.</p></div>
+<div class="tip"><p><code>defer</code> blocks run in <strong>reverse</strong> order of declaration, at scope exit, whether you leave by <code>return</code>, <code>throw</code>, or falling off the end. Use it to pair acquire/release right next to each other (open/close a file, lock/unlock) so cleanup can't be forgotten on an error path.</p></div>
+</div>
+</div>
+
+<!-- MEMORY (ARC) -->
+<div class="section" id="memory">
+<div class="card">
+<h2>Memory — ARC, <code>weak</code> / <code>unowned</code> &amp; retain cycles</h2>
+<p>Reference types (classes, closures, actors) are managed by <strong>ARC (Automatic Reference Counting)</strong>: the compiler inserts retain/release so an object is freed when its strong reference count hits zero — deterministic, no tracing GC pause. Value types (structs, enums) aren't reference-counted at all; they're copied. The one thing you must manage is the <strong>retain cycle</strong>: two objects holding each other <code>strong</code> never reach zero. Break it by making one side <strong><code>weak</code></strong> (optional, auto-nils on dealloc) or <strong><code>unowned</code></strong> (non-optional, for a reference that logically can't be nil first).</p>
+<pre><span class="kw">final</span> <span class="kw">class</span> <span class="type">Node</span> {
+    <span class="kw">let</span> name: <span class="type">String</span>
+    <span class="kw">var</span> next: <span class="type">Node</span>?             <span class="cm">// strong</span>
+    <span class="kw">weak</span> <span class="kw">var</span> prev: <span class="type">Node</span>?        <span class="cm">// weak → breaks the cycle</span>
+    <span class="kw">init</span>(_ name: <span class="type">String</span>) { self.name = name }
+    <span class="kw">deinit</span> { <span class="fn">print</span>(<span class="str">"deinit \(name)"</span>) }
+}
+<span class="kw">do</span> {
+    <span class="kw">let</span> a = <span class="type">Node</span>(<span class="str">"A"</span>)
+    <span class="kw">let</span> b = <span class="type">Node</span>(<span class="str">"B"</span>)
+    a.next = b                  <span class="cm">// a strongly holds b</span>
+    b.prev = a                  <span class="cm">// weak back-reference</span>
+    <span class="fn">print</span>(<span class="str">"linked"</span>)
+}   <span class="cm">// scope ends: both deinit, no leak</span>
+<span class="fn">print</span>(<span class="str">"scope done"</span>)</pre>
+<pre><span class="cm">// → output:</span>
+linked
+deinit A
+deinit B
+scope done</pre>
+<div class="warn"><p>Make <em>both</em> <code>next</code> and <code>prev</code> <code>strong</code> and neither <code>deinit</code> fires — the two nodes keep each other alive forever, a classic leak. The same shape appears with a stored closure capturing <code>self</code> (see Closures) and with a <code>delegate</code> property, which is why delegates and "back-pointers" are conventionally <code>weak</code>.</p></div>
+<div class="tip"><p>Because structs/enums are value types, most Swift data <em>can't</em> form a reference cycle at all — a big reason idiomatic Swift leans on value types. Reserve classes (and the cycle bookkeeping) for the cases that genuinely need shared identity or reference semantics. Use Xcode's <strong>Memory Graph Debugger</strong> or Instruments' <em>Leaks</em> to find cycles that slipped through.</p></div>
+</div>
+</div>
+
+<!-- CONCURRENCY -->
+<div class="section" id="concurrency">
+<div class="card">
+<h2>Concurrency — <code>async</code>/<code>await</code>, <code>Task</code> &amp; actors</h2>
+<p>Modern Swift concurrency replaces nested completion handlers with straight-line code. A function that suspends is marked <strong><code>async</code></strong>, and every call to it is prefixed with <strong><code>await</code></strong>, marking the potential suspension point. You launch concurrent work with <strong><code>Task { … }</code></strong>, and run independent async calls in parallel with <strong><code>async let</code></strong>. The headline safety feature is the <strong><code>actor</code></strong>: a reference type that <em>serializes</em> access to its mutable state, so you can't race on it — access from outside is <code>await</code>ed. <strong><code>@MainActor</code></strong> pins work to the main thread (UI), and the <strong><code>Sendable</code></strong> protocol marks types safe to cross concurrency boundaries — the compiler checks these under strict concurrency.</p>
+<pre><span class="kw">actor</span> <span class="type">BankAccount</span> {
+    <span class="kw">private</span>(set) <span class="kw">var</span> balance = <span class="num">0</span>
+    <span class="kw">func</span> <span class="fn">deposit</span>(_ n: <span class="type">Int</span>) { balance += n }   <span class="cm">// actor serializes mutations</span>
+}
+
+<span class="kw">func</span> <span class="fn">work</span>() <span class="kw">async</span> -&gt; <span class="type">Int</span> {
+    <span class="kw">let</span> acc = <span class="type">BankAccount</span>()
+    <span class="kw">async</span> <span class="kw">let</span> a: <span class="type">Void</span> = acc.<span class="fn">deposit</span>(<span class="num">100</span>)      <span class="cm">// run concurrently</span>
+    <span class="kw">async</span> <span class="kw">let</span> b: <span class="type">Void</span> = acc.<span class="fn">deposit</span>(<span class="num">50</span>)
+    _ = <span class="kw">await</span> (a, b)                          <span class="cm">// await both to finish</span>
+    <span class="kw">return</span> <span class="kw">await</span> acc.balance                  <span class="cm">// hop onto the actor to read</span>
+}
+
+@main
+<span class="kw">struct</span> <span class="type">App</span> {
+    <span class="kw">static</span> <span class="kw">func</span> <span class="fn">main</span>() <span class="kw">async</span> {                <span class="cm">// @main entry runs on the main actor</span>
+        <span class="kw">let</span> total = <span class="kw">await</span> <span class="fn">work</span>()              <span class="cm">// suspend until work() returns</span>
+        <span class="fn">print</span>(<span class="str">"balance = \(total)"</span>)           <span class="cm">// 150 — no data race</span>
+    }
+}</pre>
+<pre><span class="cm">// → output (built with: swiftc -parse-as-library file.swift):</span>
+balance = 150</pre>
+<div class="insight"><p>An actor guarantees that at most one task touches its mutable state at a time, turning "did I lock everything correctly?" into a compile-time property. The cost is that every cross-actor call is <code>async</code> (you <code>await</code> the hop), and values you pass across must be <strong><code>Sendable</code></strong> — value types usually are automatically; classes are only <code>Sendable</code> if immutable or internally synchronized. In Swift 6's strict-concurrency mode, violating this is a compile error, not a runtime data race.</p></div>
+<div class="warn"><p><code>@MainActor</code> is how UI code stays correct: annotate a type or method and its work is guaranteed to run on the main thread. Calling a <code>@MainActor</code> method from a background context is an <code>await</code> (a hop back to main). Never block the main actor with synchronous long work — <code>await</code> an actor or a background <code>Task</code> instead, or the UI stalls.</p></div>
+</div>
+</div>
+
+<!-- PITFALLS -->
+<div class="section" id="pitfalls">
+<div class="card">
+<h2>Common pitfalls (and their fixes)</h2>
+
+<h3>1 · Force-unwrap and force-<code>try</code> crashes</h3>
+<p>The exclamation mark is the most common cause of production crashes: <code>optional!</code> on a <code>nil</code>, <code>try! call()</code> when it throws, <code>array[i]</code> out of bounds, and implicitly-unwrapped optionals (<code>T!</code>) that are used before being set all <strong>trap</strong> (abort). Prefer <code>if let</code>/<code>guard let</code>, <code>try?</code>/<code>do-catch</code>, and <code>indices.contains(i)</code> or <code>first</code>/<code>.first(where:)</code> over indexing. Reserve <code>!</code> for genuinely-guaranteed values.</p>
+
+<h3>2 · Struct-vs-class mutation surprises</h3>
+<p>Because a <code>struct</code> is copied, mutating one copy never affects another — great for safety, surprising if you expected shared state. The reverse case surprises people too: storing a value type inside a class and mutating the class's copy won't change the original you assigned from. When you truly need shared mutable state (a cache, a coordinator), use a <code>class</code> deliberately. And remember a <code>struct</code>'s mutating method can't be called on a <code>let</code>.</p>
+
+<h3>3 · Integer overflow traps by default</h3>
+<p>Unlike C, ordinary arithmetic on Swift's fixed-width integers <strong>traps on overflow</strong> rather than silently wrapping — a safety feature, but a crash if you didn't expect it. Use the <em>overflow operators</em> <code>&amp;+</code>, <code>&amp;-</code>, <code>&amp;*</code> when you actually want two's-complement wraparound (e.g. hashing).</p>
+<pre><span class="kw">let</span> big = <span class="type">Int8</span>.max            <span class="cm">// 127</span>
+<span class="kw">let</span> wrapped = big &amp;+ <span class="num">1</span>        <span class="cm">// &+ wraps to -128; plain `big + 1` would TRAP</span>
+<span class="fn">print</span>(big, wrapped)</pre>
+<pre><span class="cm">// → output:</span>
+127 -128</pre>
+
+<h3>4 · <code>[weak self]</code> forgotten in escaping closures</h3>
+<p>A stored/escaping closure that captures <code>self</code> strongly, when <code>self</code> also holds that closure, leaks both. Add <code>[weak self]</code> (then <code>guard let self else { return }</code>). Conversely, don't reflexively add <code>[weak self]</code> to a <em>non-escaping</em> closure — it can't cause a cycle and the extra optionality is just noise.</p>
+
+<h3>5 · Existential (<code>any</code>) vs generic performance</h3>
+<p>Reaching for <code>any P</code> (or an untyped protocol) everywhere boxes values and dispatches dynamically. On hot paths prefer generics or <code>some P</code>, which the compiler specializes to concrete types. Use <code>any</code> only where heterogeneity is real (mixed concrete types in one collection).</p>
+
+<h3>6 · Array value semantics &amp; copy-on-write</h3>
+<p>Assigning an array copies it (logically); the copy is shared under COW until you mutate. This means passing a big array around is cheap <em>until</em> a write, and a write inside a tight loop over a shared array can trigger a hidden full copy. It also means you never accidentally alias — mutating <code>ys</code> below leaves <code>xs</code> untouched.</p>
+<pre><span class="kw">var</span> xs = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+<span class="kw">var</span> ys = xs                   <span class="cm">// value semantics (copy-on-write under the hood)</span>
+ys.<span class="fn">append</span>(<span class="num">4</span>)                  <span class="cm">// mutating ys triggers the copy</span>
+<span class="fn">print</span>(xs, ys)                 <span class="cm">// xs unchanged</span></pre>
+<pre><span class="cm">// → output:</span>
+[1, 2, 3] [1, 2, 3, 4]</pre>
+<div class="warn"><p>A meta-pitfall for newcomers from Java/Python: treating everything as a shared reference. In Swift the default is the opposite — <em>value semantics</em>. Ask "is this a value or an identity?" for every type you design: values are structs/enums (copied, thread-friendly, no cycles); identities are classes/actors (shared, ARC-managed, watch for cycles). Choosing correctly removes whole categories of bugs.</p></div>
+</div>
+</div>
+
+<!-- TOOLING -->
+<div class="section" id="tooling">
+<div class="card">
+<h2>Tooling &amp; interop</h2>
+<p>Swift is compiled by <strong><code>swiftc</code></strong> (an LLVM front end), organized into packages by the <strong>Swift Package Manager (SwiftPM)</strong>, and edited in <strong>Xcode</strong> on Apple platforms (Swift also runs on Linux and Windows for server/CLI work). A single file runs two ways from the command line:</p>
+<pre><span class="cm"># run a script directly (top-level code allowed)</span>
+swift prog.swift
+
+<span class="cm"># or compile to a binary, then run it</span>
+swiftc prog.swift -o prog
+./prog
+
+<span class="cm"># a file using @main needs library parsing (no top-level code)</span>
+swiftc -parse-as-library prog.swift -o prog</pre>
+<table>
+<tr><th>Tool / command</th><th>What it does</th></tr>
+<tr><td><code>swift file.swift</code></td><td>Compile-and-run a script in one step; top-level statements execute in order.</td></tr>
+<tr><td><code>swiftc</code></td><td>The compiler; produces an executable or library. Add <code>-O</code> for optimized release builds.</td></tr>
+<tr><td><code>swift build</code> / <code>swift run</code> / <code>swift test</code></td><td>SwiftPM: build, run, and test a package defined by a <code>Package.swift</code> manifest.</td></tr>
+<tr><td>Xcode / <code>xcodebuild</code></td><td>The IDE and its build tool; ships the debugger, Instruments, and the concurrency/memory checkers.</td></tr>
+</table>
+<h3>SwiftUI &amp; Objective-C interop</h3>
+<p><strong>SwiftUI</strong> is Apple's declarative UI framework: you describe the view hierarchy as value-type <code>View</code> structs and the framework diffs and re-renders on state change (<code>@State</code>, <code>@Observable</code>) — a natural fit for Swift's value semantics. Swift also interoperates with <strong>Objective-C</strong> in both directions within a target: Swift sees Objective-C through a <em>bridging header</em>, and Objective-C sees Swift symbols marked <code>@objc</code> via a generated <code>-Swift.h</code>. Objective-C <code>NSError **</code> methods bridge to Swift <code>throws</code>, and nullability annotations map to optionals — which is exactly the boundary the Objective-C chapter describes from the other side.</p>
+<div class="insight"><p><strong>Interview angle.</strong> A crisp "what makes Swift distinctive?" answer: it is a <em>value-semantics-first, protocol-oriented</em> language with a strong static type system that eliminates <code>null</code> (optionals) and unhandled errors (<code>throws</code>) at compile time, manages reference types with ARC (so the real skill is spotting retain cycles), and builds data-race safety into the type system via <code>async</code>/<code>await</code> and <code>actor</code>s. Prefer <code>struct</code> + <code>protocol</code> + generics; reach for <code>class</code>/<code>actor</code> only when you need identity or shared state.</p></div>
+<div class="tip"><p>Every runnable snippet in this chapter was compiled and executed with <strong>Swift 6.3</strong> (<code>swiftc</code>) on macOS; the <code>// → output</code> blocks are the real program output. All but the concurrency example build as plain scripts; the <code>@main</code> concurrency snippet was built with <code>swiftc -parse-as-library</code>, as noted on its output block.</p></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Value type</strong></td><td>Type copied on assignment or passing (struct, enum, tuple); no shared mutable state.</td></tr>
+<tr><td><strong>Reference type</strong></td><td>Type shared on assignment (a copy is a new reference to the same instance); includes classes, actors, and closures. Class/actor instances can be compared by identity with <code>===</code>.</td></tr>
+<tr><td><strong>Optional (<code>T?</code>)</strong></td><td>A type that either holds a value of <code>T</code> or <code>nil</code>; must be unwrapped before use.</td></tr>
+<tr><td><strong>Force-unwrap (<code>!</code>)</strong></td><td>Extracts an optional's wrapped value, trapping (crashing) if it is <code>nil</code>.</td></tr>
+<tr><td><strong>Associated values</strong></td><td>Per-case payload on an enum, making it a tagged union (sum type).</td></tr>
+<tr><td><strong>Exhaustive <code>switch</code></strong></td><td>Compiler requirement that a <code>switch</code> handle every case or add a <code>default</code>.</td></tr>
+<tr><td><strong><code>mutating</code></strong></td><td>Marks a struct/enum method that modifies the value's stored properties.</td></tr>
+<tr><td><strong>Copy-on-write (COW)</strong></td><td>Value collections share storage until the first mutation, then copy lazily.</td></tr>
+<tr><td><strong>Protocol</strong></td><td>A set of requirements a type can conform to; Swift's primary abstraction mechanism.</td></tr>
+<tr><td><strong>Generics</strong></td><td>Code parameterized over types while keeping full compile-time type safety.</td></tr>
+<tr><td><strong><code>some P</code> (opaque type)</strong></td><td>One fixed, compiler-tracked concrete type the caller can't name; zero-cost, no boxing.</td></tr>
+<tr><td><strong><code>any P</code> (existential)</strong></td><td>A box that can hold any conforming type, using dynamic dispatch and heap boxing.</td></tr>
+<tr><td><strong><code>@escaping</code></strong></td><td>Marks a closure that is stored or runs after the receiving call returns.</td></tr>
+<tr><td><strong>Capture list</strong></td><td>The <code>[weak self]</code>/<code>[unowned self]</code> prefix controlling how a closure captures references.</td></tr>
+<tr><td><strong><code>throws</code> / <code>try</code></strong></td><td>Mark a function that can throw an error and each call that may propagate one.</td></tr>
+<tr><td><strong><code>defer</code></strong></td><td>Schedules cleanup that runs on any exit from the enclosing scope, in reverse order.</td></tr>
+<tr><td><strong>ARC</strong></td><td>Automatic Reference Counting — compiler-inserted retain/release that frees an object at zero references.</td></tr>
+<tr><td><strong><code>weak</code> / <code>unowned</code></strong></td><td>Non-owning references; <code>weak</code> is optional and auto-nils on dealloc, <code>unowned</code> is non-optional and traps if used after.</td></tr>
+<tr><td><strong>Retain cycle</strong></td><td>Mutually strong references that never reach zero, leaking memory.</td></tr>
+<tr><td><strong><code>async</code> / <code>await</code></strong></td><td>Mark a suspending function and each call site that may suspend.</td></tr>
+<tr><td><strong><code>actor</code></strong></td><td>Reference type that serializes access to its mutable state, preventing data races.</td></tr>
+<tr><td><strong><code>@MainActor</code></strong></td><td>Annotation pinning work to the main thread, used for UI code.</td></tr>
+<tr><td><strong><code>Sendable</code></strong></td><td>Protocol marking types safe to pass across concurrency boundaries.</td></tr>
+</table>
+</div>
+
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  evt.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="objc_refresher.html">‹ Objective-C Refresher</a><a class="bkc" href="index.html">📖 Contents</a><a href="android_engineering.html">Android Engineering ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

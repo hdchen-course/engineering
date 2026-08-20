@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BigQuery Deep Dive — Data Engineer Interview Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* HEADER */
+.page-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px 20px;
+}
+.header-tag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.header-title { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.header-title span { color: #93c5fd; }
+.header-desc { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 700px; }
+
+/* TABS */
+.tab-bar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 44px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.tab-btn {
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text3);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 3px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.tab-btn:hover { color: var(--blue); background: var(--blue-l); }
+.tab-btn.active { color: var(--blue-d); border-bottom-color: var(--blue); }
+
+/* CONTENT */
+.content { padding: 32px 44px 60px; max-width: 1100px; margin: 0 auto; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* SECTION */
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--blue-l);
+}
+.subsection-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text2);
+  margin: 20px 0 10px;
+}
+
+/* CARD */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .icon { font-size: 18px; }
+
+/* COLLAPSIBLE */
+.collapsible {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.collapsible-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  transition: background .15s;
+  user-select: none;
+}
+.collapsible-header:hover { background: var(--bg3); }
+.collapsible-header .arrow {
+  transition: transform .2s;
+  font-size: 12px;
+  color: var(--text3);
+}
+.collapsible.open .collapsible-header .arrow { transform: rotate(90deg); }
+.collapsible-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease;
+}
+.collapsible.open .collapsible-body { max-height: 5000px; }
+.collapsible-content {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* CODE */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--blue-d);
+}
+pre {
+  font-family: 'JetBrains Mono', monospace;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 16px 20px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+pre code { background: none; color: inherit; padding: 0; }
+
+/* TABLE */
+.table-wrapper { overflow-x: auto; margin: 12px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th { background: var(--bg3); font-weight: 600; color: var(--text2); }
+tr:hover td { background: var(--bg3); }
+
+/* BADGE */
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 8px; }
+.badge-blue { background: var(--blue-l); color: var(--blue-d); }
+.badge-green { background: var(--green-l); color: var(--green); }
+.badge-yellow { background: var(--yellow-l); color: var(--yellow); }
+.badge-red { background: var(--red-l); color: var(--red); }
+.badge-purple { background: var(--purple-l); color: var(--purple); }
+
+/* KEY POINT */
+.key-point {
+  background: var(--yellow-l);
+  border-left: 4px solid var(--yellow);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.key-point strong { color: var(--yellow); }
+
+/* INFO BOX */
+.info-box {
+  background: var(--blue-l);
+  border-left: 4px solid var(--blue);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.warning-box {
+  background: var(--red-l);
+  border-left: 4px solid var(--red);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+
+/* SVG DIAGRAM */
+.diagram-container {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  margin: 16px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.diagram-caption {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* LIST */
+ul, ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 6px; font-size: 14px; }
+
+/* COMPARISON */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+@media (max-width: 768px) {
+  .comparison-grid { grid-template-columns: 1fr; }
+  .content { padding: 20px; }
+  .page-header { padding: 24px 20px 16px; }
+  .tab-bar { padding: 0 20px; }
+}
+
+.highlight { background: var(--yellow-l); padding: 1px 4px; border-radius: 3px; }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part V · Chapter 7 — <b>BigQuery Deep Dive</b></span><span class="bkspacer"></span></nav>
+
+<div class="page-header">
+  <div class="header-tag">Data Engineer / OLAP System Design Interview Prep</div>
+  <h1 class="ht header-title">Google <span>BigQuery</span> Deep Dive</h1>
+  <div class="header-desc">Serverless columnar data warehouse internals: Dremel, storage/compute separation and slots, partitioning &amp; clustering, the bytes-scanned vs slot-reservation cost model, streaming vs batch ingestion, nested data, materialized views, and OLAP-vs-OLTP boundaries — with a worked cost example and interview Q&amp;A.</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="overview">Architecture</button>
+  <button class="tab-btn" data-tab="partitioning">Partitioning &amp; Clustering</button>
+  <button class="tab-btn" data-tab="cost">Cost Model</button>
+  <button class="tab-btn" data-tab="loading">Loading &amp; Nested Data</button>
+  <button class="tab-btn" data-tab="optimize">MV, BI Engine &amp; ELT</button>
+  <button class="tab-btn" data-tab="interview">Interview</button>
+</div>
+
+<div class="content">
+
+<!-- ==================== ARCHITECTURE TAB ==================== -->
+<div id="tab-overview" class="tab-panel active">
+  <div class="section">
+    <h2 class="section-title">What BigQuery Is</h2>
+    <p>BigQuery is Google Cloud's <strong>serverless, columnar, massively-parallel analytics data warehouse</strong>. There are no instances to size, no nodes to patch, and no indexes to build: you create datasets and tables, load data, and run SQL. The service transparently allocates compute for the duration of each query and releases it afterward. Its defining architectural choice is the <strong>full separation of storage and compute</strong>, connected by Google's petabit-scale network.</p>
+
+    <div class="info-box">
+      <strong>Lineage:</strong> BigQuery is the externalized product form of <strong>Dremel</strong>, the interactive query system Google described in its 2010 Dremel paper. Under the hood it stitches together four internal Google systems: <strong>Dremel</strong> (execution engine), <strong>Colossus</strong> (distributed storage), <strong>Jupiter</strong> (data-center network), and <strong>Borg</strong> (cluster orchestration).
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Separation of Storage &amp; Compute</h2>
+    <div class="diagram-container">
+      <svg viewBox="0 0 820 470" width="780" xmlns="http://www.w3.org/2000/svg">
+        <text x="410" y="24" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#0f172a">BigQuery Serverless Architecture</text>
+
+        <!-- Compute layer -->
+        <rect x="40" y="45" width="740" height="150" rx="12" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+        <text x="410" y="70" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#1d4ed8">Compute — Dremel Execution Engine (slots)</text>
+        <rect x="70" y="85" width="150" height="45" rx="6" fill="#fff" stroke="#2188fb" stroke-width="1.5"/>
+        <text x="145" y="105" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">Root / Mixer</text>
+        <text x="145" y="120" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">plans, aggregates</text>
+        <rect x="70" y="140" width="150" height="45" rx="6" fill="#fff" stroke="#2188fb" stroke-width="1.5"/>
+        <text x="145" y="160" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">Leaf slots</text>
+        <text x="145" y="175" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">scan + filter</text>
+        <rect x="250" y="85" width="230" height="100" rx="6" fill="#eff6ff" stroke="#2188fb" stroke-width="1.5"/>
+        <text x="365" y="108" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">Multi-level serving tree</text>
+        <circle cx="365" cy="130" r="8" fill="#1658ea"/>
+        <circle cx="325" cy="160" r="7" fill="#60a5fa"/>
+        <circle cx="365" cy="160" r="7" fill="#60a5fa"/>
+        <circle cx="405" cy="160" r="7" fill="#60a5fa"/>
+        <line x1="365" y1="138" x2="325" y2="153" stroke="#2188fb"/>
+        <line x1="365" y1="138" x2="365" y2="153" stroke="#2188fb"/>
+        <line x1="365" y1="138" x2="405" y2="153" stroke="#2188fb"/>
+        <rect x="510" y="85" width="240" height="100" rx="6" fill="#fff" stroke="#2188fb" stroke-width="1.5"/>
+        <text x="630" y="112" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">In-memory Shuffle tier</text>
+        <text x="630" y="132" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">repartition between stages</text>
+        <text x="630" y="150" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">(GROUP BY, JOIN, ORDER BY)</text>
+
+        <!-- Network -->
+        <rect x="40" y="215" width="740" height="45" rx="10" fill="#fef3c7" stroke="#a35905" stroke-width="2"/>
+        <text x="410" y="243" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#92400e">Jupiter Network — petabit/s bisection bandwidth (no local disk)</text>
+        <path d="M410 195 L410 215" stroke="#59677c" stroke-width="2" marker-end="url(#a1)"/>
+        <path d="M410 260 L410 285" stroke="#59677c" stroke-width="2" marker-end="url(#a1)"/>
+
+        <!-- Storage -->
+        <rect x="40" y="285" width="740" height="150" rx="12" fill="#dcfce7" stroke="#117e39" stroke-width="2"/>
+        <text x="410" y="310" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#166534">Storage — Colossus (Capacitor columnar format)</text>
+        <rect x="70" y="330" width="130" height="80" rx="6" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+        <text x="135" y="352" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">col: user_id</text>
+        <rect x="78" y="362" width="114" height="10" rx="2" fill="#bbf7d0"/>
+        <rect x="78" y="376" width="114" height="10" rx="2" fill="#bbf7d0"/>
+        <rect x="78" y="390" width="114" height="10" rx="2" fill="#bbf7d0"/>
+        <rect x="215" y="330" width="130" height="80" rx="6" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+        <text x="280" y="352" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">col: event_ts</text>
+        <rect x="223" y="362" width="114" height="10" rx="2" fill="#bbf7d0"/>
+        <rect x="223" y="376" width="114" height="10" rx="2" fill="#bbf7d0"/>
+        <rect x="223" y="390" width="114" height="10" rx="2" fill="#bbf7d0"/>
+        <rect x="360" y="330" width="130" height="80" rx="6" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+        <text x="425" y="352" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">col: country</text>
+        <rect x="368" y="362" width="114" height="10" rx="2" fill="#e5e7eb"/>
+        <rect x="368" y="376" width="114" height="10" rx="2" fill="#e5e7eb"/>
+        <rect x="368" y="390" width="114" height="10" rx="2" fill="#e5e7eb"/>
+        <text x="640" y="365" text-anchor="middle" font-family="Inter" font-size="10" fill="#59677c">Each column stored + compressed</text>
+        <text x="640" y="382" text-anchor="middle" font-family="Inter" font-size="10" fill="#59677c">separately &#8594; a query reads only</text>
+        <text x="640" y="399" text-anchor="middle" font-family="Inter" font-size="10" fill="#59677c">the columns it references</text>
+
+        <defs>
+          <marker id="a1" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#59677c"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="diagram-caption">Fig 1: Compute (Dremel slots) and storage (Colossus) scale independently, joined by the Jupiter network</div>
+    </div>
+
+    <div class="key-point">
+      <strong>Why this design wins:</strong> because compute is stateless and storage is remote, Google can assign thousands of slots to a single query and then reclaim them instantly. You never pay for idle nodes, storage grows without touching compute, and many tenants share the same physical fleet. The trade-off is that <strong>every query pays a network + scheduling tax</strong> (typically hundreds of ms to seconds of latency), which is why BigQuery is an OLAP engine, not an OLTP database.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Columnar Storage: Capacitor</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Why columnar matters for analytics</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li>BigQuery stores tables in <strong>Capacitor</strong>, a columnar format (successor to the original ColumnIO). Each column is encoded and compressed independently on Colossus.</li>
+          <li>Analytical queries touch few columns but many rows (e.g. <code>SUM(revenue) GROUP BY country</code> over a 200-column table). Columnar layout means the engine reads <em>only</em> <code>revenue</code> and <code>country</code> — not the other 198 columns.</li>
+          <li>Values within a column are similar, so run-length and dictionary encodings compress far better than row storage. Fewer bytes on disk = fewer bytes scanned = lower cost and higher speed.</li>
+          <li>Capacitor also stores <strong>per-column, per-block statistics</strong> (min/max, etc.) so the engine can skip blocks that cannot match a filter.</li>
+          <li>There are <strong>no user-managed indexes</strong>. You influence physical layout only through <em>partitioning</em> and <em>clustering</em> (next tab). A "search index" feature exists for point lookups on text, but the day-to-day performance levers are partition + cluster.</li>
+        </ul>
+        <div class="warning-box">
+          <strong>Direct consequence for cost:</strong> because storage is columnar and billing (on-demand) is by <em>bytes scanned</em>, <code>SELECT *</code> is the single most expensive habit in BigQuery — it forces the engine to read every column. Always project only the columns you need.
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Slots: the Unit of Compute</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>What is a slot?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li>A <strong>slot</strong> is BigQuery's abstract unit of compute capacity — a bundle of CPU, memory, and networking used to execute one unit of a query's work. You do not map slots to machines; the scheduler does.</li>
+          <li>A query is compiled into a DAG of <strong>stages</strong>; each stage is split into parallel <strong>tasks</strong>; tasks are executed by available slots. More slots &#8594; more parallelism &#8594; faster (up to the query's inherent parallelism).</li>
+          <li>Slots are <strong>fair-shared and elastic</strong>: a query that needs more capacity borrows idle slots and gives them back when stages complete. This dynamic scheduling is why the same query can run in 3 s or 30 s depending on concurrent load.</li>
+          <li>On the default <strong>on-demand</strong> model you don't manage slots at all (there's a shared pool, historically up to ~2,000 slots per project); you pay by bytes scanned. With <strong>capacity / editions</strong> you provision or autoscale a slot pool and pay for slot-time instead (see Cost tab).</li>
+        </ul>
+        <div class="info-box">
+          <strong>Data shuffle:</strong> between stages, intermediate results are repartitioned through an <strong>in-memory shuffle tier</strong> backed by Colossus for spill. This is how BigQuery does distributed <code>JOIN</code>, <code>GROUP BY</code>, and <code>ORDER BY</code> without the query author choosing a distribution key — a contrast with older MPP warehouses that require you to pick a DISTKEY.
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">OLAP vs OLTP — Where BigQuery Sits</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Dimension</th><th>OLTP (e.g. Cloud SQL, Spanner)</th><th>OLAP (BigQuery)</th></tr></thead>
+        <tbody>
+          <tr><td>Access pattern</td><td>Point reads/writes of single rows by key</td><td>Large scans + aggregation over many rows</td></tr>
+          <tr><td>Storage</td><td>Row-oriented (whole row co-located)</td><td>Column-oriented (Capacitor)</td></tr>
+          <tr><td>Latency target</td><td>Single-digit ms</td><td>Sub-second to seconds per query</td></tr>
+          <tr><td>Concurrency</td><td>Thousands of tiny txns/sec</td><td>Fewer, heavier analytical queries</td></tr>
+          <tr><td>Mutations</td><td>Frequent row-level UPDATE/DELETE</td><td>Append-heavy; bulk DML; not per-row</td></tr>
+          <tr><td>Keys/constraints</td><td>Enforced PK/FK, unique indexes</td><td>PK/FK are metadata-only (unenforced) optimizer hints</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="key-point">
+      <strong>Interview one-liner:</strong> "BigQuery is an OLAP warehouse — columnar, serverless, scan-optimized. Use it for analytics and ELT over large datasets, not for a shopping cart. If the workload is high-frequency single-row reads/writes, that's Spanner/Cloud SQL/Bigtable, not BigQuery."
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PARTITIONING TAB ==================== -->
+<div id="tab-partitioning" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Partitioning</h2>
+    <p>A partitioned table is physically divided into segments so the engine can <strong>prune</strong> (skip) whole partitions that a query's filter can't match. Pruned partitions are never read, so they cost nothing on the on-demand model and add no scan time.</p>
+
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Partition type</th><th>Column / mechanism</th><th>Granularity</th><th>Typical use</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Time-unit column</strong></td><td>A <code>DATE</code> column</td><td>Day, Month, or Year (no Hour — a <code>DATE</code> has no time component)</td><td>Event/log tables partitioned by event date</td></tr>
+          <tr><td><strong>Time-unit column</strong></td><td>A <code>TIMESTAMP</code> or <code>DATETIME</code> column</td><td>Hour, Day, Month, or Year</td><td>Event/log tables needing hourly resolution</td></tr>
+          <tr><td><strong>Ingestion time</strong></td><td>Pseudo-columns <code>_PARTITIONTIME</code> / <code>_PARTITIONDATE</code></td><td>Hour, Day, Month, or Year</td><td>Streaming appends where load time ≈ event time</td></tr>
+          <tr><td><strong>Integer range</strong></td><td>An <code>INT64</code> column with start/end/interval</td><td>Fixed numeric buckets</td><td>Partition by customer_id ranges, etc.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warning-box">
+      <strong>Key limits &amp; pitfalls (defensible facts):</strong>
+      <ul>
+        <li>A table can have at most <strong>10,000 partitions</strong>. Daily partitioning therefore covers ~27 years — fine; <em>hourly</em> partitioning exhausts the limit in ~416 days, so pick granularity deliberately.</li>
+        <li>Pruning only happens when the filter compares the partition column to a <strong>constant / literal</strong> (or a small set). Wrapping the partition column in a function, or joining it against another table, can defeat pruning.</li>
+        <li>Set <code>require_partition_filter = TRUE</code> to force every query to include a partition filter — a cheap guardrail against accidental full-table scans.</li>
+        <li>You can only partition on <strong>one</strong> column. Need a second dimension? Combine partitioning with clustering.</li>
+      </ul>
+    </div>
+
+    <pre>-- Daily-partitioned, clustered events table
+CREATE TABLE analytics.events (
+  event_ts   TIMESTAMP,
+  user_id    INT64,
+  country     STRING,
+  event_type STRING,
+  payload    JSON
+)
+PARTITION BY DATE(event_ts)
+CLUSTER BY country, event_type
+OPTIONS (
+  require_partition_filter = TRUE,       -- block un-pruned scans
+  partition_expiration_days = 400        -- auto-delete old partitions
+);</pre>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Clustering</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Sorting within storage blocks for extra pruning</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li>Clustering physically <strong>sorts</strong> data by up to <strong>4 columns</strong> (within each partition, if the table is also partitioned). Rows with similar clustering values land in the same storage blocks.</li>
+          <li>Because Capacitor keeps per-block min/max metadata, a filter on a clustering column lets the engine <strong>skip blocks</strong> that can't match — <em>block-level pruning</em> on top of partition-level pruning.</li>
+          <li>Column <strong>order matters</strong>: clustering is a sort prefix, exactly like a composite key. A filter on the first clustering column prunes best; filtering only the second column prunes weakly.</li>
+          <li><strong>Automatic reclustering</strong> keeps data sorted as you append, and Google does <strong>not</strong> charge for the reclustering compute.</li>
+          <li>Clustering shines on <strong>high-cardinality</strong> columns (user_id, country, sku) where partitioning would exceed the 10,000-partition limit.</li>
+        </ul>
+        <div class="info-box">
+          <strong>Partition vs cluster, in short:</strong> partitioning gives you <em>coarse, guaranteed, metadata-priced</em> pruning and cheap lifecycle management (drop/expire a whole partition). Clustering gives you <em>fine-grained, best-effort</em> pruning within partitions and supports up to 4 dimensions. Use both: partition by date, cluster by your common filter columns.
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Worked Example: Partitioning &amp; Bytes Scanned</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#128202;</span> A 10 TiB events table, 365 daily partitions</div>
+      <p>Assume <code>analytics.events</code> holds <strong>10 TiB</strong> spread evenly across one year of daily partitions — about <strong>28 GiB per partition</strong> — and on-demand pricing of <strong>$6.25 per TiB scanned</strong> (US multi-region, 2026).</p>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Query</th><th>Bytes scanned</th><th>On-demand cost</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>SELECT * FROM events</code> (no filter)</td>
+              <td>~10 TiB (all columns, all partitions)</td>
+              <td><span class="badge badge-red">$62.50</span></td>
+            </tr>
+            <tr>
+              <td><code>WHERE DATE(event_ts) = '2026-08-01'</code></td>
+              <td>~28 GiB (one partition, all columns)</td>
+              <td><span class="badge badge-yellow">≈ $0.17</span></td>
+            </tr>
+            <tr>
+              <td>Same day, but <code>SELECT country, event_type</code> only</td>
+              <td>~1–2 GiB (2 columns of 1 partition)</td>
+              <td><span class="badge badge-green">≈ $0.01</span></td>
+            </tr>
+            <tr>
+              <td>+ <code>WHERE country = 'US'</code> (clustered col)</td>
+              <td>Fraction of that — block pruning skips non-US blocks</td>
+              <td><span class="badge badge-green">&lt; $0.01</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:10px">The single-day + two-column + clustered query scans roughly <strong>3–4 orders of magnitude</strong> less than the naive <code>SELECT *</code>. Partitioning removed 364/365 of the rows; columnar projection removed most of the columns; clustering skipped most of the remaining blocks.</p>
+      <p style="margin-top:10px"><strong>Why <code>DATE(event_ts)</code> still prunes here:</strong> the table is <code>PARTITION BY DATE(event_ts)</code>, so filtering on that <em>exact</em> partitioning expression prunes normally. The earlier warning is about wrapping the column in an <em>additional/different</em> function (e.g. <code>EXTRACT(...)</code>, <code>CAST</code>) or filtering a non-partition column — that is what defeats pruning.</p>
+      <div class="warning-box">
+        <strong>Costing traps to state in an interview:</strong>
+        <ul>
+          <li><code>LIMIT</code> does <strong>not</strong> reduce bytes scanned — the engine still scans the referenced columns/partitions before limiting. It bounds output rows, not cost.</li>
+          <li>On-demand billing is <strong>bytes processed</strong>, rounded up, with a <strong>10 MB minimum per table</strong> referenced and per-query minimums; tiny queries aren't free.</li>
+          <li>Querying <code>_PARTITIONTIME</code> or table metadata (row count via <code>__TABLES__</code>, table preview, cached results, dry runs) can be free — but a real scan is not.</li>
+          <li>Clustering pruning is <strong>estimated, not guaranteed</strong>: a dry run shows the upper-bound bytes; the actual bytes billed after a clustered scan can be lower.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== COST TAB ==================== -->
+<div id="tab-cost" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Two Compute Pricing Models</h2>
+    <p>BigQuery splits billing into <strong>storage</strong> (always billed by bytes stored) and <strong>compute</strong> (billed one of two ways). Choosing the compute model correctly is the core cost-engineering decision.</p>
+    <div class="comparison-grid">
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--blue)">On-demand (per bytes scanned)</div>
+        <ul>
+          <li>Pay <strong>$6.25 per TiB</strong> of data <em>processed</em> by queries (US, 2026). <strong>First 1 TiB/month free.</strong></li>
+          <li>Zero capacity management; uses a shared slot pool (historically ~2,000 slots/project).</li>
+          <li>Cost is a pure function of <em>bytes scanned</em> &#8594; partitioning/clustering/column projection directly cut the bill.</li>
+          <li><strong>Best for:</strong> spiky, unpredictable, or low-volume workloads; getting started.</li>
+          <li><strong>Risk:</strong> one careless <code>SELECT *</code> over a huge table is an instant large bill.</li>
+        </ul>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--purple)">Capacity / Editions (per slot-time)</div>
+        <ul>
+          <li>Provision or <strong>autoscale a pool of slots</strong>; pay per <strong>slot-hour</strong> regardless of bytes scanned.</li>
+          <li>Editions: <strong>Standard</strong> (~$0.04), <strong>Enterprise</strong> (~$0.06), <strong>Enterprise Plus</strong> (~$0.10) per slot-hour, US pay-as-you-go.</li>
+          <li><strong>Commitments</strong> (1-year / 3-year) discount the slot rate for predictable baseline load.</li>
+          <li><strong>Best for:</strong> steady, high-volume workloads where bytes-scanned would exceed a fixed slot budget; predictable monthly cost.</li>
+          <li>Bytes scanned are no longer billed — but a runaway query just makes <em>everything else</em> slower (queues for slots).</li>
+        </ul>
+      </div>
+    </div>
+    <div class="key-point">
+      <strong>The break-even mental model:</strong> compute the effective cost of your monthly bytes-scanned under on-demand, and compare to the cost of a reservation that would satisfy the same workload's slot demand. High, steady scan volume &#8594; reservations win. Bursty or small &#8594; on-demand wins. Many teams use <strong>both</strong>: a baseline reservation for scheduled pipelines + on-demand (or autoscaling) for ad-hoc analysts.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Storage Pricing</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Class</th><th>Trigger</th><th>Approx. rate (US)</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Active (logical)</strong></td><td>Partition modified within 90 days</td><td>~$0.02 per GiB / month</td></tr>
+          <tr><td><strong>Long-term (logical)</strong></td><td>Partition <em>not</em> modified for 90 days (auto, ~50% off)</td><td>~$0.01 per GiB / month</td></tr>
+          <tr><td><strong>Active (physical)</strong></td><td>Opt-in physical (compressed) billing</td><td>~$0.04 per GiB / month</td></tr>
+          <tr><td><strong>Long-term (physical)</strong></td><td>Physical bytes, untouched 90 days</td><td>~$0.02 per GiB / month</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box">
+      <strong>Logical vs physical storage billing:</strong> logical bills uncompressed bytes; physical bills the compressed bytes on disk (usually much smaller) but at ~2× the rate. If your data compresses well (typical for columnar), <strong>physical billing is often cheaper</strong>. Long-term discount applies automatically per <em>partition</em> that hasn't been edited in 90 days — and does not slow reads. First <strong>10 GiB storage/month is free</strong>.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Cost-Control Tactics</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#128176;</span> Practical guardrails</div>
+      <ol>
+        <li><strong>Project only needed columns</strong> — never <code>SELECT *</code> on wide tables (columnar billing).</li>
+        <li><strong>Partition + cluster</strong> every large table on its common filter columns; set <code>require_partition_filter</code>.</li>
+        <li><strong>Cap per-query bytes</strong> with <code>maximum_bytes_billed</code> (job-level or default). The query fails instead of scanning more than the cap.</li>
+        <li><strong>Dry-run before running</strong> (<code>--dry_run</code> / <code>dryRun</code>) to see the byte estimate; wire it into CI for expensive scheduled queries.</li>
+        <li><strong>Custom quotas</strong> — set per-project / per-user daily query byte limits to contain blast radius.</li>
+        <li><strong>Materialized views &amp; BI Engine</strong> for repeated aggregations (see the MV, BI Engine &amp; ELT tab) so you don't rescan raw data every dashboard refresh.</li>
+        <li><strong>Exploit free operations</strong> — cached results, table preview, and metadata queries don't scan.</li>
+        <li><strong>Reservations</strong> for predictable pipelines to convert a variable bytes bill into a fixed slot bill.</li>
+      </ol>
+      <pre>-- Fail the job rather than scan more than 50 GiB
+SELECT country, COUNT(*) AS n
+FROM analytics.events
+WHERE DATE(event_ts) BETWEEN '2026-08-01' AND '2026-08-07'
+GROUP BY country;
+-- run with:  bq query --maximum_bytes_billed=53687091200 --use_legacy_sql=false '...'
+
+-- Estimate cost without running (bytes only, $0 charged):
+-- bq query --dry_run --use_legacy_sql=false 'SELECT ...'</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LOADING TAB ==================== -->
+<div id="tab-loading" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Batch Load vs Streaming Ingest</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Aspect</th><th>Batch load</th><th>Streaming (Storage Write API)</th></tr></thead>
+        <tbody>
+          <tr><td>Path</td><td><code>bq load</code> / <code>LoadJob</code> from GCS, local files, or query results</td><td><code>BigQuery Storage Write API</code> (replaces legacy <code>tabledata.insertAll</code>)</td></tr>
+          <tr><td>Latency</td><td>Seconds–minutes; committed as a job</td><td>Rows queryable within seconds (near real-time)</td></tr>
+          <tr><td>Cost</td><td><span class="badge badge-green">Free</span> on shared slots (or uses your reservation)</td><td>Charged per GB ingested (Write API ~$0.025/GiB; first 2 TiB/month free)</td></tr>
+          <tr><td>Formats</td><td>Avro, Parquet, ORC, CSV, JSON (newline-delimited)</td><td>Protocol-buffer rows via gRPC streams</td></tr>
+          <tr><td>Semantics</td><td>Atomic per job; easy re-load / overwrite</td><td>Exactly-once per stream (offsets); commit control</td></tr>
+          <tr><td>Best for</td><td>Hourly/daily pipelines, backfills, huge files</td><td>Event streams, CDC, dashboards needing fresh data</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="key-point">
+      <strong>Default to batch.</strong> Batch loading is free and atomic — for scheduled ELT there's no reason to stream. Reach for the <strong>Storage Write API</strong> only when you genuinely need seconds-fresh data. The modern Storage Write API supersedes the old <code>insertAll</code> streaming endpoint, offering higher throughput, exactly-once delivery, and lower cost, with both <em>pending</em> (commit-later, batch-like) and <em>committed</em> (immediately visible) stream modes.
+    </div>
+    <div class="warning-box">
+      <strong>Free query-to-query loads:</strong> <code>CREATE TABLE AS SELECT</code> (CTAS), <code>INSERT ... SELECT</code>, and <code>LOAD DATA</code> from GCS are the backbone of ELT and don't incur separate ingestion charges — you pay only for the query compute (bytes scanned or slots). This is why the idiomatic BigQuery pattern is <em>land raw &#8594; transform with SQL</em>.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Nested &amp; Repeated Fields</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>STRUCT (RECORD) and ARRAY (REPEATED)</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li>BigQuery natively supports <strong>nested</strong> data via <code>STRUCT</code> (a record with sub-fields) and <strong>repeated</strong> data via <code>ARRAY</code> (a column holding many values per row). Combine them: an <code>ARRAY&lt;STRUCT&gt;</code> models a one-to-many relationship <em>inside a single row</em>.</li>
+          <li>This is Dremel's original contribution: it stores nested structures columnar using <strong>repetition and definition levels</strong>, so nested fields still get columnar compression and per-column scanning.</li>
+          <li><strong>Denormalizing</strong> child records into a repeated field often beats a JOIN: the related data is co-located, and you avoid a shuffle. Classic pattern — an <code>order</code> row with a repeated <code>line_items</code> array rather than a separate items table.</li>
+          <li>Flatten a repeated field with <code>UNNEST</code>, which cross-joins each array element back to its parent row.</li>
+        </ul>
+        <pre>-- Schema: orders with a repeated array of line-item STRUCTs
+CREATE TABLE shop.orders (
+  order_id   INT64,
+  customer   STRUCT&lt;id INT64, country STRING&gt;,
+  line_items ARRAY&lt;STRUCT&lt;sku STRING, qty INT64, price NUMERIC&gt;&gt;
+);
+
+-- Query: revenue per SKU — UNNEST flattens the array
+SELECT
+  li.sku,
+  SUM(li.qty * li.price) AS revenue
+FROM shop.orders AS o,
+  UNNEST(o.line_items) AS li          -- one row per line item
+WHERE o.customer.country = 'US'        -- dotted access into the STRUCT
+GROUP BY li.sku
+ORDER BY revenue DESC;</pre>
+        <div class="info-box">
+          <strong>Why denormalize here but normalize in OLTP?</strong> An OLTP store normalizes to make row-level updates cheap and consistent. BigQuery is append/scan-oriented: co-locating children as repeated fields removes JOIN shuffles and matches the columnar scan model. It's the OLAP inversion of the classic normalization advice.
+        </div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== OPTIMIZE TAB ==================== -->
+<div id="tab-optimize" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Materialized Views</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Precomputed, incrementally-refreshed aggregates with automatic rewrite</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li>A <strong>materialized view (MV)</strong> stores the precomputed result of a query and keeps it up to date. Unlike a plain <em>view</em> (which is just saved SQL re-run every time), an MV persists data and is refreshed <strong>incrementally</strong> as the base table changes.</li>
+          <li><strong>Automatic query rewrite ("smart tuning"):</strong> the optimizer can transparently rewrite a query against the <em>base table</em> to read from a matching MV instead — even if the query never names the MV — cutting bytes scanned and latency.</li>
+          <li>MVs are ideal for <strong>repeated aggregations</strong>: dashboards, daily rollups, <code>GROUP BY</code> over huge fact tables. You pay compute to maintain the MV incrementally, not a full rescan per query.</li>
+          <li>Refresh can be <strong>automatic</strong> (background, within minutes) or manual; queries against a stale MV can still read fresh base rows and combine them, so results stay correct.</li>
+          <li>Constraints: MVs support a subset of SQL (aggregations, a single base table or limited joins depending on features enabled). Complex logic may need a scheduled <strong>table</strong> rollup instead.</li>
+        </ul>
+        <pre>CREATE MATERIALIZED VIEW analytics.daily_country_counts AS
+SELECT
+  DATE(event_ts) AS day,
+  country,
+  COUNT(*)      AS events,
+  APPROX_COUNT_DISTINCT(user_id) AS users   -- exact COUNT(DISTINCT) is not MV-supported
+FROM analytics.events
+GROUP BY day, country;
+-- A later ad-hoc GROUP BY day,country against events
+-- can be auto-rewritten to read this MV.</pre>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">BI Engine</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>In-memory acceleration for interactive dashboards</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li><strong>BI Engine</strong> is an in-memory analysis layer inside BigQuery. You reserve capacity in <strong>GiB</strong>; hot columnar data is cached in RAM and queries served from it return in <strong>sub-second</strong> time.</li>
+          <li>It accelerates the <strong>same SQL</strong> transparently — no query changes. It's aimed at BI tools with many concurrent, repetitive queries (Looker / Looker Studio, and other connectors).</li>
+          <li>Best paired with partitioning/clustering (so the working set fits in the reservation) and materialized views (so aggregates are cheap to cache).</li>
+        </ul>
+        <div class="key-point">
+          <strong>Layering the accelerators:</strong> raw fact table &#8594; <em>partition + cluster</em> to prune &#8594; <em>materialized view</em> to precompute rollups &#8594; <em>BI Engine</em> to serve them from memory. Each layer removes work the next one would otherwise repeat.
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">ETL vs ELT</h2>
+    <div class="comparison-grid">
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--yellow)">ETL — transform, then load</div>
+        <ul>
+          <li>Data is cleaned/reshaped in an external engine <em>before</em> landing in the warehouse.</li>
+          <li>Google tooling: <strong>Dataflow</strong> (Apache Beam) for streaming/batch, <strong>Dataproc</strong> (Spark) for heavy custom transforms.</li>
+          <li>Fits: complex non-SQL logic, PII scrubbing before storage, joining many external sources.</li>
+        </ul>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--green)">ELT — load raw, transform in-warehouse</div>
+        <ul>
+          <li>Land raw data first, then transform with <strong>SQL inside BigQuery</strong> (its native strength).</li>
+          <li>Tooling: <strong>Dataform</strong> (SQL-based transformation/orchestration built into BigQuery) or <strong>dbt</strong>; scheduled queries; CTAS/INSERT.</li>
+          <li>Fits: most analytics pipelines — cheaper (batch loads are free), versionable, and leverages BigQuery's parallel SQL.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="info-box">
+      <strong>Why ELT is the default on BigQuery:</strong> a serverless engine that scans TiB in seconds makes "load everything raw, transform later with SQL" cheap and flexible. You keep raw data for reprocessing, express transforms as version-controlled SQL, and let the warehouse parallelize. Reserve ETL (Dataflow/Dataproc) for logic SQL can't express or for transforms that must happen before data is stored.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== INTERVIEW TAB ==================== -->
+<div id="tab-interview" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Common Interview Questions</h2>
+
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Q: How does BigQuery run a query so fast without indexes?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>Three things: (1) <strong>columnar storage</strong> (Capacitor) means it reads only the referenced columns, heavily compressed; (2) <strong>massive parallelism</strong> — the Dremel engine fans the scan across thousands of slots in a multi-level serving tree, with an in-memory shuffle between stages; (3) <strong>pruning</strong> via partitioning (skip partitions) and clustering (skip blocks) plus per-block min/max metadata. There are no B-tree indexes; you shape performance with partition + cluster + column projection.</p>
+      </div></div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Q: A query cost $60. How do you bring it down?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ol>
+          <li>Stop scanning columns you don't need — replace <code>SELECT *</code> with an explicit column list.</li>
+          <li>Add a <strong>partition filter</strong> so the engine prunes to the relevant date range; enforce with <code>require_partition_filter</code>.</li>
+          <li><strong>Cluster</strong> the table on the columns in the <code>WHERE</code> clause for block pruning.</li>
+          <li>If it's a repeated aggregation, build a <strong>materialized view</strong> so it isn't recomputed from raw each time.</li>
+          <li>Set <code>maximum_bytes_billed</code> and a default so a future mistake fails fast instead of billing.</li>
+          <li>If this workload is steady and heavy, move it to a <strong>slot reservation</strong> so cost is fixed regardless of bytes.</li>
+        </ol>
+      </div></div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Q: On-demand vs slot reservations — how do you choose?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>Model both. On-demand ($6.25/TiB scanned) is best for <strong>spiky, unpredictable, or low-volume</strong> usage — you pay nothing when idle, but a bad scan is a real bill. Reservations (per slot-hour, with 1/3-year commitment discounts) suit <strong>steady, high-volume</strong> workloads: predictable monthly cost and no per-byte surprises, at the price of managing capacity. In practice, many teams reserve a baseline for scheduled pipelines and let ad-hoc analysts use on-demand or an autoscaling reservation.</p>
+      </div></div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Q: When should you NOT use BigQuery?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li><strong>OLTP / transactional apps</strong> — high-frequency single-row reads/writes with ms latency &#8594; Cloud SQL, Spanner, or Bigtable.</li>
+          <li><strong>Point lookups by key at scale</strong> &#8594; Bigtable / a key-value store; BigQuery pays a per-query scheduling tax.</li>
+          <li><strong>Frequent per-row mutations</strong> — BigQuery does bulk DML well but is not designed for constant tiny UPDATEs.</li>
+          <li><strong>Sub-ms serving</strong> for user-facing requests &#8594; cache (Memorystore/Redis) or a serving DB.</li>
+        </ul>
+      </div></div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Q: Partitioning vs clustering — what's the difference?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p><strong>Partitioning</strong> splits a table into segments on <em>one</em> column (time-unit, ingestion-time, or integer-range), giving coarse, guaranteed pruning, cheap lifecycle management (expire/drop a partition), and a hard limit of 10,000 partitions. <strong>Clustering</strong> sorts data by up to 4 columns within each partition for fine-grained, best-effort block pruning, and handles high-cardinality columns that would overflow the partition limit. They're complementary — partition by date, cluster by your frequent filter columns.</p>
+      </div></div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Q: Why denormalize with nested/repeated fields?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>In OLAP the goal is fast scans, not cheap row updates. Storing children (e.g. order line items) as an <code>ARRAY&lt;STRUCT&gt;</code> inside the parent row co-locates related data, so you avoid a distributed JOIN and its shuffle, while Dremel still stores each nested field columnar (repetition/definition levels) for compression and selective scanning. You flatten with <code>UNNEST</code> when you need per-element rows. This is the deliberate inverse of OLTP normalization.</p>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">30-Second Summary</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#9989;</span> Say this and you've covered BigQuery</div>
+      <ul>
+        <li><strong>Architecture:</strong> serverless, columnar (Capacitor on Colossus), Dremel execution in slots, storage/compute separated over the Jupiter network.</li>
+        <li><strong>Performance levers:</strong> partition (coarse pruning, 1 column, ≤10k), cluster (4 cols, block pruning), project only needed columns — no indexes.</li>
+        <li><strong>Cost:</strong> on-demand $6.25/TiB scanned (1 TiB/mo free) vs capacity slot-reservations; storage active vs long-term, logical vs physical.</li>
+        <li><strong>Ingestion:</strong> batch loads are free/atomic (default); Storage Write API for seconds-fresh streaming; ELT with SQL is idiomatic.</li>
+        <li><strong>Acceleration:</strong> materialized views (incremental + auto-rewrite) and BI Engine (in-memory, sub-second).</li>
+        <li><strong>Boundary:</strong> OLAP, not OLTP — big scans and aggregation, not single-row transactional serving.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Dremel</strong></td><td>Google's interactive query system; BigQuery's distributed execution engine.</td></tr>
+<tr><td><strong>Colossus</strong></td><td>Google's distributed file system; BigQuery's remote storage layer.</td></tr>
+<tr><td><strong>Jupiter</strong></td><td>Google's data-center network fabric linking compute and storage at petabit scale.</td></tr>
+<tr><td><strong>Borg</strong></td><td>Google's cluster manager that orchestrates BigQuery's compute fleet.</td></tr>
+<tr><td><strong>Capacitor</strong></td><td>BigQuery's columnar on-disk storage format (successor to ColumnIO).</td></tr>
+<tr><td><strong>OLAP</strong></td><td>Online Analytical Processing — large scans and aggregation over many rows.</td></tr>
+<tr><td><strong>OLTP</strong></td><td>Online Transaction Processing — high-frequency single-row reads/writes.</td></tr>
+<tr><td><strong>Slot</strong></td><td>BigQuery's abstract unit of compute — a bundle of CPU, memory, and networking.</td></tr>
+<tr><td><strong>Shuffle</strong></td><td>In-memory tier that repartitions intermediate results between query stages.</td></tr>
+<tr><td><strong>MPP</strong></td><td>Massively Parallel Processing — splitting a query across many workers/slots.</td></tr>
+<tr><td><strong>Pruning</strong></td><td>Skipping partitions or blocks that a query's filter cannot match.</td></tr>
+<tr><td><strong>Partitioning</strong></td><td>Dividing a table into segments on one column for coarse, guaranteed pruning.</td></tr>
+<tr><td><strong>Clustering</strong></td><td>Sorting data by up to four columns for fine-grained, block-level pruning.</td></tr>
+<tr><td><strong>DML</strong></td><td>Data Manipulation Language — INSERT/UPDATE/DELETE/MERGE statements.</td></tr>
+<tr><td><strong>STRUCT / ARRAY</strong></td><td>Nested (record) and repeated field types for one-to-many data inside a row.</td></tr>
+<tr><td><strong>UNNEST</strong></td><td>Operator that flattens an array into one row per element.</td></tr>
+<tr><td><strong>Storage Write API</strong></td><td>BigQuery's gRPC streaming ingestion API with exactly-once, near real-time writes.</td></tr>
+<tr><td><strong>Materialized view (MV)</strong></td><td>Precomputed, incrementally-refreshed query result with automatic query rewrite.</td></tr>
+<tr><td><strong>BI Engine</strong></td><td>In-memory analysis layer inside BigQuery for sub-second query serving.</td></tr>
+<tr><td><strong>ETL / ELT</strong></td><td>Extract-Transform-Load vs Extract-Load-Transform (transform in-warehouse with SQL).</td></tr>
+</table>
+</div>
+
+</div> <!-- end .content -->
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Collapsible cards
+document.querySelectorAll('.collapsible-header').forEach(header => {
+  header.addEventListener('click', () => {
+    header.parentElement.classList.toggle('open');
+  });
+});
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="dynamodb_deep_dive.html">‹ DynamoDB Deep Dive</a><a class="bkc" href="index.html">📖 Contents</a><a href="cloud_ai_ml_infra.html">Cloud AI/ML Infrastructure ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

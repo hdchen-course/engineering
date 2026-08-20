@@ -1,0 +1,3071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design Interview — Playbook &amp; Tips</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --sw: 260px;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* CONTAINER — normal document flow (centered, scrolls with page) */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px 48px; }
+
+/* TOP SECTION NAV (converted from the former fixed sidebar) */
+.nav {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg); padding: 14px 0; margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+.nav-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg2);
+  color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600;
+  font-family: 'Inter', sans-serif; transition: all .15s;
+}
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue-d); border-color: var(--blue); }
+.nav-btn .badge { margin-left: 2px; }
+
+/* RELATED CHAPTER LINKS (converted from the former external-modules sidebar group) */
+.modnav {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin: 0 0 24px; padding: 14px 16px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r);
+  box-shadow: var(--shadow-sm);
+}
+.modnav .modnav-label { flex: 1 0 100%; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 2px; }
+.modnav a, .modnav .modnav-text {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg);
+  font-size: 12px; font-weight: 500;
+}
+.modnav a { text-decoration: none; color: var(--text2); }
+.modnav a:hover { background: var(--blue-l); color: var(--blue-d); border-color: var(--blue); }
+.modnav .modnav-text { color: var(--text3); }
+
+.sbh {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.sbt { font-size: 13px; font-weight: 700; color: var(--blue-d); text-transform: uppercase; letter-spacing: 1px; }
+.sbs { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.ng { padding: 12px 8px 0; }
+.ngl { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 6px; }
+.ni {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: var(--text2);
+  transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+}
+.ni:hover { background: var(--bg3); color: var(--text); }
+.ni.active { background: var(--blue-l); color: var(--blue-d); font-weight: 600; }
+.ni-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.ni-text { flex: 1; font-size: 12px; }
+.badge { margin-left: auto; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+.bh { background: var(--red-l); color: var(--red); }
+.bg { background: var(--green-l); color: var(--green); }
+.bp { background: var(--purple-l); color: var(--purple); }
+.bt { background: var(--teal-l); color: var(--teal); }
+.bo { background: var(--orange-l); color: var(--orange); }
+
+/* (legacy fixed #main shell removed — content now flows inside .container) */
+
+/* HEADER */
+.ph {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px;
+  border-radius: var(--r);
+  margin-top: 24px;
+  overflow: hidden;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #93c5fd; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 650px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+.sec { padding: 28px 0; display: none; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: #fff; border-radius: var(--r); margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--blue-l); color: var(--blue-d); font-size: 11px; font-weight: 500; margin: 2px; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* INTERVIEW QUOTE */
+.iq {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--text2);
+  font-size: 13px;
+  position: relative;
+}
+.iq::before {
+  content: 'SAY THIS';
+  position: absolute;
+  top: -8px; left: 14px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  background: var(--blue);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* SKILL BOX */
+.skill-box {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 18px; margin: 10px 0; box-shadow: var(--shadow-sm);
+}
+.skill-box h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.skill-box ul { padding-left: 18px; font-size: 13px; color: var(--text2); }
+.skill-box li { margin-bottom: 4px; }
+
+/* SVG CONTAINERS */
+.svg-container {
+  margin: 20px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.svg-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* PROGRESS */
+.prog { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.pc { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow-sm); text-align: center; }
+.pc .num { font-size: 28px; font-weight: 800; color: var(--blue-d); }
+.pc .lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg3); padding: 1px 5px; border-radius: 4px; color: var(--blue-d); }
+
+/* LIST STYLING */
+.content-list { padding-left: 20px; margin: 8px 0; }
+.content-list li { margin-bottom: 6px; font-size: 13px; color: var(--text2); }
+.content-list li strong { color: var(--text); }
+
+/* DECISION GRID */
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.decision-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.decision-item .dt {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-d);
+  margin-bottom: 6px;
+}
+.decision-item p {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.decision-item .di-key {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 0 12px 32px; }
+  .nav { padding: 10px 0; }
+  .sec { padding: 20px 2px; }
+  .ph { padding: 24px 18px; }
+}
+a.lc { color: var(--blue); text-decoration: none; font-weight: 500; }
+a.lc:hover { text-decoration: underline; color: var(--blue-d); }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part IV · Chapter 1 — <b>System Design Interview Playbook</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+
+<div class="ph">
+  <div class="htag">System Design &middot; Interview Preparation</div>
+  <div class="ht">System Design Interview <span>Playbook &amp; Tips</span></div>
+  <div class="hd">A comprehensive guide covering frameworks, patterns, trade-offs, and real-world case studies. Master the art of designing scalable distributed systems and articulating your decisions clearly.</div>
+  <div class="hm">
+    <div class="chip">Sections <b>20</b></div>
+    <div class="chip">SVG Diagrams <b>7</b></div>
+    <div class="chip">Focus <b>Trade-offs</b></div>
+    <div class="chip">Goal <b>Structured Thinking</b></div>
+  </div>
+</div>
+
+<nav class="nav" id="secnav">
+  <button class="nav-btn active" onclick="go('framework')">Framework &amp; Approach<span class="badge bh">Start Here</span></button>
+  <button class="nav-btn" onclick="go('concepts')">Key Concepts</button>
+  <button class="nav-btn" onclick="go('patterns')">Common Patterns</button>
+  <button class="nav-btn" onclick="go('database')">Database Deep Dive<span class="badge bp">Critical</span></button>
+  <button class="nav-btn" onclick="go('api')">API Design Tips</button>
+  <button class="nav-btn" onclick="go('numbers')">Numbers to Know<span class="badge bg">Reference</span></button>
+  <button class="nav-btn" onclick="go('mistakes')">Common Mistakes<span class="badge bo">Avoid</span></button>
+  <button class="nav-btn" onclick="go('phrases')">Depth Phrases</button>
+  <button class="nav-btn" onclick="go('sqlnosql')">SQL vs NoSQL<span class="badge bh">Must Know</span></button>
+  <button class="nav-btn" onclick="go('queue')">Message Queues</button>
+  <button class="nav-btn" onclick="go('caching')">Caching Strategies<span class="badge bp">Critical</span></button>
+  <button class="nav-btn" onclick="go('lb')">Load Balancing</button>
+  <button class="nav-btn" onclick="go('comms')">Communication Patterns</button>
+  <button class="nav-btn" onclick="go('apidesign')">API Design Talking Points</button>
+  <button class="nav-btn" onclick="go('resilience')">Rate Limiting &amp; Resilience</button>
+  <button class="nav-btn" onclick="go('cdn')">CDN Quick Reference</button>
+  <button class="nav-btn" onclick="go('mapdesign')">Map-Based System Design<span class="badge bp">Guide</span></button>
+  <button class="nav-btn" onclick="go('morepatterns')">Additional Design Patterns<span class="badge bo">Classic</span></button>
+  <button class="nav-btn" onclick="go('mysql')">MySQL Index Internals<span class="badge bt">Bonus</span></button>
+  <button class="nav-btn" onclick="go('pgvsmysql')">PostgreSQL vs MySQL<span class="badge bt">Bonus</span></button>
+</nav>
+
+<div class="modnav">
+  <span class="modnav-label">Related Chapters</span>
+  <a href="observability_dashboard.html">🔭 Observability &amp; Dashboards</a>
+  <a href="map_system_design.html">🗺️ Map &amp; Geospatial Design</a>
+  <a href="test_automation_design.html">🧪 Test Automation at Scale</a>
+  <a href="redis_deep_dive.html">⚡ Redis Deep Dive</a>
+  <a href="mysql_deep_dive.html">🐬 MySQL / InnoDB Deep Dive</a>
+  <a href="nv_dgx_cloud_prep.html">🎛️ GPU Cloud Automation (DGX)</a>
+  <a href="ai_contact_center_platform.html">🎧 AI Contact Center Platform</a>
+  <a href="ai_contact_center_knowledge.html">📚 Contact Center Primer</a>
+  <span class="modnav-label">Further Reading</span>
+  <span class="modnav-text">📄 GFS / MapReduce / Bigtable</span>
+  <span class="modnav-text">🤖 TPU / AI Infra Knowledge</span>
+  <span class="modnav-text">🚀 TPU System Design Problems</span>
+  <span class="modnav-text">🔮 ML Infra: Inference / Serving / Profiling</span>
+</div>
+
+<!-- ═══════ SECTION 1: FRAMEWORK ═══════ -->
+<div id="tab-framework" class="sec active">
+<h2 class="stitle">Framework — How to Approach Any System Design Question</h2>
+<div class="sdesc">A structured 5-step approach that works for any system design interview. Master the framework, then customize per question.</div>
+
+<h3 class="sub">Decision Framework — 5 Dimensions</h3>
+<div class="decision-grid">
+  <div class="decision-item">
+    <div class="dt">1. Access Pattern</div>
+    <p>Read-heavy or Write-heavy? &rarr; Read Replicas or NoSQL</p>
+    <div class="di-key">Key: Read-to-Write Ratio, Latency Requirements</div>
+  </div>
+  <div class="decision-item">
+    <div class="dt">2. Consistency</div>
+    <p>Strong Consistency (payment) vs Eventual Consistency (social posts)</p>
+    <div class="di-key">Key: CAP Theorem, Data Accuracy</div>
+  </div>
+  <div class="decision-item">
+    <div class="dt">3. Scale</div>
+    <p>Current QPS and data growth rate? Sharding vs Vertical Scale-up</p>
+    <div class="di-key">Key: Traffic Peaks, Data Scale</div>
+  </div>
+  <div class="decision-item">
+    <div class="dt">4. Failure Handling</div>
+    <p>Circuit Breaker and Failover strategies</p>
+    <div class="di-key">Key: Fault Tolerance, Backup Plans</div>
+  </div>
+  <div class="decision-item">
+    <div class="dt">5. Operational Complexity</div>
+    <p>Managed Services (RDS/S3) early on to reduce toil</p>
+    <div class="di-key">Key: Team Cost, Maintenance Difficulty</div>
+  </div>
+</div>
+
+<div class="iq">"Before jumping into the solution, I'd like to understand access patterns, consistency requirements, and scale — these will guide most of the design decisions."</div>
+
+<!-- Step 1 -->
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">STEP 1</span>
+    <span class="ct">Clarify Requirements (3-5 min)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">Functional Requirements</div>
+    <ul class="content-list">
+      <li>What does the system do? List core features.</li>
+      <li>What are the main use cases? Walk through user stories.</li>
+    </ul>
+    <div class="sub2">Non-Functional Requirements</div>
+    <ul class="content-list">
+      <li><strong>Scale:</strong> How many users? DAU/MAU?</li>
+      <li><strong>Latency:</strong> Real-time? Sub-100 ms? Batch is OK?</li>
+      <li><strong>Availability:</strong> 99.9%? 99.99%?</li>
+      <li><strong>Consistency:</strong> Strong or eventual?</li>
+      <li><strong>Durability:</strong> Can we lose data? How long to retain?</li>
+    </ul>
+    <div class="sub2">Questions to Ask</div>
+    <ul class="content-list">
+      <li><strong>Users:</strong> How many? Read-heavy or write-heavy? Geographic distribution?</li>
+      <li><strong>Data:</strong> How much? Growth rate? Access patterns?</li>
+      <li><strong>Constraints:</strong> Budget, team size, existing tech stack?</li>
+    </ul>
+    <div class="tip">
+      <div class="tipl">TIP</div>
+      <p>Spending 3-5 minutes here saves you from designing the wrong system. Interviewers want to see you ask smart questions.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Step 2 -->
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">STEP 2</span>
+    <span class="ct">Back-of-the-Envelope Estimation (2-3 min)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>DAU / MAU</strong> — daily and monthly active users</li>
+      <li><strong>QPS</strong> — queries per second: average and peak</li>
+      <li><strong>Storage</strong> — per-record size &times; records &times; retention period</li>
+      <li><strong>Bandwidth</strong> — QPS &times; response size</li>
+      <li><strong>Memory (if caching)</strong> — working set size</li>
+    </ul>
+    <div class="iq">"Let me do a quick estimation to sanity check the scale. Assume 1M daily active users, each making ~10 requests per day — that's about 100 QPS on average. Peak traffic is usually ~10x, so around 1,000 QPS. This helps us decide whether a single DB is sufficient or we need sharding early."</div>
+    <div class="ins">
+      <div class="insl">QUICK FORMULA</div>
+      <p><code>QPS = DAU &times; actions_per_user / 86,400</code><br>
+      <code>Peak QPS = Average QPS &times; 10</code><br>
+      <code>Storage = records &times; size &times; retention_days</code></p>
+    </div>
+  </div>
+</div>
+
+<!-- Step 3 -->
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">STEP 3</span>
+    <span class="ct">High-Level Design (5-10 min)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li>Start with a simple architecture that satisfies current requirements</li>
+      <li>Draw the main components: clients, load balancer, API servers, database, cache, queue</li>
+      <li>Show the data flow for the core use case</li>
+      <li>Keep it simple — don't over-engineer at this stage</li>
+    </ul>
+
+    <!-- SVG: Standard Architecture -->
+    <div class="svg-container">
+      <svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" style="max-width:860px;">
+<defs>
+          <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#5b6b7f"/>
+          </marker>
+        </defs>
+        <!-- Client -->
+        <rect x="10" y="130" width="100" height="50" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="60" y="158" text-anchor="middle" font-size="11" font-weight="600" fill="#1d4ed8">Client</text>
+        <text x="60" y="172" text-anchor="middle" font-size="9" fill="#526176">Web/App</text>
+        <!-- Arrow -->
+        <line x1="110" y1="155" x2="145" y2="155" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <!-- CDN -->
+        <rect x="150" y="130" width="90" height="50" rx="8" fill="#f0f9ff" stroke="#0ea5e9" stroke-width="1.5"/>
+        <text x="195" y="155" text-anchor="middle" font-size="11" font-weight="600" fill="#0369a1">CDN</text>
+        <text x="195" y="169" text-anchor="middle" font-size="8" fill="#526176">Static Assets</text>
+        <!-- Arrow -->
+        <line x1="240" y1="155" x2="275" y2="155" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <!-- LB -->
+        <rect x="280" y="125" width="90" height="60" rx="8" fill="#dcfce7" stroke="#137a39" stroke-width="1.5"/>
+        <text x="325" y="152" text-anchor="middle" font-size="11" font-weight="600" fill="#166534">ALB</text>
+        <text x="325" y="166" text-anchor="middle" font-size="8" fill="#526176">L7, SSL Term.</text>
+        <text x="325" y="178" text-anchor="middle" font-size="8" fill="#526176">Health Checks</text>
+        <!-- Arrows to API servers -->
+        <line x1="370" y1="140" x2="415" y2="100" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="370" y1="155" x2="415" y2="155" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <line x1="370" y1="170" x2="415" y2="210" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <!-- API Servers -->
+        <rect x="420" y="75" width="90" height="45" rx="6" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="465" y="100" text-anchor="middle" font-size="10" font-weight="600" fill="#1d4ed8">API-1</text>
+        <rect x="420" y="133" width="90" height="45" rx="6" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="465" y="158" text-anchor="middle" font-size="10" font-weight="600" fill="#1d4ed8">API-2</text>
+        <rect x="420" y="191" width="90" height="45" rx="6" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="465" y="216" text-anchor="middle" font-size="10" font-weight="600" fill="#1d4ed8">API-3</text>
+        <text x="465" y="252" text-anchor="middle" font-size="9" fill="#526176">Stateless</text>
+        <!-- Arrow to Cache -->
+        <line x1="510" y1="155" x2="555" y2="155" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <!-- Redis Cache -->
+        <rect x="560" y="130" width="90" height="50" rx="8" fill="#fee2e2" stroke="#c21f1f" stroke-width="1.5"/>
+        <text x="605" y="155" text-anchor="middle" font-size="11" font-weight="600" fill="#991b1b">Redis</text>
+        <text x="605" y="169" text-anchor="middle" font-size="8" fill="#526176">Cache Layer</text>
+        <!-- Arrow to DB -->
+        <line x1="605" y1="180" x2="605" y2="220" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <!-- Database -->
+        <rect x="545" y="225" width="120" height="60" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="605" y="250" text-anchor="middle" font-size="11" font-weight="600" fill="#5b21b6">Database</text>
+        <text x="605" y="264" text-anchor="middle" font-size="8" fill="#526176">Primary + Read Replicas</text>
+        <text x="605" y="278" text-anchor="middle" font-size="8" fill="#526176">SQL</text>
+        <!-- Arrow to Queue -->
+        <line x1="510" y1="210" x2="720" y2="155" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrowhead)" stroke-dasharray="4,3"/>
+        <!-- Message Queue -->
+        <rect x="720" y="130" width="100" height="50" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="1.5"/>
+        <text x="770" y="153" text-anchor="middle" font-size="11" font-weight="600" fill="#c2410c">Queue</text>
+        <text x="770" y="167" text-anchor="middle" font-size="8" fill="#526176">SQS / Kafka</text>
+        <!-- Arrow to Workers -->
+        <line x1="770" y1="180" x2="770" y2="215" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <!-- Workers -->
+        <rect x="720" y="220" width="100" height="45" rx="6" fill="#fff" stroke="#ea580c" stroke-width="1.5"/>
+        <text x="770" y="245" text-anchor="middle" font-size="10" font-weight="600" fill="#c2410c">Workers</text>
+        <text x="770" y="258" text-anchor="middle" font-size="8" fill="#526176">Async/Fanout</text>
+        <!-- Legend -->
+        <text x="10" y="305" font-size="9" fill="#5b6b7f">Standard Architecture: Client &rarr; CDN &rarr; LB &rarr; API Servers &rarr; Cache &rarr; DB &rarr; Queue &rarr; Workers</text>
+        <!-- Arrow marker -->
+      </svg>
+    </div>
+
+    <div class="sub2">Walk Through a Basic Use Case (E-Commerce Order)</div>
+    <ol class="content-list">
+      <li>Client sends <code>POST /orders</code> to load balancer</li>
+      <li>Load balancer routes to an API server</li>
+      <li>API server validates, checks inventory in cache (Redis)</li>
+      <li>Cache miss &rarr; query inventory DB</li>
+      <li>If in stock &rarr; start transaction: decrement inventory + create order record</li>
+      <li>Push order event to message queue for async processing (payment, notification, shipping)</li>
+      <li>Return <code>201 Created</code> to client</li>
+    </ol>
+  </div>
+</div>
+
+<!-- System Evolution -->
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">EVOLUTION</span>
+    <span class="ct">System Evolution — Design in Phases</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <!-- SVG: System Evolution -->
+    <div class="svg-container">
+      <svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" style="max-width:860px;">
+<defs>
+          <marker id="ah2" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+            <polygon points="0 0, 7 2.5, 0 5" fill="#526176"/>
+          </marker>
+        </defs>
+        <!-- Phase 1 -->
+        <rect x="10" y="10" width="260" height="250" rx="12" fill="#f0fdf4" stroke="#137a39" stroke-width="1.5"/>
+        <text x="140" y="35" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">Phase 1: MVP / Low Traffic</text>
+        <rect x="90" y="55" width="100" height="35" rx="6" fill="#fff" stroke="#137a39" stroke-width="1"/>
+        <text x="140" y="77" text-anchor="middle" font-size="10" fill="#166534">Web App</text>
+        <line x1="140" y1="90" x2="140" y2="110" stroke="#137a39" stroke-width="1" marker-end="url(#ah2)"/>
+        <rect x="60" y="115" width="160" height="40" rx="6" fill="#fff" stroke="#137a39" stroke-width="1"/>
+        <text x="140" y="138" text-anchor="middle" font-size="10" fill="#166534">Monolithic App</text>
+        <line x1="140" y1="155" x2="140" y2="175" stroke="#137a39" stroke-width="1" marker-end="url(#ah2)"/>
+        <rect x="70" y="180" width="140" height="40" rx="6" fill="#dcfce7" stroke="#137a39" stroke-width="1"/>
+        <text x="140" y="203" text-anchor="middle" font-size="10" fill="#166534">Single Database</text>
+        <text x="140" y="245" text-anchor="middle" font-size="9" fill="#526176">Simple, fast to ship</text>
+
+        <!-- Arrow between phases -->
+        <text x="285" y="140" font-size="20" fill="#5b6b7f">&rarr;</text>
+
+        <!-- Phase 2 -->
+        <rect x="315" y="10" width="260" height="250" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="445" y="35" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Phase 2: Growing / Read-Heavy</text>
+        <rect x="355" y="55" width="80" height="30" rx="5" fill="#fff" stroke="#2563eb" stroke-width="1"/>
+        <text x="395" y="74" text-anchor="middle" font-size="9" fill="#1d4ed8">Frontend</text>
+        <rect x="445" y="55" width="80" height="30" rx="5" fill="#fff" stroke="#2563eb" stroke-width="1"/>
+        <text x="485" y="74" text-anchor="middle" font-size="9" fill="#1d4ed8">API Service</text>
+        <line x1="445" y1="85" x2="445" y2="110" stroke="#2563eb" stroke-width="1" marker-end="url(#ah2)"/>
+        <rect x="380" y="115" width="130" height="35" rx="6" fill="#fee2e2" stroke="#c21f1f" stroke-width="1"/>
+        <text x="445" y="136" text-anchor="middle" font-size="10" fill="#991b1b">Redis Cache</text>
+        <line x1="445" y1="150" x2="445" y2="170" stroke="#2563eb" stroke-width="1" marker-end="url(#ah2)"/>
+        <rect x="355" y="175" width="80" height="35" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+        <text x="395" y="196" text-anchor="middle" font-size="9" fill="#5b21b6">Primary</text>
+        <rect x="445" y="175" width="80" height="35" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+        <text x="485" y="196" text-anchor="middle" font-size="9" fill="#5b21b6">Replicas</text>
+        <text x="445" y="240" text-anchor="middle" font-size="9" fill="#526176">Cache + Read Replicas</text>
+
+        <!-- Arrow between phases -->
+        <text x="590" y="140" font-size="20" fill="#5b6b7f">&rarr;</text>
+
+        <!-- Phase 3 -->
+        <rect x="620" y="10" width="270" height="250" rx="12" fill="#fef3c7" stroke="#a15408" stroke-width="1.5"/>
+        <text x="755" y="35" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">Phase 3: High Scale</text>
+        <rect x="635" y="55" width="72" height="28" rx="5" fill="#fff" stroke="#a15408" stroke-width="1"/>
+        <text x="671" y="73" text-anchor="middle" font-size="8" fill="#92400e">User Svc</text>
+        <rect x="715" y="55" width="72" height="28" rx="5" fill="#fff" stroke="#a15408" stroke-width="1"/>
+        <text x="751" y="73" text-anchor="middle" font-size="8" fill="#92400e">Order Svc</text>
+        <rect x="795" y="55" width="72" height="28" rx="5" fill="#fff" stroke="#a15408" stroke-width="1"/>
+        <text x="831" y="73" text-anchor="middle" font-size="8" fill="#92400e">Payment Svc</text>
+        <line x1="755" y1="83" x2="755" y2="108" stroke="#a15408" stroke-width="1" marker-end="url(#ah2)"/>
+        <rect x="660" y="112" width="60" height="30" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+        <text x="690" y="130" text-anchor="middle" font-size="8" fill="#5b21b6">Shard 1</text>
+        <rect x="725" y="112" width="60" height="30" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+        <text x="755" y="130" text-anchor="middle" font-size="8" fill="#5b21b6">Shard 2</text>
+        <rect x="790" y="112" width="60" height="30" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+        <text x="820" y="130" text-anchor="middle" font-size="8" fill="#5b21b6">Shard N</text>
+        <rect x="680" y="160" width="150" height="30" rx="5" fill="#ffedd5" stroke="#ea580c" stroke-width="1"/>
+        <text x="755" y="179" text-anchor="middle" font-size="9" fill="#c2410c">Message Queue (Kafka)</text>
+        <rect x="700" y="205" width="110" height="30" rx="5" fill="#fff" stroke="#ea580c" stroke-width="1"/>
+        <text x="755" y="224" text-anchor="middle" font-size="9" fill="#c2410c">Worker Nodes</text>
+        <text x="755" y="255" text-anchor="middle" font-size="9" fill="#526176">Microservices + Sharding</text>
+      </svg>
+    </div>
+
+    <div class="iq">"I intentionally avoid starting with a complex architecture. I'd begin with a simple monolith and single DB. As we scale: the first bottleneck is usually reads — add cache and replicas. Then write scaling — consider sharding. Only introduce microservices when team or domain boundaries require it."</div>
+  </div>
+</div>
+
+<!-- Step 4 -->
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">STEP 4</span>
+    <span class="ct">Deep Dive (10-15 min)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li>The interviewer usually picks 1-2 areas to go deeper</li>
+      <li>Be ready to discuss: <strong>database schema</strong>, <strong>API design</strong>, <strong>caching strategy</strong>, <strong>data partitioning</strong></li>
+      <li>Show trade-offs, not just one solution</li>
+    </ul>
+    <div class="iq">"I'd choose X here because [reason]. The trade-off is [downside], but it's acceptable because [context]."</div>
+    <div class="warn">
+      <div class="warnl">WARNING</div>
+      <p>Don't just describe a solution — always explain WHY you chose it and what you're giving up. This is the #1 differentiator between senior and junior candidates.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Step 5 -->
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">STEP 5</span>
+    <span class="ct">Wrap Up (3-5 min)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li>Summarize key decisions and trade-offs</li>
+      <li>Mention what you'd improve with more time</li>
+      <li>Discuss monitoring, alerting, operational concerns</li>
+    </ul>
+    <div class="tip">
+      <div class="tipl">PRO TIP</div>
+      <p>Ending with "Here's what I'd do next with more time..." shows maturity and self-awareness.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Monitoring -->
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">OBSERVABILITY</span>
+    <span class="ct">Monitoring / Observability — Always Mention This</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">Three Pillars</div>
+    <ul class="content-list">
+      <li><strong>Metrics:</strong> request rate, error rate, latency (p50/p95/p99), CPU/memory, queue depth, cache hit rate</li>
+      <li><strong>Logging:</strong> structured logs with request IDs for traceability</li>
+      <li><strong>Tracing:</strong> distributed tracing (X-Ray, Jaeger) to follow a request across multiple services</li>
+    </ul>
+
+    <div class="sub2">What to Monitor — By Layer</div>
+    <table class="tbl">
+      <tr><th>Layer</th><th>Metrics</th></tr>
+      <tr><td>Application</td><td>Request rate (QPS), error rate (4xx, 5xx), latency (p50/p95/p99)</td></tr>
+      <tr><td>Infrastructure</td><td>CPU/memory utilization, disk I/O, network throughput, instance count</td></tr>
+      <tr><td>Database</td><td>Query latency (slow query log), connection pool usage, replication lag, lock wait time</td></tr>
+      <tr><td>Cache</td><td>Hit rate, memory usage, eviction rate, connection count</td></tr>
+      <tr><td>Queue</td><td>Queue depth, message age, dead letter queue size</td></tr>
+    </table>
+
+    <div class="sub2">Business Metrics Framework</div>
+    <ol class="content-list">
+      <li><strong>Primary Action</strong> — "What is the primary action users take?" &rarr; core metric</li>
+      <li><strong>Success Signal</strong> — "What does success look like?" &rarr; conversion rate, completion rate</li>
+      <li><strong>Failure Signal</strong> — "What would indicate something is wrong?" &rarr; drop in orders, spike in cancellations</li>
+    </ol>
+  </div>
+</div>
+
+<!-- SLO/SLA -->
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">SLO</span>
+    <span class="ct">SLO / SLA / Error Budget</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="iq">"We define SLOs — for example, 99.9% availability and p99 latency under 200 ms."</div>
+    <div class="iq">"We track error budget: if we've consumed 80% of our monthly error budget, we pause feature releases and focus on reliability."</div>
+    <div class="iq">"SLOs also guide design decisions — if we need 99.99% availability, we may need multi-region setup."</div>
+    <div class="note">
+      <div class="notel">NOTE</div>
+      <p><strong>SLI</strong> = what you measure (latency). <strong>SLO</strong> = what you target (p99 &lt; 200 ms). <strong>SLA</strong> = what you promise to customers (with penalties). <strong>Error Budget</strong> = 100% - SLO (room for experimentation).</p>
+    </div>
+  </div>
+</div>
+
+<!-- Security -->
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">SECURITY</span>
+    <span class="ct">Security &amp; Data Privacy — 30 Second Mention</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Authentication &amp; Authorization:</strong> OAuth 2.0 / JWT. API gateway validates tokens. RBAC for access control.</li>
+      <li><strong>Encryption:</strong> AES-256 at rest, TLS in transit. PII encrypted at application level.</li>
+      <li><strong>Data Privacy:</strong> PII stored separately. Data retention policies. GDPR/CCPA compliance.</li>
+      <li><strong>Input Validation:</strong> All user input validated and sanitized at API gateway level.</li>
+    </ul>
+    <div class="tip">
+      <div class="tipl">TIP</div>
+      <p>You don't need to go deep here, but mentioning security shows you think about production systems holistically. 30 seconds is enough.</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 2: KEY CONCEPTS ═══════ -->
+<div id="tab-concepts" class="sec">
+<h2 class="stitle">Key Concepts to Know</h2>
+<div class="sdesc">Core building blocks of any distributed system. Know these cold — they come up again and again.</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Scaling</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Vertical scaling:</strong> bigger machine (simple but has limits — can't scale CPU forever)</li>
+      <li><strong>Horizontal scaling:</strong> more machines (needs stateless design, load balancer)</li>
+      <li><strong>Database scaling:</strong> read replicas (read-heavy), sharding (write-heavy), partitioning (data size)</li>
+    </ul>
+    <div class="ins">
+      <div class="insl">KEY INSIGHT</div>
+      <p>Scale vertically first (it's simpler), then horizontally when you hit a ceiling. Most startups never need horizontal scaling on day 1.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Load Balancing</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Round robin:</strong> rotate through servers sequentially</li>
+      <li><strong>Least connections:</strong> send to server with fewest active connections</li>
+      <li><strong>IP hash:</strong> hash client IP to always route to same server</li>
+      <li><strong>Weighted:</strong> assign weights per server capacity</li>
+    </ul>
+    <div class="sub2">L4 vs L7</div>
+    <ul class="content-list">
+      <li><strong>L4 (TCP):</strong> Routes based on IP/port. Fast, low overhead. Example: AWS NLB.</li>
+      <li><strong>L7 (HTTP):</strong> Can inspect headers, URL path, cookies. Content-based routing, SSL termination. Example: AWS ALB, Nginx.</li>
+    </ul>
+    <ul class="content-list">
+      <li><strong>Health checks:</strong> LB pings backends, removes unhealthy ones automatically</li>
+      <li><strong>Failover:</strong> unhealthy server removed from pool, traffic redistributed</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Caching</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Cache-aside (lazy loading):</strong> app checks cache first, fills on miss</li>
+      <li><strong>Write-through:</strong> write to cache and DB simultaneously</li>
+      <li><strong>Write-behind:</strong> write to cache, async write to DB</li>
+      <li><strong>Cache invalidation:</strong> TTL, event-driven, versioning</li>
+      <li><strong>Tools:</strong> Redis, Memcached, CDN for static content</li>
+    </ul>
+    <div class="warn">
+      <div class="warnl">REMEMBER</div>
+      <p>"There are only two hard things in computer science: cache invalidation and naming things." — Phil Karlton</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Database</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">SQL</div>
+    <ul class="content-list">
+      <li>Strong consistency, ACID transactions, JOINs, schema enforcement</li>
+      <li>Examples: PostgreSQL, MySQL</li>
+    </ul>
+    <div class="sub2">NoSQL</div>
+    <ul class="content-list">
+      <li>Flexible schema, horizontal scaling, eventual consistency</li>
+      <li>Examples: DynamoDB, Cassandra, MongoDB</li>
+    </ul>
+    <div class="sub2">When to Use What</div>
+    <ul class="content-list">
+      <li>SQL for complex queries, transactions, relational data</li>
+      <li>NoSQL for high write throughput, flexible schema, simple access patterns</li>
+    </ul>
+    <div class="sub2">Indexing</div>
+    <ul class="content-list">
+      <li><strong>B-tree:</strong> range queries, ordered data</li>
+      <li><strong>Hash:</strong> exact match lookups</li>
+      <li><strong>Composite:</strong> multi-column, order matters (leftmost prefix rule)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Message Queues</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Decouple</strong> producers and consumers</li>
+      <li><strong>Buffer</strong> traffic spikes</li>
+      <li><strong>Enable</strong> async processing</li>
+      <li><strong>Tools:</strong> SQS, Kafka, RabbitMQ</li>
+      <li><strong>Delivery:</strong> At-least-once vs exactly-once</li>
+    </ul>
+    <div class="tip">
+      <div class="tipl">TIP</div>
+      <p>Most systems use at-least-once delivery + idempotent consumers. Exactly-once is extremely expensive.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Consistency Models</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Strong consistency:</strong> read always returns latest write (slower, less available)</li>
+      <li><strong>Eventual consistency:</strong> reads may be stale temporarily (faster, more available)</li>
+      <li><strong>CAP theorem:</strong> in a network partition, choose Consistency or Availability</li>
+    </ul>
+    <div class="note">
+      <div class="notel">REAL WORLD</div>
+      <p>Most real systems choose availability + eventual consistency. Strong consistency is reserved for financial transactions, inventory counts, and similar critical paths.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Rate Limiting</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Token bucket:</strong> tokens refill at fixed rate, request consumes a token. Allows bursts.</li>
+      <li><strong>Sliding window:</strong> count requests in rolling time window</li>
+      <li><strong>Fixed window:</strong> count in fixed time buckets (simpler but boundary problem)</li>
+      <li><strong>Scope:</strong> Per-user, per-IP, per-API-key</li>
+      <li><strong>Response:</strong> Return <code>429 Too Many Requests</code></li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 3: COMMON PATTERNS ═══════ -->
+<div id="tab-patterns" class="sec">
+<h2 class="stitle">Common Patterns</h2>
+<div class="sdesc">Classic system design problems distilled to their core patterns and key decisions.</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">URL Shortener</span>
+    <span class="db de">CLASSIC</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>ID Generation:</strong> Hash function (MD5/SHA, take first 7 chars) or counter-based auto-increment ID</li>
+      <li><strong>Encoding:</strong> Base62 encoding (a-z, A-Z, 0-9) — 7 chars = 62^7 = 3.5 trillion URLs</li>
+      <li><strong>Storage:</strong> Key-value store (short_url &rarr; long_url)</li>
+      <li><strong>Caching:</strong> Cache hot URLs in Redis (Pareto: 20% URLs get 80% traffic)</li>
+      <li><strong>Redirect:</strong> 301 (permanent, cached by browser) vs 302 (temporary, server sees every hit for analytics)</li>
+    </ul>
+    <div class="tip">
+      <div class="tipl">KEY DECISION</div>
+      <p>301 vs 302: Use 302 if you need analytics (click tracking). Use 301 if you want to reduce server load.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Chat System</span>
+    <span class="db dm">MEDIUM</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Protocol:</strong> WebSocket for bidirectional real-time communication</li>
+      <li><strong>Message delivery:</strong> Message queue for reliable delivery</li>
+      <li><strong>Fan-out:</strong> Fan-out on write (fast read for small groups) vs fan-out on read (for large groups/celebrities)</li>
+      <li><strong>Presence service:</strong> heartbeat-based online/offline status</li>
+      <li><strong>Storage:</strong> Append-only log (Cassandra) for message history</li>
+      <li><strong>Scaling:</strong> Redis Pub/Sub for cross-server message routing</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">News Feed / Timeline</span>
+    <span class="db dm">MEDIUM</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Fan-out on write:</strong> When user posts, push to all followers' timelines. Fast read, slow write. Good for users with few followers.</li>
+      <li><strong>Fan-out on read:</strong> When user opens feed, pull from all followed users. Slow read, fast write. Good for celebrities.</li>
+      <li><strong>Hybrid approach:</strong> Fan-out on write for normal users, fan-out on read for celebrities (>10K followers)</li>
+      <li><strong>Ranking:</strong> ML-based ranking (engagement prediction, recency, relevance)</li>
+    </ul>
+    <div class="ins">
+      <div class="insl">REAL WORLD</div>
+      <p>Twitter uses a hybrid: regular users' tweets are fanned out on write. Celebrity tweets are pulled on read and merged into the timeline.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Rate Limiter</span>
+    <span class="db de">CLASSIC</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Token Bucket:</strong> Most common. Allows bursts. Smooth average rate. Tokens refill steadily.</li>
+      <li><strong>Fixed Window:</strong> Simplest. Count requests in fixed time windows. Boundary problem (2x burst at window edges).</li>
+      <li><strong>Sliding Window Log:</strong> Precise. Store timestamp of each request. High memory usage.</li>
+      <li><strong>Sliding Window Counter:</strong> Good balance. Weighted count from current + previous window.</li>
+      <li><strong>Distributed:</strong> Redis <code>INCR</code> + <code>EXPIRE</code> for atomic counter across all servers.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Notification System</span>
+    <span class="db dm">MEDIUM</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Channels:</strong> Push (APNs, FCM), SMS, Email — different reliability and cost</li>
+      <li><strong>Priority queue:</strong> urgent notifications processed first</li>
+      <li><strong>User preferences:</strong> opt-in/opt-out per channel, quiet hours</li>
+      <li><strong>Retry:</strong> exponential backoff for failed deliveries</li>
+      <li><strong>Deduplication:</strong> idempotency key prevents sending same notification twice</li>
+      <li><strong>Rate limiting:</strong> don't spam users (max N notifications per hour)</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 4: DATABASE DEEP DIVE ═══════ -->
+<div id="tab-database" class="sec">
+<h2 class="stitle">Database Deep Dive</h2>
+<div class="sdesc">Partitioning, replication, and indexing strategies — the foundation of scalable storage.</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Partitioning / Sharding</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Horizontal partitioning:</strong> split rows across shards by key</li>
+      <li><strong>Hash-based:</strong> consistent hashing to distribute evenly. Good uniform distribution.</li>
+      <li><strong>Range-based:</strong> by date, region, alphabet. Risk of hot spots (e.g., all new data goes to latest partition).</li>
+    </ul>
+    <div class="trap">
+      <div class="trapl">TRAP</div>
+      <p>Resharding is extremely painful — plan your sharding key carefully upfront. Bad shard key = hot partitions = one shard overloaded while others idle.</p>
+    </div>
+    <div class="tip">
+      <div class="tipl">TIP</div>
+      <p>Good shard keys: user_id (even distribution), order_id. Bad shard keys: country (skewed), date (hot partition).</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Replication</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Single-leader:</strong> one write node, multiple read replicas. Simple, good for read-heavy. Replication lag is the trade-off.</li>
+      <li><strong>Multi-leader:</strong> multiple write nodes. Needed for multi-region writes. Conflict resolution required (last-write-wins, vector clocks, CRDTs).</li>
+      <li><strong>Leaderless:</strong> quorum reads/writes (Dynamo-style). W + R > N makes the read and write sets overlap, so a read sees at least one replica with the latest acknowledged write — but this is not full linearizability (concurrent or partial writes and read-repair races can still surface stale values). Highly available.</li>
+    </ul>
+    <div class="ins">
+      <div class="insl">QUORUM FORMULA</div>
+      <p><code>W + R > N</code> where W = write quorum, R = read quorum, N = total replicas. Example: N=3, W=2, R=2 ensures at least one node has the latest write.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Indexing</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Primary index (clustered):</strong> determines physical row order. Only one per table.</li>
+      <li><strong>Secondary index (non-clustered):</strong> separate structure, pointer to row. Can have many.</li>
+      <li><strong>Composite index:</strong> multi-column. Order matters — leftmost prefix rule. INDEX(a,b,c) supports queries on (a), (a,b), (a,b,c) but NOT (b) or (c) alone.</li>
+    </ul>
+    <div class="warn">
+      <div class="warnl">TRADE-OFF</div>
+      <p>Too many indexes slow down writes. Every INSERT/UPDATE/DELETE must update all indexes. Balance read performance against write overhead.</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 5: API DESIGN TIPS ═══════ -->
+<div id="tab-api" class="sec">
+<h2 class="stitle">API Design Tips</h2>
+<div class="sdesc">Quick reference for RESTful API conventions and best practices.</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">RESTful Conventions</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Method</th><th>Purpose</th><th>Example</th></tr>
+      <tr><td><code>GET</code></td><td>Read resource</td><td><code>GET /users/123</code></td></tr>
+      <tr><td><code>POST</code></td><td>Create resource</td><td><code>POST /users</code></td></tr>
+      <tr><td><code>PUT</code></td><td>Full update (replace)</td><td><code>PUT /users/123</code></td></tr>
+      <tr><td><code>PATCH</code></td><td>Partial update</td><td><code>PATCH /users/123</code></td></tr>
+      <tr><td><code>DELETE</code></td><td>Delete resource</td><td><code>DELETE /users/123</code></td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Pagination</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Cursor-based (scalable):</strong> <code>GET /messages?cursor=abc123&limit=10</code>. Uses <code>WHERE id > cursor LIMIT 10</code>. Consistent performance regardless of page depth.</li>
+      <li><strong>Offset-based (simple):</strong> <code>GET /messages?offset=20&limit=10</code>. DB must skip N rows — slow at high offsets.</li>
+    </ul>
+    <div class="tip">
+      <div class="tipl">TIP</div>
+      <p>Use cursor-based for infinite scroll or large datasets. Offset-based is OK for admin panels with few pages.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Versioning &amp; Idempotency</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">Versioning</div>
+    <ul class="content-list">
+      <li>URL path: <code>/v1/resource</code> (most common)</li>
+      <li>Accept header: <code>Accept: application/vnd.api+json; version=1</code></li>
+    </ul>
+    <div class="sub2">Idempotency</div>
+    <ul class="content-list">
+      <li><code>POST</code> with idempotency key for safe retries</li>
+      <li>Client generates UUID, sends as header <code>Idempotency-Key: uuid</code></li>
+      <li>Server checks if key was seen before &rarr; return cached result. New? &rarr; execute and store.</li>
+    </ul>
+    <div class="sub2">Rate Limiting Headers</div>
+    <ul class="content-list">
+      <li><code>X-RateLimit-Limit</code> — max requests allowed in window</li>
+      <li><code>X-RateLimit-Remaining</code> — requests left in current window</li>
+      <li><code>X-RateLimit-Reset</code> — when the window resets (epoch time)</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 6: NUMBERS ═══════ -->
+<div id="tab-numbers" class="sec">
+<h2 class="stitle">Numbers Every Engineer Should Know</h2>
+<div class="sdesc">Latency numbers, quick math, and scale references for back-of-the-envelope estimations.</div>
+
+<h3 class="sub">Latency Numbers</h3>
+<table class="tbl">
+  <tr><th>Operation</th><th>Latency</th></tr>
+  <tr><td>L1 cache reference</td><td><code>0.5 ns</code></td></tr>
+  <tr><td>L2 cache reference</td><td><code>7 ns</code></td></tr>
+  <tr><td>Main memory reference</td><td><code>100 ns</code></td></tr>
+  <tr><td>SSD random read</td><td><code>150 &micro;s</code></td></tr>
+  <tr><td>HDD seek</td><td><code>10 ms</code></td></tr>
+  <tr><td>Send 1 KB over 1 Gbps network</td><td><code>10 &micro;s</code></td></tr>
+  <tr><td>Read 1 MB sequentially from memory</td><td><code>250 &micro;s</code></td></tr>
+  <tr><td>Read 1 MB sequentially from SSD</td><td><code>1 ms</code></td></tr>
+  <tr><td>Read 1 MB sequentially from HDD</td><td><code>20 ms</code></td></tr>
+  <tr><td>Round trip within same datacenter</td><td><code>500 &micro;s</code></td></tr>
+  <tr><td>Round trip cross-continent</td><td><code>150 ms</code></td></tr>
+</table>
+
+<h3 class="sub">Quick Math — QPS</h3>
+<table class="tbl">
+  <tr><th>Volume</th><th>QPS</th></tr>
+  <tr><td>1 million requests/day</td><td>&asymp; 12 QPS</td></tr>
+  <tr><td>100 million requests/day</td><td>&asymp; 1,160 QPS</td></tr>
+  <tr><td>1 billion requests/day</td><td>&asymp; 11,600 QPS</td></tr>
+</table>
+
+<h3 class="sub">Quick Math — Storage</h3>
+<table class="tbl">
+  <tr><th>Data</th><th>Size</th></tr>
+  <tr><td>1 KB &times; 1 million</td><td>1 GB</td></tr>
+  <tr><td>1 KB &times; 1 billion</td><td>1 TB</td></tr>
+</table>
+
+<div class="ins">
+  <div class="insl">MEMORIZE THIS</div>
+  <p><code>1 day = 86,400 seconds &asymp; 10^5 seconds</code>. So 1M requests/day &asymp; 10 QPS. Just divide daily volume by 10^5 for average QPS.</p>
+</div>
+
+
+<div class="ins"><div class="insl">INSIGHT</div>
+<p><strong>Resolving the "~10 vs ~12 QPS" discrepancy:</strong> both numbers describe 1M requests/day — one is exact, one is a mental-math shortcut. Exact: 1,000,000 / 86,400 s = <strong>11.6 QPS (round to ~12)</strong>. The "~10 QPS" figure is the interview back-of-the-envelope trick — divide by 100,000 instead of 86,400 (since 86,400 is close-ish to 10<sup>5</sup>), which is fast to do in your head and deliberately conservative. Use ~10 to reason out loud; use ~12 if you write the precise arithmetic.</p>
+</div>
+<ul class="content-list">
+<li><strong>Clean rule (exact avg):</strong> 1M/day &asymp; 12 QPS, 10M/day &asymp; 116 QPS, 100M/day &asymp; 1,160 QPS (each 10x scales linearly).</li>
+<li><strong>Mental-math rule (&divide;100k):</strong> 1M/day &asymp; 10 QPS, 10M/day &asymp; 100 QPS, 100M/day &asymp; 1,000 QPS — always slightly under the true value, which is safe for "at least this much" capacity talk.</li>
+<li><strong>Peak vs average:</strong> the numbers above are averages. Apply a peak factor of <strong>2-10x</strong> (daily traffic cycles, bursts, thundering-herd) before sizing servers, connection pools, or rate limits. State your assumed factor explicitly.</li>
+</ul>
+<div class="iq"> "Is 1M requests/day 10 or 12 QPS?" — Answer: exactly 11.6 (&asymp;12); 10 is the divide-by-100k approximation. Then immediately add: "but I'd design for peak, so ~24-120 QPS depending on burstiness."</div>
+
+<!-- FRAGMENT 2 -->
+
+<div class="tip"><div class="tipl">TIP</div>
+<p><strong>Latency numbers: quote the canonical table, but know it's dated.</strong> The "Latency Numbers Every Programmer Should Know" list traces to Jeff Dean's ~2009 talks (building on Peter Norvig's ~2001 list); Jonas Bonér's gist popularized the static list in <strong>2012</strong>, and Colin Scott's year-by-year interactive version (~2016-2017) is where most people first meet it. It's still the shared vocabulary interviewers expect — anchor on it, then note that real hardware moved on. Two figures are most out of date:</p>
+</div>
+<table class="tbl">
+<thead>
+<tr><th>Operation</th><th>Classic (Dean, ~2009-2012)</th><th>Modern (2020s)</th></tr>
+</thead>
+<tbody>
+<tr><td>Random read from SSD</td><td>~150 &micro;s (4 KB, SATA SSD)</td><td>NAND NVMe: <strong>~40-100 &micro;s</strong> (enterprise TLC ~80-100 &micro;s, good consumer ~50-70 &micro;s)</td></tr>
+<tr><td>Read 1 MB sequentially from RAM</td><td>~250 &micro;s</td><td><strong>single-digit &micro;s</strong> (~3-5 &micro;s; DRAM bandwidth is now hundreds of GB/s)</td></tr>
+<tr><td>Main memory reference</td><td>~100 ns</td><td>~50-100 ns (largely unchanged)</td></tr>
+<tr><td>Same-datacenter round trip</td><td>~500 &micro;s</td><td>~0.5 ms still typical; sub-100 &micro;s on tuned RDMA/kernel-bypass paths</td></tr>
+</tbody>
+</table>
+<div class="note"><div class="notel">NOTE</div><p> The relative ordering (L1 &lt; RAM &lt; SSD &lt; network &lt; disk seek &lt; cross-continent RTT) is what actually matters for design and hasn't changed. Cite both: "The classic table says SSD random read is ~150 &micro;s; modern NAND NVMe is closer to ~40-100 &micro;s — either way it's ~100-1000x slower than RAM, so I'll cache hot reads." The sub-20 &micro;s numbers you may have seen were Intel Optane / 3D XPoint, not commodity NAND (Optane was discontinued in 2022, and QLC is <em>slower</em> than TLC, not faster). Rotational-disk seek (~10 ms) and CA&harr;Europe RTT (~150 ms) are still accurate — physics and geography don't get firmware updates.</p></div>
+</div>
+
+<!-- ═══════ SECTION 7: COMMON MISTAKES ═══════ -->
+<div id="tab-mistakes" class="sec">
+<h2 class="stitle">Common Mistakes</h2>
+<div class="sdesc">Avoid these pitfalls — they are the most common reasons candidates fail system design interviews.</div>
+
+<div class="trap">
+  <div class="trapl">MISTAKE #1</div>
+  <p><strong>Jumping into solution without clarifying requirements.</strong> You'll design the wrong system. Always spend 3-5 minutes asking questions first.</p>
+</div>
+
+<div class="trap">
+  <div class="trapl">MISTAKE #2</div>
+  <p><strong>Not doing back-of-the-envelope math.</strong> Without numbers, you can't justify whether a single DB suffices or you need sharding. A quick calculation shows you thought about scale.</p>
+</div>
+
+<div class="trap">
+  <div class="trapl">MISTAKE #3</div>
+  <p><strong>Single point of failure.</strong> Always ask "what if this component goes down?" Every critical component needs redundancy or a failover plan.</p>
+</div>
+
+<div class="trap">
+  <div class="trapl">MISTAKE #4</div>
+  <p><strong>Ignoring data consistency requirements.</strong> Not all data needs strong consistency. But payment data does. Know the difference and state your choice explicitly.</p>
+</div>
+
+<div class="trap">
+  <div class="trapl">MISTAKE #5</div>
+  <p><strong>Over-engineering.</strong> Don't add Kafka, microservices, and Kubernetes for 100 users. Start simple. Evolve as needed. Show you know WHEN complexity is justified.</p>
+</div>
+
+<div class="trap">
+  <div class="trapl">MISTAKE #6</div>
+  <p><strong>Not discussing trade-offs.</strong> Every decision has pros and cons. Saying "I'd use Redis" without explaining why (and what you give up) shows shallow understanding.</p>
+</div>
+
+<div class="trap">
+  <div class="trapl">MISTAKE #7</div>
+  <p><strong>Forgetting operational concerns.</strong> Monitoring, logging, alerting, deployment, rollback — these separate production systems from hobby projects.</p>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 8: PHRASES ═══════ -->
+<div id="tab-phrases" class="sec">
+<h2 class="stitle">Phrases That Show Depth</h2>
+<div class="sdesc">Use these phrases to demonstrate senior-level thinking during your interview.</div>
+
+<div class="iq">"The trade-off here is..."</div>
+<div class="iq">"At this scale, we'd need to consider..."</div>
+<div class="iq">"One concern with this approach is..."</div>
+<div class="iq">"We could start simple with X and evolve to Y as traffic grows"</div>
+<div class="iq">"This depends on whether we prioritize consistency or availability"</div>
+<div class="iq">"Let me do a quick calculation to see if this fits in memory"</div>
+
+<div class="tip">
+  <div class="tipl">WHY THESE WORK</div>
+  <p>These phrases signal that you think in trade-offs (not absolutes), consider scale implications, and approach design incrementally. This is exactly how senior engineers reason about systems.</p>
+</div>
+
+<div class="note">
+  <div class="notel">ANTI-PATTERNS TO AVOID</div>
+  <p>"We should use [technology]" without explaining why.<br>
+  "This is the best approach" — nothing is universally best.<br>
+  "We need microservices" — without justifying the complexity.</p>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 9: SQL vs NoSQL ═══════ -->
+<div id="tab-sqlnosql" class="sec">
+<h2 class="stitle">SQL vs NoSQL — Deep Dive</h2>
+<div class="sdesc">The real question is not "can it do X?" but "was it designed for X?" — native support vs bolted-on.</div>
+
+<div class="ins">
+  <div class="insl">KEY INSIGHT</div>
+  <p>Modern SQL and NoSQL boundaries are blurring. Both can do most things. The difference is operational cost and performance characteristics for your specific access pattern.</p>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Still Clearly Different</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Dimension</th><th>SQL</th><th>NoSQL</th></tr>
+      <tr><td>Data Model</td><td>Normalized tables + foreign keys + fixed schema</td><td>Denormalized, embedded documents, flexible schema</td></tr>
+      <tr><td>Query Capability</td><td>JOIN, subquery, window functions native</td><td>$lookup available but cross-shard is slow</td></tr>
+      <tr><td>Schema Enforcement</td><td>DB catches bad data at DB level</td><td>Flexibility but garbage-in risk is on you</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Blurred but Still Nuanced</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Dimension</th><th>SQL</th><th>NoSQL</th></tr>
+      <tr><td>Transactions</td><td>Native ACID, highly optimized</td><td>MongoDB 4.0+ supports multi-document but performance cost</td></tr>
+      <tr><td>Sharding</td><td>Possible via Vitess, ProxySQL (higher ops)</td><td>Built-in (MongoDB, Cassandra) with lower operational overhead</td></tr>
+      <tr><td>Consistency</td><td>Strong by default</td><td>Tunable (strong to eventual)</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">NoSQL Sub-Categories</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Type</th><th>Examples</th><th>Best For</th><th>Weak At</th></tr>
+      <tr><td>Document Store</td><td>MongoDB</td><td>Flexible schema, content, profiles</td><td>Cross-document JOIN, extreme scale writes</td></tr>
+      <tr><td>Wide-Column</td><td>Cassandra, ScyllaDB</td><td>Massive write throughput, time-series</td><td>Ad-hoc queries, no JOIN</td></tr>
+      <tr><td>Key-Value</td><td>Redis, DynamoDB</td><td>Ultra-low latency lookup, cache</td><td>Complex queries, only key-based access</td></tr>
+      <tr><td>Graph</td><td>Neo4j</td><td>Multi-hop relationships, social graph</td><td>Non-graph data, small ecosystem</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Quick Decision Framework</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Scenario</th><th>Recommended</th><th>Why</th><th>Trade-off</th></tr>
+      <tr><td>Complex JOIN + ACID</td><td>PostgreSQL/MySQL</td><td>Strong Consistency, Relational</td><td>Scaling writes can be hard</td></tr>
+      <tr><td>Flexible Schema</td><td>MongoDB</td><td>Developer Velocity, Document-based</td><td>No complex JOINs natively</td></tr>
+      <tr><td>Extreme Write + Append</td><td>Cassandra/ScyllaDB</td><td>High Write Throughput, Wide-column</td><td>Eventual consistency</td></tr>
+      <tr><td>Sub-ms Latency</td><td>Redis</td><td>In-memory, Caching Layer</td><td>Volatile unless persistent</td></tr>
+      <tr><td>Relationship Traversal</td><td>Neo4j</td><td>Graph-based, Multi-hop query</td><td>Niche use case</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Real-World Case Studies</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Discord:</strong> MongoDB &rarr; Cassandra &rarr; ScyllaDB (write-heavy messages, linear scaling needed) — <a href="https://discord.com/blog/how-discord-stores-billions-of-messages" target="_blank" class="lc">How Discord Stores Billions of Messages</a></li>
+      <li><strong>Uber:</strong> PostgreSQL &rarr; MySQL (write amplification problem, InnoDB clustered index better for append-heavy workload) — <a href="https://www.uber.com/blog/postgres-to-mysql-migration/" target="_blank" class="lc">Why Uber Engineering Switched from Postgres to MySQL</a></li>
+      <li><strong>Twitter:</strong> MySQL &rarr; Manhattan (custom KV store, millions QPS) — <a href="https://blog.twitter.com/engineering/en_us/a/2014/manhattan-our-real-time-multi-tenant-distributed-database-for-twitter-scale" target="_blank" class="lc">Manhattan: Twitter's Distributed Database</a></li>
+      <li><strong>Netflix:</strong> Cassandra + EVCache + SQL (polyglot persistence — right tool for each job) — <a href="https://netflixtechblog.com/netflixs-viewing-data-how-we-know-where-you-are-in-house-of-cards-608dd61077da" target="_blank" class="lc">Netflix Tech Blog</a></li>
+      <li><strong>Amazon:</strong> DynamoDB (always-writable shopping cart, availability over consistency)</li>
+    </ul>
+    <div class="note">
+      <div class="notel">PATTERN</div>
+      <p>Most companies start with SQL, then migrate specific workloads to NoSQL as they hit scale limits. This is "polyglot persistence" — using different databases for different use cases.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Interview Anti-Patterns</span>
+    <span class="db dh">AVOID</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="trap">
+      <div class="trapl">DON'T SAY</div>
+      <p>"I choose MongoDB because it's faster" — faster at what? This shows shallow understanding.</p>
+    </div>
+    <div class="trap">
+      <div class="trapl">DON'T SAY</div>
+      <p>"SQL can't scale horizontally" — it can (Vitess, ProxySQL, CockroachDB), just more operational cost.</p>
+    </div>
+    <div class="trap">
+      <div class="trapl">DON'T SAY</div>
+      <p>"NoSQL has no transactions" — MongoDB 4.0+ supports multi-document transactions.</p>
+    </div>
+    <div class="tip">
+      <div class="tipl">DO SAY</div>
+      <p>"Both can do X, but [this one] was designed for it, so the operational cost and performance characteristics are better for our use case because [specific reason]."</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 10: MESSAGE QUEUE ═══════ -->
+<div id="tab-queue" class="sec">
+<h2 class="stitle">Message Queue — When, Why, and Trade-offs</h2>
+<div class="sdesc">Queues are powerful but add complexity. Know when they help and when they hurt.</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">When to Add a Queue</span>
+    <span class="db de">USE</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Decoupling:</strong> Service A doesn't wait for Service B. They evolve independently.</li>
+      <li><strong>Traffic spike buffering:</strong> Queue absorbs spike, consumers process steadily at their own pace.</li>
+      <li><strong>Fan-out:</strong> One event, multiple consumers (e.g., order placed &rarr; email, analytics, inventory update).</li>
+      <li><strong>Retry/reliability:</strong> Failed messages stay for retry. Dead Letter Queue (DLQ) for repeated failures.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">When NOT to Add a Queue</span>
+    <span class="db dh">AVOID</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>User needs immediate response:</strong> "Is my payment successful?" can't wait for async processing.</li>
+      <li><strong>System is simple:</strong> 2-3 services, direct HTTP calls are fine.</li>
+      <li><strong>Low traffic:</strong> 3 requests/day doesn't need buffering — it adds needless complexity.</li>
+    </ul>
+    <div class="warn">
+      <div class="warnl">OVER-ENGINEERING</div>
+      <p>Adding a queue to a simple system is a common over-engineering mistake. Only add when you have a clear need (decoupling, buffering, fan-out, or reliability).</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Trade-offs of Queues</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Eventual consistency:</strong> user sees "order placed" but email arrives seconds later. User might refresh and not see update yet.</li>
+      <li><strong>Increased complexity:</strong> message ordering, deduplication, DLQ monitoring, consumer idempotency — all new concerns.</li>
+      <li><strong>Harder debugging:</strong> request spans multiple services asynchronously. Distributed tracing becomes essential.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Queue vs Pub/Sub</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Queue model (SQS):</strong> one message &rarr; one consumer. Competing consumers split work.</li>
+      <li><strong>Pub/Sub model (SNS, Kafka topics):</strong> one message &rarr; all subscribers get a copy.</li>
+      <li><strong>Fan-out pattern (SNS + SQS):</strong> SNS broadcasts to multiple SQS queues, each feeds one service.</li>
+      <li><strong>Google Pub/Sub:</strong> does both models in one service.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Delivery Semantics</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Semantic</th><th>Meaning</th><th>Trade-off</th></tr>
+      <tr><td>At-most-once</td><td>Send once, if lost it's lost</td><td>Fastest, may lose messages</td></tr>
+      <tr><td>At-least-once</td><td>Guaranteed delivery, may duplicate</td><td>Consumer must be idempotent</td></tr>
+      <tr><td>Exactly-once</td><td>No loss, no duplicates</td><td>Kafka supports but with performance cost</td></tr>
+    </table>
+    <div class="ins">
+      <div class="insl">BEST PRACTICE</div>
+      <p>Most systems use <strong>at-least-once + idempotent consumers</strong>. This gives you reliability without the performance penalty of exactly-once.</p>
+    </div>
+    <div class="sub2">Consumer Idempotency — Key Interview Point</div>
+    <p style="font-size:13px; color:var(--text2); margin-top:8px;">Use order ID (or message ID) as idempotency key. Before processing, check if already processed. If yes, skip. This makes at-least-once delivery safe.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Technology Selection</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Tool</th><th>Best For</th><th>Complexity</th></tr>
+      <tr><td>SQS</td><td>Simple task queue, fully managed</td><td>Low</td></tr>
+      <tr><td>SNS + SQS</td><td>Fan-out pattern</td><td>Low-Medium</td></tr>
+      <tr><td>Google Pub/Sub</td><td>Both queue and pub/sub</td><td>Low-Medium</td></tr>
+      <tr><td>Kafka</td><td>High throughput, message replay, strict ordering</td><td>High</td></tr>
+      <tr><td>RabbitMQ</td><td>Complex routing rules, priority queues</td><td>Medium</td></tr>
+      <tr><td>Redis Pub/Sub</td><td>Lightweight real-time broadcast, fire-and-forget</td><td>Low</td></tr>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 11: CACHING ═══════ -->
+<div id="tab-caching" class="sec">
+<h2 class="stitle">Caching — When to Use, When Not to, and Trade-offs</h2>
+<div class="sdesc">Caching is a multiplier for read performance — but misuse creates consistency nightmares.</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">When Cache Makes Sense</span>
+    <span class="db de">USE</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Read-heavy workload</strong> (10:1+ read-to-write ratio)</li>
+      <li><strong>Expensive computation</strong> (aggregation, ML inference results)</li>
+      <li><strong>Hot data</strong> (power law / Pareto — 20% of data serves 80% of requests)</li>
+      <li><strong>Latency-sensitive</strong> (sub-10 ms response needed)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">When Cache Does NOT Make Sense</span>
+    <span class="db dh">AVOID</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Write-heavy workload:</strong> cache invalidated constantly, defeating the purpose</li>
+      <li><strong>Low traffic:</strong> 3 requests/day, cache overhead not worth it</li>
+      <li><strong>Data must be real-time:</strong> stock prices, live inventory counts (stale data = wrong decisions)</li>
+      <li><strong>Large working set with no hot data:</strong> everything accessed equally = cache keeps evicting</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Caching Strategies</span>
+    <span class="db dh">CRITICAL</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Strategy</th><th>Flow</th><th>Pros</th><th>Cons</th><th>Best For</th></tr>
+      <tr><td>Cache-Aside (Lazy Loading)</td><td>Read: Miss &rarr; DB &rarr; Update Cache. Write: DB &rarr; Delete Cache</td><td>Simple, only caches what's needed</td><td>Cold start (first read slow)</td><td>Most common, general-purpose</td></tr>
+      <tr><td>Write-Through</td><td>Write: Cache AND DB at once. Read: Always from cache</td><td>Consistent, always fresh</td><td>Double write latency</td><td>Data integrity critical</td></tr>
+      <tr><td>Write-Behind (Write-Back)</td><td>Write: Cache only &rarr; Async to DB. Read: Always from cache</td><td>Blazing fast writes</td><td>Risk of data loss if cache crashes</td><td>Write-heavy, gaming, metrics</td></tr>
+    </table>
+
+    <!-- SVG: Cache Strategy Flows -->
+    <div class="svg-container">
+      <svg viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg" style="max-width:860px;">
+<defs>
+          <marker id="ah3" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+            <polygon points="0 0, 6 2, 0 4" fill="#526176"/>
+          </marker>
+        </defs>
+        <!-- Cache-Aside -->
+        <rect x="10" y="10" width="270" height="180" rx="10" fill="#f0fdf4" stroke="#137a39" stroke-width="1"/>
+        <text x="145" y="30" text-anchor="middle" font-size="11" font-weight="700" fill="#166534">Cache-Aside</text>
+        <rect x="30" y="45" width="55" height="30" rx="4" fill="#fff" stroke="#137a39" stroke-width="1"/>
+        <text x="57" y="64" text-anchor="middle" font-size="9" fill="#166534">App</text>
+        <rect x="120" y="45" width="55" height="30" rx="4" fill="#fee2e2" stroke="#c21f1f" stroke-width="1"/>
+        <text x="147" y="64" text-anchor="middle" font-size="9" fill="#991b1b">Cache</text>
+        <rect x="210" y="45" width="55" height="30" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+        <text x="237" y="64" text-anchor="middle" font-size="9" fill="#5b21b6">DB</text>
+        <text x="90" y="52" font-size="8" fill="#526176">1.check</text>
+        <line x1="85" y1="60" x2="118" y2="60" stroke="#137a39" stroke-width="1" marker-end="url(#ah3)"/>
+        <text x="170" y="92" font-size="8" fill="#526176">2.miss&rarr;query</text>
+        <line x1="175" y1="75" x2="210" y2="60" stroke="#7c3aed" stroke-width="1" marker-end="url(#ah3)"/>
+        <text x="90" y="138" font-size="8" fill="#526176">3.update cache</text>
+        <line x1="85" y1="110" x2="120" y2="110" stroke="#c21f1f" stroke-width="1" marker-end="url(#ah3)"/>
+        <rect x="30" y="100" width="55" height="25" rx="4" fill="#fff" stroke="#137a39" stroke-width="1"/>
+        <text x="57" y="116" text-anchor="middle" font-size="8" fill="#166534">App</text>
+        <rect x="120" y="100" width="55" height="25" rx="4" fill="#fee2e2" stroke="#c21f1f" stroke-width="1"/>
+        <text x="147" y="116" text-anchor="middle" font-size="8" fill="#991b1b">Cache</text>
+        <text x="145" y="150" text-anchor="middle" font-size="9" fill="#526176">Write: DB then delete cache</text>
+        <text x="145" y="165" text-anchor="middle" font-size="9" font-weight="600" fill="#166534">Most Common</text>
+
+        <!-- Write-Through -->
+        <rect x="310" y="10" width="270" height="180" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1"/>
+        <text x="445" y="30" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">Write-Through</text>
+        <rect x="330" y="50" width="55" height="30" rx="4" fill="#fff" stroke="#2563eb" stroke-width="1"/>
+        <text x="357" y="69" text-anchor="middle" font-size="9" fill="#1d4ed8">App</text>
+        <rect x="420" y="50" width="55" height="30" rx="4" fill="#fee2e2" stroke="#c21f1f" stroke-width="1"/>
+        <text x="447" y="69" text-anchor="middle" font-size="9" fill="#991b1b">Cache</text>
+        <rect x="510" y="50" width="55" height="30" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+        <text x="537" y="69" text-anchor="middle" font-size="9" fill="#5b21b6">DB</text>
+        <line x1="385" y1="65" x2="418" y2="65" stroke="#2563eb" stroke-width="1" marker-end="url(#ah3)"/>
+        <line x1="475" y1="65" x2="508" y2="65" stroke="#2563eb" stroke-width="1" marker-end="url(#ah3)"/>
+        <text x="400" y="100" font-size="8" fill="#526176">write both</text>
+        <text x="490" y="100" font-size="8" fill="#526176">simultaneously</text>
+        <text x="445" y="135" text-anchor="middle" font-size="9" fill="#526176">Read: always from cache</text>
+        <text x="445" y="150" text-anchor="middle" font-size="9" fill="#526176">Data always consistent</text>
+        <text x="445" y="170" text-anchor="middle" font-size="9" font-weight="600" fill="#1d4ed8">Consistent but slower writes</text>
+
+        <!-- Write-Behind -->
+        <rect x="610" y="10" width="280" height="180" rx="10" fill="#fef3c7" stroke="#a15408" stroke-width="1"/>
+        <text x="750" y="30" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Write-Behind</text>
+        <rect x="630" y="50" width="55" height="30" rx="4" fill="#fff" stroke="#a15408" stroke-width="1"/>
+        <text x="657" y="69" text-anchor="middle" font-size="9" fill="#92400e">App</text>
+        <rect x="720" y="50" width="55" height="30" rx="4" fill="#fee2e2" stroke="#c21f1f" stroke-width="1"/>
+        <text x="747" y="69" text-anchor="middle" font-size="9" fill="#991b1b">Cache</text>
+        <rect x="810" y="50" width="65" height="30" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+        <text x="842" y="69" text-anchor="middle" font-size="9" fill="#5b21b6">DB</text>
+        <line x1="685" y1="65" x2="718" y2="65" stroke="#a15408" stroke-width="1" marker-end="url(#ah3)"/>
+        <line x1="775" y1="65" x2="808" y2="65" stroke="#a15408" stroke-width="1" stroke-dasharray="4,2" marker-end="url(#ah3)"/>
+        <text x="790" y="100" font-size="8" fill="#526176">async later</text>
+        <text x="750" y="135" text-anchor="middle" font-size="9" fill="#526176">Write: cache only, DB async</text>
+        <text x="750" y="150" text-anchor="middle" font-size="9" fill="#526176">Risk: data loss if cache crashes</text>
+        <text x="750" y="170" text-anchor="middle" font-size="9" font-weight="600" fill="#92400e">Fastest writes</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Cache Invalidation</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>TTL (Time-To-Live):</strong> simplest. Short TTL (30s) = fresher but more misses. Long TTL (1h) = better hit rate but stale risk.</li>
+      <li><strong>Event-driven invalidation:</strong> explicitly delete cache on data change. Fresher but requires pub/sub infrastructure.</li>
+      <li><strong>Versioning:</strong> append version to cache key (e.g., <code>user:123:v5</code>). Old entries naturally become unused.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Common Cache Problems</span>
+    <span class="db dh">TRAPS</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="trap">
+      <div class="trapl">CACHE STAMPEDE (THUNDERING HERD)</div>
+      <p>Popular key expires &rarr; hundreds of requests hit DB simultaneously. <strong>Fix:</strong> lock (only one request rebuilds), staggered TTL with jitter, pre-warm before expiry.</p>
+    </div>
+    <div class="trap">
+      <div class="trapl">CACHE PENETRATION</div>
+      <p>Requests for non-existent data always miss cache, always hit DB. <strong>Fix:</strong> cache "not found" result with short TTL, bloom filter to check existence before query.</p>
+    </div>
+    <div class="trap">
+      <div class="trapl">HOT KEY</div>
+      <p>One key gets disproportionate traffic, overloading a single cache node. <strong>Fix:</strong> replicate across nodes, add local in-memory cache (L1) in front of Redis.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Redis as Cache — Why It Dominates</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li>In-memory, sub-millisecond reads</li>
+      <li>Rich data structures (strings, hashes, lists, sorted sets)</li>
+      <li>Built-in TTL per key</li>
+      <li>Atomic operations (<code>INCR</code>, <code>LPUSH</code>, <code>ZADD</code>) for counters, rate limiters, leaderboards</li>
+      <li>Optional persistence (RDB snapshots, AOF)</li>
+      <li>Cluster mode for horizontal scaling</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Multi-Layer Caching</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <p style="font-size:13px; color:var(--text2); margin-bottom:10px;">Layer caches to reduce load at each level:</p>
+    <div class="ins">
+      <div class="insl">LAYERS</div>
+      <p><strong>Client</strong> (browser/CDN) &rarr; <strong>API Gateway cache</strong> &rarr; <strong>Application cache</strong> (Redis) &rarr; <strong>Database</strong></p>
+    </div>
+    <p style="font-size:13px; color:var(--text2); margin-top:10px;">Each layer catches requests before they reach the more expensive layer below. CDN handles static assets, API Gateway caches common responses, Redis handles dynamic hot data.</p>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 12: LOAD BALANCING ═══════ -->
+<div id="tab-lb" class="sec">
+<h2 class="stitle">Load Balancing — More Than Just a Box</h2>
+<div class="sdesc">Understanding L4 vs L7, algorithms, and high availability patterns.</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">L4 vs L7 Load Balancing</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Layer</th><th>Sees</th><th>Can Do</th><th>Example</th></tr>
+      <tr><td>L4 (Transport)</td><td>TCP/IP, port numbers</td><td>Route based on IP/port. Fast, low overhead</td><td>AWS NLB</td></tr>
+      <tr><td>L7 (Application)</td><td>HTTP headers, URL path, cookies</td><td>Content-based routing, SSL termination, path-based routing</td><td>AWS ALB, Nginx</td></tr>
+    </table>
+
+    <!-- SVG: Dual-Layer LB -->
+    <div class="svg-container">
+      <svg viewBox="0 0 850 260" xmlns="http://www.w3.org/2000/svg" style="max-width:820px;">
+<defs>
+          <marker id="ah4" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+            <polygon points="0 0, 7 2.5, 0 5" fill="#5b6b7f"/>
+          </marker>
+        </defs>
+        <!-- External-Facing Section -->
+        <rect x="10" y="10" width="400" height="240" rx="12" fill="#f0fdf4" stroke="#137a39" stroke-width="1.5"/>
+        <text x="210" y="35" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">External-Facing (L7)</text>
+
+        <!-- Client -->
+        <rect x="30" y="100" width="80" height="40" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1"/>
+        <text x="70" y="124" text-anchor="middle" font-size="10" fill="#1d4ed8">Clients</text>
+        <!-- Arrow -->
+        <line x1="110" y1="120" x2="145" y2="120" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah4)"/>
+        <!-- ALB -->
+        <rect x="150" y="85" width="90" height="70" rx="8" fill="#dcfce7" stroke="#137a39" stroke-width="1.5"/>
+        <text x="195" y="110" text-anchor="middle" font-size="11" font-weight="600" fill="#166534">ALB</text>
+        <text x="195" y="125" text-anchor="middle" font-size="8" fill="#526176">L7 / HTTP</text>
+        <text x="195" y="140" text-anchor="middle" font-size="8" fill="#526176">SSL Termination</text>
+        <!-- Arrows to API servers -->
+        <line x1="240" y1="105" x2="290" y2="75" stroke="#5b6b7f" stroke-width="1" marker-end="url(#ah4)"/>
+        <line x1="240" y1="120" x2="290" y2="120" stroke="#5b6b7f" stroke-width="1" marker-end="url(#ah4)"/>
+        <line x1="240" y1="135" x2="290" y2="165" stroke="#5b6b7f" stroke-width="1" marker-end="url(#ah4)"/>
+        <!-- API Servers -->
+        <rect x="295" y="55" width="90" height="35" rx="5" fill="#fff" stroke="#2563eb" stroke-width="1"/>
+        <text x="340" y="76" text-anchor="middle" font-size="9" fill="#1d4ed8">API Server 1</text>
+        <rect x="295" y="102" width="90" height="35" rx="5" fill="#fff" stroke="#2563eb" stroke-width="1"/>
+        <text x="340" y="123" text-anchor="middle" font-size="9" fill="#1d4ed8">API Server 2</text>
+        <rect x="295" y="149" width="90" height="35" rx="5" fill="#fff" stroke="#2563eb" stroke-width="1"/>
+        <text x="340" y="170" text-anchor="middle" font-size="9" fill="#1d4ed8">API Server 3</text>
+        <text x="210" y="225" text-anchor="middle" font-size="9" fill="#526176">Path-based routing, health checks</text>
+        <text x="210" y="240" text-anchor="middle" font-size="9" fill="#526176">/api/* &rarr; API, /static/* &rarr; CDN</text>
+
+        <!-- Internal-Facing Section -->
+        <rect x="440" y="10" width="400" height="240" rx="12" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="640" y="35" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Internal-Facing (L4)</text>
+
+        <!-- API Servers -->
+        <rect x="460" y="100" width="90" height="40" rx="6" fill="#fff" stroke="#2563eb" stroke-width="1"/>
+        <text x="505" y="124" text-anchor="middle" font-size="10" fill="#1d4ed8">API Servers</text>
+        <!-- Arrow -->
+        <line x1="550" y1="120" x2="590" y2="120" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah4)"/>
+        <!-- NLB -->
+        <rect x="595" y="85" width="90" height="70" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="640" y="110" text-anchor="middle" font-size="11" font-weight="600" fill="#1d4ed8">NLB</text>
+        <text x="640" y="125" text-anchor="middle" font-size="8" fill="#526176">L4 / TCP</text>
+        <text x="640" y="140" text-anchor="middle" font-size="8" fill="#526176">Fast, Low Overhead</text>
+        <!-- Arrows to DB/Redis -->
+        <line x1="685" y1="105" x2="730" y2="85" stroke="#5b6b7f" stroke-width="1" marker-end="url(#ah4)"/>
+        <line x1="685" y1="135" x2="730" y2="155" stroke="#5b6b7f" stroke-width="1" marker-end="url(#ah4)"/>
+        <!-- DB -->
+        <rect x="735" y="65" width="85" height="35" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+        <text x="777" y="86" text-anchor="middle" font-size="9" fill="#5b21b6">Database</text>
+        <!-- Redis -->
+        <rect x="735" y="140" width="85" height="35" rx="5" fill="#fee2e2" stroke="#c21f1f" stroke-width="1"/>
+        <text x="777" y="161" text-anchor="middle" font-size="9" fill="#991b1b">Redis</text>
+        <text x="640" y="225" text-anchor="middle" font-size="9" fill="#526176">IP/port routing, low latency</text>
+        <text x="640" y="240" text-anchor="middle" font-size="9" fill="#526176">No HTTP inspection needed</text>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Load Balancing Algorithms</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Algorithm</th><th>How It Works</th><th>Good For</th><th>Watch Out</th></tr>
+      <tr><td>Round Robin</td><td>Rotate through servers sequentially</td><td>Simple, equal-capacity servers</td><td>Slow requests piling up on one server</td></tr>
+      <tr><td>Least Connections</td><td>Send to server with fewest active connections</td><td>Uneven request processing times</td><td>Connection tracking overhead</td></tr>
+      <tr><td>IP Hash</td><td>Hash client IP &rarr; always same server</td><td>Simple sticky session</td><td>Server goes down &rarr; clients lose affinity</td></tr>
+      <tr><td>Weighted</td><td>Assign weights per server capacity</td><td>Mixed hardware, rolling deploys</td><td>Need to maintain weight config</td></tr>
+      <tr><td>Consistent Hashing</td><td>Hash-ring based distribution</td><td>Cache layer, minimize redistribution</td><td>More complex to implement</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Consistent Hashing Ring</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <!-- SVG: Consistent Hashing Ring -->
+    <div class="svg-container">
+      <svg viewBox="0 0 500 400" xmlns="http://www.w3.org/2000/svg" style="max-width:480px;">
+<defs>
+          <marker id="ah5" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+            <polygon points="0 0, 6 2, 0 4" fill="#5b6b7f"/>
+          </marker>
+        </defs>
+        <!-- Ring -->
+        <circle cx="250" cy="200" r="140" fill="none" stroke="#cbd5e1" stroke-width="2.5"/>
+
+        <!-- Server A (top-right) -->
+        <circle cx="345" cy="105" r="18" fill="#dcfce7" stroke="#137a39" stroke-width="2"/>
+        <text x="345" y="109" text-anchor="middle" font-size="11" font-weight="700" fill="#166534">A</text>
+        <text x="375" y="90" font-size="9" fill="#137a39">Server A</text>
+
+        <!-- Server B (bottom-left) -->
+        <circle cx="145" cy="290" r="18" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+        <text x="145" y="294" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">B</text>
+        <text x="105" y="310" font-size="9" fill="#2563eb">Server B</text>
+
+        <!-- Server C (left) -->
+        <circle cx="115" cy="165" r="18" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+        <text x="115" y="169" text-anchor="middle" font-size="11" font-weight="700" fill="#5b21b6">C</text>
+        <text x="80" y="150" font-size="9" fill="#7c3aed">Server C</text>
+
+        <!-- Key 1 (between C and A, maps to A) -->
+        <circle cx="270" cy="62" r="10" fill="#fef3c7" stroke="#a15408" stroke-width="1.5"/>
+        <text x="270" y="66" text-anchor="middle" font-size="9" font-weight="600" fill="#92400e">1</text>
+        <!-- Arrow from key 1 to server A -->
+        <path d="M 278 68 Q 310 75 335 95" fill="none" stroke="#a15408" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#ah5)"/>
+
+        <!-- Key 2 (between A and B, maps to B) -->
+        <circle cx="380" cy="230" r="10" fill="#fef3c7" stroke="#a15408" stroke-width="1.5"/>
+        <text x="380" y="234" text-anchor="middle" font-size="9" font-weight="600" fill="#92400e">2</text>
+        <!-- Arrow from key 2 to server B -->
+        <path d="M 372 237 Q 300 310 163 295" fill="none" stroke="#a15408" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#ah5)"/>
+
+        <!-- Key 3 (between B and C, maps to C) -->
+        <circle cx="130" cy="230" r="10" fill="#fef3c7" stroke="#a15408" stroke-width="1.5"/>
+        <text x="130" y="234" text-anchor="middle" font-size="9" font-weight="600" fill="#92400e">3</text>
+        <!-- Arrow from key 3 to server C -->
+        <path d="M 125 221 Q 118 195 117 183" fill="none" stroke="#a15408" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#ah5)"/>
+
+        <!-- Key 4 (between C and A, maps to A) -->
+        <circle cx="195" cy="70" r="10" fill="#fef3c7" stroke="#a15408" stroke-width="1.5"/>
+        <text x="195" y="74" text-anchor="middle" font-size="9" font-weight="600" fill="#92400e">4</text>
+        <!-- Arrow from key 4 to server A -->
+        <path d="M 204 67 Q 270 60 330 95" fill="none" stroke="#a15408" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#ah5)"/>
+
+        <!-- Legend -->
+        <text x="250" y="370" text-anchor="middle" font-size="10" fill="#526176">Keys map to nearest server clockwise on the ring</text>
+        <text x="250" y="385" text-anchor="middle" font-size="10" fill="#526176">Adding/removing a server only affects adjacent keys</text>
+
+        <!-- Direction arrow (clockwise) -->
+        <path d="M 310 60 A 140 140 0 0 1 385 160" fill="none" stroke="#5b6b7f" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#ah5)"/>
+        <text x="370" y="70" font-size="9" fill="#5b6b7f">clockwise</text>
+      </svg>
+    </div>
+    <div class="ins">
+      <div class="insl">WHY CONSISTENT HASHING</div>
+      <p>When you add/remove a server with consistent hashing, only <code>K/N</code> keys need to be remapped (K=total keys, N=servers). With simple mod-N hashing, almost all keys would be remapped.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Health Checks, Sticky Sessions, HA</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">Health Checks</div>
+    <ul class="content-list">
+      <li>LB periodically pings backend servers (HTTP <code>GET /health</code> or TCP check)</li>
+      <li>Unhealthy server automatically removed from pool, re-added when recovered</li>
+    </ul>
+    <div class="sub2">Sticky Sessions</div>
+    <ul class="content-list">
+      <li>Same user always routed to same server (via cookie or IP hash)</li>
+      <li><strong>Trade-off:</strong> breaks stateless design, uneven load distribution</li>
+      <li><strong>Better approach:</strong> store session in Redis — any server can handle any request</li>
+    </ul>
+    <div class="sub2">LB High Availability</div>
+    <ul class="content-list">
+      <li>LB itself is a single point of failure</li>
+      <li><strong>Solutions:</strong> active-passive LB pair, or use managed service (ALB/NLB already HA)</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 13: COMMUNICATION PATTERNS ═══════ -->
+<div id="tab-comms" class="sec">
+<h2 class="stitle">Communication Patterns</h2>
+<div class="sdesc">HTTP, Long Polling, SSE, WebSocket — know when to use each.</div>
+
+<table class="tbl">
+  <tr><th>Pattern</th><th>Direction</th><th>Connection</th><th>Best For</th></tr>
+  <tr><td>HTTP</td><td>Client &rarr; Server &rarr; Client</td><td>Short-lived, one request one response</td><td>REST APIs, CRUD operations</td></tr>
+  <tr><td>Long Polling</td><td>Client &rarr; Server (held) &rarr; Client</td><td>Repeated short connections</td><td>Legacy real-time (fallback)</td></tr>
+  <tr><td>SSE (Server-Sent Events)</td><td>Server &rarr; Client only</td><td>Persistent HTTP connection</td><td>Live feeds, streaming (ChatGPT uses SSE)</td></tr>
+  <tr><td>WebSocket</td><td>Bidirectional</td><td>Persistent, upgraded from HTTP</td><td>Chat, real-time collaboration, games</td></tr>
+</table>
+
+<div class="ins">
+  <div class="insl">DECISION GUIDE</div>
+  <p><strong>Client needs data occasionally?</strong> &rarr; HTTP. <strong>Server pushes, client doesn't push back?</strong> &rarr; SSE. <strong>Bidirectional real-time?</strong> &rarr; WebSocket.</p>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">WebSocket Deep Dive — Scaling and Failure Handling</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <!-- SVG: WebSocket Scaling -->
+    <div class="svg-container">
+      <svg viewBox="0 0 730 200" xmlns="http://www.w3.org/2000/svg" style="max-width:710px;">
+<defs>
+          <marker id="ah6" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+            <polygon points="0 0, 7 2.5, 0 5" fill="#526176"/>
+          </marker>
+          <marker id="ah6r" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+            <polygon points="0 0, 7 2.5, 0 5" fill="#c21f1f"/>
+          </marker>
+          <marker id="ah6b" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+            <polygon points="0 0, 7 2.5, 0 5" fill="#2563eb"/>
+          </marker>
+        </defs>
+        <!-- User A -->
+        <rect x="20" y="75" width="80" height="40" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="60" y="99" text-anchor="middle" font-size="10" font-weight="600" fill="#1d4ed8">User A</text>
+        <!-- Arrow -->
+        <line x1="100" y1="95" x2="145" y2="95" stroke="#2563eb" stroke-width="1.5" marker-end="url(#ah6b)"/>
+        <text x="123" y="88" text-anchor="middle" font-size="8" fill="#526176">WS</text>
+        <!-- Server 1 -->
+        <rect x="150" y="70" width="100" height="50" rx="8" fill="#dcfce7" stroke="#137a39" stroke-width="1.5"/>
+        <text x="200" y="90" text-anchor="middle" font-size="11" font-weight="600" fill="#166534">Server 1</text>
+        <text x="200" y="104" text-anchor="middle" font-size="8" fill="#166534">(holds WS conn)</text>
+        <!-- Publish arrow -->
+        <line x1="250" y1="95" x2="305" y2="95" stroke="#c21f1f" stroke-width="2" marker-end="url(#ah6r)"/>
+        <text x="278" y="85" text-anchor="middle" font-size="9" font-weight="600" fill="#c21f1f">PUBLISH</text>
+        <!-- Redis Pub/Sub -->
+        <rect x="310" y="55" width="120" height="80" rx="10" fill="#fee2e2" stroke="#c21f1f" stroke-width="2"/>
+        <text x="370" y="82" text-anchor="middle" font-size="12" font-weight="700" fill="#991b1b">Redis</text>
+        <text x="370" y="98" text-anchor="middle" font-size="10" fill="#991b1b">Pub/Sub</text>
+        <text x="370" y="118" text-anchor="middle" font-size="8" fill="#526176">channel: chat:room1</text>
+        <!-- Subscribe arrow -->
+        <line x1="430" y1="95" x2="480" y2="95" stroke="#2563eb" stroke-width="2" marker-end="url(#ah6b)"/>
+        <text x="455" y="85" text-anchor="middle" font-size="9" font-weight="600" fill="#2563eb">SUBSCRIBE</text>
+        <!-- Server 2 -->
+        <rect x="485" y="70" width="100" height="50" rx="8" fill="#dcfce7" stroke="#137a39" stroke-width="1.5"/>
+        <text x="535" y="90" text-anchor="middle" font-size="11" font-weight="600" fill="#166534">Server 2</text>
+        <text x="535" y="104" text-anchor="middle" font-size="8" fill="#166534">(holds WS conn)</text>
+        <!-- Arrow to User B -->
+        <line x1="585" y1="95" x2="620" y2="95" stroke="#2563eb" stroke-width="1.5" marker-end="url(#ah6b)"/>
+        <text x="603" y="88" text-anchor="middle" font-size="8" fill="#526176">WS</text>
+        <!-- User B -->
+        <rect x="625" y="75" width="80" height="40" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+        <text x="665" y="99" text-anchor="middle" font-size="10" font-weight="600" fill="#1d4ed8">User B</text>
+
+        <!-- Legend -->
+        <rect x="100" y="150" width="500" height="40" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+        <text x="350" y="168" text-anchor="middle" font-size="10" fill="#334155">User A (Server 1) sends message &#8594; Redis broadcasts &#8594; Server 2 delivers to User B</text>
+        <text x="350" y="183" text-anchor="middle" font-size="9" fill="#526176">Connection registry in Redis: user_id &#8594; server_id</text>
+      </svg>
+    </div>
+
+    <div class="sub2">Key Challenges</div>
+    <ol class="content-list">
+      <li><strong>Stateful Connections Break Horizontal Scaling</strong> — each WS connection is bound to one server</li>
+      <li><strong>Cross-Server Messaging</strong> — Redis Pub/Sub to broadcast between servers</li>
+      <li><strong>Connection Registry</strong> — store <code>user_id &rarr; server_id</code> mapping in Redis</li>
+      <li><strong>Server Failure</strong> — clients reconnect with exponential backoff, replay from last message ID</li>
+      <li><strong>Load Balancer Considerations</strong> — connection-aware routing (least connections), not round-robin</li>
+      <li><strong>Connection Limits</strong> — 10K-100K connections per server (tune OS, use event loop)</li>
+    </ol>
+  </div>
+</div>
+
+
+<div class="card">
+<div class="ch" onclick="toggle(this)"><span class="cn">API</span><span class="ct">gRPC vs REST vs GraphQL</span><span class="db dm">API STYLE</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+
+<div class="iq">"We're standing up a new service. Do we expose REST, gRPC, or GraphQL — and why?"</div>
+
+<p>All three are ways to move structured data between a client and a server; they differ in <strong>transport</strong>, <strong>encoding</strong>, and <strong>who decides the shape of the response</strong>. There is no universally "best" one — the right pick falls out of who the caller is (public third party, internal service, or a UI aggregating many backends).</p>
+
+<h3 class="sub">REST</h3>
+<ul class="content-list">
+<li><strong>Model:</strong> resources addressed by URLs, manipulated with HTTP verbs (GET/POST/PUT/PATCH/DELETE) and status codes. Usually JSON over HTTP/1.1 or HTTP/2.</li>
+<li><strong>Strengths:</strong> ubiquitous, human-readable, trivially debuggable (curl/browser), and it rides the mature HTTP toolchain — CDNs, proxies, and <code>GET</code> response caching via <code>Cache-Control</code>/<code>ETag</code> for free.</li>
+<li><strong>Weakness:</strong> fixed response shapes lead to <em>over-fetching</em> (endpoint returns more than the client needs) and <em>under-fetching</em> (client must call N endpoints to build one screen).</li>
+</ul>
+
+<h3 class="sub">gRPC</h3>
+<ul class="content-list">
+<li><strong>Model:</strong> contract-first RPC. You define services/messages in a <code>.proto</code> file and generate typed client + server stubs. Runs over HTTP/2, serializes with Protocol Buffers (compact binary).</li>
+<li><strong>Strengths:</strong> low latency and small payloads, strong typing, and four call styles — unary, server-streaming, client-streaming, and <strong>bidirectional streaming</strong> — all multiplexed over one HTTP/2 connection. Excellent for high-volume internal service-to-service traffic.</li>
+<li><strong>Weakness:</strong> not natively callable from browsers — JS can't control the raw HTTP/2 frames gRPC needs — so browser clients require <strong>grpc-web</strong> plus a proxy (e.g. Envoy) or a gateway. Binary payloads are also harder to read at a glance than JSON.</li>
+</ul>
+
+<h3 class="sub">GraphQL</h3>
+<ul class="content-list">
+<li><strong>Model:</strong> a single endpoint (typically <code>POST /graphql</code>) exposing one typed schema; the <em>client</em> specifies exactly which fields it wants in each query.</li>
+<li><strong>Strengths:</strong> directly kills over- and under-fetching — one round trip returns precisely the shape the UI needs, aggregated across multiple backends. Strongly typed schema with introspection.</li>
+<li><strong>Weakness:</strong> resolvers can trigger the <strong>N+1 query problem</strong> (mitigated with batching/DataLoader), and because most operations are a single <code>POST</code>, you lose HTTP-level caching and must cache at the application/field layer instead. Server complexity is higher.</li>
+</ul>
+
+<h3 class="sub">Side-by-side</h3>
+<table class="tbl">
+<thead>
+<tr><th>Dimension</th><th>REST</th><th>gRPC</th><th>GraphQL</th></tr>
+</thead>
+<tbody>
+<tr><td>Transport</td><td>HTTP/1.1 or HTTP/2</td><td>HTTP/2 (required)</td><td>HTTP (usually POST)</td></tr>
+<tr><td>Encoding</td><td>JSON (text)</td><td>Protobuf (binary)</td><td>JSON (text)</td></tr>
+<tr><td>Streaming</td><td>Limited (SSE/chunked)</td><td>First-class: uni + <strong>bidirectional</strong></td><td>Subscriptions (usually WebSocket)</td></tr>
+<tr><td>Browser-native</td><td>Yes</td><td>No (needs grpc-web + proxy)</td><td>Yes</td></tr>
+<tr><td>Response shape</td><td>Server-defined (fixed)</td><td>Server-defined (schema/proto)</td><td><strong>Client-specified</strong></td></tr>
+<tr><td>HTTP caching</td><td>Native (GET/ETag)</td><td>Not applicable</td><td>Hard (app-layer)</td></tr>
+<tr><td>Best for</td><td>Public/partner APIs, CRUD</td><td>Internal microservices, low-latency</td><td>Client aggregation / BFF</td></tr>
+</tbody>
+</table>
+
+<h3 class="sub">When to pick which</h3>
+<div class="decision-grid">
+<div class="decision-item"><div class="dt">Public / third-party API</div><p>Broadest client compatibility, easy to document (OpenAPI), cacheable, debuggable without special tooling.</p><div class="di-key">Key: REST</div></div>
+<div class="decision-item"><div class="dt">Internal microservice-to-service</div><p>You control both ends, want a strict contract, low latency, small payloads, and streaming.</p><div class="di-key">Key: gRPC</div></div>
+<div class="decision-item"><div class="dt">Client aggregation / BFF (Backend-for-Frontend)</div><p>A web/mobile UI stitches data from many backends and wants to avoid over/under-fetching in one round trip.</p><div class="di-key">Key: GraphQL</div></div>
+</div>
+
+<div class="tip"><div class="tipl">TIP</div><p><strong>Tip:</strong> These aren't mutually exclusive — a very common production topology is <strong>GraphQL (or REST) at the edge for browsers, gRPC behind it</strong> for service-to-service calls. Pick per <em>hop</em>, not per company: the browser boundary favors REST/GraphQL, the internal mesh favors gRPC.</p></div>
+
+<div class="note"><div class="notel">NOTE</div><p><strong>Interview framing:</strong> lead with the caller and the boundary ("who calls this, and can they speak HTTP/2?") rather than declaring a favorite. Naming a concrete trade-off — grpc-web proxy for browsers, N+1/caching cost for GraphQL, over-fetching for REST — signals you've actually operated these.</p></div>
+
+</div>
+</div>
+</div>
+
+<!-- ═══════ SECTION 14: API DESIGN TALKING POINTS ═══════ -->
+<div id="tab-apidesign" class="sec">
+<h2 class="stitle">API Design — Talking Points</h2>
+<div class="sdesc">Idempotency, pagination, and HTTP status codes — the details that matter.</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Idempotency — Deep Dive</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">Definition — say this first</div>
+    <p style="font-size:13px; color:var(--text2); margin:8px 0;"><strong>Idempotent = doing it once and doing it N times leave the system in the same state.</strong> It's about the <em>side effect</em>, not the response body. (Note: "idempotent" &ne; "safe" — <code>GET</code> is both; <code>DELETE</code> is idempotent but not safe because it changes state.)</p>
+    <table class="tbl">
+      <tr><th>Method</th><th>Idempotent?</th><th>Why</th></tr>
+      <tr><td><code>GET</code></td><td>Yes (&amp; safe)</td><td>No state change at all</td></tr>
+      <tr><td><code>PUT</code></td><td>Yes</td><td>"Set to X" — repeating sets it to X again (same state)</td></tr>
+      <tr><td><code>DELETE</code></td><td>Yes</td><td>Deleting twice = still gone (same end state)</td></tr>
+      <tr><td><code>POST</code></td><td><strong>No</strong></td><td>"Create new" — repeating makes duplicates. This is the one you must protect with an idempotency key.</td></tr>
+    </table>
+    <div class="ins">
+      <div class="insl">The core problem</div>
+      <p>Networks retry — timeouts, load balancers, client retries, at-least-once queues. The request may have <em>already succeeded</em> but the response got lost. Retrying a <code>POST /charge</code> would charge the user twice. Idempotency makes "do it again" safe.</p>
+    </div>
+
+    <div class="sub2">Idempotency-key pattern — the full lifecycle</div>
+    <ol style="font-size:13px; color:var(--text2); margin:8px 0 8px 20px;">
+      <li><strong>Client generates a unique key</strong> (UUID) per <em>logical operation</em> and sends it: <code>Idempotency-Key: &lt;uuid&gt;</code>. Crucially the key is generated <em>once</em> and <strong>reused across retries</strong> of the same operation (not regenerated each retry).</li>
+      <li><strong>Server looks up the key</strong> in an idempotency store:
+        <ul style="margin-top:4px;">
+          <li><strong>Not seen</strong> &rarr; record key as <code>in-progress</code>, execute the operation, store the result + response, mark <code>done</code>, return it.</li>
+          <li><strong>Seen &amp; done</strong> &rarr; skip execution, return the <em>stored</em> response (same status + body).</li>
+          <li><strong>Seen &amp; in-progress</strong> &rarr; a concurrent duplicate is mid-flight &rarr; return <code>409 Conflict</code> (optionally with <code>Retry-After</code>), or block until it finishes.</li>
+        </ul>
+      </li>
+    </ol>
+
+    <div class="warn">
+      <div class="warnl">The concurrency trap (senior-level point)</div>
+      <p>Two retries can arrive <em>simultaneously</em> — both do the "not seen?" check before either writes. Naive check-then-act races and you charge twice anyway. Fix: make the key insert <strong>atomic</strong> — a unique constraint / conditional write (<code>INSERT ... ON CONFLICT DO NOTHING</code>, or DynamoDB <code>attribute_not_exists</code>). Whoever wins the insert executes; the loser reads the result. The DB's uniqueness guarantee is what actually enforces idempotency.</p>
+    </div>
+
+    <div class="sub2">Design decisions to raise</div>
+    <table class="tbl">
+      <tr><th>Decision</th><th>Answer</th></tr>
+      <tr><td>Where to store keys?</td><td>Fast KV with TTL (Redis) for the common path, or the same transactional DB as the write so the key + the effect commit <strong>atomically</strong> (best correctness). Redis-only risks key-stored-but-write-failed splits.</td></tr>
+      <tr><td>How long to keep keys?</td><td>A TTL (e.g. 24h) — long enough to cover all realistic retries, not forever. Bounds storage.</td></tr>
+      <tr><td>Scope of a key?</td><td>Per user + per endpoint, so one client's key can't collide with another's. Often store a hash of the request body too, to reject "same key, different payload" (a client bug).</td></tr>
+      <tr><td>What do you return on replay?</td><td>The <em>exact original response</em> (status + body), so the client can't tell it was a replay. Store it with the key.</td></tr>
+    </table>
+
+    <div class="note">
+      <div class="notel">Idempotency vs exactly-once</div>
+      <p>"Exactly-once delivery" is famously near-impossible/expensive. The practical pattern is <strong>at-least-once delivery + idempotent processing = effectively-once</strong>. So idempotency is <em>how</em> you get exactly-once semantics without exactly-once delivery. (Ties to the Message Queue section.)</p>
+    </div>
+
+    <div class="sub2">Where idempotency shows up (mention breadth)</div>
+    <ul style="font-size:13px; color:var(--text2); margin:8px 0 0 20px;">
+      <li><strong>Payments / orders</strong> — the classic: don't double-charge on retry.</li>
+      <li><strong>Queue consumers</strong> — at-least-once delivery means dedupe by message ID before processing.</li>
+      <li><strong>Webhooks</strong> — providers retry; consumers must dedupe by event ID.</li>
+      <li><strong>Infra / deploys (CDK, Terraform)</strong> — "apply" is idempotent: converge to desired state whether run once or thrice.</li>
+    </ul>
+
+    <div class="trap">
+      <div class="trapl">Common interview follow-ups</div>
+      <p><strong>"Two identical requests arrive at the same instant?"</strong> &rarr; atomic key insert (unique constraint); loser returns the winner's result.<br>
+      <strong>"Where do you store the key and for how long?"</strong> &rarr; transactional DB (or Redis) keyed by user+endpoint, with a TTL covering retry windows.<br>
+      <strong>"Same key but different request body?"</strong> &rarr; reject (409) — store a body hash to detect it; it's a client bug.<br>
+      <strong>"Isn't PUT already idempotent, why need a key?"</strong> &rarr; PUT is idempotent for "set to X", but <code>POST</code> create-new isn't — that's the case needing a key. Also, even PUT needs care if the handler has extra side effects (emails, events).</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Pagination — Cursor vs Offset</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Type</th><th>Example</th><th>Pros</th><th>Cons</th></tr>
+      <tr><td>Offset</td><td><code>GET /messages?offset=20&limit=10</code></td><td>Simple, jumpable pages</td><td>Slow at high offsets (DB skips N rows), duplicates on inserts</td></tr>
+      <tr><td>Cursor</td><td><code>GET /messages?cursor=abc123&limit=10</code></td><td>Consistent O(1) performance, no duplicates</td><td>Can't jump to page N, cursor is opaque</td></tr>
+    </table>
+    <div class="ins">
+      <div class="insl">IMPLEMENTATION</div>
+      <p>Cursor = opaque token encoding last seen ID. Server uses <code>WHERE id > cursor_id LIMIT 10</code>. Consistent performance regardless of how deep you paginate.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">HTTP Status Codes — Know These</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Code</th><th>Meaning</th><th>When to Use</th></tr>
+      <tr><td><code>200</code></td><td>OK</td><td>Successful GET/PUT/PATCH</td></tr>
+      <tr><td><code>201</code></td><td>Created</td><td>Successful POST (resource created)</td></tr>
+      <tr><td><code>204</code></td><td>No Content</td><td>Successful DELETE (nothing to return)</td></tr>
+      <tr><td><code>301</code></td><td>Moved Permanently</td><td>URL shortener (cacheable redirect)</td></tr>
+      <tr><td><code>302</code></td><td>Found (Temporary)</td><td>URL shortener with analytics</td></tr>
+      <tr><td><code>400</code></td><td>Bad Request</td><td>Invalid input from client</td></tr>
+      <tr><td><code>401</code></td><td>Unauthorized</td><td>No authentication / invalid token</td></tr>
+      <tr><td><code>403</code></td><td>Forbidden</td><td>Authenticated but no permission</td></tr>
+      <tr><td><code>404</code></td><td>Not Found</td><td>Resource doesn't exist</td></tr>
+      <tr><td><code>409</code></td><td>Conflict</td><td>Conflicting state (duplicate, version mismatch)</td></tr>
+      <tr><td><code>429</code></td><td>Too Many Requests</td><td>Rate limited</td></tr>
+      <tr><td><code>500</code></td><td>Internal Server Error</td><td>Unexpected server failure</td></tr>
+      <tr><td><code>503</code></td><td>Service Unavailable</td><td>Server overloaded or in maintenance</td></tr>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 15: RATE LIMITING & RESILIENCE ═══════ -->
+<div id="tab-resilience" class="sec">
+<h2 class="stitle">Rate Limiting &amp; Resilience Patterns</h2>
+<div class="sdesc">Protecting your system from abuse (inbound) and from cascading failures (outbound).</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Inbound Rate Limiting</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">Where to Apply</div>
+    <ul class="content-list">
+      <li><strong>API Gateway (coarse):</strong> IP-based, global limits. First line of defense.</li>
+      <li><strong>Application (fine):</strong> per-user, per-endpoint limits. Business logic aware.</li>
+    </ul>
+    <div class="sub2">Algorithms</div>
+    <table class="tbl">
+      <tr><th>Algorithm</th><th>Description</th><th>Pros/Cons</th></tr>
+      <tr><td>Token Bucket</td><td>Tokens refill at fixed rate. Request consumes token.</td><td>Most common. Allows bursts. Smooth average.</td></tr>
+      <tr><td>Fixed Window</td><td>Count requests in fixed time windows</td><td>Simplest. Boundary problem (2x burst at window edges)</td></tr>
+      <tr><td>Sliding Window Log</td><td>Store timestamp of every request in window</td><td>Precise. High memory usage.</td></tr>
+      <tr><td>Sliding Window Counter</td><td>Weighted count from current + previous window</td><td>Good balance of precision and efficiency</td></tr>
+    </table>
+    <div class="sub2">Distributed Rate Limiting</div>
+    <p style="font-size:13px; color:var(--text2); margin:8px 0;">Redis <code>INCR</code> + <code>EXPIRE</code> for atomic counter across all servers. All API instances share one counter in Redis.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Outbound Resilience Patterns</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Respect External Rate Limits:</strong> read <code>X-RateLimit-Remaining</code>, <code>Retry-After</code> headers. Back off proactively.</li>
+      <li><strong>Retry with Exponential Backoff + Jitter:</strong> 1s, 2s, 4s, 8s... + random jitter to avoid thundering herd. Max 3 attempts.</li>
+      <li><strong>Timeout:</strong> Always set timeouts. Separate connect timeout (2s) and read timeout (10s). Never wait forever.</li>
+      <li><strong>Bulkhead:</strong> Separate connection pools per external service. If payment service hangs, it doesn't exhaust connections for other services.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Circuit Breaker Pattern</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <!-- SVG: Circuit Breaker -->
+    <div class="svg-container">
+      <svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" style="max-width:680px;">
+<defs>
+          <marker id="ah7" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+            <polygon points="0 0, 7 2.5, 0 5" fill="#526176"/>
+          </marker>
+        </defs>
+        <!-- CLOSED state -->
+        <rect x="50" y="80" width="150" height="70" rx="12" fill="#dcfce7" stroke="#137a39" stroke-width="2"/>
+        <text x="125" y="110" text-anchor="middle" font-size="13" font-weight="700" fill="#166534">CLOSED</text>
+        <text x="125" y="128" text-anchor="middle" font-size="9" fill="#166534">Normal Operation</text>
+        <text x="125" y="142" text-anchor="middle" font-size="8" fill="#526176">All requests pass through</text>
+
+        <!-- Arrow CLOSED -> OPEN -->
+        <line x1="200" y1="100" x2="290" y2="100" stroke="#c21f1f" stroke-width="2" marker-end="url(#ah7)"/>
+        <text x="245" y="90" text-anchor="middle" font-size="8" fill="#c21f1f">failures exceed</text>
+        <text x="245" y="75" text-anchor="middle" font-size="8" fill="#c21f1f">threshold</text>
+
+        <!-- OPEN state -->
+        <rect x="295" y="80" width="150" height="70" rx="12" fill="#fee2e2" stroke="#c21f1f" stroke-width="2"/>
+        <text x="370" y="110" text-anchor="middle" font-size="13" font-weight="700" fill="#c21f1f">OPEN</text>
+        <text x="370" y="128" text-anchor="middle" font-size="9" fill="#c21f1f">Stop Calling</text>
+        <text x="370" y="142" text-anchor="middle" font-size="8" fill="#526176">Fail fast, return error</text>
+
+        <!-- Arrow OPEN -> HALF-OPEN -->
+        <line x1="445" y1="115" x2="520" y2="115" stroke="#a15408" stroke-width="2" marker-end="url(#ah7)"/>
+        <text x="483" y="105" text-anchor="middle" font-size="8" fill="#a15408">wait timeout</text>
+        <text x="483" y="93" text-anchor="middle" font-size="8" fill="#a15408">expires</text>
+
+        <!-- HALF-OPEN state -->
+        <rect x="525" y="80" width="150" height="70" rx="12" fill="#fef3c7" stroke="#a15408" stroke-width="2"/>
+        <text x="600" y="110" text-anchor="middle" font-size="13" font-weight="700" fill="#92400e">HALF-OPEN</text>
+        <text x="600" y="128" text-anchor="middle" font-size="9" fill="#92400e">Try One Request</text>
+        <text x="600" y="142" text-anchor="middle" font-size="8" fill="#526176">Test if service recovered</text>
+
+        <!-- Arrow HALF-OPEN -> CLOSED (success) -->
+        <path d="M 600 150 Q 600 200 125 200 Q 80 200 80 150" fill="none" stroke="#137a39" stroke-width="1.5" marker-end="url(#ah7)"/>
+        <text x="350" y="215" text-anchor="middle" font-size="9" fill="#137a39">success &rarr; reset to CLOSED</text>
+
+        <!-- Arrow HALF-OPEN -> OPEN (failure) -->
+        <path d="M 525 140 Q 480 180 445 145" fill="none" stroke="#c21f1f" stroke-width="1.5" marker-end="url(#ah7)"/>
+        <text x="470" y="175" text-anchor="middle" font-size="8" fill="#c21f1f">failure &rarr; back to OPEN</text>
+      </svg>
+    </div>
+
+    <div class="note">
+      <div class="notel">KEY INSIGHT</div>
+      <p>Circuit breaker prevents cascading failures. When a downstream service is down, hammering it with retries makes things worse. Fail fast, give it time to recover, then test with a single request.</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 16: CDN ═══════ -->
+<div id="tab-cdn" class="sec">
+<h2 class="stitle">CDN — Quick Reference</h2>
+<div class="sdesc">Content Delivery Network basics for system design interviews.</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">What CDN Does</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li>Caches static content (JS, CSS, images, videos) at <strong>edge locations</strong> close to users</li>
+      <li>Reduces latency (content served from nearest edge, not origin)</li>
+      <li>Reduces origin server load (most static requests never reach your servers)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Push vs Pull CDN</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Mode</th><th>How It Works</th><th>Best For</th></tr>
+      <tr><td>Pull</td><td>First request &rarr; CDN fetches from origin &rarr; caches</td><td>Most common. Simple. Works for most websites.</td></tr>
+      <tr><td>Push</td><td>You upload content to CDN proactively</td><td>Large files (videos), pre-caching before traffic spike</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Cache Invalidation</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="tip">
+      <div class="tipl">BEST PRACTICE</div>
+      <p>Use content hashing in filenames: <code>app.a3b2c1.js</code>. When content changes, filename changes, CDN fetches new version. Build tools (webpack, vite) do this automatically. Never manually purge CDN.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">What NOT to Put on CDN</span>
+    <span class="db dh">AVOID</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Dynamic content</strong> (API responses) — changes per request</li>
+      <li><strong>Personalized data</strong> (user-specific content) — can't cache per-user at edge</li>
+      <li><strong>Authenticated content</strong> (private data) — public cache = serving User A's data to User B</li>
+    </ul>
+    <div class="trap">
+      <div class="trapl">SECURITY TRAP</div>
+      <p>Never cache authenticated API responses in CDN without careful configuration. A misconfigured CDN can serve one user's private data to another.</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ APPENDIX A: MySQL Index Internals ═══════ -->
+<div id="tab-mysql" class="sec">
+<h2 class="stitle">Appendix A: MySQL Index Internals</h2>
+<div class="sdesc">Deep understanding of InnoDB indexing — a differentiator in database-focused interviews.</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Clustered Index (Primary Key)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li>InnoDB stores rows <strong>physically ordered</strong> by primary key</li>
+      <li>Only <strong>one per table</strong> (it IS the table)</li>
+      <li>Range queries on PK are very fast (sequential disk reads)</li>
+      <li><strong>Auto-increment</strong> = sequential writes (fast, appends to end)</li>
+      <li><strong>UUID</strong> = random inserts (slow, page splits, fragmentation)</li>
+    </ul>
+    <div class="warn">
+      <div class="warnl">PERFORMANCE IMPACT</div>
+      <p>UUID as primary key causes random page splits and poor cache utilization. For high-write workloads, auto-increment or time-sorted IDs (ULID, Snowflake) are much better.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Secondary Index</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li>Separate B-tree structure</li>
+      <li>Leaf nodes contain: indexed column values + primary key value</li>
+      <li>Lookup = <strong>2 steps</strong>: secondary index &rarr; get PK &rarr; clustered index (table) to get full row</li>
+      <li><strong>Covering index</strong> skips step 2 — if all needed columns are in the index, no need to go to clustered index</li>
+    </ul>
+    <div class="tip">
+      <div class="tipl">OPTIMIZATION</div>
+      <p>A covering index (includes all columns the query needs) eliminates the "bookmark lookup" to the clustered index. This can be 2-3x faster for read-heavy queries.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Composite Index</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li>Follows <strong>leftmost prefix rule</strong></li>
+      <li><code>INDEX(a, b, c)</code> works for queries on:</li>
+    </ul>
+    <table class="tbl">
+      <tr><th>Query Condition</th><th>Uses Index?</th></tr>
+      <tr><td><code>WHERE a = ?</code></td><td>Yes</td></tr>
+      <tr><td><code>WHERE a = ? AND b = ?</code></td><td>Yes</td></tr>
+      <tr><td><code>WHERE a = ? AND b = ? AND c = ?</code></td><td>Yes (full)</td></tr>
+      <tr><td><code>WHERE b = ?</code></td><td>No (skips leftmost)</td></tr>
+      <tr><td><code>WHERE c = ?</code></td><td>No (skips leftmost)</td></tr>
+      <tr><td><code>WHERE a = ? AND c = ?</code></td><td>Partial (uses a only)</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Impact on Writes</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li>Every index must be updated on <code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code></li>
+      <li>More indexes = slower writes</li>
+      <li>Rule of thumb: <strong>5-7 indexes max</strong> per table for OLTP (Online Transaction Processing) workloads</li>
+      <li>Monitor: <code>SHOW INDEX FROM table</code>, check for unused indexes via slow query log</li>
+    </ul>
+    <div class="note">
+      <div class="notel">BALANCE</div>
+      <p>Indexes are a read-write trade-off. Add indexes for frequent queries. Remove indexes that are never used. Monitor and adjust.</p>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ APPENDIX B: PostgreSQL vs MySQL ═══════ -->
+<div id="tab-pgvsmysql" class="sec">
+<h2 class="stitle">Appendix B: PostgreSQL vs MySQL Index Differences</h2>
+<div class="sdesc">Understanding the storage engine differences explains why companies choose one over the other.</div>
+
+<table class="tbl">
+  <tr><th>Aspect</th><th>MySQL (InnoDB)</th><th>PostgreSQL</th></tr>
+  <tr><td>Table storage</td><td>Clustered by primary key</td><td>Heap storage (insert order, not sorted)</td></tr>
+  <tr><td>Primary key index</td><td>IS the table (clustered)</td><td>Separate B-tree pointing to heap row</td></tr>
+  <tr><td>Secondary index</td><td>Points to PK &rarr; then clustered index</td><td>Points to heap row directly (ctid)</td></tr>
+  <tr><td>Old row versions</td><td>Stored in separate undo log</td><td>Stored in-place (dead tuples)</td></tr>
+  <tr><td>Cleanup</td><td>Automatic purge of undo log</td><td>Requires VACUUM</td></tr>
+  <tr><td>Write amplification</td><td>Lower</td><td>Higher — dead tuples bloat table</td></tr>
+  <tr><td>Table bloat</td><td>Minimal</td><td>Can be significant without VACUUM tuning</td></tr>
+</table>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Why Uber Switched from PostgreSQL to MySQL</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li>At high write throughput, PostgreSQL's heap bloated with dead tuples</li>
+      <li>VACUUM couldn't keep up with the rate of dead tuple generation</li>
+      <li>Replication amplified the problem (WAL replayed dead tuples on replicas)</li>
+      <li>MySQL's undo log approach kept the table compact</li>
+      <li>InnoDB clustered index = sequential writes for append-heavy patterns (trip data)</li>
+    </ul>
+    <div class="note">
+      <div class="notel">CONTEXT MATTERS</div>
+      <p>This doesn't mean "MySQL is always better." Uber's workload was very specific: append-heavy, high write throughput, many replicas. For most read-heavy workloads with complex queries, PostgreSQL is excellent.</p>
+    </div>
+    <div class="iq">"The choice between PostgreSQL and MySQL depends on workload characteristics. For append-heavy, high-write workloads with many replicas, MySQL's InnoDB storage engine handles dead tuples more gracefully. For complex analytical queries and rich SQL features, PostgreSQL often wins."</div>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════ SECTION 17: MAP-BASED SYSTEM DESIGN ═══════ -->
+<div id="tab-mapdesign" class="sec">
+<h2 class="stitle">Map-Based System Design</h2>
+<div class="sdesc">A dedicated guide for designing map-based products (Google Maps, Uber, delivery tracking). Master the geospatial architecture patterns.</div>
+
+<div class="ins">
+  <div class="insl">OPENING STATEMENT</div>
+  <p>"To design a scalable [Product Name], I'll break the system into a Client Layer, an API Gateway, Geospatial Services (Search / Routing), a Geo-indexed Database, and a CDN-backed Tile Service."</p>
+</div>
+
+<h3 class="sub">8 Universal Map Architecture Components</h3>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">1</span>
+    <span class="ct">Client (React + Map SDK)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Role:</strong> User interaction layer — renders map tiles, handles gestures (pan, zoom, tap)</li>
+      <li><strong>Tech:</strong> React + Mapbox GL JS / Google Maps SDK / Leaflet</li>
+      <li><strong>Responsibilities:</strong> Tile rendering, marker overlays, user input capture, GPS location tracking</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">2</span>
+    <span class="ct">CDN (Cache Map Tiles &amp; Static Assets)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Role:</strong> Edge-cache pre-rendered map tiles and static assets for sub-second loads</li>
+      <li><strong>Strategy:</strong> Tiles are immutable per version — cache indefinitely with versioned URLs</li>
+      <li><strong>Benefit:</strong> Reduces origin load by 90%+, provides global low-latency delivery</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">3</span>
+    <span class="ct">API Gateway (Auth, Rate Limiting, Request Routing)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Role:</strong> Single entry point — authentication, rate limiting, request routing to backend services</li>
+      <li><strong>Handles:</strong> API key validation, quota enforcement, request transformation, load shedding</li>
+      <li><strong>Tech:</strong> Kong / AWS API Gateway / Nginx with Lua</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">4</span>
+    <span class="ct">Location Service (Coordinates, Reverse Geocoding)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Role:</strong> Convert addresses to coordinates (geocoding) and coordinates to addresses (reverse geocoding)</li>
+      <li><strong>Data:</strong> Address database, postal codes, landmark registry</li>
+      <li><strong>Optimization:</strong> Cache popular lookups, use geohash prefix for batch resolution</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">5</span>
+    <span class="ct">Search Service (POI, Fuzzy, Keyword Search)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Role:</strong> Find points of interest, businesses, landmarks via text queries</li>
+      <li><strong>Tech:</strong> Elasticsearch with geo_point fields, autocomplete with edge n-grams</li>
+      <li><strong>Features:</strong> Fuzzy matching, category filters, distance-weighted relevance scoring</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">6</span>
+    <span class="ct">Routing Service (Pathfinding with Dijkstra/A*, ETA)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Role:</strong> Compute optimal routes between points, estimate arrival times</li>
+      <li><strong>Algorithms:</strong> Dijkstra (shortest path), A* (heuristic-guided), Contraction Hierarchies (pre-computed long-distance)</li>
+      <li><strong>ETA:</strong> Historical traffic data + real-time conditions + ML predictions</li>
+      <li><strong>Graph:</strong> Road network as weighted directed graph — edges = road segments, weights = travel time</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">7</span>
+    <span class="ct">Geo-Database (PostGIS / Cosmos DB, Spatial Indexing)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Role:</strong> Store and query geospatial data with spatial indexes</li>
+      <li><strong>Tech:</strong> PostGIS (PostgreSQL extension), MongoDB with 2dsphere, Azure Cosmos DB with spatial</li>
+      <li><strong>Index types:</strong> GiST (R-tree based), SP-GiST (space-partitioned), BRIN (block range for sorted data)</li>
+      <li><strong>Queries:</strong> ST_DWithin (within distance), ST_Intersects (overlap), ST_Contains (inside polygon)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">8</span>
+    <span class="ct">Cache (Redis with Geo Commands, Hot Locations)</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Role:</strong> Cache hot locations, store real-time coordinates for moving entities</li>
+      <li><strong>Commands:</strong> <code>GEOADD</code> (store coords), <code>GEORADIUS</code> (find nearby), <code>GEODIST</code> (distance between)</li>
+      <li><strong>Use case:</strong> Driver/courier real-time position tracking — update every 3-5 seconds</li>
+      <li><strong>TTL:</strong> Short expiry for real-time data, longer for POI cache</li>
+    </ul>
+  </div>
+</div>
+
+<h3 class="sub">Key Concepts</h3>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Tile System</span>
+    <span class="db de">CORE</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li>Map divided into tiles at different zoom levels</li>
+      <li><strong>Quadtree addressing:</strong> each tile subdivides into 4 children</li>
+      <li>Zoom level N has 4<sup>N</sup> tiles</li>
+      <li>Standard tile size: 256x256 or 512x512 pixels</li>
+      <li>URL pattern: <code>/{z}/{x}/{y}.png</code> — easily cacheable by CDN</li>
+    </ul>
+    <div class="tip">
+      <div class="tipl">TIP</div>
+      <p>Tiles are immutable per version — perfect for CDN caching. When map data updates, increment the version in the URL path to bust cache.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Geohashing</span>
+    <span class="db de">CORE</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Concept:</strong> Convert 2D coordinates (lat, lng) to a 1D string</li>
+      <li><strong>Property:</strong> Nearby points share a common prefix</li>
+      <li><strong>Use case:</strong> Proximity queries — find all entities with the same geohash prefix</li>
+      <li><strong>Trade-off:</strong> Precision vs cell size — longer hash = smaller cell = more precise</li>
+      <li><strong>Example:</strong> Geohash length 6 = ~1.2 km x 0.6 km cell</li>
+    </ul>
+    <div class="warn">
+      <div class="warnl">EDGE CASE</div>
+      <p>Two points can be very close but have different geohash prefixes if they straddle a cell boundary. Solution: query the target cell AND its 8 neighbors.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Spatial Indexing</span>
+    <span class="db de">CORE</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <table class="tbl">
+      <tr><th>Index Type</th><th>Mechanism</th><th>Best For</th></tr>
+      <tr><td>R-tree</td><td>Bounding rectangles, hierarchical</td><td>Range queries, polygon containment</td></tr>
+      <tr><td>Quadtree</td><td>Recursive subdivision into 4 quadrants</td><td>Point queries, variable density data</td></tr>
+      <tr><td>Geohash</td><td>String prefix matching</td><td>Proximity queries, distributed caching</td></tr>
+    </table>
+    <p style="margin-top:10px; font-size:13px; color:var(--text2);">Choice depends on query pattern: R-tree for complex geometry, Quadtree for adaptive resolution, Geohash for simple key-value stores.</p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Real-time Location Updates</span>
+    <span class="db dm">IMPORTANT</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <ul class="content-list">
+      <li><strong>Protocol:</strong> Use WebSocket for driver/courier tracking (bidirectional, low overhead)</li>
+      <li><strong>Storage:</strong> Store in Redis with <code>GEOADD key lng lat member</code></li>
+      <li><strong>Query:</strong> Find nearby with <code>GEORADIUS key lng lat radius unit</code></li>
+      <li><strong>Update frequency:</strong> Every 3-5 seconds per active entity</li>
+      <li><strong>Fan-out:</strong> Push updates to riders/customers watching a specific driver via pub/sub</li>
+    </ul>
+  </div>
+</div>
+
+<h3 class="sub">Non-Functional Requirements (Memorize These Numbers)</h3>
+
+<table class="tbl">
+  <tr><th>Metric</th><th>Target</th></tr>
+  <tr><td>Map Load Time</td><td>&lt; 2 seconds</td></tr>
+  <tr><td>Search Response</td><td>&lt; 500 ms</td></tr>
+  <tr><td>Location Update</td><td>&lt; 1 second</td></tr>
+  <tr><td>Uptime</td><td>99.9%</td></tr>
+  <tr><td>Concurrent Users</td><td>1K &ndash; 100K</td></tr>
+</table>
+
+<h3 class="sub">Interview Phrasings</h3>
+
+<div class="iq">"I'd use a quadtree-based tile system where each zoom level subdivides tiles by 4. The CDN caches tiles at the edge so users get sub-second map loads."</div>
+
+<div class="iq">"For proximity search, I'd use geohashing in Redis — GEOADD to store locations, GEORADIUS to find nearby entities within a given radius. That's a logarithmic index seek plus a scan of the matching cells — roughly O(log M + K) — where M is the total indexed points and K the number of matches returned — rather than a flat O(log M)."</div>
+
+<div class="iq">"For route calculation, I'd use a pre-computed graph with A* for real-time routing and contraction hierarchies for long-distance routes."</div>
+
+</div>
+
+<!-- ═══════ SECTION 18: ADDITIONAL DESIGN PATTERNS ═══════ -->
+<div id="tab-morepatterns" class="sec">
+<h2 class="stitle">Additional Design Patterns</h2>
+<div class="sdesc">Quick-reference cards for common, classic system design problems. Each covers key components, data flow, tricky parts, and an interview phrasing.</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Design a Web Crawler</span>
+    <span class="db dh">HARD</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">Key Components</div>
+    <ul class="content-list">
+      <li><strong>URL Frontier:</strong> Priority queue — manages which URLs to crawl next (BFS order, priority by domain importance)</li>
+      <li><strong>Fetcher:</strong> HTTP client + headless browser for JS-rendered pages</li>
+      <li><strong>Parser:</strong> Extract links, text content, metadata from fetched pages</li>
+      <li><strong>Content Store:</strong> Detect duplicates via content hash (SimHash / MinHash for near-duplicates)</li>
+      <li><strong>URL Filter:</strong> Respect robots.txt, deduplicate URLs, apply domain rules</li>
+    </ul>
+    <div class="sub2">Data Flow</div>
+    <ul class="content-list">
+      <li>Seed URLs &rarr; URL Frontier &rarr; Fetcher &rarr; Parser &rarr; extract links &rarr; filter &amp; dedup &rarr; back to Frontier</li>
+      <li>Parsed content &rarr; Content Store (check hash for duplicates) &rarr; Index / Storage</li>
+    </ul>
+    <div class="sub2">Key Decisions</div>
+    <ul class="content-list">
+      <li><strong>BFS vs DFS:</strong> BFS preferred — ensures breadth coverage, avoids getting trapped deep in one site</li>
+      <li><strong>Politeness:</strong> Rate limit per domain (1 req/s default), separate queue per host</li>
+      <li><strong>Distributed coordination:</strong> Consistent hashing to assign URL domains to worker nodes</li>
+    </ul>
+    <div class="sub2">Tricky Parts</div>
+    <ul class="content-list">
+      <li><strong>Infinite loops:</strong> URL normalization + Bloom filter for seen-URL dedup</li>
+      <li><strong>Spider traps:</strong> Detect via max depth limit, URL pattern detection</li>
+      <li><strong>Dynamic content:</strong> Headless browser rendering increases cost 10x — use selectively</li>
+    </ul>
+    <div class="iq">"I'd use a distributed URL frontier partitioned by domain to enforce politeness. Each worker fetches, parses links, and adds new URLs back to the frontier after checking against a bloom filter for deduplication."</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Design a Unique ID Generator</span>
+    <span class="db dm">MEDIUM</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">Key Components &amp; Approaches</div>
+    <table class="tbl">
+      <tr><th>Approach</th><th>Pros</th><th>Cons</th></tr>
+      <tr><td>UUID (128-bit)</td><td>No coordination needed, simple</td><td>Long (36 chars), not sortable by time</td></tr>
+      <tr><td>Database auto-increment</td><td>Simple, ordered</td><td>Single point of failure, bottleneck at scale</td></tr>
+      <tr><td>Twitter Snowflake (64-bit)</td><td>Time-ordered, distributed, compact</td><td>Clock sync dependency</td></tr>
+    </table>
+    <div class="sub2">Snowflake Breakdown (64 bits)</div>
+    <ul class="content-list">
+      <li><strong>1 bit:</strong> Sign (always 0)</li>
+      <li><strong>41 bits:</strong> Timestamp in milliseconds (supports ~69 years from epoch)</li>
+      <li><strong>10 bits:</strong> Machine ID (supports 1024 machines)</li>
+      <li><strong>12 bits:</strong> Sequence number (4096 IDs per millisecond per machine)</li>
+    </ul>
+    <div class="sub2">Tricky Parts</div>
+    <ul class="content-list">
+      <li><strong>Clock synchronization:</strong> NTP drift can cause duplicate timestamps — use logical clocks or wait-on-clock-backward</li>
+      <li><strong>ID ordering guarantees:</strong> Snowflake gives rough time-ordering, not strict global order</li>
+      <li><strong>Machine ID assignment:</strong> Use ZooKeeper / etcd for lease-based machine ID allocation</li>
+    </ul>
+    <div class="iq">"I'd use a Snowflake-like approach: 64-bit IDs with timestamp prefix for rough time-ordering, machine ID for distributed generation without coordination, and a sequence counter for same-millisecond uniqueness."</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Design a Search Autocomplete System</span>
+    <span class="db dm">MEDIUM</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">Key Components</div>
+    <ul class="content-list">
+      <li><strong>Trie:</strong> Prefix tree for fast prefix matching — each node represents a character</li>
+      <li><strong>Frequency counter:</strong> Track query popularity for ranking suggestions</li>
+      <li><strong>Cache:</strong> Redis cache for hot prefixes (top 10-20% of queries)</li>
+    </ul>
+    <div class="sub2">Data Flow</div>
+    <ul class="content-list">
+      <li>User types &rarr; check cache &rarr; query trie &rarr; rank by frequency &rarr; return top-5</li>
+      <li>Each keystroke triggers a lookup (debounced 100-200 ms on client side)</li>
+    </ul>
+    <div class="sub2">Optimization</div>
+    <ul class="content-list">
+      <li><strong>Precompute top-K:</strong> Store top-K completions at each trie node — avoids traversal at query time</li>
+      <li><strong>Async updates:</strong> Frequency counters updated via batch pipeline (e.g., every 15 min), not on the read path</li>
+      <li><strong>Shard by prefix:</strong> Partition trie across nodes by first 1-2 characters</li>
+    </ul>
+    <div class="sub2">Tricky Parts</div>
+    <ul class="content-list">
+      <li><strong>Handling typos:</strong> Edit distance (Levenshtein) for fuzzy matching — expensive, use only for cache misses</li>
+      <li><strong>Personalization:</strong> Per-user recent queries layered on top of global suggestions</li>
+      <li><strong>Freshness vs popularity:</strong> Blend time-decay with frequency — trending topics surface faster</li>
+    </ul>
+    <div class="iq">"I'd build a trie where each node stores the top-K completions precomputed. Hot prefixes are cached in Redis. Frequency updates happen async via a batch pipeline, not on the read path."</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Design YouTube / Video Streaming</span>
+    <span class="db dh">HARD</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">Key Components</div>
+    <ul class="content-list">
+      <li><strong>Upload service:</strong> Chunked upload (resume on failure), virus scan, format validation</li>
+      <li><strong>Transcoding pipeline:</strong> Convert to multiple resolutions (360p, 720p, 1080p, 4K) + formats (H.264, VP9, AV1)</li>
+      <li><strong>CDN:</strong> Edge delivery of video segments for low-latency playback globally</li>
+      <li><strong>Metadata DB:</strong> Title, description, tags, thumbnails, view counts, user interactions</li>
+      <li><strong>View counter:</strong> Eventual consistency — aggregate in batches, not real-time per view</li>
+    </ul>
+    <div class="sub2">Key Decisions</div>
+    <ul class="content-list">
+      <li><strong>ABR (Adaptive Bitrate):</strong> Client dynamically switches quality based on bandwidth — uses manifest file (HLS/DASH)</li>
+      <li><strong>DAG-based pipeline:</strong> Transcoding as a directed acyclic graph — split, encode, merge, thumbnail, watermark in parallel</li>
+      <li><strong>Eventual consistency:</strong> View counts, likes — write to message queue, aggregate async</li>
+    </ul>
+    <div class="sub2">Tricky Parts</div>
+    <ul class="content-list">
+      <li><strong>Copyright detection:</strong> Content fingerprinting (audio + video hash) checked during upload</li>
+      <li><strong>Live streaming vs VOD:</strong> Live requires real-time encoding + low-latency CDN (WebRTC or LL-HLS)</li>
+      <li><strong>Cold start:</strong> New videos not yet on CDN — use origin shield to reduce thundering herd on origin</li>
+    </ul>
+    <div class="iq">"Upload triggers an async transcoding pipeline that produces multiple resolutions. Videos are served via CDN with ABR streaming — the client dynamically switches quality based on bandwidth."</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="ct">Design Google Drive / Dropbox</span>
+    <span class="db dh">HARD</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <div class="sub2">Key Components</div>
+    <ul class="content-list">
+      <li><strong>Block server:</strong> Chunked storage — files split into 4 MB blocks, stored in object storage (S3)</li>
+      <li><strong>Metadata DB:</strong> File tree structure, versions, permissions, sharing links</li>
+      <li><strong>Sync service:</strong> Detect local changes, resolve conflicts, orchestrate upload/download</li>
+      <li><strong>Notification service:</strong> Alert other clients when files change (long polling / WebSocket)</li>
+    </ul>
+    <div class="sub2">Key Decisions</div>
+    <ul class="content-list">
+      <li><strong>Block-level dedup:</strong> Only upload changed blocks on edit — content-addressable hashing (SHA-256)</li>
+      <li><strong>Conflict resolution:</strong> Last-write-wins for simple cases, branching (create conflict copy) for simultaneous edits</li>
+      <li><strong>Long polling:</strong> Client holds connection open — server responds when file changes occur (lower overhead than WebSocket for infrequent updates)</li>
+    </ul>
+    <div class="sub2">Tricky Parts</div>
+    <ul class="content-list">
+      <li><strong>Large files:</strong> Chunking + parallel upload + resumable uploads for reliability</li>
+      <li><strong>Offline edits:</strong> Queue changes locally, sync when connection restores, merge conflicts</li>
+      <li><strong>Concurrent edits:</strong> Operational Transform (Google Docs approach) or CRDT for real-time collaboration</li>
+    </ul>
+    <div class="iq">"Files are split into blocks and stored with content-addressable hashing for dedup. Only modified blocks are uploaded on edit. A sync service detects conflicts and the notification service alerts other clients via long polling."</div>
+  </div>
+</div>
+
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">DT1</span><span class="ct">Saga &amp; the Dual-Write Problem (Outbox + CDC)</span><span class="db dh">DISTRIBUTED TX</span><span class="chv">&#9654;</span></div><div class="cb">
+
+<div class="iq">"An order-service updates its DB and then calls payment-service. The DB commit succeeds, the process crashes before the event is published. How does payment ever find out?"</div>
+
+<h3 class="sub">SAGA: distributed transactions without 2PC</h3>
+<p>A <strong>Saga</strong> replaces one ACID transaction that spans services with a <em>sequence of local transactions</em>, one per service, where each step commits locally and then hands off to the next — either by <em>emitting an event</em> (choreography) or by an <em>orchestrator issuing the next command</em> (orchestration). There is <strong>no global lock and no two-phase commit (2PC)</strong> — 2PC needs a synchronous coordinator holding locks across services, which kills availability and does not scale for microservices. Instead of rollback, a Saga uses <strong>compensating transactions</strong>: semantic undo actions (refund payment, release inventory) that reverse an already-committed step.</p>
+
+<div class="decision-grid">
+<div class="decision-item"><div class="dt">Choreography</div><p>No central coordinator. Each service listens for events and reacts by emitting its own. Fully decoupled, event-driven.</p><div class="di-key">Key: great for a few steps; cyclic event dependencies get hard to trace / reason about</div></div>
+<div class="decision-item"><div class="dt">Orchestration</div><p>A central orchestrator (state machine) issues commands to each service and awaits replies, driving the compensation path on failure.</p><div class="di-key">Key: explicit control flow and easy to observe; the orchestrator is a new component to build and own</div></div>
+<div class="decision-item"><div class="dt">Compensation</div><p>Backward recovery. Steps that already committed are undone in reverse order via semantic inverses. Compensations must be idempotent and (ideally) commutative-safe.</p><div class="di-key">Key: some actions can't be undone (email sent) — order such steps last or make them pivot</div></div>
+<div class="decision-item"><div class="dt">Isolation gap</div><p>Sagas give <em>ACD</em> not full ACID — no isolation. Other txns can read intermediate state (dirty reads).</p><div class="di-key">Key: use semantic locks / status flags (PENDING → CONFIRMED) to guard partial state</div></div>
+</div>
+
+<h3 class="sub">The Dual-Write Problem</h3>
+<p>Every Saga step must do two things atomically: <strong>commit the business state</strong> and <strong>publish an event</strong>. But the database and the message broker (Kafka, SQS, RabbitMQ) are two separate systems with no shared transaction. Writing to both is a <strong>dual write</strong>, and there is no ordering of the two that is safe:</p>
+<ul class="content-list">
+<li><strong>DB first, then publish:</strong> crash after commit but before publish &rarr; state changed, no event, downstream never learns. <em>Lost event.</em></li>
+<li><strong>Publish first, then DB:</strong> crash after publish but before commit &rarr; event fired for state that was rolled back. <em>Phantom event.</em></li>
+<li><strong>Wrap both in one txn:</strong> impossible without a distributed transaction across DB + broker (XA/2PC) — the very thing we're avoiding, and most brokers (Kafka) don't support XA well.</li>
+</ul>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Trap — "just publish inside the @Transactional method":</strong> the broker call is not part of the DB transaction. A rollback of the DB does <em>not</em> un-send the message, and a broker timeout after a successful commit does not undo the commit. The two stores drift out of sync under partial failure, and this is invisible in the happy-path tests you run locally.</p></div>
+
+<h3 class="sub">Transactional Outbox</h3>
+<p>Make the write <em>single-store</em>. In the <strong>same local ACID transaction</strong> as the business row, insert a row into an <code>outbox</code> table describing the event. Because both writes hit the same database, they commit or roll back together — atomicity restored, no 2PC. A separate <strong>message relay</strong> then reads the outbox and publishes to the broker, marking (or deleting) rows once delivered.</p>
+<table class="tbl">
+<tr><th>Concern</th><th>How the outbox handles it</th></tr>
+<tr><td>Atomicity</td><td>Business row + outbox row in one local transaction — no dual write</td></tr>
+<tr><td>Relay delivery</td><td>At-least-once: relay may crash after publish, before marking sent &rarr; re-publishes on restart</td></tr>
+<tr><td>Duplicates</td><td>Guaranteed possible &rarr; consumers <strong>must be idempotent</strong> (dedupe on event ID / business key)</td></tr>
+<tr><td>Ordering</td><td>Include a monotonic sequence / aggregate ID; partition by aggregate to preserve per-entity order</td></tr>
+<tr><td>Cleanup</td><td>Delete or archive sent rows (or use CDC + tombstones) to keep the table small</td></tr>
+</table>
+
+<div class="sub2">Two ways to build the relay</div>
+<div class="decision-grid">
+<div class="decision-item"><div class="dt">Polling publisher</div><p>A background job runs <code>SELECT ... WHERE published = false ORDER BY id</code>, publishes each, marks sent. Simple, works on any DB.</p><div class="di-key">Key: polling interval trades latency vs load; needs SKIP LOCKED / status column to avoid double-processing across instances</div></div>
+<div class="decision-item"><div class="dt">CDC (log tailing)</div><p>Tail the DB's replication log (MySQL binlog, Postgres WAL). Inserts into the outbox appear as change events with no polling and near-zero added query load.</p><div class="di-key">Key: lower latency, no read pressure on the primary; needs log-level access + a connector to operate</div></div>
+</div>
+
+<h3 class="sub">CDC via Debezium as the relay</h3>
+<p><strong>Change Data Capture</strong> turns committed row changes into an event stream by reading the database's own transaction log — the source of truth for what actually committed — rather than querying tables. <strong>Debezium</strong> is the de-facto open-source CDC platform (Apache License 2.0, sponsored by Red Hat). It typically runs as a set of source connectors on <strong>Kafka Connect</strong>; for non-Kafka sinks you have two distinct options — <strong>Debezium Server</strong>, a standalone runtime that routes to Kinesis / Pub-Sub / Pulsar / etc., and the <strong>Debezium Engine (Embedded)</strong>, an embeddable Java library (Debezium Server uses this engine internally).</p>
+<ul class="content-list">
+<li><strong>MySQL / MariaDB:</strong> reads the <strong>binlog</strong> (requires <code>binlog_format=ROW</code>).</li>
+<li><strong>PostgreSQL:</strong> reads the <strong>WAL</strong> via logical decoding. Debezium's default <code>plugin.name</code> is <strong><code>decoderbufs</code></strong> (needs the protobuf-c output plugin installed server-side); <code>pgoutput</code> (built into Postgres since PG 10, no extra install) is the commonly-chosen alternative you switch to — <em>not</em> the shipped default.</li>
+<li><strong>MongoDB:</strong> consumes change streams / the oplog. <strong>SQL Server, Oracle, Db2, Cassandra</strong> connectors also exist.</li>
+</ul>
+<p>Debezium also provides an <strong>Outbox Event Router</strong> SMT (single message transform) that reads outbox-table change events and routes each to a topic derived from the aggregate type — the outbox pattern and CDC combined into a first-class feature. CDC guarantees <strong>at-least-once</strong> delivery (it can re-emit after a restart from the last committed log offset), which again puts the burden on <strong>idempotent consumers</strong>: dedupe on the event's unique ID, use upserts, or track processed offsets.</p>
+
+<div class="note"><div class="notel">NOTE</div><p><strong>Ties together:</strong> Outbox solves atomicity (one local txn), CDC solves the relay efficiently (log tailing, no polling), and idempotent consumers absorb the at-least-once duplicates that both introduce. The trio is how a Saga step reliably emits its event without 2PC.</p></div>
+
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">DT2</span><span class="ct">Event Sourcing &amp; CQRS</span><span class="db dh">DATA MODELING</span><span class="chv">&#9654;</span></div><div class="cb">
+
+<div class="iq">"Instead of storing that the account balance is $100, store every deposit and withdrawal that ever happened — the balance is a question you answer by replaying them."</div>
+
+<h3 class="sub">Event Sourcing: events as the source of truth</h3>
+<p>Rather than persisting the <em>current state</em> and overwriting it on each update, <strong>Event Sourcing</strong> stores an append-only, immutable log of <strong>domain events</strong> (<code>OrderPlaced</code>, <code>ItemShipped</code>). Current state is <em>derived</em> by <strong>replaying</strong> the events for an aggregate from the beginning. The event store is the system of record; nothing is ever updated or deleted in place.</p>
+<ul class="content-list">
+<li><strong>Full audit / temporal queries:</strong> you have the entire history for free — "what was this state on this date?" is just a replay up to a point in time.</li>
+<li><strong>Rebuild &amp; retro-fix:</strong> new read models or bug-fixed projections can be built by replaying from the log; you can reconstruct state you never thought to store.</li>
+<li><strong>Snapshots:</strong> replaying millions of events is slow, so periodically persist a <strong>snapshot</strong> of aggregate state and replay only events after it.</li>
+<li><strong>Immutability constraint:</strong> events are facts that happened — never mutate them. Correct mistakes with new compensating events, and version event schemas (upcasting) as they evolve.</li>
+</ul>
+
+<h3 class="sub">CQRS: split the write model from the read model</h3>
+<p><strong>Command Query Responsibility Segregation</strong> uses separate models for writing (commands that change state) and reading (queries). The write side is optimized for validation and consistency; the read side is optimized for query shape. They are frequently different data stores kept in sync asynchronously.</p>
+<table class="tbl">
+<tr><th>Aspect</th><th>Write model (command)</th><th>Read model (query)</th></tr>
+<tr><td>Purpose</td><td>Validate + apply state changes</td><td>Serve queries fast</td></tr>
+<tr><td>Shape</td><td>Normalized aggregates / event log</td><td>Denormalized, query-tailored views</td></tr>
+<tr><td>Store</td><td>Event store / RDBMS</td><td>Elasticsearch, Redis, materialized SQL views</td></tr>
+<tr><td>Consistency</td><td>Strongly consistent per aggregate</td><td><strong>Eventually</strong> consistent (updated via projections)</td></tr>
+<tr><td>Scaling</td><td>Scale for write throughput / contention</td><td>Scale reads independently (replicas, caches)</td></tr>
+</table>
+<p><strong>Projections</strong> are the glue: a processor subscribes to the event stream and updates one or more denormalized read models (also called materialized views or view models). Each projection is independent, can be rebuilt by replay, and can be tuned to exactly one query pattern. CQRS is <em>independent</em> of Event Sourcing — you can do CQRS over a plain RDBMS — but the two compose naturally: events feed the projections.</p>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Trap — read-model lag:</strong> because projections update asynchronously, a client that issues a command and immediately queries may not see its own write (read-after-write violation). Symptom: user submits a form, the list still shows the old value for a few hundred ms. Mitigations: return the new state directly from the command response, subscribe/poll for the projection to catch up, pin that session to read from the write model, or surface a "pending" UI state. Do <em>not</em> assume the read side is immediately consistent.</p></div>
+
+<h3 class="sub">When to use — and when it's overkill</h3>
+<div class="decision-grid">
+<div class="decision-item"><div class="dt">Use it when</div><p>Audit/compliance demands full history; complex domains with rich behavior (DDD); read and write loads differ by orders of magnitude; you need temporal queries or to derive new views retroactively.</p><div class="di-key">Key: the log-of-facts is a genuine asset, not just overhead</div></div>
+<div class="decision-item"><div class="dt">Avoid it when</div><p>Simple CRUD with balanced read/write, small team, no audit need. The extra stores, projections, eventual-consistency handling, and event-versioning cost outweigh the benefit.</p><div class="di-key">Key: a normalized RDBMS with an audit column is often enough</div></div>
+<div class="decision-item"><div class="dt">Adopt incrementally</div><p>You don't need all-or-nothing. Apply CQRS to one hot read path, or event-source one aggregate, rather than the whole system.</p><div class="di-key">Key: scope to the bounded context that actually hurts</div></div>
+<div class="decision-item"><div class="dt">Hidden costs</div><p>Event schema evolution / upcasting, snapshotting, projection rebuild time, eventual-consistency UX, debugging across the log + views.</p><div class="di-key">Key: operational complexity is the real price, not the code</div></div>
+</div>
+
+<div class="warn"><div class="warnl">WATCH</div><p><strong>Consistency model:</strong> the write side is consistent per aggregate; the read side is eventually consistent. Design the UX and the API contract around that lag rather than fighting it — treating a CQRS read model as strongly consistent is the most common way these systems go wrong.</p></div>
+
+</div></div>
+</div>
+
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>DAU / MAU</strong></td><td>Daily / Monthly Active Users &mdash; core sizing inputs for estimating traffic and scale.</td></tr>
+<tr><td><strong>QPS</strong></td><td>Queries per second &mdash; the average and peak request rate a system must serve (peak is often 2&ndash;10&times; average).</td></tr>
+<tr><td><strong>CAP theorem</strong></td><td>Under a network partition, a distributed system can guarantee only Consistency or Availability, not both.</td></tr>
+<tr><td><strong>SLI / SLO / SLA</strong></td><td>Service Level Indicator (measured metric) / Objective (internal target) / Agreement (customer promise with penalties).</td></tr>
+<tr><td><strong>Error budget</strong></td><td>The allowed unreliability, 100% minus the SLO; when spent, teams pause features to focus on reliability.</td></tr>
+<tr><td><strong>ACID</strong></td><td>Atomicity, Consistency, Isolation, Durability &mdash; the transaction guarantees of relational databases.</td></tr>
+<tr><td><strong>TTL</strong></td><td>Time to Live &mdash; expiry set on a cache entry or key, after which it is evicted.</td></tr>
+<tr><td><strong>L4 / L7</strong></td><td>Layer 4 load balancing (routes by IP/port, fast) vs Layer 7 (inspects HTTP path, headers, cookies).</td></tr>
+<tr><td><strong>ALB / NLB</strong></td><td>Application Load Balancer (L7, HTTP-aware) / Network Load Balancer (L4, low-overhead IP/port routing).</td></tr>
+<tr><td><strong>Quorum (W + R &gt; N)</strong></td><td>Replica rule where write nodes (W) plus read nodes (R) exceed total replicas (N), so reads see the latest write.</td></tr>
+<tr><td><strong>Consistent hashing</strong></td><td>Hash-ring placement where adding or removing a node remaps only ~K/N keys instead of nearly all of them.</td></tr>
+<tr><td><strong>CDN</strong></td><td>Content Delivery Network &mdash; edge servers that cache static content near users to cut latency and origin load.</td></tr>
+<tr><td><strong>DLQ</strong></td><td>Dead Letter Queue &mdash; holds messages that repeatedly fail processing for later inspection.</td></tr>
+<tr><td><strong>Idempotency</strong></td><td>Property that doing an operation once or many times leaves the same system state, making retries safe.</td></tr>
+<tr><td><strong>SSE</strong></td><td>Server-Sent Events &mdash; a one-way server-to-client stream over a persistent HTTP connection.</td></tr>
+<tr><td><strong>WebSocket</strong></td><td>Full-duplex, bidirectional channel over a single persistent TCP connection, used for real-time two-way messaging.</td></tr>
+<tr><td><strong>gRPC</strong></td><td>High-performance contract-first RPC framework over HTTP/2, serializing with Protocol Buffers and supporting streaming.</td></tr>
+<tr><td><strong>GraphQL</strong></td><td>Query language and single-endpoint API where the client specifies exactly which fields each response returns.</td></tr>
+<tr><td><strong>Saga</strong></td><td>A distributed transaction modeled as a sequence of local transactions with compensating actions, avoiding 2PC.</td></tr>
+<tr><td><strong>2PC</strong></td><td>Two-Phase Commit &mdash; a coordinator-based atomic commit protocol across systems that holds locks and hurts availability.</td></tr>
+<tr><td><strong>CDC</strong></td><td>Change Data Capture &mdash; streaming committed row changes by tailing the database transaction log (binlog / WAL).</td></tr>
+<tr><td><strong>CQRS</strong></td><td>Command Query Responsibility Segregation &mdash; separate write (command) and read (query) models, often synced via async projections.</td></tr>
+</table>
+
+</div><!-- end #main -->
+
+<script>
+function go(id) {
+  // Hide all sections
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  // Show target
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('active');
+  // Update nav
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+  // Bring the section nav to the top of the viewport
+  const nav = document.getElementById('secnav');
+  if (nav) {
+    const y = nav.getBoundingClientRect().top + window.pageYOffset;
+    window.scrollTo({ top: y, behavior: 'auto' });
+  }
+}
+
+function toggle(el) {
+  const body = el.nextElementSibling;
+  const chevron = el.querySelector('.chv');
+  body.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open');
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="rampup_192.html">‹ 4-Week Ramp-Up (192 Problems)</a><a class="bkc" href="index.html">📖 Contents</a><a href="observability_dashboard.html">Observability &amp; Dashboards ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

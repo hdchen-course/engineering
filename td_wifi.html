@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WiFi &amp; Connectivity — the Software/Networking View — The Interview Prep Handbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XIII · Chapter 4 — <b>WiFi &amp; Connectivity</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>WiFi &amp; Connectivity — the Software/Networking View</h1>
+  <div class="sub">What a software engineer actually needs to know about 802.11: where WiFi sits in the stack (a link layer beneath IP), the bands and generations, the frame types, how a device joins a network step by step, how WPA2/WPA3 protect the link, why radios use CSMA/CA instead of CSMA/CD, how roaming works, and why measured throughput is always far below the advertised PHY rate. This is the software/networking view — not RF or PHY firmware internals. Security is covered at a conceptual, defensive level only.</div>
+</header>
+
+<div class="ins"><div class="insl">Read this like a story</div><p>The sections build from "where does WiFi sit relative to IP" up to "why is my 1200 Mbps AP only giving me 500 Mbps, and how does my phone hand off between access points." If you already know the layered model, the key sections are §4 (joining a network), §5 (WPA2/WPA3 security), §6 (CSMA/CA), and §7 (roaming). Every standard name, band, frame type, and protocol step is stated to match the IEEE 802.11 specification and the relevant Wi-Fi Alliance naming; nothing here is an attack how-to, and no capture output is fabricated.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. Where WiFi Sits in the Stack</h2>
+
+<p class="lead">"WiFi" is a Wi-Fi Alliance brand for equipment implementing the <strong>IEEE 802.11</strong> family of standards. In the layered model from the TCP/IP chapter, 802.11 is a <strong>link-layer (L2)</strong> technology — it does the same job as Ethernet (802.3), just over radio instead of copper. It moves <em>frames</em> across one hop between a station and an access point; everything above — IP packets, TCP segments, HTTP — rides inside those frames unchanged. Swap Ethernet for WiFi and your sockets code does not change at all; only the bottom layer does.</p>
+
+<h3>The software engineer's view vs. RF/PHY</h3>
+<p>802.11 splits into two sublayers. The <strong>PHY</strong> (physical layer) is the radio: modulation, coding, antennas, spectrum — the domain of RF and firmware engineers. The <strong>MAC</strong> (Medium Access Control) sublayer is the software/networking view: how frames are addressed, how the shared medium is arbitrated, how a device authenticates and associates, and how it roams. This chapter lives almost entirely in the MAC and just above it. You will not tune a power amplifier here, but you will understand every frame your driver logs and every state your connection moves through.</p>
+
+<div class="note"><div class="notel">802.11 is Ethernet's radio cousin — with complications</div><p>Both are IEEE 802 link layers and both use 48-bit MAC addresses, so IP treats them almost identically. But radio forces three differences that shape the whole design: the medium is <strong>half-duplex and shared</strong> (you cannot send and receive at once, and everyone hears everyone), frames are <strong>lossy and unicast frames are individually acknowledged</strong> at L2 (Ethernet never ACKs), and stations <strong>move</strong>, so association and roaming exist. Those three facts explain most of what follows.</p></div>
+
+<h3>Why it matters for real roles</h3>
+<ul>
+  <li><strong>Mobile.</strong> Battery life is dominated by radio power state; connection drops during roaming break long-lived sockets; captive portals and band steering shape the first-connect experience.</li>
+  <li><strong>Embedded / IoT.</strong> Constrained devices pick a band and security mode, handle re-association after sleep, and must survive a noisy 2.4 GHz environment.</li>
+  <li><strong>Networking / backend.</strong> "The app is slow on WiFi" almost always resolves at L2 — retries, airtime contention, a weak roam — long before it is a server problem. Knowing what a client can and cannot observe (§9) is what lets you triage it.</li>
+</ul>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. Bands, Channels &amp; the Generations</h2>
+
+<p>802.11 operates in unlicensed spectrum divided into <strong>bands</strong>, each band into <strong>channels</strong>, and a transmission occupies a <strong>channel width</strong>. Which band and width you use is the single biggest lever on range vs. throughput.</p>
+
+<h3>The three bands</h3>
+<table class="tbl">
+  <tr><th>Band</th><th>Rough range / penetration</th><th>Congestion</th><th>Non-overlapping 20 MHz channels</th></tr>
+  <tr><td><strong>2.4 GHz</strong></td><td>Longest range, best through walls</td><td>Crowded — shared with Bluetooth, microwaves, many legacy devices</td><td>Only 3 in most regions (channels <strong>1, 6, 11</strong>)</td></tr>
+  <tr><td><strong>5 GHz</strong></td><td>Shorter range, more attenuation per wall</td><td>Much less crowded; many channels</td><td>~20+ (region-dependent; some require DFS)</td></tr>
+  <tr><td><strong>6 GHz</strong> (Wi-Fi 6E / 7)</td><td>Similar to 5 GHz, slightly shorter</td><td>Newest and cleanest; legacy devices cannot enter it</td><td>Up to ~59 (region-dependent)</td></tr>
+</table>
+<p>The 2.4 GHz band is only about 80 MHz wide, which is why just three 20 MHz channels (1, 6, 11) fit without overlapping — anything else partially overlaps and interferes. The 5 GHz band is far wider but includes <strong>DFS</strong> (Dynamic Frequency Selection) channels that must yield to radar and can force a channel change. The 6 GHz band adds ~1200 MHz of fresh spectrum and, by rule, admits only WPA3 security and no pre-Wi-Fi-6 devices — so it starts clean.</p>
+
+<h3>Channel width</h3>
+<p>A wider channel carries more bits per unit time but occupies more spectrum, so wider channels mean fewer non-overlapping channels and more chance of interference — especially in the narrow 2.4 GHz band, where you should stay at 20 MHz.</p>
+<table class="tbl">
+  <tr><th>Width</th><th>Introduced</th><th>Trade-off</th></tr>
+  <tr><td>20 MHz</td><td>Baseline</td><td>Most robust; the only sane choice on 2.4 GHz</td></tr>
+  <tr><td>40 MHz</td><td>802.11n (channel bonding)</td><td>~2× rate; on 2.4 GHz it eats most of the band</td></tr>
+  <tr><td>80 MHz</td><td>802.11ac</td><td>Common on 5 GHz</td></tr>
+  <tr><td>160 MHz</td><td>802.11ac (optional) / ax</td><td>High rate but few such channels; sensitive to DFS</td></tr>
+  <tr><td>320 MHz</td><td>802.11be (Wi-Fi 7)</td><td>Only feasible in 6 GHz</td></tr>
+</table>
+
+<h3>The generation map</h3>
+<p>Each generation added capability at the PHY/MAC boundary. The Wi-Fi Alliance's numeric names (Wi-Fi 4/5/6/7) map to specific 802.11 amendments.</p>
+<table class="tbl">
+  <tr><th>Amendment</th><th>Marketing name</th><th>Band(s)</th><th>Key additions</th><th>Max width</th></tr>
+  <tr><td>802.11a</td><td>—</td><td>5 GHz</td><td>OFDM modulation; up to 54 Mbps</td><td>20 MHz</td></tr>
+  <tr><td>802.11b</td><td>—</td><td>2.4 GHz</td><td>DSSS; up to 11 Mbps</td><td>20 MHz</td></tr>
+  <tr><td>802.11g</td><td>—</td><td>2.4 GHz</td><td>OFDM on 2.4 GHz; up to 54 Mbps</td><td>20 MHz</td></tr>
+  <tr><td>802.11n</td><td><strong>Wi-Fi 4</strong></td><td>2.4 &amp; 5 GHz</td><td><strong>MIMO</strong> (multiple spatial streams), 40 MHz bonding, frame aggregation</td><td>40 MHz</td></tr>
+  <tr><td>802.11ac</td><td><strong>Wi-Fi 5</strong></td><td>5 GHz</td><td>Wider channels, 256-QAM, <strong>downlink MU-MIMO</strong></td><td>160 MHz</td></tr>
+  <tr><td>802.11ax</td><td><strong>Wi-Fi 6</strong> / <strong>6E</strong></td><td>2.4 &amp; 5 GHz (6E adds 6 GHz)</td><td><strong>OFDMA</strong>, uplink+downlink MU-MIMO, 1024-QAM, BSS coloring, Target Wake Time</td><td>160 MHz</td></tr>
+  <tr><td>802.11be</td><td><strong>Wi-Fi 7</strong></td><td>2.4, 5 &amp; 6 GHz</td><td>320 MHz channels, 4096-QAM, <strong>Multi-Link Operation</strong> (MLO)</td><td>320 MHz</td></tr>
+</table>
+
+<h4>MIMO, MU-MIMO, OFDMA — the three that get confused</h4>
+<ul>
+  <li><strong>MIMO</strong> (Multiple-Input Multiple-Output, Wi-Fi 4) — one radio uses several antennas to send several independent <em>spatial streams</em> to a <em>single</em> device at once, multiplying that link's rate.</li>
+  <li><strong>MU-MIMO</strong> (Multi-User MIMO) — the AP forms simultaneous spatial streams to <em>different</em> devices at the same time. Wi-Fi 5 added it downlink (AP→clients); Wi-Fi 6 added uplink too.</li>
+  <li><strong>OFDMA</strong> (Orthogonal Frequency-Division Multiple Access, Wi-Fi 6) — the AP subdivides a channel into smaller <em>resource units</em> and serves several devices in one transmission by giving each a slice of the frequency. It is the big Wi-Fi 6 efficiency win in dense, many-small-packets environments.</li>
+</ul>
+<div class="tip"><div class="tipl">Interview signal</div><p>The one-liner that works: <strong>MIMO adds streams (space), OFDMA divides the channel (frequency), MU-MIMO serves multiple users at once.</strong> Wi-Fi 6's headline gains are about <em>efficiency in dense environments</em> (OFDMA, scheduling, TWT), not a bigger peak rate for a single quiet client.</p></div>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. 802.11 Frame Types</h2>
+
+<p>Every 802.11 transmission is a <strong>frame</strong>. The MAC header's <em>Frame Control</em> field carries a 2-bit <strong>Type</strong> and a 4-bit <strong>Subtype</strong> that classify it into three families: <strong>management</strong>, <strong>control</strong>, and <strong>data</strong>. Knowing the taxonomy is what lets you read a connection log or a driver trace.</p>
+
+<h3>The three families</h3>
+<table class="tbl">
+  <tr><th>Type</th><th>Purpose</th><th>Key subtypes</th></tr>
+  <tr><td><strong>Management</strong></td><td>Build and maintain the association: advertise, discover, authenticate, join, leave</td><td>Beacon, Probe Request/Response, Authentication, Association Request/Response, Reassociation, Disassociation, Deauthentication</td></tr>
+  <tr><td><strong>Control</strong></td><td>Arbitrate the medium and acknowledge (§6)</td><td>RTS, CTS, ACK, Block Ack, PS-Poll</td></tr>
+  <tr><td><strong>Data</strong></td><td>Carry the actual payload — the IP packet lives here</td><td>Data, QoS Data, Null (used for power-save signalling)</td></tr>
+</table>
+
+<h3>The frames behind "joining"</h3>
+<ul>
+  <li><strong>Beacon</strong> — the AP broadcasts these periodically (typically about every 100 ms) announcing the network: SSID, supported rates, capabilities, security parameters (the RSN information element), and channel.</li>
+  <li><strong>Probe Request / Response</strong> — a client actively asks "is anyone here / is SSID X here?" and matching APs answer with a Probe Response (essentially a directed beacon).</li>
+  <li><strong>Authentication</strong> — the legacy 802.11 handshake. In modern WPA2/WPA3-PSK networks this is <em>Open System</em> authentication: a near-empty two-frame formality. The <em>real</em> authentication happens later (§5).</li>
+  <li><strong>Association Request / Response</strong> — the client asks to join a specific AP; the AP accepts and assigns an <strong>Association ID (AID)</strong>.</li>
+  <li><strong>Deauthentication / Disassociation</strong> — either side signalling that the relationship is ending.</li>
+</ul>
+
+<h3>The MAC header: SSID vs. BSSID</h3>
+<p>An 802.11 data frame's MAC header contains a Frame Control field, a Duration/ID field (used to set the virtual carrier sense, §6), <strong>up to four 48-bit MAC addresses</strong>, and a Sequence Control field, followed by the frame body and a Frame Check Sequence (FCS). Four addresses are possible because a frame may traverse the wireless distribution system; in the common client↔AP case, three are used — receiver, transmitter, and the source-or-destination endpoint; the BSSID is one of the receiver/transmitter addresses (whichever is the AP).</p>
+<table class="tbl">
+  <tr><th>Term</th><th>What it is</th></tr>
+  <tr><td><strong>SSID</strong></td><td>The human-readable <em>network name</em> (e.g. "CoffeeShop-Guest"). Advertised in beacons and probes. Many APs can share one SSID.</td></tr>
+  <tr><td><strong>BSSID</strong></td><td>The 48-bit MAC address of a specific AP radio — the identifier of one <strong>BSS</strong> (Basic Service Set). This is how a client tells two APs of the same SSID apart, and what changes when it roams (§7).</td></tr>
+</table>
+<div class="note"><div class="notel">Why deauth frames were historically abusable</div><p>Classic management frames — including deauthentication — were sent <em>unprotected</em>, so they could be spoofed to knock clients off a network. The defensive fix is <strong>Protected Management Frames (PMF, 802.11w)</strong>, which authenticates these frames; PMF is <em>mandatory</em> in WPA3 and in the 6 GHz band. This is stated here only to explain why PMF exists — not as a technique.</p></div>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. Joining a Network, Step by Step</h2>
+
+<p>Getting from "radio on" to "I have an IP and can send data" is a fixed sequence of MAC-layer states. Understanding it turns a vague "WiFi won't connect" into a precise "it associates but never completes the key exchange."</p>
+
+<h3>The steps</h3>
+<ol>
+  <li><strong>Scan.</strong> Discover nearby networks. <em>Passive</em> scanning listens on each channel for beacons; <em>active</em> scanning sends a Probe Request and collects Probe Responses. Active is faster; passive is required on channels where transmitting first is not allowed (e.g. certain DFS channels).</li>
+  <li><strong>Authentication.</strong> The Open System 802.11 authentication exchange — a formality on modern networks, kept for backward compatibility.</li>
+  <li><strong>Association.</strong> The client sends an Association Request to the chosen BSSID; the AP replies with an Association Response and an AID. The client is now <em>associated</em> — but on a secured network the data port is still blocked.</li>
+  <li><strong>Key exchange (EAPOL).</strong> On WPA2/WPA3 the <strong>4-way handshake</strong> (§5) runs over EAPOL frames to prove both sides know the key and to install fresh encryption keys. Only when it completes does the controlled port open.</li>
+  <li><strong>DHCP.</strong> With the link secured, normal L3 setup runs: the client uses DHCP to obtain an IP address, gateway, and DNS.</li>
+  <li><strong>Connected.</strong> Data frames now flow, encrypted.</li>
+</ol>
+
+<div class="svg-container">
+<svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ja" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#5b6b7f"/></marker>
+    <marker id="jb" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#b45309"/></marker>
+  </defs>
+
+  <!-- state boxes -->
+  <rect x="190" y="24" width="300" height="46" rx="9" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="340" y="45" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">SCANNING</text>
+  <text x="340" y="61" text-anchor="middle" font-size="9" fill="#526176">unauthenticated · unassociated</text>
+
+  <rect x="190" y="112" width="300" height="46" rx="9" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="340" y="133" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">AUTHENTICATED</text>
+  <text x="340" y="149" text-anchor="middle" font-size="9" fill="#526176">open-system auth done · unassociated</text>
+
+  <rect x="190" y="200" width="300" height="46" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="340" y="221" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">ASSOCIATED</text>
+  <text x="340" y="237" text-anchor="middle" font-size="9" fill="#526176">AID assigned · data port still blocked</text>
+
+  <rect x="190" y="288" width="300" height="46" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="340" y="309" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">KEYS INSTALLED</text>
+  <text x="340" y="325" text-anchor="middle" font-size="9" fill="#526176">4-way handshake complete · port open</text>
+
+  <rect x="190" y="376" width="300" height="46" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1.8"/>
+  <text x="340" y="397" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">CONNECTED</text>
+  <text x="340" y="413" text-anchor="middle" font-size="9" fill="#526176">DHCP done · encrypted data flows</text>
+
+  <!-- transition arrows -->
+  <line x1="340" y1="70"  x2="340" y2="110" stroke="#5b6b7f" stroke-width="1.7" marker-end="url(#ja)"/>
+  <line x1="340" y1="158" x2="340" y2="198" stroke="#5b6b7f" stroke-width="1.7" marker-end="url(#ja)"/>
+  <line x1="340" y1="246" x2="340" y2="286" stroke="#5b6b7f" stroke-width="1.7" marker-end="url(#ja)"/>
+  <line x1="340" y1="334" x2="340" y2="374" stroke="#5b6b7f" stroke-width="1.7" marker-end="url(#ja)"/>
+
+  <!-- transition label chips (labels inside boxes) -->
+  <rect x="360" y="79" width="196" height="22" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="458" y="94" text-anchor="middle" font-size="9" fill="#475569">probe / beacon → open auth</text>
+  <rect x="378" y="167" width="160" height="22" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="458" y="182" text-anchor="middle" font-size="9" fill="#475569">assoc request / response</text>
+  <rect x="366" y="255" width="184" height="22" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="458" y="270" text-anchor="middle" font-size="9" fill="#475569">EAPOL 4-way handshake</text>
+  <rect x="392" y="343" width="132" height="22" rx="6" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="458" y="358" text-anchor="middle" font-size="9" fill="#475569">DHCP → IP address</text>
+
+  <!-- return arrow (deauth / disassoc) -->
+  <line x1="150" y1="399" x2="150" y2="49" stroke="#b45309" stroke-width="1.6" stroke-dasharray="5,3" marker-end="url(#jb)"/>
+  <line x1="190" y1="399" x2="150" y2="399" stroke="#b45309" stroke-width="1.6" stroke-dasharray="5,3"/>
+  <line x1="150" y1="47" x2="190" y2="47" stroke="#b45309" stroke-width="1.6" stroke-dasharray="5,3"/>
+  <rect x="46" y="203" width="118" height="40" rx="6" fill="#fffbeb" stroke="#b45309" stroke-width="1.1"/>
+  <text x="105" y="220" text-anchor="middle" font-size="9" font-weight="700" fill="#92400e">deauth /</text>
+  <text x="105" y="234" text-anchor="middle" font-size="9" font-weight="700" fill="#92400e">disassociation</text>
+</svg>
+<div class="svg-cap">The association / join state machine. A client climbs from SCANNING to CONNECTED; a deauthentication or disassociation at any point drops it back to SCANNING to start over.</div>
+</div>
+
+<div class="trap"><div class="trapl">"Associates then drops" is a key-exchange failure</div><p>If a device reaches ASSOCIATED and immediately falls back to SCANNING, the association itself succeeded but the <strong>4-way handshake failed</strong> — almost always a wrong passphrase (PSK mismatch) or an enterprise (802.1X) auth rejection. That is different from "never associates," which points at signal, band, or capability mismatch. Being able to name <em>which</em> step failed is the whole value of knowing this state machine.</p></div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. Security — Conceptual &amp; Defensive</h2>
+
+<p>WiFi security has evolved through four named generations. This section explains what each provides and, at a message level, what the WPA2 4-way handshake establishes. It contains <strong>no</strong> cracking procedure — the point is to reason about which mode to deploy and why the old ones failed.</p>
+
+<h3>The evolution</h3>
+<table class="tbl">
+  <tr><th>Scheme</th><th>Cipher</th><th>Status</th><th>Why</th></tr>
+  <tr><td><strong>WEP</strong></td><td>RC4 with a 24-bit IV</td><td>Broken — do not use</td><td>The initialization vector is far too short, so keystreams repeat and statistical weaknesses let the key be recovered. Deprecated long ago.</td></tr>
+  <tr><td><strong>WPA</strong></td><td>TKIP (RC4 + per-packet keying + MIC)</td><td>Deprecated</td><td>A transitional fix layered onto WEP-era hardware; TKIP's own weaknesses mean it should no longer be used.</td></tr>
+  <tr><td><strong>WPA2</strong></td><td>CCMP (AES-CCM)</td><td>Widely deployed baseline</td><td>Proper AES-based authenticated encryption; introduced the 4-way handshake below. Still common and acceptable when configured well.</td></tr>
+  <tr><td><strong>WPA3</strong></td><td>CCMP / GCMP + <strong>SAE</strong></td><td>Current best practice</td><td>Replaces the PSK exchange with SAE (below), adds forward secrecy and mandatory PMF; required on 6 GHz.</td></tr>
+</table>
+
+<h3>PSK vs. 802.1X/EAP: where the key comes from</h3>
+<p>Both WPA2 and WPA3 have two deployment modes that differ only in how the master key — the <strong>PMK</strong> (Pairwise Master Key) — is obtained:</p>
+<ul>
+  <li><strong>Personal (PSK).</strong> Everyone shares one passphrase. In WPA2-Personal the PMK is derived from the passphrase and the SSID via a key-derivation function (PBKDF2); WPA3-Personal instead derives it through the SAE (Dragonfly) handshake (see below). Simple; the whole network shares one secret.</li>
+  <li><strong>Enterprise (802.1X / EAP).</strong> Each user authenticates individually to a <strong>RADIUS</strong> server via an EAP method (e.g. EAP-TLS with certificates). The PMK is generated per-session from that exchange — no shared passphrase, per-user revocation, far stronger for organizations.</li>
+</ul>
+
+<h3>The WPA2 4-way handshake</h3>
+<p>Once a client is associated and both sides hold the PMK (from the PSK or from 802.1X), the 4-way handshake runs over <strong>EAPOL-Key</strong> frames. Its job: prove each side actually knows the PMK <em>without ever transmitting it</em>, and derive a fresh per-session <strong>PTK</strong> (Pairwise Transient Key) plus deliver the <strong>GTK</strong> (Group Temporal Key) used for broadcast/multicast. The PTK is a function of the PMK, two random nonces (one from each side), and both MAC addresses — so it is unique to this session and this pair of devices.</p>
+
+<div class="formula">
+<span class="cm"># the PTK is derived locally on both sides — never sent over the air</span><br>
+<b>PTK = PRF( PMK , ANonce , SNonce , AP-MAC , STA-MAC )</b><br>
+<span class="cm"># PTK splits into: KCK (confirms messages via the MIC),</span><br>
+<span class="cm">#                 KEK (encrypts the GTK in M3),</span><br>
+<span class="cm">#                 TK  (encrypts actual data frames, AES-CCMP)</span>
+</div>
+
+<div class="svg-container">
+<svg viewBox="0 0 720 430" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="wa" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#5b6b7f"/></marker>
+  </defs>
+  <!-- endpoints -->
+  <rect x="60" y="22" width="180" height="46" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="150" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Supplicant (client)</text>
+  <text x="150" y="58" text-anchor="middle" font-size="9" fill="#526176">holds PMK</text>
+  <rect x="480" y="22" width="180" height="46" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="570" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">Authenticator (AP)</text>
+  <text x="570" y="58" text-anchor="middle" font-size="9" fill="#526176">holds PMK</text>
+  <line x1="150" y1="68" x2="150" y2="410" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4,4"/>
+  <line x1="570" y1="68" x2="570" y2="410" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4,4"/>
+
+  <!-- M1 AP -> STA -->
+  <line x1="570" y1="98" x2="152" y2="120" stroke="#5b6b7f" stroke-width="1.8" marker-end="url(#wa)"/>
+  <text x="360" y="104" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">M1 &nbsp; ANonce (AP nonce)</text>
+
+  <!-- STA computes PTK -->
+  <rect x="60" y="128" width="180" height="34" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.1"/>
+  <text x="150" y="149" text-anchor="middle" font-size="9" font-weight="700" fill="#1d4ed8">derive PTK (has both nonces)</text>
+
+  <!-- M2 STA -> AP -->
+  <line x1="150" y1="182" x2="568" y2="204" stroke="#5b6b7f" stroke-width="1.8" marker-end="url(#wa)"/>
+  <text x="360" y="188" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">M2 &nbsp; SNonce (client nonce) + MIC</text>
+
+  <!-- AP computes PTK / verifies -->
+  <rect x="480" y="212" width="180" height="34" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.1"/>
+  <text x="570" y="233" text-anchor="middle" font-size="9" font-weight="700" fill="#166534">derive PTK · verify MIC</text>
+
+  <!-- M3 AP -> STA -->
+  <line x1="570" y1="266" x2="152" y2="288" stroke="#5b6b7f" stroke-width="1.8" marker-end="url(#wa)"/>
+  <text x="360" y="272" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">M3 &nbsp; MIC + GTK (install PTK)</text>
+
+  <!-- M4 STA -> AP -->
+  <line x1="150" y1="326" x2="568" y2="348" stroke="#5b6b7f" stroke-width="1.8" marker-end="url(#wa)"/>
+  <text x="360" y="332" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">M4 &nbsp; MIC (acknowledge)</text>
+
+  <!-- final -->
+  <rect x="230" y="372" width="260" height="30" rx="7" fill="#dcfce7" stroke="#16a34a" stroke-width="1.3"/>
+  <text x="360" y="391" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">keys installed → encrypted data (AES-CCMP)</text>
+</svg>
+<div class="svg-cap">The WPA2 4-way handshake at the message level. Both sides already share the PMK; the exchange of nonces lets each derive the same PTK independently, the MICs prove knowledge of the key, and M3 delivers the group key. The PMK and PTK are never transmitted.</div>
+</div>
+
+<h4>What each message carries</h4>
+<ul>
+  <li><strong>M1 (AP → client):</strong> the AP's random nonce, <em>ANonce</em>. No MIC yet. The client now has both nonces and both MACs, so it computes the PTK.</li>
+  <li><strong>M2 (client → AP):</strong> the client's nonce, <em>SNonce</em>, protected by a <strong>MIC</strong> (message integrity code keyed by the PTK). The AP can now compute the same PTK and verify the MIC — proving the client knows the PMK.</li>
+  <li><strong>M3 (AP → client):</strong> a MIC plus the encrypted <strong>GTK</strong>, instructing the client to install the keys. This proves the AP also knows the PMK.</li>
+  <li><strong>M4 (client → AP):</strong> a final MIC acknowledging installation. Encrypted data can now flow.</li>
+</ul>
+
+<h3>WPA3: SAE and forward secrecy</h3>
+<p>WPA3-Personal replaces the PSK-based key setup with <strong>SAE</strong> (Simultaneous Authentication of Equals), a password-authenticated key exchange based on the <em>Dragonfly</em> handshake. Two properties matter: it is resistant to <em>offline</em> guessing (an eavesdropper who records the exchange cannot then grind through candidate passwords offline the way WPA2-PSK allowed), and it provides <strong>forward secrecy</strong> — compromising the password later does not decrypt previously recorded sessions, because each session derives independent keys. WPA3 also mandates PMF (§3). SAE feeds into the same 4-way handshake to install the session keys.</p>
+
+<div class="warn"><div class="warnl">Stated defensively</div><p>WEP and WPA/TKIP are described as broken/deprecated so you choose WPA2-CCMP or WPA3 and understand <em>why</em> — not to enable any attack. The 4-way handshake is presented at the conceptual message level exactly as a defender or protocol implementer reasons about it; no capture, injection, or key-recovery procedure is given or implied.</p></div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. Medium Access — CSMA/CA</h2>
+
+<p>The radio channel is a single shared medium: everyone in range hears everyone, and a station cannot transmit and receive at the same time (it is <strong>half-duplex</strong>). That one physical fact dictates the whole access method.</p>
+
+<h3>Why CSMA/CA, not CSMA/CD</h3>
+<p>Wired Ethernet historically used <strong>CSMA/CD</strong> — Carrier Sense Multiple Access with <em>Collision Detection</em>: a station transmits and simultaneously listens, and if it hears its own signal garbled it knows a collision happened and backs off. A WiFi radio <em>cannot do this</em>: while transmitting, its own signal overwhelms the receiver, so it is physically unable to hear a colliding station. Since it cannot <em>detect</em> collisions, 802.11 tries to <strong>avoid</strong> them instead — <strong>CSMA/CA</strong>, Collision <em>Avoidance</em>.</p>
+
+<h3>How avoidance works</h3>
+<ol>
+  <li><strong>Carrier sense.</strong> Before transmitting, a station checks the medium two ways: <em>physical</em> carrier sense (is energy present on the channel?) and <em>virtual</em> carrier sense via the <strong>NAV</strong> (Network Allocation Vector) — a countdown set from the Duration field of frames it overhears, telling it how long someone else reserved the medium.</li>
+  <li><strong>Wait a fixed gap.</strong> If the medium has been idle for a defined interframe space (DIFS), the station may proceed to contend.</li>
+  <li><strong>Random backoff.</strong> It then picks a random number of slots in the range <code>[0, CW]</code> — the <strong>contention window</strong> — and counts down while the medium stays idle, transmitting only at zero. Random backoff makes it unlikely two waiting stations start at the exact same instant.</li>
+  <li><strong>Acknowledge.</strong> Because collisions cannot be detected, the receiver returns an <strong>ACK</strong> (after a short SIFS gap) for every successful unicast frame. <em>No ACK</em> is how the sender infers a loss.</li>
+  <li><strong>Back off harder on failure.</strong> On a missing ACK the station doubles its contention window (<strong>exponential backoff</strong>, up to a maximum) and retransmits. Repeated failures keep doubling CW, spreading contenders out.</li>
+</ol>
+<div class="formula">
+<span class="cm"># CSMA/CA, simplified sender loop</span><br>
+sense medium (physical + NAV)<br>
+wait until idle for DIFS<br>
+backoff = random(0 .. CW)          <span class="cm"># CW starts at CWmin</span><br>
+count backoff down while idle → transmit at 0<br>
+if ACK received:  success, reset CW = CWmin<br>
+else:             <b>CW = min(2·CW+1, CWmax)</b>, retransmit   <span class="cm"># exponential backoff</span>
+</div>
+
+<h3>RTS/CTS and the hidden-node problem</h3>
+<p>Carrier sense fails when two stations can each reach the AP but <em>cannot hear each other</em> — the <strong>hidden node</strong> problem. Both sense the channel idle, both transmit, and their frames collide at the AP even though neither did anything wrong. The optional <strong>RTS/CTS</strong> handshake fixes this: the sender first transmits a tiny <em>Request To Send</em>; the AP replies with a <em>Clear To Send</em> that <em>every</em> station in range hears. The RTS and CTS carry a Duration that sets everyone's NAV, so hidden stations stay silent for the upcoming data frame. It costs two extra small frames, so it is typically enabled only above an RTS threshold (for larger frames where a collision is expensive).</p>
+
+<div class="note"><div class="notel">Airtime is the shared resource</div><p>Because the medium is half-duplex and only one station transmits at a time within a contention domain, the fundamental scarce resource is <strong>airtime</strong>, not "bandwidth" in the abstract. Every frame — data, ACK, beacon, retransmission, backoff idle — consumes airtime that no one else can use. This single idea explains why more clients slow everyone down, why retries hurt, and why a slow distant client can drag down a whole cell (§8).</p></div>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Roaming &amp; Mobility</h2>
+
+<p>A phone walking through a building must move from one AP to another without dropping its connection. That is <strong>roaming</strong>, and it happens entirely at L2 — the IP address does not change because all the APs belong to one logical network.</p>
+
+<h3>BSS vs. ESS</h3>
+<ul>
+  <li>A <strong>BSS</strong> (Basic Service Set) is one AP and its associated clients, identified by the AP's <strong>BSSID</strong>.</li>
+  <li>An <strong>ESS</strong> (Extended Service Set) is several BSSes that share the same <strong>SSID</strong>, joined by a distribution system (usually a wired backbone). To the client it looks like one network; underneath it is many APs.</li>
+</ul>
+<p>Roaming means leaving one BSS and re-associating with another BSS in the same ESS — same SSID, different BSSID.</p>
+
+<h3>The roaming decision is the client's</h3>
+<p>Crucially, <strong>the client decides when to roam</strong>, not the network. The primary trigger is falling <strong>RSSI</strong> (received signal strength, in dBm) as the client moves away from its current AP, often combined with rising retry rates or falling SNR. When signal drops below the client's internal threshold, it scans for a better BSSID on the same SSID and re-associates. Because the decision is client-side, roaming behaviour varies a lot between devices — a "sticky" client clings to a weak AP long after a better one is in range.</p>
+
+<h3>802.11k / v / r — the fast-roaming trio</h3>
+<p>Three amendments each remove a different delay from a roam. They are complementary, not alternatives.</p>
+<table class="tbl">
+  <tr><th>Amendment</th><th>Name</th><th>What it speeds up</th></tr>
+  <tr><td><strong>802.11k</strong></td><td>Neighbor Reports</td><td><em>Finding</em> candidates. The AP hands the client a list of neighbor APs and their channels, so the client scans only those instead of sweeping every channel — cutting scan time.</td></tr>
+  <tr><td><strong>802.11v</strong></td><td>BSS Transition Management</td><td><em>Steering.</em> The network can <em>suggest</em> a better AP to a client (e.g. for load balancing), nudging sticky clients to move rather than waiting for signal to collapse.</td></tr>
+  <tr><td><strong>802.11r</strong></td><td>Fast BSS Transition (FT)</td><td><em>Re-authenticating.</em> Caches and pre-derives the key hierarchy across APs so the full 4-way handshake / 802.1X exchange need not be redone on each roam — turning a roam from hundreds of milliseconds into tens.</td></tr>
+</table>
+<div class="tip"><div class="tipl">Interview signal</div><p>The clean framing: a roam has three costs — <strong>find</strong> a target (11k trims the scan), <strong>decide/steer</strong> to it (11v nudges the client), and <strong>re-secure</strong> the link (11r skips a fresh key exchange). Latency-sensitive traffic like WiFi calling depends most on <strong>11r</strong>, because the key exchange is the biggest chunk of roam time.</p></div>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Real-World Performance Factors</h2>
+
+<p>The number on the box ("up to 1200 Mbps") is a <em>PHY rate</em> under ideal conditions. Measured application throughput is always lower — often by half or more. Here is why.</p>
+
+<h3>Rate adaptation</h3>
+<p>The link does not run at a fixed speed. The transmitter continuously chooses a <strong>modulation and coding scheme (MCS)</strong> based on link quality (signal strength, retries). Good conditions → dense modulation (many bits/symbol) → high rate; a weak or noisy link → a more robust, slower MCS that survives errors. As you walk away from the AP, rate adaptation quietly steps you down.</p>
+
+<h3>Why measured throughput is far below the PHY rate</h3>
+<ul>
+  <li><strong>MAC overhead.</strong> Every frame carries headers and is preceded by interframe spaces, backoff, and (for unicast) followed by an ACK. That fixed per-frame cost is pure overhead, worst for small frames.</li>
+  <li><strong>Half-duplex + contention.</strong> Only one station transmits at a time; time spent sensing, backing off, and yielding to others is throughput no one gets.</li>
+  <li><strong>Retries.</strong> A retransmitted frame occupies airtime twice (or more) for the same delivered bits.</li>
+  <li><strong>Management traffic.</strong> Beacons and probes from every nearby AP consume airtime on the channel.</li>
+  <li><strong>PHY rate is a peak.</strong> The advertised number assumes maximum MCS, full spatial streams, widest channel, and no interference — rarely all true at once.</li>
+</ul>
+<p>A useful rule of thumb: real TCP throughput commonly lands around half of the negotiated PHY rate, sometimes less in a busy cell. This is expected, not a fault.</p>
+
+<h3>Interference &amp; co-channel contention</h3>
+<p>Two distinct effects are often conflated. <strong>Co-channel interference</strong> is other APs/clients on the <em>same</em> channel: CSMA/CA makes them politely take turns, so they don't corrupt each other but they <em>share</em> the airtime — capacity is divided. <strong>Adjacent-channel interference</strong> is energy from <em>overlapping</em> channels (rife on 2.4 GHz if you stray from 1/6/11): this is true noise that corrupts frames and forces retries. The first divides airtime; the second destroys it.</p>
+
+<h3>Airtime fairness &amp; the slow-client problem</h3>
+<p>Because everyone shares airtime, a single slow client (far away, on a low MCS) transmitting the same number of bytes occupies the medium for far longer than a fast client would — dragging down the effective rate of <em>everyone</em> in the cell. <strong>Airtime fairness</strong> scheduling counters this by allocating roughly equal <em>time</em> (not equal <em>bytes</em>) to each client, so a slow client gets its fair slice of time and no more.</p>
+
+<h3>Power save</h3>
+<p>A battery device does not keep its radio fully awake. In <strong>power-save mode</strong> the client tells the AP it is dozing; the AP buffers frames destined for it and advertises their presence via the TIM (Traffic Indication Map) in its beacons. The client wakes periodically to check and retrieve buffered frames. Wi-Fi 6's <strong>Target Wake Time (TWT)</strong> improves this by <em>scheduling</em> negotiated wake windows, letting devices sleep longer and more predictably — a major battery win for IoT.</p>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Debugging at the Software Layer</h2>
+
+<p>You rarely have an RF spectrum analyzer, but the OS exposes plenty at the MAC layer. Knowing what a client can observe — and what those numbers mean — is enough to triage most "the WiFi is bad" reports. The descriptions below are conceptual; no device output is fabricated.</p>
+
+<h3>What the client can see</h3>
+<table class="tbl">
+  <tr><th>Metric</th><th>Meaning &amp; rough reading</th></tr>
+  <tr><td><strong>RSSI</strong> (dBm)</td><td>Received signal strength, a negative number. Closer to 0 is stronger: roughly −50 dBm is excellent, −67 dBm is a common threshold for reliable voice/video, −80 dBm and below is poor.</td></tr>
+  <tr><td><strong>Noise floor</strong> (dBm)</td><td>Background noise level. RSSI minus noise gives the SNR.</td></tr>
+  <tr><td><strong>SNR</strong> (dB)</td><td>Signal-to-noise ratio — the number rate adaptation really cares about. Higher SNR permits denser modulation and higher rates.</td></tr>
+  <tr><td><strong>TX rate / MCS</strong></td><td>The currently negotiated PHY rate and modulation index — watch it drop as you move away.</td></tr>
+  <tr><td><strong>Channel / width / band</strong></td><td>Which channel and how wide; reveals band steering and 2.4-vs-5-vs-6 placement.</td></tr>
+  <tr><td><strong>BSSID</strong></td><td>Which specific AP you are on — changes on a roam (§7).</td></tr>
+  <tr><td><strong>Retries / errors</strong></td><td>High retry counts point at interference or a marginal link.</td></tr>
+</table>
+
+<h3>The conceptual tooling</h3>
+<p>Every OS ships a way to read these. The exact field names differ, but they all surface the same MAC-layer state.</p>
+<pre><span class="cm"># Linux — the nl80211 userspace tool</span>
+iw dev wlan0 link       <span class="cm"># current BSSID, SSID, signal (RSSI), TX rate</span>
+iw dev wlan0 scan       <span class="cm"># nearby BSSes: SSID, channel, signal, capabilities</span>
+
+<span class="cm"># macOS — the modern replacement for the old `airport -I`</span>
+wdutil info             <span class="cm"># RSSI, noise, tx rate, channel, PHY mode, BSSID</span>
+
+<span class="cm"># Windows</span>
+netsh wlan show interfaces   <span class="cm"># SSID, BSSID, signal %, radio type, channel, rate</span></pre>
+<p>These commands report live driver state; the exact numbers depend on your environment, so none are shown here. The point is what to <em>look at</em>: a low RSSI/SNR explains a low TX rate; a TX rate far below the PHY maximum with high retries points at interference; a BSSID that keeps changing points at flapping between APs (a roaming problem, §7).</p>
+
+<h3>Reading connection logs</h3>
+<p>OS and supplicant logs narrate the state machine of §4: scan results, the authentication and association exchange, the 4-way handshake, DHCP, and any <strong>deauthentication/disassociation with a reason code</strong>. Mapping a failure to a step is the whole point:</p>
+<table class="tbl">
+  <tr><th>Log symptom</th><th>Likely stage &amp; cause</th></tr>
+  <tr><td>Never sees the SSID in scans</td><td>Wrong band/channel, hidden SSID, or out of range (§2).</td></tr>
+  <tr><td>Associates, then deauth right after</td><td>4-way handshake failed — wrong PSK or enterprise auth rejected (§4/§5).</td></tr>
+  <tr><td>Associated + keyed but "no internet"</td><td>Link is up; the problem is L3 — DHCP or DNS, not WiFi (§4).</td></tr>
+  <tr><td>Repeated deauth / re-association</td><td>Flapping/roaming between APs, or a marginal RSSI (§7).</td></tr>
+  <tr><td>Connected but slow</td><td>Low MCS from weak SNR, airtime contention, or a busy channel (§8).</td></tr>
+</table>
+
+<!-- ══════════════ SECTION 10 ══════════════ -->
+<h2>10. Interview Framing — Probe Q&amp;As</h2>
+
+<div class="card">
+<p><strong>Q: Why does WiFi use CSMA/CA instead of CSMA/CD like classic Ethernet?</strong><br>A radio is half-duplex — while transmitting, a station's own signal drowns out any incoming signal, so it physically cannot <em>detect</em> a collision the way wired Ethernet did. Since detection is impossible, 802.11 <em>avoids</em> collisions: sense the medium (physical + the NAV virtual carrier sense), wait a fixed interframe gap, then count down a random backoff before transmitting, and rely on an explicit ACK to confirm success. A missing ACK signals loss, and the station doubles its contention window and retries (exponential backoff).</p>
+
+<p><strong>Q: What does the WPA2 4-way handshake actually establish?</strong><br>Both sides already share the PMK (from the PSK or from 802.1X). The handshake proves each side knows that PMK <em>without transmitting it</em>, and derives a fresh per-session PTK from the PMK, two nonces (one per side), and both MAC addresses. M1 delivers the AP's nonce; M2 the client's nonce plus a MIC (letting the AP derive and verify the PTK); M3 confirms the AP and delivers the group key (GTK); M4 acknowledges. After it, data frames are encrypted with AES-CCMP. WPA3 fronts this with SAE for offline-guessing resistance and forward secrecy.</p>
+
+<p><strong>Q: Why is real throughput so much lower than the advertised rate?</strong><br>The advertised figure is a PHY peak under ideal conditions. Reality subtracts MAC overhead (headers, interframe spaces, backoff, and a per-frame ACK), half-duplex contention (one transmitter at a time, shared airtime), retries (a retransmit spends airtime twice), management traffic (beacons/probes), and rate adaptation stepping down the MCS on a weak or noisy link. Half of the negotiated PHY rate is a normal real-world result, and it can be less in a crowded cell.</p>
+
+<p><strong>Q: How does fast roaming work?</strong><br>A roam within an ESS (same SSID, new BSSID) has three costs, each addressed by an amendment: <strong>802.11k</strong> gives the client a neighbor list so it scans only relevant channels (find faster), <strong>802.11v</strong> lets the network steer/suggest a better AP (decide faster, and unstick sticky clients), and <strong>802.11r</strong> pre-derives the key hierarchy so the 4-way handshake / 802.1X exchange is skipped on each roam (re-secure faster). 11r matters most for latency-sensitive traffic like WiFi calling, since the key exchange is the biggest slice of roam time. The client still owns the decision, driven mainly by RSSI.</p>
+
+<p><strong>Q: 2.4 vs. 5 vs. 6 GHz — how do you choose?</strong><br><strong>2.4 GHz</strong>: best range and wall penetration, but only three non-overlapping channels and heavy congestion from legacy and non-WiFi devices — good for reach and IoT, bad for capacity. <strong>5 GHz</strong>: much more spectrum and far less congestion, at the cost of range and some DFS complexity — the everyday main choice. <strong>6 GHz</strong> (Wi-Fi 6E/7): the most spectrum and cleanest air, WPA3-only and no legacy devices, but the shortest range. Rule of thumb: 2.4 for distance/penetration, 5 for balanced capacity, 6 for maximum throughput close to the AP.</p>
+</div>
+
+<div class="note"><div class="notel">One-line summary</div><p>WiFi is 802.11 — a half-duplex, shared, lossy <em>link layer</em> under IP. Pick a band and width for the range/throughput trade you want; a device joins by scan → auth → associate → 4-way handshake → DHCP; WPA2/WPA3 derive a fresh session key from a shared PMK without ever sending it; the radio avoids (not detects) collisions with CSMA/CA and per-frame ACKs; clients roam between BSSes of one ESS on RSSI, sped up by 802.11k/v/r; and measured throughput sits well below the PHY rate because airtime — consumed by overhead, contention, and retries — is the real scarce resource. Know the join state machine, what the 4-way handshake establishes, and why CSMA/CA, and you can reason about almost any connectivity question.</p></div>
+
+<!-- ══════════════ GLOSSARY ══════════════ -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>802.11</strong></td><td>The IEEE standard family that WiFi implements — a link-layer (L2) technology carrying frames over radio.</td></tr>
+<tr><td><strong>PHY</strong></td><td>Physical layer — the radio sublayer handling modulation, coding, antennas, and spectrum.</td></tr>
+<tr><td><strong>MAC</strong></td><td>Medium Access Control — the 802.11 sublayer that addresses frames, arbitrates the medium, and manages association.</td></tr>
+<tr><td><strong>SSID</strong></td><td>Service Set Identifier — the human-readable network name advertised in beacons and probes.</td></tr>
+<tr><td><strong>BSSID</strong></td><td>Basic Service Set Identifier — the 48-bit MAC address of a specific access-point radio.</td></tr>
+<tr><td><strong>BSS</strong></td><td>Basic Service Set — one access point and its associated clients, identified by the BSSID.</td></tr>
+<tr><td><strong>ESS</strong></td><td>Extended Service Set — several BSSes sharing one SSID, joined by a distribution system.</td></tr>
+<tr><td><strong>DFS</strong></td><td>Dynamic Frequency Selection — 5 GHz channels that must yield to radar and can force a channel change.</td></tr>
+<tr><td><strong>MIMO</strong></td><td>Multiple-Input Multiple-Output — several antennas send multiple spatial streams to one device, multiplying its rate.</td></tr>
+<tr><td><strong>MU-MIMO</strong></td><td>Multi-User MIMO — the AP forms simultaneous spatial streams to different devices at once.</td></tr>
+<tr><td><strong>OFDMA</strong></td><td>Orthogonal Frequency-Division Multiple Access — splits a channel into resource units serving several devices in one transmission.</td></tr>
+<tr><td><strong>CSMA/CA</strong></td><td>Carrier Sense Multiple Access with Collision Avoidance — 802.11's medium-access method, which avoids rather than detects collisions.</td></tr>
+<tr><td><strong>NAV</strong></td><td>Network Allocation Vector — virtual carrier sense; a countdown set from the Duration field of overheard frames.</td></tr>
+<tr><td><strong>RTS/CTS</strong></td><td>Request To Send / Clear To Send — optional handshake that reserves the medium, solving the hidden-node problem.</td></tr>
+<tr><td><strong>EAPOL</strong></td><td>Extensible Authentication Protocol over LAN — the frame type that carries the 4-way handshake key exchange.</td></tr>
+<tr><td><strong>PSK</strong></td><td>Pre-Shared Key &mdash; the shared passphrase in WPA2/WPA3-Personal, from which the PMK is derived.</td></tr>
+<tr><td><strong>PMK</strong></td><td>Pairwise Master Key — the master secret both sides hold (from the PSK or 802.1X) before the handshake.</td></tr>
+<tr><td><strong>PTK</strong></td><td>Pairwise Transient Key — the fresh per-session key derived from the PMK, both nonces, and both MAC addresses.</td></tr>
+<tr><td><strong>GTK</strong></td><td>Group Temporal Key — the shared key encrypting broadcast and multicast traffic, delivered during the handshake.</td></tr>
+<tr><td><strong>SAE</strong></td><td>Simultaneous Authentication of Equals — WPA3's password-authenticated key exchange (Dragonfly), resistant to offline guessing.</td></tr>
+<tr><td><strong>PMF</strong></td><td>Protected Management Frames (802.11w) — authenticates management frames; mandatory in WPA3 and on 6 GHz.</td></tr>
+<tr><td><strong>CCMP</strong></td><td>Counter Mode CBC-MAC Protocol — WPA2's AES-based authenticated encryption of data frames.</td></tr>
+<tr><td><strong>WPA2</strong></td><td>Wi-Fi Protected Access 2 &mdash; the CCMP/AES-CCM baseline that introduced the 4-way handshake.</td></tr>
+<tr><td><strong>WPA3</strong></td><td>Wi-Fi Protected Access 3 &mdash; current best practice; adds SAE, forward secrecy, and mandatory PMF.</td></tr>
+<tr><td><strong>MCS</strong></td><td>Modulation and Coding Scheme — the modulation index rate adaptation selects based on link quality.</td></tr>
+<tr><td><strong>RSSI</strong></td><td>Received Signal Strength Indicator — received power in dBm (negative; closer to 0 is stronger); the main roam trigger.</td></tr>
+<tr><td><strong>SNR</strong></td><td>Signal-to-Noise Ratio — RSSI minus the noise floor, in dB; determines the achievable modulation and rate.</td></tr>
+</table>
+</div>
+
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="td_lowlatency_cpp.html">&lsaquo; Low-Latency C++ (for Trading &amp; Real-Time Systems)</a><a class="bkc" href="index.html">📖 Contents</a><a href="td_cloud_networking.html">Cloud &amp; Data-Center Networking &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

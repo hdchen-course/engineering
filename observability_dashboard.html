@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Observability, Dashboards &amp; Pipeline Design — System Design Interview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --sw: 260px;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+#sb {
+  width: var(--sw);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; bottom: 0;
+  overflow-y: auto; z-index: 100;
+  transition: width .3s ease;
+}
+#sb::-webkit-scrollbar { width: 4px; }
+#sb::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.sbh {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.sbt { font-size: 13px; font-weight: 700; color: var(--blue-d); text-transform: uppercase; letter-spacing: 1px; }
+.sbs { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.ng { padding: 12px 8px 0; }
+.ngl { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 6px; }
+.ni {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: var(--text2);
+  transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+}
+.ni:hover { background: var(--bg3); color: var(--text); }
+.ni.active { background: var(--blue-l); color: var(--blue-d); font-weight: 600; }
+.ni-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.ni-text { flex: 1; font-size: 12px; }
+.badge { margin-left: auto; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+.bh { background: var(--red-l); color: var(--red); }
+.bg { background: var(--green-l); color: var(--green); }
+.bp { background: var(--purple-l); color: var(--purple); }
+.bt { background: var(--teal-l); color: var(--teal); }
+.bo { background: var(--orange-l); color: var(--orange); }
+
+/* MAIN — normal document flow, centered like the rest of the book */
+#main { background: var(--bg); }
+.container { max-width: 1080px; margin: 0 auto; padding: 20px 20px 0; }
+
+/* TOP SECTION NAV (site style, sticky) */
+.nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 14px 0; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; font-family: 'Inter', sans-serif; transition: all .2s; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue-d); border-color: var(--blue); }
+
+/* HEADER */
+.ph {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px;
+  border-radius: var(--r);
+  margin: 8px 0 4px;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #93c5fd; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 650px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+.sec { padding: 28px 4px; display: none; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: #fff; border-radius: var(--r); margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--blue-l); color: var(--blue-d); font-size: 11px; font-weight: 500; margin: 2px; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* INTERVIEW QUOTE */
+.iq {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--text2);
+  font-size: 13px;
+  position: relative;
+}
+.iq::before {
+  content: 'SAY THIS';
+  position: absolute;
+  top: -8px; left: 14px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  background: var(--blue);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+h4.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* SKILL BOX */
+.skill-box {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 18px; margin: 10px 0; box-shadow: var(--shadow-sm);
+}
+.skill-box h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.skill-box ul { padding-left: 18px; font-size: 13px; color: var(--text2); }
+.skill-box li { margin-bottom: 4px; }
+
+/* SVG CONTAINERS */
+.svg-container {
+  margin: 20px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.svg-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* PROGRESS */
+.prog { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.pc { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow-sm); text-align: center; }
+.pc .num { font-size: 28px; font-weight: 800; color: var(--blue-d); }
+.pc .lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg3); padding: 1px 5px; border-radius: 4px; color: var(--blue-d); }
+
+pre, pre.codeblock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+  line-height: 1.6;
+  color: var(--text2);
+  white-space: pre;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: 12px; }
+
+/* LIST STYLING */
+.content-list { padding-left: 20px; margin: 8px 0; }
+.content-list li { margin-bottom: 6px; font-size: 13px; color: var(--text2); }
+.content-list li strong { color: var(--text); }
+
+/* DECISION GRID */
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.decision-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.decision-item .dsub {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-d);
+  margin-bottom: 6px;
+}
+.decision-item p {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.decision-item .di-key {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+@media (max-width: 768px) {
+  #sb { width: 0; overflow: hidden; }
+  #main { left: 0; }
+  .sec { padding: 20px 16px; }
+  .ph { padding: 24px 16px; }
+}
+a.lc { color: var(--blue); text-decoration: none; font-weight: 500; }
+a.lc:hover { text-decoration: underline; color: var(--blue-d); }
+</style>
+
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part IV · Chapter 2 — <b>Observability &amp; Dashboards</b></span><span class="bkspacer"></span></nav>
+
+<div id="main">
+<div class="container">
+
+<div class="ph">
+  <div class="htag">System Design Interview Preparation</div>
+  <div class="ht">Dashboard &amp; <span>Pipeline Design</span> &mdash; Under Deliberate Ambiguity</div>
+  <div class="hd">A classic data-platform design loop: "leadership just wants a dashboard" (no spec), "design a scalable pipeline for mobile data — now the algorithm changes." The exam is whether you drive ambiguity into requirements and design for algorithm-agnostic extensibility. Design rounds plus an observability fundamentals reference.</div>
+  <div class="hm">
+    <div class="chip">Design Tabs <b>7</b></div>
+    <div class="chip">Signature <b>Ambiguity</b></div>
+    <div class="chip">Twist <b>Algorithm-swap</b></div>
+    <div class="chip">Level <b>L5 / L6</b></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="go('process')">Handling Ambiguity</button>
+  <button class="nav-btn" onclick="go('ambiguity')">Driving the Ambiguity</button>
+  <button class="nav-btn" onclick="go('dashboard')">What Goes in the Dashboard</button>
+  <button class="nav-btn" onclick="go('pipeline')">Pipeline Architecture</button>
+  <button class="nav-btn" onclick="go('extensible')">Extensibility &amp; Algorithm-Swap</button>
+  <button class="nav-btn" onclick="go('trade')">Data Quality, Scale &amp; Trade-offs</button>
+  <button class="nav-btn" onclick="go('coding')">Coding &amp; Remote Comms (DSU)</button>
+  <button class="nav-btn" onclick="go('golden')">Four Golden Signals</button>
+  <button class="nav-btn" onclick="go('reduse')">RED &amp; USE Methods</button>
+  <button class="nav-btn" onclick="go('sli')">SLI / SLO / SLA</button>
+  <button class="nav-btn" onclick="go('layers')">Three-Layer Dashboard</button>
+  <button class="nav-btn" onclick="go('metrics')">Metrics Design</button>
+  <button class="nav-btn" onclick="go('alerting')">Alerting Strategy</button>
+  <button class="nav-btn" onclick="go('tracing')">Distributed Tracing</button>
+  <button class="nav-btn" onclick="go('logging')">Log Aggregation</button>
+  <button class="nav-btn" onclick="go('architecture')">Monitoring Architecture</button>
+</nav>
+
+<div class="sec active" id="tab-process">
+<h2 class="stitle">Handling Ambiguity in Design Rounds</h2>
+<div class="sdesc">These prompts are ambiguous by design. Here is the pattern and the framework that turns emptiness into signal.</div>
+
+<p>A typical data-platform loop has one signature: the design rounds give you almost nothing to work with on purpose — that emptiness <em>is</em> the question. The coding round is usually lost not to the algorithm but to communication. Below is the failure-mode breakdown, then the reusable machinery so the loop doesn't feel like guessing.</p>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Data-platform design loops grade a specific muscle: can you convert a vague wish into a concrete, defensible spec — out loud, in real time. The "right answer" is rarely a system; it's the <strong>path you take to define the system</strong>. Whoever fills the silence with structured questions is the one who reads as senior (L5/L6).</p></div>
+
+<h3 class="sub">Round-by-round breakdown</h3>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">SD1</span><span class="ct">Extreme-ambiguity dashboard: "leadership just wants a dashboard"</span><span class="db de">SYSTEM DESIGN</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+<p><strong>The prompt:</strong> essentially one sentence — the boss wants to see a dashboard — and "what would you put in it?" No audience, no product, no metric, no decision. Total ambiguity. The instinct is to start naming charts. That instinct is the trap: a dashboard is a <em>decision surface</em>, and you cannot pick metrics before you know whose decision they serve.</p>
+<h4 class="sub2">The concrete lesson</h4>
+<ul class="content-list">
+<li><strong>Drive, don't receive:</strong> immediately reframe from "what charts" to "who acts on this, and what action changes based on the number."</li>
+<li><strong>Anchor on one persona:</strong> an on-call SRE, a PM, and a VP need three different dashboards. Force a choice, state it, move.</li>
+<li><strong>Metrics follow decisions:</strong> every tile must map to a decision or it's decoration. "If this goes red, someone does X" is the acceptance test for each metric.</li>
+<li><strong>Name the plumbing last:</strong> serving from <code>Bigtable</code>/<code>BigQuery</code>, metrics via <code>Monarch</code>, freshness SLO, pre-aggregated rollups vs. live queries — but only after the "what" is nailed.</li>
+</ul>
+<div class="tip"><div class="tipl">TIP</div><p>Say the audience and the decision back to the interviewer as a stated assumption, then ask them to confirm or redirect. That single move converts ambiguity into a contract and shows you drive, not stall.</p></div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">SD2</span><span class="ct">Scalable mobile-data pipeline + the "swap the algorithm" twist</span><span class="db de">SYSTEM DESIGN</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+<p><strong>The prompt:</strong> design a pipeline that ingests <strong>mobile data</strong>, computes/aggregates it, and scales. Thin context by design. Then the twist: "today we change the method/algorithm — how do you add a new pipeline?" The specific algorithm is deliberately never given, and that is the point. The round isn't testing whether you know <em>a particular</em> computation; it tests whether the design is <strong>algorithm-agnostic</strong> — whether swapping or adding a computation is cheap.</p>
+<h4 class="sub2">The concrete lesson — design for the swap before you're asked</h4>
+<ul class="content-list">
+<li><strong>Separate transport from logic:</strong> ingest (<code>Pub/Sub</code>) → durable log → pluggable <em>compute stage</em> → sink (<code>Colossus</code>/<code>BigQuery</code>). The computation is a <strong>strategy behind a stable interface</strong>, not built into the DAG (directed acyclic graph — the pipeline's task graph).</li>
+<li><strong>Algorithm as a versioned plugin:</strong> a new algorithm is a new <code>Dataflow</code>/Beam transform implementing the same <code>(input schema) → (output schema)</code> contract; adding one is config + deploy, not a rewrite.</li>
+<li><strong>Fan-out for A/B and backfill:</strong> because logic is decoupled, you can run algo v1 and v2 in parallel off the same source log, compare outputs, and backfill by replaying the log — no re-ingest.</li>
+<li><strong>Stable contracts at the seams:</strong> schema versioning + a registry so old and new pipelines coexist; that's what makes "add a new pipeline" a bounded change.</li>
+<li><strong>Then talk scale/quality/cost:</strong> partition mobile data by device/region, late-arrival + watermarks, dedup on at-least-once delivery, and the cost of storing raw vs. aggregated.</li>
+</ul>
+<div class="ins"><div class="insl">INSIGHT</div><p>The "change the algorithm" twist is a rigged test: if your first design already isolates computation behind an interface, the twist is a five-second answer. If you hardcoded the algorithm into the DAG, the twist forces a redesign in front of the interviewer. <strong>Build extensibility in from minute one so the twist rewards you instead of exposing you.</strong></p></div>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">DSU</span><span class="ct">Union-Find coding — and the communication breakdown that can cost it</span><span class="db de">CODING</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+<p><strong>The failure mode:</strong> the problem is Disjoint Set Union / Union-Find — very learnable. But a classic way to lose it is a comm breakdown: audio drops mid-round, the interviewer can't hear you and doesn't acknowledge, and the channel silently dies. Without the two-way loop it's easy to misread the direction and <strong>code the wrong thing</strong>. That is a communication loss, not an algorithm loss — and it is entirely preventable.</p>
+<h4 class="sub2">The concrete lesson — the channel is a graded axis</h4>
+<ul class="content-list">
+<li><strong>Silence is a signal, not a green light:</strong> if the interviewer goes quiet for more than a beat, assume the channel is broken, not that you're doing great.</li>
+<li><strong>Fall back to the shared editor instantly:</strong> if audio might be down, <em>type</em> your approach in the code pane — "Can you hear me? I'll restate my plan here in comments." The editor is the one channel that can't silently fail.</li>
+<li><strong>Confirm the problem before coding:</strong> restate the input/output and the approach in one line and get an explicit "yes" before writing the algorithm. A 20-second confirm would have saved the whole round.</li>
+<li><strong>Pre-flight the setup:</strong> test mic, screen-share, and editor in the first minute; keep a phone dial-in number ready as a backup line.</li>
+</ul>
+<div class="iq">"I want to confirm you can hear me — if not, tell me in the doc and I'll drive everything in the editor. Before I code: input is X, output is Y, approach is Union-Find with path compression + union by rank. Good to start?"</div>
+</div></div>
+
+<h3 class="sub">The ambiguity-driving framework</h3>
+<div class="sdesc">Run this in order on any underspecified prompt. Say each layer out loud; state assumptions instead of waiting for permission.</div>
+
+<div class="decision-grid">
+<div class="decision-item"><div class="dsub">1 · Audience</div><p>Who literally opens this and how often? SRE at 3am, PM weekly, VP quarterly — each implies a different artifact. Pick one and name them.</p><div class="di-key">Key: "Who is this for?" before anything else.</div></div>
+<div class="decision-item"><div class="dsub">2 · Decisions</div><p>What action does that person take from it? No decision → no feature. This is the guiding principle every metric answers to.</p><div class="di-key">Key: Every tile ties to a decision or it's cut.</div></div>
+<div class="decision-item"><div class="dsub">3 · Metrics</div><p>The smallest set of numbers that drive those decisions — plus their freshness, granularity, and "what does red mean" threshold.</p><div class="di-key">Key: Metrics are derived, not brainstormed.</div></div>
+<div class="decision-item"><div class="dsub">4 · Scope &amp; scale</div><p>Volume, latency SLO, real-time vs. batch, data quality (dedup, late arrival), and cost of the chosen freshness. Bound the problem explicitly.</p><div class="di-key">Key: State the SLO; it forces the architecture.</div></div>
+<div class="decision-item"><div class="dsub">5 · Assumptions aloud</div><p>Voice every gap-fill as "I'm assuming X — correct me." Turns ambiguity into a contract and invites the interviewer to steer.</p><div class="di-key">Key: Stated assumption &gt; silent guess.</div></div>
+</div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>The #1 failure mode: passively waiting to be told what to build.</strong> When the prompt is empty, candidates freeze or ask "what do you want?" — which reads as "I can't operate without a spec," the exact opposite of the L5 signal. Ambiguity is not missing information; it is the interviewer <em>handing you the pen</em>. Fill the void with structured, stated decisions and let them redirect. Driving the wrong direction confidently and correcting on feedback beats standing still.</p></div>
+
+<h4 class="sub2">Say-this openers for ambiguous prompts</h4>
+<div class="iq">"Let me drive this: who looks at this dashboard, and what decision do they make from it? I'll assume it's an on-call SRE deciding whether to page — tell me if the real audience is leadership instead."</div>
+<div class="iq">"Before I pick metrics, I'll define the one decision this surface exists to support. Everything on it earns its place by feeding that decision."</div>
+<div class="iq">"I'll design the compute step as a pluggable stage behind a fixed input/output contract — so when we swap the algorithm later, adding a pipeline is a new transform plus config, not a redesign. Let me state that interface now."</div>
+<div class="iq">"I'm going to state my assumptions as I go and keep moving — stop me the moment one is wrong so I'm driving in your direction, not mine."</div>
+
+<div class="note"><div class="notel">NOTE</div><p>Both design rounds reward the same instinct — <strong>convert vagueness into an explicit, extensible contract</strong> — and the coding round is a reminder that the contract with the <em>interviewer</em> (that you're heard and aligned) is the one you can't afford to let fail silently. Same skill, three surfaces.</p></div>
+
+</div>
+<div class="sec" id="tab-ambiguity">
+<h2 class="stitle">Driving the Ambiguity</h2>
+<div class="sdesc">Turn "leadership wants a dashboard" into a requirement set before drawing a single box.</div>
+
+<div class="note"><div class="notel">NOTE</div><p>Three vague asks — "a dashboard," "a scalable pipeline," "the algorithm will change" — are withheld on purpose in two flavors: the dashboard is under-specified on <strong>purpose</strong> (no audience/decision/metric), the pipeline is under-specified on <strong>substance &amp; stability</strong> (no schema, no number, and the method-change is buried). The exam is whether you treat the vagueness as the work.</p></div>
+
+<h3 class="sub">The chain that generates every requirement</h3>
+<p>Say it out loud, then walk it: <strong>audience &#8594; decision &#8594; the one metric &#8594; (freshness, granularity, retention)</strong>. A dashboard nobody acts on is a screensaver.</p>
+
+<div class="decision-grid">
+<div class="decision-item"><div class="dsub">Audience</div><p>Who opens it and how often? Exec glancing weekly, PM slicing daily, or on-call staring live?</p><div class="di-key">Key: audience sets everything downstream</div></div>
+<div class="decision-item"><div class="dsub">Decision</div><p>What changes because of a number here? If nothing changes, it shouldn't exist.</p><div class="di-key">Key: decision justifies the metric</div></div>
+<div class="decision-item"><div class="dsub">The one metric</div><p>If you ship a single number first, what is it? DAU, retention, crash-free?</p><div class="di-key">Key: ship one, not ten</div></div>
+<div class="decision-item"><div class="dsub">Freshness / granularity</div><p>Real-time or next-morning? This alone picks the architecture.</p><div class="di-key">Key: T+1 vs streaming is a fork</div></div>
+</div>
+
+<h3 class="sub">The three audiences I'll surface</h3>
+<table class="tbl">
+<thead><tr><th>Audience</th><th>Decision</th><th>Metric</th><th>Freshness</th></tr></thead>
+<tbody>
+<tr><td>Leadership (exec)</td><td>Where to invest next quarter; catch regressions</td><td>DAU/WAU + retention curve, sliced by app_version &amp; country</td><td><strong>T+1 batch</strong> — stable &amp; official beats fast</td></tr>
+<tr><td>Science team</td><td>Validate a new method vs. the old one</td><td>Same metrics, A/B two method versions on one history</td><td><strong>Same-day</strong> iteration</td></tr>
+<tr><td>On-call / data-eng</td><td>Is the pipeline healthy &amp; the number trustworthy?</td><td>Freshness, volume, DQ — not business KPIs</td><td>Live</td></tr>
+</tbody>
+</table>
+
+<h3 class="sub">Say-this — state assumptions, don't stall</h3>
+<div class="iq">"Before I draw anything: who opens this, and what do they do differently based on a number on it? Because audience decides the metric, and the metric decides freshness, granularity, and retention."</div>
+<div class="iq">"I'll assume mobile data = client-SDK analytics events — device_id, optional user_id, event_type, event-time, app_version, country, plus a JSON properties blob — at ~5B events/day across ~200M devices, spiky around pushes, growing ~20% YoY. Correct me and only the compute stage changes, not the architecture."</div>
+<div class="iq">"You told me the method will keep changing. That's not an afterthought — it's the main thing driving the design. So I'll isolate the one thing guaranteed to change behind an interface and make everything else a fixed backbone."</div>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>The signature move: reframe "build a dashboard" as "who decides what, from which number, how fresh?" and reframe "scalable pipeline" as "the method is the one guaranteed change, so it is the one thing behind an interface." Being wrong about the metric must be <em>cheap</em>.</p></div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Tricky follow-up incoming: <em>"Leadership loves it — now the growth PM wants the same dashboard per-experiment and hourly."</em> If you built the exec view into the pipeline, this is a rewrite. Answer it in advance: audience is a serving-layer concern (role-scoped views + a granularity dimension), never a pipeline concern.</p></div>
+</div>
+
+<div class="sec" id="tab-dashboard">
+<h2 class="stitle">What Goes in the Dashboard</h2>
+<div class="sdesc">Layered views off one source of truth — exec KPIs on top, trust signals underneath.</div>
+
+<p>I don't build "a dashboard." I build <strong>layers</strong>, because the exec and the on-call engineer ask different questions. Every tile carries <code>metric_name @ method_version</code> so a reader always knows which definition they're seeing.</p>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">L1</span><span class="ct">Business / Leadership KPIs</span><span class="db de">EXEC</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>Active users:</strong> DAU / WAU / MAU and the DAU/MAU stickiness ratio.</li>
+<li><strong>Retention curve:</strong> D1/D7/D30, sliced by <code>app_version</code> and <code>country</code>.</li>
+<li><strong>Sessions:</strong> session length / sessions-per-user — only after sessionization is agreed.</li>
+<li><strong>Version tag:</strong> e.g. "Retention &#183; v3 (official)". Non-negotiable.</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">L2</span><span class="ct">Pipeline Health / Freshness / Volume</span><span class="db dm">ON-CALL</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>Freshness SLO:</strong> "data complete through &lt;timestamp&gt;"; target exec tables complete by 06:00 local (lag &lt; 6h).</li>
+<li><strong>Ingest:</strong> events/sec vs. 7-day baseline; Pub/Sub oldest-unacked-message age.</li>
+<li><strong>Compute:</strong> Dataflow system lag, autoscaling worker count, backlog depth, dead-letter size.</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">L3</span><span class="ct">Data Quality</span><span class="db dh">SCIENCE + ON-CALL</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li><strong>Duplicate rate</strong> (dropped by <code>event_id</code>): expect ~1&ndash;3% from client retries.</li>
+<li><strong>Late-arrival distribution:</strong> % arriving &gt;24h / &gt;72h after event-time — drives restatement.</li>
+<li><strong>Null/malformed rate</strong> per field; <strong>clock-skew</strong> (event-time vs. ingest-time) p50/p99.</li>
+<li><strong>Method-vs-method delta:</strong> when v4 is shadowed, show |v4&minus;v3| per metric, flag if &gt;5%.</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">L4</span><span class="ct">Infra / Cost</span><span class="db de">FINOPS</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li>BigQuery bytes scanned/day and $/day; Colossus/GCS storage by tier; backfill job cost.</li>
+<li>This is how you answer "spend doubled" <em>before</em> finance asks.</li>
+</ul>
+</div></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Retention is not a cheap slice.</strong> "Cluster by app_version, country so exec queries scan MBs" is true for a DAU rollup but not for D1/D7/D30 retention — retention is a self-join of a cohort day against a return day over per-user history. Clustering doesn't bound that compute; you need <em>pre-materialized cohort tables</em> (cohort_date &#215; return_day &#215; slice), not raw scans. Name the materialization or the cost claim is vague.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Slice cardinality can explode the DQ panel.</strong> app_version (hundreds live in the wild) &#215; country (~200) &#215; day &#215; metric &#215; method_version is easily millions of rows; a naive "null rate per field per slice" tile becomes its own expensive query. Cap cardinality (top-N versions + "other" bucket) and pre-aggregate DQ, or the trust layer costs more than the KPI layer.</p></div>
+
+<div class="tip"><div class="tipl">TIP</div><p>Exec sees L1; on-call sees L2&ndash;L4; science lives in L3's method-delta panel. One pipeline, role-scoped views — that sentence alone answers the "second audience" trap.</p></div>
+</div>
+
+<div class="sec" id="tab-pipeline">
+<h2 class="stitle">Pipeline Architecture</h2>
+<div class="sdesc">Fixed backbone, Google-flavored primitives, one pluggable stage — built for mobile reality.</div>
+
+<h3 class="sub">The backbone</h3>
+<p><strong>Pub/Sub</strong> (ingest) &#8594; <strong>immutable raw</strong> (Colossus / BigQuery raw) &#8594; <strong>normalize + sessionize</strong> (Dataflow/Beam) &#8594; <strong>[Metric Compute — PLUGGABLE]</strong> &#8594; <strong>versioned output tables</strong> &#8594; <strong>serving</strong> (BigQuery + dashboard).</p>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">1</span><span class="ct">Ingestion — absorb the burst</span><span class="db dm">PUB/SUB</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list">
+<li>Edge collector &#8594; <strong>Pub/Sub</strong>. A push tripling ingestion for 10 min is just a deeper backlog, not dropped data — backpressure becomes queue depth.</li>
+<li>Every event carries a client-generated <code>event_id</code> (idempotency key) and a device-set <strong>event-time</strong> distinct from server <strong>ingest-time</strong>.</li>
+<li>Malformed events &#8594; dead-letter topic, never silently dropped.</li>
+</ul>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">2</span><span class="ct">Land raw, immutably</span><span class="db dh">COLOSSUS</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Append-only, partitioned by <strong>ingest-date</strong>, keyed by <code>event_id</code>. Never mutated or deleted (except sanctioned privacy deletion). <strong>Raw immutability is <em>why</em> backfill under a new method is possible at all.</strong></p>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">3</span><span class="ct">Normalize + sessionize</span><span class="db dm">DATAFLOW</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Dedup by <code>event_id</code>, parse the JSON blob to a typed schema, resolve identity (device_id &#8594; user_id), sessionize. Event-time windowing + watermarks for late data; autoscaling for bursts.</p>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">4</span><span class="ct">Metric compute — the pluggable stage</span><span class="db dh">PLUGGABLE</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>The one stage designed to change. Each metric definition is a versioned plugin behind a stable <code>(events, params) &#8594; rows</code> contract, tagged with <code>method_version</code>. This is the crux of the round — detailed in the <strong>Extensibility &amp; Algorithm-Swap</strong> tab.</p>
+</div></div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">5</span><span class="ct">Versioned output + serving</span><span class="db de">BIGQUERY</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Output partitioned by <strong>metric-date</strong>, clustered by <code>app_version, country</code>, tagged with <code>method_version</code>. Rollup tables sit on top so dashboards never scan raw. Exec reads rollups pinned to the official version; science reads any version incl. shadow.</p>
+</div></div>
+
+<h3 class="sub">Scale sanity check</h3>
+<p>5B events/day &#8776; <strong>58k events/sec average</strong>. Pub/Sub + Dataflow autoscaling scale ~linearly; the cost lever is partitioning + rollups, not just more workers.</p>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>The peak/average ratio is badly understated.</strong> "3&#215; at push-peak &#8776; 180k/sec" only reprices the specific trap. Real mobile traffic follows a day-night cycle <em>and</em> is timezone-clustered <em>and</em> push-driven; a coordinated push into a dense timezone can spike 5&ndash;10&#215; the daily mean for minutes. Design the buffer and autoscaling headroom against the true peak (and its ramp rate — Dataflow can't add workers instantly), not against 3&#215;. Also state a Pub/Sub retention window long enough to survive a compute outage, or the "buffer absorbs it" claim is unbounded.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Dedup and late data are unbounded-state problems in streaming.</strong> A retry that arrives 3 days after the original can't be de-duplicated by an in-flight streaming window — you'd need days of <code>event_id</code> state. In practice dedup-across-days and the 3-day-late event are resolved by the <em>batch reprocess over immutable raw</em>, not by the streaming watermark. Be explicit that streaming gives provisional numbers with bounded allowed-lateness, and the T+1 batch is the correcting source of truth — otherwise you're claiming watermarks do something they can't afford to.</p></div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Tricky follow-up: <em>"Where's your backpressure / dead-letter path when compute can't keep up?"</em> Answer: Pub/Sub retention = the buffer; dead-letter topic = poison messages; Dataflow system-lag alert = the trigger to scale or shed to batch. Say all three.</p></div>
+</div>
+
+<div class="sec" id="tab-extensible">
+<h2 class="stitle">Extensibility &amp; Algorithm-Swap</h2>
+<div class="sdesc">The exam. If the compute stage is behind an interface, "add a new pipeline" is a non-event.</div>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Name the ONE axis of change — the method — and push it behind an interface. Keep raw immutable to enable reprocessing. Version outputs so a new method writes <em>alongside</em>, never <em>over</em>, the old. Then "add a new pipeline" collapses to "add a plugin + config + bounded backfill."</p></div>
+
+<h3 class="sub">The backbone, with the one swappable stage</h3>
+<svg viewBox="0 0 860 200" width="100%" role="img" aria-label="Pipeline backbone with one pluggable compute stage">
+  <defs>
+    <marker id="ah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--fg, #888)"/></marker>
+  </defs>
+  <g font-size="11" text-anchor="middle">
+    <rect x="10"  y="70" width="110" height="46" rx="8" fill="none" stroke="var(--blue)" stroke-width="1.5"/>
+    <text x="65"  y="90" fill="var(--blue)">Pub/Sub</text><text x="65" y="105" fill="var(--blue)">ingest</text>
+    <rect x="150" y="70" width="120" height="46" rx="8" fill="none" stroke="var(--purple)" stroke-width="1.5"/>
+    <text x="210" y="90" fill="var(--purple)">Immutable raw</text><text x="210" y="105" fill="var(--purple)">Colossus</text>
+    <rect x="300" y="70" width="120" height="46" rx="8" fill="none" stroke="var(--purple)" stroke-width="1.5"/>
+    <text x="360" y="90" fill="var(--purple)">Normalize +</text><text x="360" y="105" fill="var(--purple)">sessionize</text>
+    <rect x="450" y="55" width="140" height="76" rx="8" fill="none" stroke="var(--green)" stroke-width="3"/>
+    <text x="520" y="80" fill="var(--green)" font-weight="bold">Metric Compute</text><text x="520" y="97" fill="var(--green)" font-weight="bold">PLUGGABLE</text><text x="520" y="117" fill="var(--green)">v3 / v4 …</text>
+    <rect x="620" y="70" width="110" height="46" rx="8" fill="none" stroke="var(--blue)" stroke-width="1.5"/>
+    <text x="675" y="90" fill="var(--blue)">Versioned</text><text x="675" y="105" fill="var(--blue)">outputs</text>
+    <rect x="760" y="70" width="90" height="46" rx="8" fill="none" stroke="var(--blue)" stroke-width="1.5"/>
+    <text x="805" y="90" fill="var(--blue)">Serving</text><text x="805" y="105" fill="var(--blue)">BQ + dash</text>
+    <line x1="120" y1="93" x2="148" y2="93" stroke="var(--fg, #888)" marker-end="url(#ah)"/>
+    <line x1="270" y1="93" x2="298" y2="93" stroke="var(--fg, #888)" marker-end="url(#ah)"/>
+    <line x1="420" y1="93" x2="448" y2="93" stroke="var(--fg, #888)" marker-end="url(#ah)"/>
+    <line x1="590" y1="93" x2="618" y2="93" stroke="var(--fg, #888)" marker-end="url(#ah)"/>
+    <line x1="730" y1="93" x2="758" y2="93" stroke="var(--fg, #888)" marker-end="url(#ah)"/>
+    <path d="M210 70 C210 20, 520 20, 520 53" fill="none" stroke="var(--green)" stroke-dasharray="4 3" marker-end="url(#ah)"/>
+    <text x="365" y="24" fill="var(--green)" font-size="10">bounded backfill over immutable raw</text>
+  </g>
+</svg>
+
+<h3 class="sub">The contract</h3>
+<p>Every method is a plugin implementing one interface:</p>
+<div class="iq">Metric.compute(events_in_window, params) &#8594; rows tagged {metric_name, method_version}</div>
+<p>A new method = new class/module + config/registry entry + Beam template deploy. <strong>Zero changes to ingest, raw storage, or serving.</strong></p>
+
+<h3 class="sub">Walk-through — "science ships retention v4 today"</h3>
+<ol class="content-list">
+<li><strong>Deploy:</strong> register <code>RetentionV4</code> in the plugin registry; the DAG picks it up. Plumbing untouched.</li>
+<li><strong>Backfill:</strong> registration triggers a <strong>bounded</strong> reprocess over immutable raw (e.g. last 90 days), writing a new logical output tagged <code>method_version=v4</code> alongside v3. <strong>v3's numbers do not move.</strong></li>
+<li><strong>Shadow / canary:</strong> v4 runs in parallel, lands in the method-delta panel. Leadership stays pinned to <code>v3 (official)</code>.</li>
+<li><strong>Gate:</strong> schema/contract test + DQ gate (row counts, null rates, |v4&minus;v3| anomaly) must pass before promotion.</li>
+<li><strong>Promote:</strong> flip one config flag &mdash; <code>official_version = v4</code>. The version tag answers the "which is right?" question cleanly.</li>
+</ol>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>The interface boundary is drawn too narrow.</strong> The constraints say the science team changes <em>metric definitions AND sessionization AND identity resolution</em> — but sessionization and identity live in the "fixed backbone" (stage 3), <em>upstream</em> of the pluggable compute. So a sessionization change is exactly the monolithic-rewrite scenario you claimed to avoid. Fix: make normalize/sessionize <em>also</em> versioned plugins (<code>session_version</code>), and tag outputs with the full lineage <code>{session_version, method_version}</code>. Otherwise "the method is behind an interface" is only two-thirds true.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Backfill cost is under-owned.</strong> 90 days &#215; 5B/day = ~450B events reprocessed <em>per method change, several times a quarter</em>, plus each shadow run. That is a large recurring Dataflow + BigQuery bill you dismissed with "storage is cheap." Bound it explicitly: reprocess only affected metrics, sample-then-full for the gate, cache normalized/sessionized intermediates so a metric-only change doesn't re-run identity resolution, and put a cost budget on shadow runs.</p></div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Anti-signal to avoid naming out loud: a single monolithic Dataflow job with the formula wired inline, where a method change edits + redeploys the whole pipeline and overwrites history. State that this is the no-hire design and why yours isn't it.</p></div>
+</div>
+
+<div class="sec" id="tab-trade">
+<h2 class="stitle">Data Quality, Scale &amp; Trade-offs</h2>
+<div class="sdesc">Mobile is dirty by nature — dedup, late data, clock skew, restatement, cost — plus the rubric and interview tips.</div>
+
+<h3 class="sub">Data quality</h3>
+<ul class="content-list">
+<li><strong>Duplicates:</strong> dedup by <code>event_id</code> — idempotent by construction. In streaming, bounded by allowed-lateness; cross-day retries caught by the batch reprocess.</li>
+<li><strong>Late data:</strong> event-time windowing + watermarks. A device offline 3 days syncing 50k last-Tuesday events lands in Tuesday's window; that day was already published, so I <strong>restate</strong> — recompute the affected partition, bump <code>data_version</code>, dashboard shows "Tue updated — late data" rather than silently mutating a screenshotted number.</li>
+<li><strong>Clock skew:</strong> trust event-time within a bound; surface p50/p99 skew in L3.</li>
+</ul>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Unbounded restatement destroys trust.</strong> "Any past day can silently update forever" means leadership's Q2 number can move in Q3. Define a <strong>freeze horizon</strong> (e.g. day N is official and immutable after 7 days; later-arriving events land in a labeled "corrections" bucket, not a rewrite). Without a cutoff, "official numbers stay stable" contradicts "we restate on late data."</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Falling back to ingest-time corrupts cohorts.</strong> Reassigning a skewed-clock event from its true Tuesday to "today" mis-buckets retention/DAU cohorts — mixing event-time and ingest-time inside one metric is a silent correctness bug. Better: quarantine events whose skew exceeds the bound into a DQ bucket and exclude them from cohort metrics, don't relabel their day.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>You built a Lambda architecture, then claimed one source of truth.</strong> A same-day streaming path and a T+1 batch path running "the same" plugin still diverge (different windowing, watermark, dedup horizon). Either explicitly own reconciliation (batch is authoritative; streaming is labeled provisional and gets overwritten by batch), or go Kappa (one path, replay from raw). Saying "same source of truth, two freshness paths" without the reconciliation rule is the classic vague answer.</p></div>
+
+<h3 class="sub">Reliability, cost, privacy</h3>
+<ul class="content-list">
+<li><strong>Freshness SLO:</strong> exec tables complete by 06:00 (lag &lt; 6h); monitored via <strong>Monarch</strong> — freshness lag, row-count anomaly, DLQ depth. "Blank at 2am": freshness metric distinguishes <em>no data</em> (Pub/Sub unacked age) from <em>stuck</em> (Dataflow system lag climbing).</li>
+<li><strong>Backfill:</strong> always a bounded window over immutable raw, emitting a new version. Never full-history on a tweak.</li>
+<li><strong>Cost:</strong> partition by date + cluster by app_version/country; rollup/materialized tables; tiered raw (hot 30d &#8594; nearline/coldline); incremental compute + targeted backfill windows.</li>
+<li><strong>Privacy:</strong> device_id/user_id are PII — access-controlled datasets, retention limits, deletion propagating through raw + all derived versions (the one sanctioned mutation of the immutable layer).</li>
+</ul>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>"Raw is immutable forever" collides with privacy retention limits and cost.</strong> 5B/day &#215; 20% YoY, never deleted, is petabytes/year — and GDPR-style deletion + retention limits legally <em>require</em> purging raw, not just derived. Reconcile it: raw is immutable for its retention window (e.g. 18 months) then tiered/expired; user-deletion is a first-class exception with a documented propagation job. "Except privacy deletion" as a parenthetical isn't a plan.</p></div>
+
+<h3 class="sub">Rubric — where this answer lands</h3>
+<div class="decision-grid">
+<div class="decision-item"><div class="dsub">No-hire</div><p>Draws Pub/Sub&#8594;Dataflow&#8594;BQ&#8594;Looker before asking who/why; hardcodes the metric in one monolithic job; no versioning, no late/dup plan.</p><div class="di-key">Key: answers the literal words only</div></div>
+<div class="decision-item"><div class="dsub">Hire</div><p>Drives dashboard ambiguity to audience&#8594;decision&#8594;metric&#8594;freshness; isolates compute behind an interface; handles dedup + late data + basic backfill; mentions scale &amp; cost.</p><div class="di-key">Key: may need prompting on versioning / dual-method</div></div>
+<div class="decision-item"><div class="dsub">Strong-hire</div><p>Runs the room; algorithm-agnostic backbone; versioned immutable outputs; raw kept immutable <em>for</em> reprocessing; two audiences off one source of truth; restatement semantics; cost-controlled backfill; DQ gates before promote.</p><div class="di-key">Key: "add a pipeline" is a non-event</div></div>
+</div>
+
+<h3 class="sub">Interview tips — closing the gap to Strong-Hire</h3>
+<div class="tip"><div class="tipl">TIP</div><p>Extend the plugin boundary to sessionization + identity (<code>session_version</code>), not just the metric — the constraints say science changes those too. That single move separates "isolated the metric" from "isolated the axis of change."</p></div>
+<div class="tip"><div class="tipl">TIP</div><p>Volunteer the reconciliation rule (batch authoritative, streaming provisional) and the freeze horizon <em>before</em> a common probe is late data — proactively covering restatement is the difference between Hire and Strong-Hire.</p></div>
+<div class="tip"><div class="tipl">TIP</div><p>Put real numbers on the recurring backfill cost (~450B events/reprocess) and name the mitigations (cache normalized intermediates, metric-only reprocess, budgeted shadow runs). "Storage is cheap" is the phrase that caps you at Hire.</p></div>
+<div class="skill-box"><h4>Remote-communication signals to hit</h4><ul><li>State assumptions out loud, then invite correction — don't stall on questions.</li><li>Tag every claim with a number or a mechanism; avoid "it scales."</li><li>Name the anti-pattern you're avoiding and why — shows you know the failure mode.</li><li>End the algorithm-swap answer with "nothing in ingest/storage/serving changes" — the one-line proof it's a non-event.</li></ul></div>
+</div>
+<div class="sec" id="tab-coding">
+<h2 class="stitle">Coding &amp; Remote Communication — Don't Lose a Round You Can Solve</h2>
+<div class="sdesc">A candidate who knows DSU cold can still lose the round when audio fails, the interviewer goes silent, and they code the wrong thing. This is how to prevent it.</div>
+
+<h3 class="sub">Part A — Remote-Comm Playbook: When the Channel Breaks, Stop Coding</h3>
+<div class="sdesc">The failure mode isn't the algorithm. It's coding forward into silence. Silence is a signal, not a green light.</div>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>This kind of lost round is a <strong>protocol failure, not a skill failure</strong>. When audio drops and you keep typing, you solve the problem you <em>imagine</em> was asked. The fix is a rule: the shared editor is your fallback channel, and no line of solution code gets written before the approach is confirmed in text.</p></div>
+
+<h4 class="sub2">The recovery sequence — run it the moment comm degrades</h4>
+<ol class="content-list">
+<li><strong>STOP coding immediately:</strong> the instant you can't hear or aren't sure you're heard, freeze. Do not "keep making progress" — progress on the wrong problem is negative.</li>
+<li><strong>Confirm the channel out loud AND in text:</strong> say it and simultaneously type it at the top of the editor, so it lands even if your audio is gone.</li>
+<li><strong>Declare your fallback:</strong> announce that you'll drive everything through the editor until audio is restored, so the interviewer knows silence from you is a tool issue, not you being stuck.</li>
+<li><strong>Narrate approach in TEXT before implementing:</strong> write a short plan as editor comments — restated problem, approach, complexity — and pause for a thumbs-up.</li>
+<li><strong>Get explicit confirmation, then code:</strong> "Does this match what you're asking?" Wait for a yes (verbal or typed) before the first real line.</li>
+<li><strong>Treat interviewer silence as a re-sync trigger:</strong> if they go quiet for ~20–30s after you asked something, assume a comm gap and re-confirm in text rather than filling the void with code.</li>
+</ol>
+
+<div class="iq">"I'm having trouble hearing you — can you hear me? To be safe I'll type my approach and questions directly in the editor so we stay in sync, and I'll read the top of the file for any replies from you."</div>
+
+<div class="iq">"Before I implement, here's my plan as a comment block: [restate] [approach] [complexity]. Can you confirm this is the direction you want — a quick 'yes' in the editor works if audio is choppy."</div>
+
+<div class="trap"><div class="trapl">TRAP</div><p>Pushing forward silently. When audio breaks, the instinct is to demonstrate momentum by coding — but you're now guessing at the spec with no correction loop. Every minute of confident wrong code is a minute you'll spend rewriting, and it reads to the interviewer as "doesn't notice when he's off track." <strong>Momentum into ambiguity is the anti-signal.</strong> Explicit re-sync is the pro signal.</p></div>
+
+<div class="tip"><div class="tipl">TIP</div><p>Keep a permanent scratch region at the top of the editor: <code>// PROBLEM: ... // APPROACH: ... // Q FOR YOU: ...</code>. It doubles as your think-aloud transcript and your degraded-audio lifeline — and it shows structured thinking even when everything works.</p></div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Don't over-apologize or fixate on the tech glitch — one calm sentence, switch to text, keep solving. Panic about the tooling is itself a negative signal. Composure under a broken channel is exactly what a remote-heavy data team is screening for.</p></div>
+
+<h3 class="sub">Part B — DSU / Union-Find Crib: The Template to Know Cold</h3>
+<div class="sdesc">Know it well enough to type it with a dead mic and narrate it in comments.</div>
+
+<div class="card">
+<div class="ch" onclick="toggle(this)"><span class="cn">DSU</span><span class="ct">Interview-quality template — path compression + union by rank</span><span class="db de">TEMPLATE</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+<ul class="content-list">
+<li><strong>find(x):</strong> path compression (here the <em>path-halving</em> variant) flattens the tree so future lookups are near-constant.</li>
+<li><strong>union(a,b):</strong> attach the smaller-rank root under the larger; returns <code>false</code> if already connected (that return value is your cycle detector).</li>
+<li><strong>count:</strong> track number of components, decrement on every successful union — free "connected components" answer.</li>
+</ul>
+<table class="tbl">
+<thead><tr><th>Method</th><th>Java (clean, interview style)</th></tr></thead>
+<tbody>
+<tr><td>fields</td><td><code>int[] parent, rank; int count;</code></td></tr>
+<tr><td>init</td><td><code>parent[i]=i; rank[i]=0; count=n;</code></td></tr>
+<tr><td>find</td><td><code>while(parent[x]!=x){parent[x]=parent[parent[x]]; x=parent[x];} return x;</code></td></tr>
+<tr><td>union</td><td>see full block below — union by rank, returns boolean</td></tr>
+</tbody>
+</table>
+<pre><code>class DSU {
+    private final int[] parent, rank;
+    private int count;
+
+    DSU(int n) {
+        parent = new int[n];
+        rank = new int[n];
+        for (int i = 0; i &lt; n; i++) parent[i] = i;
+        count = n;
+    }
+
+    int find(int x) {                       // iterative + path halving
+        while (parent[x] != x) {
+            parent[x] = parent[parent[x]];  // compress
+            x = parent[x];
+        }
+        return x;
+    }
+
+    boolean union(int a, int b) {           // false => already connected (cycle)
+        int ra = find(a), rb = find(b);
+        if (ra == rb) return false;
+        if (rank[ra] &lt; rank[rb]) { int t = ra; ra = rb; rb = t; }
+        parent[rb] = ra;
+        if (rank[ra] == rank[rb]) rank[ra]++;
+        count--;
+        return true;
+    }
+
+    int components() { return count; }
+    boolean connected(int a, int b) { return find(a) == find(b); }
+}</code></pre>
+<div class="note"><div class="notel">NOTE</div><p>Iterative <code>find</code> with path halving avoids recursion-stack risk on large inputs and is one fewer thing to explain. State both optimizations aloud (or in comment): "path compression + union by rank gives amortized inverse-Ackermann, effectively constant."</p></div>
+</div>
+</div>
+
+<h4 class="sub2">The "tells" — how to recognize a DSU problem in the first 30 seconds</h4>
+<table class="tbl">
+<thead><tr><th>Signal in the prompt</th><th>Why it's DSU</th><th>What to say</th></tr></thead>
+<tbody>
+<tr><td>"connected", "reachable", "same group/network"</td><td>Connectivity queries over an undirected relation</td><td>"This is a connectivity problem — union-find fits."</td></tr>
+<tr><td>"merge accounts / clusters / friend circles"</td><td>Transitive grouping by shared keys</td><td>"I'll union entities that share a key, then collect by root."</td></tr>
+<tr><td>"detect a cycle" / "redundant edge"</td><td>Adding an edge whose endpoints already share a root closes a cycle</td><td>"If union returns false, that edge creates a cycle."</td></tr>
+<tr><td>"edges/queries arrive over time" (dynamic connectivity, no deletions)</td><td>Incremental unions; DSU is online for adds</td><td>"Union-find handles incremental joins in near-constant time."</td></tr>
+<tr><td>"count groups / islands / provinces"</td><td>Component count = distinct roots</td><td>"Track a running component count, decrement per union."</td></tr>
+</tbody>
+</table>
+
+<div class="warn"><div class="warnl">WATCH</div><p>DSU does <strong>not</strong> support efficient <em>deletion</em> of edges or splitting components. If the prompt has removals or "undo," that's a sign to reach for a different tool (offline reverse-processing, link-cut trees, or BFS/DFS per query). Name this boundary aloud — knowing when NOT to use DSU is a senior signal.</p></div>
+
+<h4 class="sub2">Classic problems — pattern &rarr; DSU mapping</h4>
+<div class="decision-grid">
+<div class="decision-item"><div class="dsub">Number of Connected Components</div><p>Union every edge, answer is <code>components()</code>.</p><div class="di-key">Key: component count = distinct roots</div></div>
+<div class="decision-item"><div class="dsub">Redundant Connection</div><p>Process edges; the first edge whose <code>union</code> returns <code>false</code> is the answer.</p><div class="di-key">Key: union false = cycle-closing edge</div></div>
+<div class="decision-item"><div class="dsub">Accounts Merge</div><p>Union accounts sharing any email; group emails by root, sort per group.</p><div class="di-key">Key: map email&rarr;id, union on shared key</div></div>
+<div class="decision-item"><div class="dsub">Number of Islands (via DSU)</div><p>Union each land cell with its right/down land neighbor; count land roots. (BFS/DFS also valid — say why you'd pick which.)</p><div class="di-key">Key: 2D index = r*cols+c</div></div>
+</div>
+
+<div class="ins"><div class="insl">INSIGHT</div><p><strong>Complexity to state without hesitating:</strong> with both path compression and union by rank, <code>m</code> operations on <code>n</code> elements run in <code>O(m &middot; &alpha;(n))</code>, where <code>&alpha;</code> is the inverse-Ackermann function — <code>&le; 4</code> for any input that fits in the universe. So: <strong>amortized near-constant per op.</strong> Space is <code>O(n)</code>.</p></div>
+
+<div class="tip"><div class="tipl">TIP</div><p>For Accounts Merge and Islands, the DSU itself is trivial — the interviewer is watching your <strong>index mapping and grouping logic</strong> (email&rarr;int, cell&rarr;int). Narrate that mapping in the editor first; it's where remote candidates silently diverge from the intended problem.</p></div>
+
+<div class="iq">"I'll restate to confirm: you want the number of distinct connected groups after all these merges — so I'll use union-find, union on each shared key, and return the component count. Sound right before I code it?"</div>
+
+<div class="iq">"I'm writing the DSU with path compression and union by rank — amortized inverse-Ackermann, effectively O(1) per op. The interesting part here is mapping each email to an integer id; I'll do that in a HashMap first. I'll keep narrating in comments in case audio cuts."</div>
+
+</div>
+<div id="tab-golden" class="sec">
+<h2 class="stitle">Four Golden Signals</h2>
+<div class="sdesc">From the Google SRE book — the four metrics that matter most for any service. If you can only measure four things, measure these.</div>
+
+<div class="iq">"The Four Golden Signals from the Google SRE book are my starting point for any monitoring system: latency, traffic, errors, and saturation. They cover both the user experience and the system's capacity."</div>
+
+<h3 class="sub">1. Latency</h3>
+<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">The time it takes to serve a request. Critical insight: <strong>track success and error latency separately</strong>. A fast error (500ms) and a slow success (5s) tell very different stories.</p>
+
+<div class="skill-box">
+  <h4>Why Percentiles, Not Averages</h4>
+  <ul>
+    <li><strong>Average is misleading:</strong> If 99 requests take 10ms and 1 takes 10,000ms, the average is ~110ms (109.9ms) — hides the pain of that 1 user</li>
+    <li><strong>p50 (median):</strong> The "typical" user experience</li>
+    <li><strong>p95:</strong> 1 in 20 users sees at least this latency — good engineering target</li>
+    <li><strong>p99:</strong> 1 in 100 users — important for large-scale services</li>
+    <li><strong>p99.9:</strong> Matters when you have millions of requests (1 in 1000 = thousands of users/day)</li>
+  </ul>
+</div>
+
+<div class="warn">
+  <div class="warnl">WARNING</div>
+  <p>You CANNOT average percentiles. If service A has p99=100ms and service B has p99=200ms, the combined p99 is NOT 150ms. You must merge the underlying histograms.</p>
+</div>
+
+<pre class="codeblock"># Good: Histogram with meaningful buckets
+http_request_duration_seconds_bucket{le="0.05"}   -- 50ms
+http_request_duration_seconds_bucket{le="0.1"}    -- 100ms
+http_request_duration_seconds_bucket{le="0.25"}   -- 250ms
+http_request_duration_seconds_bucket{le="0.5"}    -- 500ms
+http_request_duration_seconds_bucket{le="1.0"}    -- 1s
+http_request_duration_seconds_bucket{le="+Inf"}   -- catch-all</pre>
+
+<h3 class="sub">2. Traffic</h3>
+<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">A measure of how much demand is being placed on the system. The specific metric depends on the system type.</p>
+<ul class="content-list">
+  <li><strong>Web service:</strong> HTTP requests per second, QPS</li>
+  <li><strong>Streaming:</strong> Concurrent sessions, bandwidth utilization</li>
+  <li><strong>Key-value store:</strong> Reads/sec, writes/sec</li>
+  <li><strong>Message queue:</strong> Messages produced/sec, messages consumed/sec</li>
+  <li><strong>Business-specific:</strong> Orders/min, transactions/sec, searches/sec</li>
+</ul>
+
+<h3 class="sub">3. Errors</h3>
+<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">The rate of requests that fail. Three categories to track:</p>
+<ul class="content-list">
+  <li><strong>Explicit errors:</strong> HTTP 5xx responses — system failures</li>
+  <li><strong>Implicit errors:</strong> HTTP 200 but wrong content (e.g., search returns stale data, empty results for a valid query)</li>
+  <li><strong>Policy violations:</strong> Responses slower than SLO threshold count as "errors" for error budget (e.g., any response > 1s = "error")</li>
+</ul>
+
+<div class="ins">
+  <div class="insl">ERROR BUDGET CONCEPT</div>
+  <p>If your SLO is 99.9% availability, your error budget is 0.1% — about 43 minutes of downtime per 30-day window. This budget is "spent" on deployments, experiments, and inevitable failures. When the budget runs out, freeze changes and focus on reliability.</p>
+</div>
+
+<h3 class="sub">4. Saturation</h3>
+<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">How "full" the service is. Saturation is the ONLY golden signal that predicts future problems (the others are reactive).</p>
+<ul class="content-list">
+  <li><strong>CPU utilization:</strong> Consistently above 70%? Time to scale.</li>
+  <li><strong>Memory:</strong> How close to OOM? GC pressure increasing?</li>
+  <li><strong>Disk I/O:</strong> Approaching IOPS limits?</li>
+  <li><strong>Network:</strong> Bandwidth utilization nearing NIC capacity?</li>
+  <li><strong>Queue depth:</strong> Growing queues = consumers can't keep up</li>
+  <li><strong>Thread pool:</strong> All threads busy = requests start queuing</li>
+  <li><strong>Connection pool:</strong> No available connections = requests blocked</li>
+</ul>
+
+<div class="iq">"Saturation is unique among the four signals because it's predictive rather than reactive. A growing queue depth tells you the system WILL fail soon, even if it hasn't yet."</div>
+
+<h3 class="sub">Golden Signals by System Type</h3>
+<table class="tbl">
+  <thead><tr><th>System</th><th>Latency</th><th>Traffic</th><th>Errors</th><th>Saturation</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Web Service</strong></td><td>Request duration p50/p99</td><td>HTTP requests/sec</td><td>5xx rate, timeout rate</td><td>Thread pool, connection pool</td></tr>
+    <tr><td><strong>Database</strong></td><td>Query duration p99</td><td>Queries/sec, connections</td><td>Failed queries, deadlocks</td><td>Disk I/O, connection count</td></tr>
+    <tr><td><strong>Message Queue</strong></td><td>End-to-end message latency</td><td>Messages/sec (in & out)</td><td>Dead letter queue size</td><td>Consumer lag, partition count</td></tr>
+    <tr><td><strong>Cache (Redis)</strong></td><td>GET/SET latency</td><td>Operations/sec</td><td>Evictions, OOM errors</td><td>Memory usage %, key count</td></tr>
+    <tr><td><strong>Load Balancer</strong></td><td>Backend response time</td><td>Active connections</td><td>4xx/5xx from backends</td><td>Connection limit utilization</td></tr>
+  </tbody>
+</table>
+
+<div class="tip">
+  <div class="tipl">INTERVIEW TIP</div>
+  <p>When asked "what would you monitor for X?", always start with the Four Golden Signals customized for that system type. It shows you have a systematic approach rather than listing random metrics.</p>
+</div>
+</div>
+<div id="tab-reduse" class="sec">
+<h2 class="stitle">RED & USE Methods</h2>
+<div class="sdesc">Two complementary frameworks: RED for services (request-driven), USE for resources (infrastructure-driven).</div>
+
+<h3 class="sub">RED Method (for Services)</h3>
+<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">Created by Tom Wilkie (Grafana Labs). Use RED for any component that processes requests — microservices, APIs, web servers.</p>
+
+<div class="g3">
+  <div class="skill-box">
+    <h4 style="color:var(--red);">Rate</h4>
+    <ul>
+      <li>Requests per second</li>
+      <li>Segmented by endpoint</li>
+      <li>Shows traffic patterns</li>
+      <li>Detects traffic drops</li>
+    </ul>
+  </div>
+  <div class="skill-box">
+    <h4 style="color:var(--orange);">Errors</h4>
+    <ul>
+      <li>Failed requests per second</li>
+      <li>Error rate as percentage</li>
+      <li>By error code/type</li>
+      <li>Tracks user impact</li>
+    </ul>
+  </div>
+  <div class="skill-box">
+    <h4 style="color:var(--blue);">Duration</h4>
+    <ul>
+      <li>Latency distribution</li>
+      <li>p50, p95, p99</li>
+      <li>By endpoint/method</li>
+      <li>Histogram preferred</li>
+    </ul>
+  </div>
+</div>
+
+<h3 class="sub">USE Method (for Resources)</h3>
+<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">Created by Brendan Gregg. Use USE for any physical or virtual resource — CPU, memory, disk, network, GPUs.</p>
+
+<div class="g3">
+  <div class="skill-box">
+    <h4 style="color:var(--green);">Utilization</h4>
+    <ul>
+      <li>% time resource is busy</li>
+      <li>Or: % of capacity used</li>
+      <li>Example: CPU 85%</li>
+      <li>High = approaching limit</li>
+    </ul>
+  </div>
+  <div class="skill-box">
+    <h4 style="color:var(--yellow);">Saturation</h4>
+    <ul>
+      <li>Extra work that is queued</li>
+      <li>Or: work not being serviced</li>
+      <li>Example: run queue length</li>
+      <li>Any saturation = problem</li>
+    </ul>
+  </div>
+  <div class="skill-box">
+    <h4 style="color:var(--red);">Errors</h4>
+    <ul>
+      <li>Count of error events</li>
+      <li>Hardware errors (ECC)</li>
+      <li>Retransmissions</li>
+      <li>Disk errors, CRC failures</li>
+    </ul>
+  </div>
+</div>
+
+<h3 class="sub">When to Use Which</h3>
+<table class="tbl">
+  <thead><tr><th>Context</th><th>Method</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Microservice dashboard</td><td><strong>RED</strong></td><td>Services process requests — measure from the consumer's perspective</td></tr>
+    <tr><td>Kubernetes node monitoring</td><td><strong>USE</strong></td><td>Nodes are resources — measure capacity and saturation</td></tr>
+    <tr><td>Database monitoring</td><td><strong>Both</strong></td><td>RED for query serving (latency, errors, QPS) + USE for resources (disk, CPU, connections)</td></tr>
+    <tr><td>API Gateway</td><td><strong>RED</strong></td><td>Gateway's purpose is handling requests</td></tr>
+    <tr><td>Message broker</td><td><strong>RED + USE</strong></td><td>RED for message throughput + USE for broker resource utilization</td></tr>
+    <tr><td>Top-level service health</td><td><strong>RED</strong></td><td>Directly maps to user experience</td></tr>
+    <tr><td>Root cause investigation</td><td><strong>USE</strong></td><td>Pinpoints which resource is the bottleneck</td></tr>
+  </tbody>
+</table>
+
+<div class="iq">"I'd apply the RED method at the service layer — rate, errors, duration for each microservice — and the USE method at the infrastructure layer for CPU, memory, disk, and network. RED tells me if users are affected; USE tells me why."</div>
+
+<h3 class="sub">Relationship to Four Golden Signals</h3>
+<div class="ins">
+  <div class="insl">CONNECTION</div>
+  <p>The Four Golden Signals = RED + Saturation. RED covers Latency (Duration), Traffic (Rate), and Errors. Adding Saturation from USE gives you the complete picture. In an interview, mention all three frameworks to show breadth.</p>
+</div>
+</div>
+<div id="tab-sli" class="sec">
+<h2 class="stitle">SLI / SLO / SLA</h2>
+<div class="sdesc">The foundation of reliability engineering. These three concepts form a hierarchy from measurement to target to contract.</div>
+
+<div class="iq">"I'd start by defining SLIs for the core user journeys, then set SLOs that align with business requirements. The SLA is a business contract — it should be looser than our SLO so we have breathing room."</div>
+
+<h3 class="sub">Definitions</h3>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">SLI</span>
+    <span class="ct">Service Level Indicator — What You Measure</span>
+    <span class="db dh">FOUNDATION</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <p>A carefully defined quantitative measure of some aspect of the level of service provided. It must be something you can measure reliably.</p>
+    <h4 class="sub2">Good SLI Formula</h4>
+    <pre class="codeblock">SLI = (good events / total events) * 100%
+
+Example:
+SLI = (requests completing in &lt; 200ms) / (total requests) * 100%
+SLI = (successful non-5xx responses) / (total responses) * 100%</pre>
+    <h4 class="sub2">Good vs Bad SLI Examples</h4>
+    <table class="tbl">
+      <thead><tr><th>Good SLI</th><th>Bad SLI</th><th>Why Bad is Bad</th></tr></thead>
+      <tbody>
+        <tr><td>Proportion of requests &lt; 200ms</td><td>Average response time</td><td>Averages hide tail latency</td></tr>
+        <tr><td>% of successful checkout completions</td><td>Server uptime</td><td>Server can be "up" but returning errors</td></tr>
+        <tr><td>% of data retrievable within 24h</td><td>Disk health status</td><td>Disk can be "healthy" but data inaccessible</td></tr>
+        <tr><td>Ratio of requests without errors</td><td>Number of 5xx errors</td><td>Raw count depends on traffic volume</td></tr>
+      </tbody>
+    </table>
+    <div class="tip">
+      <div class="tipl">KEY PRINCIPLE</div>
+      <p>A good SLI measures the user's experience, not the system's internals. "Was the user's request handled correctly and quickly?" not "Is CPU below 80%?"</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">SLO</span>
+    <span class="ct">Service Level Objective — Your Target</span>
+    <span class="db dm">TARGET</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <p>A target value or range for an SLI. Example: "99.9% of requests complete in &lt; 200ms over a 30-day rolling window."</p>
+    <h4 class="sub2">SLO Anatomy</h4>
+    <pre class="codeblock">SLO = SLI + Target + Time Window
+
+"99.9% of checkout requests complete successfully
+ within 500ms over a rolling 30-day window"
+
+ ^--- Target     ^--- SLI definition       ^--- Window</pre>
+    <h4 class="sub2">Error Budget</h4>
+    <table class="tbl">
+      <thead><tr><th>SLO Target</th><th>Error Budget (30 days)</th><th>Practical Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>99%</td><td>1% = 7.2 hours</td><td>~14 minutes/day of allowed failure</td></tr>
+        <tr><td>99.9%</td><td>0.1% = 43.2 minutes</td><td>~86 seconds/day of allowed failure</td></tr>
+        <tr><td>99.95%</td><td>0.05% = 21.6 minutes</td><td>~43 seconds/day of allowed failure</td></tr>
+        <tr><td>99.99%</td><td>0.01% = 4.32 minutes</td><td>~8.6 seconds/day of allowed failure</td></tr>
+      </tbody>
+    </table>
+    <div class="warn">
+      <div class="warnl">COMMON MISTAKE</div>
+      <p>Don't set SLO at 100%. It's impossible, and it means zero error budget — no deployments, no experiments, no maintenance windows.</p>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="ch" onclick="toggle(this)">
+    <span class="cn">SLA</span>
+    <span class="ct">Service Level Agreement — Business Contract</span>
+    <span class="db de">CONTRACT</span>
+    <span class="chv">&#9654;</span>
+  </div>
+  <div class="cb">
+    <p>A formal contract with customers that specifies consequences (usually financial) for not meeting the agreed service level.</p>
+    <h4 class="sub2">Hierarchy</h4>
+    <pre class="codeblock">SLO (internal, tighter)  &gt;  SLA (external, looser)
+
+Example:
+  Internal SLO: 99.95% availability
+  External SLA: 99.9% availability
+
+  If SLO breaches → internal alert, freeze changes
+  If SLA breaches → customer refund/credits</pre>
+    <h4 class="sub2">Why SLO Must Be Tighter Than SLA</h4>
+    <ul class="content-list">
+      <li>SLO breach = early warning → fix before customers are contractually affected</li>
+      <li>Gives you a buffer to react before money is lost</li>
+      <li>Example: AWS S3's SLA is 99.9%, and providers generally run their internal SLO tighter than the SLA they contract to</li>
+    </ul>
+  </div>
+</div>
+
+<h3 class="sub">Practical Example: E-Commerce Checkout</h3>
+<table class="tbl">
+  <thead><tr><th>Component</th><th>SLI</th><th>SLO</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Checkout latency</td><td>% of checkouts completing in &lt; 2s</td><td>99.5% within 2s (30-day window)</td><td>Users abandon after 3s</td></tr>
+    <tr><td>Checkout success</td><td>% of checkout attempts succeeding (non-5xx)</td><td>99.9% success rate</td><td>Failed checkout = direct revenue loss</td></tr>
+    <tr><td>Payment processing</td><td>% of payment calls &lt; 5s with correct result</td><td>99.95% correctness</td><td>Money involved = higher bar</td></tr>
+    <tr><td>Search relevance</td><td>% of searches returning relevant top-10 results</td><td>95% relevance score</td><td>Lower bar — degraded search is tolerable</td></tr>
+    <tr><td>Page load time</td><td>% of page loads completing in &lt; 1s</td><td>99% within 1s</td><td>Impacts conversion but not correctness</td></tr>
+  </tbody>
+</table>
+
+<div class="iq">"For this checkout system, I'd define the SLI as the proportion of checkout requests that complete successfully within 2 seconds. The SLO would be 99.5% over a rolling 30-day window, giving us an error budget of about 3.6 hours per month for deployments and maintenance."</div>
+</div>
+<div id="tab-layers" class="sec">
+<h2 class="stitle">Three-Layer Dashboard</h2>
+<div class="sdesc">The correct way to structure any monitoring dashboard: Business → Service → Infrastructure. Always top-down, never bottom-up.</div>
+
+<div class="iq">"I'd design the dashboard in layers: the top gives business confidence in 3 seconds, the middle lets engineers localize the problem in 30 seconds, the bottom enables root cause analysis in 3 minutes."</div>
+
+<h3 class="sub">Dashboard Pyramid</h3>
+<div class="svg-container">
+<svg width="600" height="380" viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">
+  <!-- Pyramid background -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:0.1"/>
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:0.02"/>
+    </linearGradient>
+  </defs>
+  <!-- Layer 1: Business (top, small) -->
+  <polygon points="300,20 380,110 220,110" fill="#dcfce7" stroke="#137a39" stroke-width="2"/>
+  <text x="300" y="75" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#137a39">LAYER 1</text>
+  <text x="300" y="95" text-anchor="middle" font-family="Inter" font-size="10" fill="#166534">Business Health</text>
+  <!-- Layer 2: Service (middle) -->
+  <polygon points="220,120 380,120 440,220 160,220" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="300" y="160" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#1d4ed8">LAYER 2</text>
+  <text x="300" y="180" text-anchor="middle" font-family="Inter" font-size="10" fill="#1e40af">Service Health</text>
+  <text x="300" y="200" text-anchor="middle" font-family="Inter" font-size="9" fill="#1d4ed8">Per-service latency, errors, throughput</text>
+  <!-- Layer 3: Infrastructure (bottom, widest) -->
+  <polygon points="160,230 440,230 520,340 80,340" fill="#fef3c7" stroke="#a15408" stroke-width="2"/>
+  <text x="300" y="270" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#a15408">LAYER 3</text>
+  <text x="300" y="290" text-anchor="middle" font-family="Inter" font-size="10" fill="#92400e">Infrastructure</text>
+  <text x="300" y="310" text-anchor="middle" font-family="Inter" font-size="9" fill="#b45309">CPU, memory, disk, network, pods</text>
+  <!-- Right labels -->
+  <text x="460" y="70" font-family="Inter" font-size="10" fill="#137a39" font-weight="600">3 sec glance</text>
+  <text x="460" y="85" font-family="Inter" font-size="9" fill="#526176">Manager's view</text>
+  <line x1="390" y1="70" x2="450" y2="70" stroke="#137a39" stroke-width="1" stroke-dasharray="3"/>
+  <text x="460" y="165" font-family="Inter" font-size="10" fill="#2563eb" font-weight="600">30 sec localize</text>
+  <text x="460" y="180" font-family="Inter" font-size="9" fill="#526176">Engineer's view</text>
+  <line x1="410" y1="170" x2="450" y2="170" stroke="#2563eb" stroke-width="1" stroke-dasharray="3"/>
+  <text x="460" y="280" font-family="Inter" font-size="10" fill="#a15408" font-weight="600">3 min root cause</text>
+  <text x="460" y="295" font-family="Inter" font-size="9" fill="#526176">SRE deep dive</text>
+  <line x1="410" y1="285" x2="450" y2="285" stroke="#a15408" stroke-width="1" stroke-dasharray="3"/>
+  <!-- Arrow on left -->
+  <line x1="60" y1="50" x2="60" y2="330" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#526176"/></marker></defs>
+  <text x="55" y="45" text-anchor="middle" font-family="Inter" font-size="9" fill="#526176">Start here</text>
+  <text x="55" y="345" text-anchor="middle" font-family="Inter" font-size="9" fill="#526176">Drill down</text>
+  <!-- Bottom annotation -->
+  <text x="300" y="370" text-anchor="middle" font-family="Inter" font-size="11" fill="#1e293b" font-weight="600">Always read top-down. Never start at the bottom.</text>
+</svg>
+</div>
+
+<h3 class="sub">Layer 1 — Business Health (Manager's View)</h3>
+<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">The top of the dashboard. A manager should be able to glance at it for 3 seconds and know if the business is healthy.</p>
+<table class="tbl">
+  <thead><tr><th>Metric</th><th>Example</th><th>Alert Condition</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Revenue per minute</strong></td><td>$2,450/min (normal), <span style="color:var(--red)">$800/min (alert)</span></td><td>&gt;30% drop from rolling avg</td></tr>
+    <tr><td><strong>Orders per minute</strong></td><td>125 orders/min baseline</td><td>&gt;25% drop for &gt;5 minutes</td></tr>
+    <tr><td><strong>User-facing error rate</strong></td><td>0.05% of all page loads show error</td><td>&gt;1% for &gt;2 minutes</td></tr>
+    <tr><td><strong>Core journey success rate</strong></td><td>Checkout completion: 99.7%</td><td>Below SLO (99.5%)</td></tr>
+    <tr><td><strong>Apdex score</strong></td><td>0.95 = (satisfied + tolerating/2) / total</td><td>Below 0.85</td></tr>
+    <tr><td><strong>Active users (real-time)</strong></td><td>12,500 concurrent users</td><td>&gt;40% drop in 10 min</td></tr>
+  </tbody>
+</table>
+
+<h3 class="sub">Layer 2 — Service Health (Engineer's View)</h3>
+<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">Which specific service is causing the business metric to degrade? Engineer can localize in 30 seconds.</p>
+<table class="tbl">
+  <thead><tr><th>Metric</th><th>Per-Service View</th><th>Why It Matters</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Latency p50/p95/p99</strong></td><td>Payment service: p99 = 450ms</td><td>Identifies slow services</td></tr>
+    <tr><td><strong>Error rate by service</strong></td><td>Inventory service: 2.3% errors</td><td>Pinpoints failing service</td></tr>
+    <tr><td><strong>Throughput</strong></td><td>Search service: 8,200 req/s</td><td>Detects traffic imbalance</td></tr>
+    <tr><td><strong>Dependency health</strong></td><td>Redis: healthy, PostgreSQL: degraded</td><td>External dependency failures</td></tr>
+    <tr><td><strong>Queue depth / consumer lag</strong></td><td>Order queue: 45,000 pending</td><td>Consumers can't keep up</td></tr>
+    <tr><td><strong>Cache hit ratio</strong></td><td>Product cache: 94% hits</td><td>Drop in hit ratio = more DB load</td></tr>
+    <tr><td><strong>Connection pool utilization</strong></td><td>DB pool: 180/200 used</td><td>Near exhaustion = imminent failure</td></tr>
+  </tbody>
+</table>
+
+<h3 class="sub">Layer 3 — Infrastructure (Root Cause)</h3>
+<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">Once you know WHICH service is failing, drill down to WHY at the infrastructure level.</p>
+<table class="tbl">
+  <thead><tr><th>Metric</th><th>What to Look For</th><th>Common Root Causes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>CPU per instance</strong></td><td>Individual host hotspots</td><td>Infinite loop, expensive computation</td></tr>
+    <tr><td><strong>Memory per instance</strong></td><td>Growing usage over time</td><td>Memory leak, cache unbounded</td></tr>
+    <tr><td><strong>Disk I/O (IOPS, latency)</strong></td><td>Read/write latency spikes</td><td>Noisy neighbor, disk degradation</td></tr>
+    <tr><td><strong>Network (bandwidth, errors)</strong></td><td>Packet loss, retransmissions</td><td>NIC saturation, MTU issues</td></tr>
+    <tr><td><strong>Pod count / autoscaler</strong></td><td>HPA at max replicas</td><td>Scale limit reached, need vertical scale</td></tr>
+    <tr><td><strong>GC pauses</strong></td><td>Frequent long GC pauses</td><td>Heap too large, object retention</td></tr>
+    <tr><td><strong>Thread count</strong></td><td>Stuck threads, deadlocks</td><td>Lock contention, blocking I/O</td></tr>
+    <tr><td><strong>DB replication lag</strong></td><td>Replica falls behind primary</td><td>Write burst, network partition</td></tr>
+  </tbody>
+</table>
+
+<div class="tip">
+  <div class="tipl">INTERVIEW TIP</div>
+  <p>In the interview, explicitly say "I'd organize the dashboard in three layers" and explain the drill-down flow: "If Layer 1 shows orders dropping, I'd check Layer 2 to see which service is failing, then Layer 3 to find the resource bottleneck."</p>
+</div>
+</div>
+<div id="tab-metrics" class="sec">
+<h2 class="stitle">Metrics Design</h2>
+<div class="sdesc">How to design metrics that scale: naming conventions, types, cardinality management, and dimensional data.</div>
+
+<h3 class="sub">Metric Types</h3>
+<table class="tbl">
+  <thead><tr><th>Type</th><th>Description</th><th>Example</th><th>Operations</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Counter</strong></td><td>Monotonically increasing value. Only goes up (or resets to 0).</td><td><code>http_requests_total</code></td><td>rate(), increase()</td></tr>
+    <tr><td><strong>Gauge</strong></td><td>Value that can go up or down. A snapshot.</td><td><code>temperature_celsius</code></td><td>Direct value, min/max/avg</td></tr>
+    <tr><td><strong>Histogram</strong></td><td>Samples observations into configurable buckets; buckets counted client-side, quantiles computed server-side and aggregatable across instances.</td><td><code>request_duration_seconds</code></td><td>histogram_quantile()</td></tr>
+    <tr><td><strong>Summary</strong></td><td>Like histogram but calculates quantiles on the client. Cannot be aggregated across instances.</td><td><code>rpc_duration_seconds</code></td><td>Pre-calculated quantiles</td></tr>
+  </tbody>
+</table>
+
+<div class="warn">
+  <div class="warnl">HISTOGRAM vs SUMMARY</div>
+  <p>Prefer <strong>Histogram</strong> in almost all cases. Histograms can be aggregated across instances (sum the buckets), while Summaries cannot. Summaries are only useful when you need exact quantiles from a single instance.</p>
+</div>
+
+<h3 class="sub">Naming Conventions</h3>
+<pre class="codeblock"># Pattern: {service}_{component}_{what}_{unit}_{suffix}
+
+# Good examples:
+payment_checkout_duration_seconds_bucket    # histogram bucket
+payment_checkout_requests_total             # counter
+payment_checkout_errors_total               # counter
+inventory_stock_level_items                 # gauge
+search_query_duration_seconds_sum           # histogram sum
+order_queue_depth_messages                  # gauge
+
+# Bad examples:
+latency                    # no context, what service? what unit?
+request_time               # is it seconds? milliseconds?
+errors                     # for what? total or rate?
+cpu                        # utilization? time? cores?</pre>
+
+<div class="ins">
+  <div class="insl">PROMETHEUS CONVENTIONS</div>
+  <p>Suffix with unit (<code>_seconds</code>, <code>_bytes</code>, <code>_total</code>). Use <code>_total</code> for counters. Use base units (seconds not milliseconds, bytes not megabytes). Snake_case always.</p>
+</div>
+
+<h3 class="sub">Cardinality — The Silent Killer</h3>
+<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">Cardinality = number of unique time series. Each unique combination of metric name + label values = one time series.</p>
+
+<pre class="codeblock"># This is FINE (low cardinality):
+http_requests_total{method="GET", status="200", service="payment"}
+# Labels: ~5 methods × ~10 status codes × ~20 services = 1,000 series
+
+# This KILLS your monitoring system (high cardinality):
+http_requests_total{method="GET", status="200", user_id="abc123"}
+# Labels: ~5 methods × ~10 codes × 10,000,000 users = 500,000,000 series !!!</pre>
+
+<div class="trap">
+  <div class="trapl">CARDINALITY EXPLOSION</div>
+  <p>NEVER use unbounded labels: user_id, email, request_id, session_id, IP address. Each unique value creates a new time series. 10M users = 10M time series per metric = your monitoring system OOMs and dies.</p>
+</div>
+
+<h4 class="sub2">Safe Label Cardinality Guidelines</h4>
+<table class="tbl">
+  <thead><tr><th>Label</th><th>Cardinality</th><th>Safe?</th></tr></thead>
+  <tbody>
+    <tr><td><code>method</code> (GET, POST, PUT, DELETE)</td><td>~5</td><td style="color:var(--green)">Safe</td></tr>
+    <tr><td><code>status_code</code> (200, 201, 400, 404, 500)</td><td>~15</td><td style="color:var(--green)">Safe</td></tr>
+    <tr><td><code>service</code> (payment, search, inventory)</td><td>~20-50</td><td style="color:var(--green)">Safe</td></tr>
+    <tr><td><code>region</code> (us-east-1, eu-west-1)</td><td>~10-20</td><td style="color:var(--green)">Safe</td></tr>
+    <tr><td><code>endpoint</code> (/api/v1/orders, /api/v1/users)</td><td>~50-200</td><td style="color:var(--yellow)">Careful</td></tr>
+    <tr><td><code>customer_tier</code> (free, pro, enterprise)</td><td>~3-5</td><td style="color:var(--green)">Safe</td></tr>
+    <tr><td><code>user_id</code></td><td>Millions</td><td style="color:var(--red)">NEVER</td></tr>
+    <tr><td><code>request_id</code></td><td>Infinite</td><td style="color:var(--red)">NEVER</td></tr>
+    <tr><td><code>ip_address</code></td><td>Millions</td><td style="color:var(--red)">NEVER</td></tr>
+  </tbody>
+</table>
+
+<div class="iq">"For high-cardinality data like user_id or request_id, I'd use logs or traces, not metrics. Metrics are for aggregate patterns — low-cardinality labels that let you slice by region, service, and method without exploding the time series count."</div>
+
+<h3 class="sub">Percentile Calculation Pitfall</h3>
+<div class="skill-box">
+  <h4>Why You Cannot Average Percentiles</h4>
+  <ul>
+    <li><strong>Scenario:</strong> 3 instances, each reports p99 = 100ms, 150ms, 200ms</li>
+    <li><strong>Wrong:</strong> Average them → p99 = 150ms</li>
+    <li><strong>Right:</strong> Merge the underlying histograms, then compute p99 from the merged data</li>
+    <li><strong>Why:</strong> Percentiles are not linear; the 99th percentile of combined traffic depends on the distribution, not the average of individual percentiles</li>
+    <li><strong>Solution:</strong> Use Prometheus histograms with <code>histogram_quantile()</code> — it merges bucket counts across instances before calculating</li>
+  </ul>
+</div>
+</div>
+<div id="tab-alerting" class="sec">
+<h2 class="stitle">Alerting Strategy</h2>
+<div class="sdesc">Alert fatigue kills on-call engineers. The key principle: alert on SYMPTOMS not CAUSES, and every alert must be actionable.</div>
+
+<div class="iq">"Rather than alert on individual host CPU, I'd alert on user-facing symptoms — if error rate exceeds our error budget burn rate, that's a page. CPU alerts become informational, not paging."</div>
+
+<h3 class="sub">Symptoms vs Causes</h3>
+<div class="g2">
+  <div class="skill-box">
+    <h4 style="color:var(--green);">Alert on Symptoms (Good)</h4>
+    <ul>
+      <li>Error rate &gt; 1% for 5 minutes</li>
+      <li>p99 latency &gt; 2s for 10 minutes</li>
+      <li>Checkout success rate below SLO</li>
+      <li>Zero orders for 3 minutes</li>
+      <li>Error budget burn rate &gt; 14.4x</li>
+    </ul>
+  </div>
+  <div class="skill-box">
+    <h4 style="color:var(--red);">Alert on Causes (Bad)</h4>
+    <ul>
+      <li>Memory &gt; 90% (might be normal for JVM)</li>
+      <li>CPU &gt; 80% (self-corrects; not user-visible on its own)</li>
+      <li>Disk &gt; 70% <em>as a static threshold</em> (too early) — but note disk is the exception: it doesn't self-heal, so DO page on <em>projected time-to-full</em> (e.g. &lt;4h at current growth)</li>
+      <li>1 node down (might be normal in k8s)</li>
+      <li>GC pause &gt; 200ms (might not affect users)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="ins">
+  <div class="insl">KEY PRINCIPLE</div>
+  <p>Cause-based alerts have too many false positives. CPU at 85% with autoscaling enabled? Not a problem. But error rate at 2%? ALWAYS a problem regardless of which resource caused it. Alert on what users experience.</p>
+</div>
+
+<h3 class="sub">Severity Levels</h3>
+<table class="tbl">
+  <thead><tr><th>Severity</th><th>Response</th><th>Example</th><th>Response Target</th></tr></thead>
+  <tbody>
+    <tr><td><strong style="color:var(--red)">P1 — Critical</strong></td><td>Page immediately, wake people up</td><td>Complete service outage, data loss risk</td><td>&lt; 5 minutes</td></tr>
+    <tr><td><strong style="color:var(--orange)">P2 — High</strong></td><td>Page during business hours</td><td>Significant degradation, SLO breach</td><td>&lt; 30 minutes</td></tr>
+    <tr><td><strong style="color:var(--yellow)">P3 — Medium</strong></td><td>Ticket, address within 24h</td><td>Non-critical component degraded</td><td>&lt; 4 hours</td></tr>
+    <tr><td><strong style="color:var(--green)">P4 — Low</strong></td><td>Ticket, address within sprint</td><td>Performance degradation, no user impact yet</td><td>&lt; 1 week</td></tr>
+    <tr><td><strong style="color:var(--text3)">P5 — Info</strong></td><td>Weekly review, trending</td><td>Capacity trending upward, minor anomalies</td><td>Weekly review</td></tr>
+  </tbody>
+</table>
+
+<h3 class="sub">Multi-Window / Multi-Burn-Rate Alerting</h3>
+<p style="font-size:13px;color:var(--text2);margin-bottom:10px;">From Google's Site Reliability Workbook, the "Alerting on SLOs" chapter. Combines fast detection with low false-positive rate.</p>
+
+<div class="skill-box">
+  <h4>Burn Rate Concept</h4>
+  <ul>
+    <li><strong>Burn rate 1x:</strong> Budget consumed exactly on pace — exhausts by end of the 30-day window. Normal consumption, no action.</li>
+    <li><strong>Burn rate 14.4x:</strong> Exhausts the budget in ~2 days — fast burn, page immediately</li>
+    <li><strong>Burn rate 6x:</strong> Exhausts in ~5 days — page during business hours</li>
+    <li><strong>Burn rate 3x:</strong> Exhausts in ~10 days — slow burn, ticket</li>
+  </ul>
+</div>
+
+<table class="tbl">
+  <thead><tr><th>Burn Rate</th><th>Short Window</th><th>Long Window</th><th>Severity</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>14.4x</td><td>5 minutes</td><td>1 hour</td><td>P1 — Page</td><td>Immediate response, likely outage</td></tr>
+    <tr><td>6x</td><td>30 minutes</td><td>6 hours</td><td>P2 — Page (business hours)</td><td>Significant issue, investigate soon</td></tr>
+    <tr><td>3x</td><td>2 hours</td><td>1 day</td><td>P3 — Ticket</td><td>Slow burn, address within 24h</td></tr>
+    <tr><td>1x</td><td>6 hours</td><td>3 days</td><td>P5 — Review</td><td>Monitor trend, plan capacity</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <div class="notel">WHY TWO WINDOWS</div>
+  <p><strong>Short window:</strong> Ensures the problem is currently happening (not just a spike from 30 min ago). <strong>Long window:</strong> Ensures it's sustained and not a momentary blip. Both conditions must be true to fire.</p>
+</div>
+
+<h3 class="sub">Alert Fatigue Prevention</h3>
+<ul class="content-list">
+  <li><strong>Every alert must be actionable:</strong> If no one does anything when it fires, delete it</li>
+  <li><strong>Every page-level alert needs a runbook:</strong> Link in the alert → "what to do first"</li>
+  <li><strong>Review alert volume weekly:</strong> &gt;2 pages/week per person = burnout and ignoring alerts</li>
+  <li><strong>Snooze / auto-resolve:</strong> Alerts that auto-resolve in &lt;2 min should be downgraded</li>
+  <li><strong>Aggregate related alerts:</strong> "5 hosts high CPU" should be 1 alert, not 5</li>
+  <li><strong>Silence during maintenance:</strong> Scheduled deploys should auto-silence related alerts</li>
+</ul>
+
+<div class="iq">"I'd follow Google's multi-window, multi-burn-rate approach. A 14.4x burn rate over a 5-minute window AND 1-hour window means we'll exhaust our monthly error budget in 2 days — that's a P1 page. A 3x burn rate over 2 hours is a ticket for the next business day."</div>
+</div>
+<div id="tab-tracing" class="sec">
+<h2 class="stitle">Distributed Tracing</h2>
+<div class="sdesc">When a request touches 10 services, where is the bottleneck? Tracing answers "WHERE in the system" by following a request end-to-end.</div>
+
+<div class="iq">"The three pillars of observability are metrics, logs, and traces. Metrics tell you WHAT is wrong, logs tell you WHY, traces tell you WHERE in the distributed system the problem is occurring."</div>
+
+<h3 class="sub">Core Concepts</h3>
+<table class="tbl">
+  <thead><tr><th>Concept</th><th>Definition</th><th>Analogy</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Trace</strong></td><td>The entire journey of a request through all services</td><td>A complete order delivery from click to doorstep</td></tr>
+    <tr><td><strong>Span</strong></td><td>One unit of work within a trace (one service call)</td><td>One stop on the delivery route</td></tr>
+    <tr><td><strong>SpanContext</strong></td><td>Metadata propagated between services (trace_id, span_id, flags)</td><td>The tracking number on the package</td></tr>
+    <tr><td><strong>Parent Span</strong></td><td>The span that initiated a child span</td><td>The service that called another service</td></tr>
+    <tr><td><strong>Baggage</strong></td><td>Key-value pairs propagated along with context</td><td>Extra metadata riding along with the request</td></tr>
+  </tbody>
+</table>
+
+<h3 class="sub">Trace Waterfall Diagram</h3>
+<div class="svg-container">
+<svg width="700" height="320" viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg">
+  <!-- Timeline header -->
+  <text x="160" y="20" font-family="Inter" font-size="10" fill="#526176">0ms</text>
+  <text x="280" y="20" font-family="Inter" font-size="10" fill="#526176">100ms</text>
+  <text x="400" y="20" font-family="Inter" font-size="10" fill="#526176">200ms</text>
+  <text x="520" y="20" font-family="Inter" font-size="10" fill="#526176">300ms</text>
+  <text x="640" y="20" font-family="Inter" font-size="10" fill="#526176">400ms</text>
+  <!-- Grid lines -->
+  <line x1="160" y1="25" x2="160" y2="300" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="280" y1="25" x2="280" y2="300" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="400" y1="25" x2="400" y2="300" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="520" y1="25" x2="520" y2="300" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3"/>
+  <line x1="640" y1="25" x2="640" y2="300" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3"/>
+  <!-- Span 1: API Gateway (full width) -->
+  <text x="10" y="55" font-family="Inter" font-size="11" fill="#1e293b" font-weight="600">API Gateway</text>
+  <rect x="160" y="42" width="500" height="22" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="400" y="57" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#1e40af">420ms (trace_id: abc-123)</text>
+  <!-- Span 2: Auth Service -->
+  <text x="10" y="95" font-family="Inter" font-size="11" fill="#1e293b" font-weight="600">Auth Service</text>
+  <rect x="175" y="82" width="60" height="22" rx="4" fill="#dcfce7" stroke="#137a39" stroke-width="1.5"/>
+  <text x="205" y="97" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#166534">50ms</text>
+  <!-- Span 3: Order Service -->
+  <text x="10" y="135" font-family="Inter" font-size="11" fill="#1e293b" font-weight="600">Order Service</text>
+  <rect x="250" y="122" width="360" height="22" rx="4" fill="#fef3c7" stroke="#a15408" stroke-width="1.5"/>
+  <text x="430" y="137" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#92400e">300ms</text>
+  <!-- Span 4: Inventory Check -->
+  <text x="10" y="175" font-family="Inter" font-size="11" fill="#1e293b" font-weight="600">Inventory DB</text>
+  <rect x="270" y="162" width="100" height="22" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="320" y="177" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#5b21b6">80ms</text>
+  <!-- Span 5: Payment Service (SLOW - highlighted) -->
+  <text x="10" y="215" font-family="Inter" font-size="11" fill="#c21f1f" font-weight="700">Payment Svc</text>
+  <rect x="385" y="202" width="200" height="22" rx="4" fill="#fee2e2" stroke="#c21f1f" stroke-width="2"/>
+  <text x="485" y="217" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#c21f1f" font-weight="600">170ms SLOW</text>
+  <!-- Span 6: Payment DB -->
+  <text x="10" y="255" font-family="Inter" font-size="11" fill="#1e293b" font-weight="600">Payment DB</text>
+  <rect x="400" y="242" width="160" height="22" rx="4" fill="#fee2e2" stroke="#c21f1f" stroke-width="1.5"/>
+  <text x="480" y="257" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#c21f1f">140ms (bottleneck!)</text>
+  <!-- Span 7: Notification -->
+  <text x="10" y="295" font-family="Inter" font-size="11" fill="#1e293b" font-weight="600">Notification</text>
+  <rect x="600" y="282" width="50" height="22" rx="4" fill="#ccfbf1" stroke="#0e7268" stroke-width="1.5"/>
+  <text x="625" y="297" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#0e7268">async</text>
+  <!-- Connection arrows -->
+  <line x1="205" y1="64" x2="205" y2="82" stroke="#5b6b7f" stroke-width="1"/>
+  <line x1="430" y1="64" x2="430" y2="122" stroke="#5b6b7f" stroke-width="1"/>
+  <line x1="320" y1="144" x2="320" y2="162" stroke="#5b6b7f" stroke-width="1"/>
+  <line x1="485" y1="144" x2="485" y2="202" stroke="#5b6b7f" stroke-width="1"/>
+  <line x1="480" y1="224" x2="480" y2="242" stroke="#5b6b7f" stroke-width="1"/>
+  <line x1="610" y1="144" x2="625" y2="282" stroke="#5b6b7f" stroke-width="1" stroke-dasharray="3"/>
+</svg>
+</div>
+
+<div class="tip">
+  <div class="tipl">READING THE WATERFALL</div>
+  <p>In this trace, the total request took 420ms. The bottleneck is Payment DB at 140ms — it accounts for 33% of the total latency. The notification service is async (fire-and-forget), so it doesn't add to user-perceived latency.</p>
+</div>
+
+<h3 class="sub">OpenTelemetry (OTel)</h3>
+<ul class="content-list">
+  <li><strong>What:</strong> The vendor-neutral standard for telemetry data (traces, metrics, logs)</li>
+  <li><strong>SDK:</strong> Instrument your code to generate spans</li>
+  <li><strong>Collector:</strong> Receives, processes, and exports telemetry data</li>
+  <li><strong>Propagation:</strong> W3C TraceContext headers pass trace_id between services</li>
+  <li><strong>Backend:</strong> Jaeger, Zipkin, Tempo, Datadog, Honeycomb for storage + query</li>
+</ul>
+
+<pre class="codeblock"># W3C TraceContext propagation header:
+traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+             ^   ^                                ^                 ^
+          version  trace-id (128-bit)         parent-span-id      flags (sampled)</pre>
+
+<h3 class="sub">Sampling Strategies</h3>
+<table class="tbl">
+  <thead><tr><th>Strategy</th><th>When to Use</th><th>Trade-off</th></tr></thead>
+  <tbody>
+    <tr><td><strong>100% (all traffic)</strong></td><td>Dev/staging, low-traffic services</td><td>Full visibility but high cost</td></tr>
+    <tr><td><strong>Probabilistic (1-10%)</strong></td><td>High-traffic production services</td><td>Misses rare issues</td></tr>
+    <tr><td><strong>Rate-limited (100 traces/sec)</strong></td><td>Very high traffic, cost-sensitive</td><td>Good baseline, caps cost</td></tr>
+    <tr><td><strong>Tail-based (keep if slow/error)</strong></td><td>When you need all error traces</td><td>Complex, requires buffering at collector</td></tr>
+    <tr><td><strong>Always sample errors</strong></td><td>Combined with probabilistic for success</td><td>Best practice: 1% success + 100% errors</td></tr>
+  </tbody>
+</table>
+
+<div class="iq">"For a high-traffic production system, I'd use tail-based sampling at the collector level — keep all traces that have errors or high latency, and probabilistically sample 1-5% of successful fast requests. This gives us full debugging power for incidents while controlling storage costs."</div>
+
+<h3 class="sub">Correlating Traces with Logs and Metrics</h3>
+<ul class="content-list">
+  <li><strong>Trace → Logs:</strong> Include <code>trace_id</code> in every log line. Click trace → see all logs for that request.</li>
+  <li><strong>Metrics → Traces:</strong> Exemplars in Prometheus link a metric data point to a specific trace_id.</li>
+  <li><strong>Logs → Traces:</strong> Parse trace_id from log, link to trace visualization.</li>
+</ul>
+<pre class="codeblock"># Structured log with trace context:
+{
+  "timestamp": "2024-01-15T10:30:45Z",
+  "level": "ERROR",
+  "service": "payment-service",
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "span_id": "00f067aa0ba902b7",
+  "message": "Payment declined: insufficient funds",
+  "user_id_hash": "a3f2...",
+  "amount": 99.99,
+  "error_code": "INSUFFICIENT_FUNDS"
+}</pre>
+</div>
+<div id="tab-logging" class="sec">
+<h2 class="stitle">Log Aggregation</h2>
+<div class="sdesc">Structured logging, correlation IDs, log pipelines, and cost management for distributed systems.</div>
+
+<h3 class="sub">Structured vs Unstructured Logging</h3>
+<div class="g2">
+  <div class="skill-box">
+    <h4 style="color:var(--red);">Unstructured (Bad)</h4>
+    <ul>
+      <li><code>2024-01-15 10:30:45 ERROR Payment failed for user 123 amount $99.99</code></li>
+      <li>Hard to parse programmatically</li>
+      <li>Can't filter by field</li>
+      <li>Grep is your only tool</li>
+      <li>Different formats per service</li>
+    </ul>
+  </div>
+  <div class="skill-box">
+    <h4 style="color:var(--green);">Structured JSON (Good)</h4>
+    <ul>
+      <li>Machine-parseable fields</li>
+      <li>Easy to filter, aggregate, alert</li>
+      <li>Consistent schema across services</li>
+      <li>Indexable by log platform</li>
+      <li>Links to traces via trace_id</li>
+    </ul>
+  </div>
+</div>
+
+<pre class="codeblock"># Structured log example (production-ready):
+{
+  "timestamp": "2024-01-15T10:30:45.123Z",
+  "level": "ERROR",
+  "logger": "com.payment.CheckoutService",
+  "service": "payment-service",
+  "instance": "payment-pod-7b4f9",
+  "trace_id": "abc123def456",
+  "span_id": "span789",
+  "request_id": "req-uuid-001",
+  "message": "Payment processing failed",
+  "error": {
+    "type": "InsufficientFundsException",
+    "message": "Balance $45.00 less than amount $99.99"
+  },
+  "context": {
+    "order_id": "ORD-12345",
+    "payment_method": "credit_card",
+    "amount_cents": 9999,
+    "currency": "USD"
+  }
+}</pre>
+
+<h3 class="sub">Log Levels</h3>
+<table class="tbl">
+  <thead><tr><th>Level</th><th>When to Use</th><th>Production?</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td><strong>FATAL</strong></td><td>Application is crashing, cannot continue</td><td>Always</td><td>Cannot connect to database, OOM</td></tr>
+    <tr><td><strong>ERROR</strong></td><td>Request failed, but app continues</td><td>Always</td><td>Payment declined, API timeout</td></tr>
+    <tr><td><strong>WARN</strong></td><td>Unexpected but handled; potential problem</td><td>Always</td><td>Retry succeeded, cache miss, approaching limit</td></tr>
+    <tr><td><strong>INFO</strong></td><td>Normal but significant business events</td><td>Selective</td><td>Order placed, user registered, deployment started</td></tr>
+    <tr><td><strong>DEBUG</strong></td><td>Detailed diagnostic information</td><td>Off (or sampled)</td><td>SQL query, cache hit/miss details, request body</td></tr>
+    <tr><td><strong>TRACE</strong></td><td>Very fine-grained, step-by-step execution</td><td>Off</td><td>Entering method X, variable value Y</td></tr>
+  </tbody>
+</table>
+
+<div class="warn">
+  <div class="warnl">COST CONTROL</div>
+  <p>In production: log at WARN and above by default. INFO only for business events. NEVER log full request/response bodies — they contain PII and explode storage costs. Use DEBUG only with dynamic log level changes for targeted debugging.</p>
+</div>
+
+<h3 class="sub">Correlation IDs</h3>
+<ul class="content-list">
+  <li><strong>request_id:</strong> Generated at the edge (API gateway/load balancer), propagated to all downstream services</li>
+  <li><strong>trace_id:</strong> From distributed tracing (OpenTelemetry), links logs to trace waterfall</li>
+  <li><strong>session_id:</strong> Groups all requests from one user session</li>
+  <li><strong>correlation_id:</strong> For async flows — links the initial request to eventual processing</li>
+</ul>
+
+<div class="ins">
+  <div class="insl">DEBUGGING WORKFLOW</div>
+  <p>User reports issue → find their request_id from the edge log → search all services for that request_id → see the complete journey → find the error. Without correlation IDs, debugging distributed systems is nearly impossible.</p>
+</div>
+
+<h3 class="sub">Log Pipeline Architecture</h3>
+<pre class="codeblock">Application → Log Agent → Buffer/Queue → Processing → Storage → Query UI
+
+Concrete example:
+App (stdout) → Fluentd/Vector → Kafka → Logstash/Flink → Elasticsearch → Kibana
+                                                         → S3 (cold archive)
+
+Alternative (managed):
+App → CloudWatch Agent → CloudWatch Logs → CloudWatch Insights
+App → Datadog Agent → Datadog Log Management</pre>
+
+<h3 class="sub">Log Retention Strategy</h3>
+<table class="tbl">
+  <thead><tr><th>Tier</th><th>Duration</th><th>Storage</th><th>Query Speed</th><th>Cost</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Hot</strong></td><td>7 days</td><td>Elasticsearch (SSD)</td><td>&lt; 1 second</td><td>$$$</td></tr>
+    <tr><td><strong>Warm</strong></td><td>30 days</td><td>Elasticsearch (HDD) or reduced replicas</td><td>1-10 seconds</td><td>$$</td></tr>
+    <tr><td><strong>Cold</strong></td><td>1 year</td><td>S3 / Glacier</td><td>Minutes (restore needed)</td><td>$</td></tr>
+    <tr><td><strong>Archive</strong></td><td>7 years (compliance)</td><td>S3 Glacier Deep Archive</td><td>Hours</td><td>Cents</td></tr>
+  </tbody>
+</table>
+
+<div class="iq">"For the logging pipeline, I'd have applications emit structured JSON to stdout, collected by a DaemonSet agent like Fluentd. Logs flow through Kafka for buffering, then to Elasticsearch for hot search. After 7 days, they age to warm storage, and after 30 days to S3 for cold archive. Correlation IDs in every log line let me trace a request across all services."</div>
+</div>
+<div id="tab-architecture" class="sec">
+<h2 class="stitle">Monitoring Architecture</h2>
+<div class="sdesc">The infrastructure that powers your observability: collection, storage, querying, and visualization.</div>
+
+<h3 class="sub">Push vs Pull Collection</h3>
+<div class="g2">
+  <div class="skill-box">
+    <h4 style="color:var(--blue);">Pull-Based (Prometheus)</h4>
+    <ul>
+      <li>Server scrapes /metrics endpoints</li>
+      <li>Knows which targets exist (service discovery)</li>
+      <li>Can detect DOWN targets (scrape fails)</li>
+      <li>Simple: just expose an HTTP endpoint</li>
+      <li>Challenge: ephemeral targets, firewalls</li>
+      <li>Good for: Kubernetes, known infrastructure</li>
+    </ul>
+  </div>
+  <div class="skill-box">
+    <h4 style="color:var(--green);">Push-Based (StatsD, Datadog, CloudWatch)</h4>
+    <ul>
+      <li>Agents push data to central collector</li>
+      <li>Works behind NAT/firewalls</li>
+      <li>Good for ephemeral (Lambda, batch jobs)</li>
+      <li>Challenge: can't detect "silent failure" (not pushing = dead or just quiet?)</li>
+      <li>Good for: serverless, short-lived processes</li>
+    </ul>
+  </div>
+</div>
+
+<table class="tbl">
+  <thead><tr><th>Aspect</th><th>Pull (Prometheus)</th><th>Push (Datadog/CloudWatch)</th></tr></thead>
+  <tbody>
+    <tr><td>Discovery</td><td>Needs service discovery (k8s, consul)</td><td>Agents self-register on startup</td></tr>
+    <tr><td>Failure detection</td><td>Scrape failure = target down</td><td>Need heartbeat/staleness detection</td></tr>
+    <tr><td>Firewalls</td><td>Server must reach targets</td><td>Agents push outbound (easier)</td></tr>
+    <tr><td>Short-lived jobs</td><td>Hard (use Pushgateway)</td><td>Natural fit</td></tr>
+    <tr><td>Scale</td><td>Federation or Thanos/Cortex</td><td>Managed by vendor</td></tr>
+  </tbody>
+</table>
+
+<h3 class="sub">Monitoring Architecture Diagram</h3>
+<div class="svg-container">
+<svg width="720" height="440" viewBox="0 0 720 440" xmlns="http://www.w3.org/2000/svg">
+  <!-- Title -->
+  <text x="360" y="20" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#0f172a">End-to-End Monitoring Architecture</text>
+
+  <!-- Layer: Applications (left) -->
+  <rect x="20" y="50" width="140" height="160" rx="8" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1.5"/>
+  <text x="90" y="70" text-anchor="middle" font-family="Inter" font-size="10" font-weight="700" fill="#0369a1">APPLICATIONS</text>
+  <rect x="35" y="82" width="110" height="24" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1"/>
+  <text x="90" y="98" text-anchor="middle" font-family="Inter" font-size="9" fill="#1e40af">Service A /metrics</text>
+  <rect x="35" y="112" width="110" height="24" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1"/>
+  <text x="90" y="128" text-anchor="middle" font-family="Inter" font-size="9" fill="#1e40af">Service B /metrics</text>
+  <rect x="35" y="142" width="110" height="24" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1"/>
+  <text x="90" y="158" text-anchor="middle" font-family="Inter" font-size="9" fill="#1e40af">Service C /metrics</text>
+  <rect x="35" y="172" width="110" height="24" rx="4" fill="#dcfce7" stroke="#137a39" stroke-width="1"/>
+  <text x="90" y="188" text-anchor="middle" font-family="Inter" font-size="9" fill="#166534">OTel SDK (traces)</text>
+
+  <!-- Arrow: Apps → Collection -->
+  <line x1="160" y1="130" x2="210" y2="130" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrow2)"/>
+  <text x="185" y="122" text-anchor="middle" font-family="Inter" font-size="8" fill="#526176">pull</text>
+
+  <!-- Layer: Collection -->
+  <rect x="215" y="50" width="140" height="160" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+  <text x="285" y="70" text-anchor="middle" font-family="Inter" font-size="10" font-weight="700" fill="#166534">COLLECTION</text>
+  <rect x="230" y="82" width="110" height="28" rx="4" fill="#dcfce7" stroke="#137a39" stroke-width="1"/>
+  <text x="285" y="100" text-anchor="middle" font-family="Inter" font-size="9" fill="#166534">Prometheus</text>
+  <rect x="230" y="118" width="110" height="28" rx="4" fill="#dcfce7" stroke="#137a39" stroke-width="1"/>
+  <text x="285" y="136" text-anchor="middle" font-family="Inter" font-size="9" fill="#166534">OTel Collector</text>
+  <rect x="230" y="154" width="110" height="28" rx="4" fill="#dcfce7" stroke="#137a39" stroke-width="1"/>
+  <text x="285" y="172" text-anchor="middle" font-family="Inter" font-size="9" fill="#166534">Fluentd / Vector</text>
+
+  <!-- Arrow: Collection → Storage -->
+  <line x1="355" y1="130" x2="405" y2="130" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+  <!-- Layer: Storage -->
+  <rect x="410" y="50" width="140" height="160" rx="8" fill="#fefce8" stroke="#fde68a" stroke-width="1.5"/>
+  <text x="480" y="70" text-anchor="middle" font-family="Inter" font-size="10" font-weight="700" fill="#92400e">STORAGE</text>
+  <rect x="425" y="82" width="110" height="24" rx="4" fill="#fef3c7" stroke="#a15408" stroke-width="1"/>
+  <text x="480" y="98" text-anchor="middle" font-family="Inter" font-size="9" fill="#92400e">Thanos / Cortex</text>
+  <rect x="425" y="112" width="110" height="24" rx="4" fill="#fef3c7" stroke="#a15408" stroke-width="1"/>
+  <text x="480" y="128" text-anchor="middle" font-family="Inter" font-size="9" fill="#92400e">Tempo (traces)</text>
+  <rect x="425" y="142" width="110" height="24" rx="4" fill="#fef3c7" stroke="#a15408" stroke-width="1"/>
+  <text x="480" y="158" text-anchor="middle" font-family="Inter" font-size="9" fill="#92400e">Elasticsearch (logs)</text>
+  <rect x="425" y="172" width="110" height="24" rx="4" fill="#fef3c7" stroke="#a15408" stroke-width="1"/>
+  <text x="480" y="188" text-anchor="middle" font-family="Inter" font-size="9" fill="#92400e">S3 (cold archive)</text>
+
+  <!-- Arrow: Storage → Query -->
+  <line x1="550" y1="130" x2="580" y2="130" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+  <!-- Layer: Query & Viz -->
+  <rect x="585" y="50" width="120" height="160" rx="8" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.5"/>
+  <text x="645" y="70" text-anchor="middle" font-family="Inter" font-size="10" font-weight="700" fill="#7c3aed">QUERY & VIZ</text>
+  <rect x="598" y="85" width="95" height="28" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+  <text x="645" y="103" text-anchor="middle" font-family="Inter" font-size="9" fill="#5b21b6">Grafana</text>
+  <rect x="598" y="121" width="95" height="28" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+  <text x="645" y="139" text-anchor="middle" font-family="Inter" font-size="9" fill="#5b21b6">Kibana</text>
+  <rect x="598" y="157" width="95" height="28" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1"/>
+  <text x="645" y="175" text-anchor="middle" font-family="Inter" font-size="9" fill="#5b21b6">Jaeger UI</text>
+
+  <!-- Alerting layer (bottom) -->
+  <rect x="215" y="260" width="335" height="80" rx="8" fill="#fef2f2" stroke="#fecaca" stroke-width="1.5"/>
+  <text x="382" y="280" text-anchor="middle" font-family="Inter" font-size="10" font-weight="700" fill="#c21f1f">ALERTING & NOTIFICATION</text>
+  <rect x="230" y="292" width="90" height="24" rx="4" fill="#fee2e2" stroke="#c21f1f" stroke-width="1"/>
+  <text x="275" y="308" text-anchor="middle" font-family="Inter" font-size="9" fill="#c21f1f">Alertmanager</text>
+  <rect x="330" y="292" width="90" height="24" rx="4" fill="#fee2e2" stroke="#c21f1f" stroke-width="1"/>
+  <text x="375" y="308" text-anchor="middle" font-family="Inter" font-size="9" fill="#c21f1f">PagerDuty</text>
+  <rect x="430" y="292" width="90" height="24" rx="4" fill="#fee2e2" stroke="#c21f1f" stroke-width="1"/>
+  <text x="475" y="308" text-anchor="middle" font-family="Inter" font-size="9" fill="#c21f1f">Slack/Email</text>
+  <!-- Arrow from storage to alerting -->
+  <line x1="382" y1="210" x2="382" y2="260" stroke="#c21f1f" stroke-width="1.5" marker-end="url(#arrow3)"/>
+  <text x="395" y="240" font-family="Inter" font-size="8" fill="#c21f1f">rules eval</text>
+
+  <!-- Runbook -->
+  <rect x="215" y="365" width="335" height="50" rx="8" fill="#1e293b" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="382" y="385" text-anchor="middle" font-family="Inter" font-size="10" font-weight="700" fill="#ffffff">RESPONSE</text>
+  <text x="382" y="403" text-anchor="middle" font-family="Inter" font-size="9" fill="#94a3b8">Runbook → Investigate → Mitigate → RCA</text>
+  <line x1="382" y1="340" x2="382" y2="365" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+  <!-- Arrow markers -->
+  <defs>
+    <marker id="arrow2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#526176"/></marker>
+    <marker id="arrow3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#c21f1f"/></marker>
+  </defs>
+</svg>
+</div>
+
+<h3 class="sub">Time-Series Databases</h3>
+<table class="tbl">
+  <thead><tr><th>Database</th><th>Model</th><th>Strengths</th><th>Weaknesses</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Prometheus</strong></td><td>Pull, local TSDB</td><td>Kubernetes-native, PromQL powerful, large ecosystem</td><td>Single-node (needs Thanos/Cortex for HA)</td></tr>
+    <tr><td><strong>Thanos / Cortex</strong></td><td>Prometheus HA layer</td><td>Long-term storage in object store, global query view</td><td>Operational complexity</td></tr>
+    <tr><td><strong>InfluxDB</strong></td><td>Push, dedicated TSDB</td><td>High write throughput; SQL / InfluxQL in v3 (Flux now legacy)</td><td>Clustering is enterprise/cloud-only</td></tr>
+    <tr><td><strong>TimescaleDB</strong></td><td>PostgreSQL extension</td><td>Full SQL, JOIN with relational data, mature</td><td>Higher resource usage than purpose-built TSDB</td></tr>
+    <tr><td><strong>Datadog / New Relic</strong></td><td>SaaS, push-based</td><td>Zero ops, integrated platform, AI features</td><td>Expensive at scale, vendor lock-in</td></tr>
+  </tbody>
+</table>
+
+<h3 class="sub">Scaling Prometheus</h3>
+<pre class="codeblock"># Single Prometheus → 10M time series, ~1-2 weeks retention
+# Beyond that, you need horizontal scaling:
+
+Option 1: Thanos
+  Prometheus (short-term) → Thanos Sidecar → Object Store (S3)
+  Thanos Query (unified view across all Prometheus instances)
+
+Option 2: Cortex / Mimir
+  All writes → Cortex Distributor → Cortex Ingester → Object Store
+  (No local Prometheus storage needed)
+
+Option 3: Victoria Metrics
+  Drop-in Prometheus replacement, better compression and performance
+  Supports both push and pull
+
+# Rule of thumb: up to ~100 microservices + k8s cluster
+# → single Prometheus is usually fine with 2-week retention</pre>
+
+<div class="iq">"For the monitoring architecture, I'd use Prometheus with pull-based scraping for metrics, OpenTelemetry for distributed traces stored in Tempo, and Fluentd shipping structured logs to Elasticsearch. Grafana provides unified dashboards across all three. For alerting, Prometheus Alertmanager evaluates recording rules and routes notifications through PagerDuty with runbook links."</div>
+</div>
+
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Backfill</strong></td><td>Reprocessing historical raw data to recompute outputs — e.g., a new method version over a bounded past window.</td></tr>
+<tr><td><strong>BigQuery</strong></td><td>Google's serverless data warehouse; here it holds raw data, versioned output tables, and serves dashboards.</td></tr>
+<tr><td><strong>Burn rate</strong></td><td>How fast an error budget is consumed, as a multiple of the sustainable pace (1×).</td></tr>
+<tr><td><strong>Cardinality</strong></td><td>Number of unique time series — one per distinct metric-name-plus-label-value combination.</td></tr>
+<tr><td><strong>Colossus</strong></td><td>Google's distributed file system; here the immutable, append-only raw-event store that makes backfill possible.</td></tr>
+<tr><td><strong>Dataflow</strong></td><td>Google's managed Apache Beam service for stream/batch processing — normalization, sessionization, and the pluggable compute stage.</td></tr>
+<tr><td><strong>DSU (Union-Find)</strong></td><td>Disjoint Set Union — near-constant-time structure for connectivity queries, grouping, and cycle detection.</td></tr>
+<tr><td><strong>Error budget</strong></td><td>The allowed unreliability, equal to 1 minus the SLO target (e.g., 0.1% for a 99.9% SLO).</td></tr>
+<tr><td><strong>Four Golden Signals</strong></td><td>Google SRE's core service metrics — latency, traffic, errors, and saturation.</td></tr>
+<tr><td><strong>Histogram</strong></td><td>Metric type that buckets observations client-side so quantiles can be computed and aggregated across instances.</td></tr>
+<tr><td><strong>OpenTelemetry (OTel)</strong></td><td>Vendor-neutral standard and SDK for emitting traces, metrics, and logs.</td></tr>
+<tr><td><strong>Percentile (p50/p95/p99)</strong></td><td>Value below which that share of observations fall; percentiles cannot be averaged across instances.</td></tr>
+<tr><td><strong>Prometheus</strong></td><td>Pull-based metrics system and time-series database, queried with PromQL.</td></tr>
+<tr><td><strong>Pub/Sub</strong></td><td>Google's managed messaging and ingestion service; the pipeline's durable intake buffer.</td></tr>
+<tr><td><strong>RED method</strong></td><td>Per-service monitoring framework — Rate, Errors, Duration.</td></tr>
+<tr><td><strong>Restatement</strong></td><td>Recomputing and republishing an already-published metric after late-arriving data changes it.</td></tr>
+<tr><td><strong>SLI / SLO / SLA</strong></td><td>Service Level Indicator (measured ratio), Objective (internal target), Agreement (external contract, looser than the SLO).</td></tr>
+<tr><td><strong>Trace / Span</strong></td><td>Trace — a request's full journey across services; span — one unit of work within that trace.</td></tr>
+<tr><td><strong>USE method</strong></td><td>Per-resource monitoring framework — Utilization, Saturation, Errors.</td></tr>
+<tr><td><strong>Watermark</strong></td><td>Event-time marker bounding how late data can still be assigned to its processing window.</td></tr>
+</table>
+
+</div>
+</div>
+
+<script>
+function go(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  if (typeof event !== 'undefined' && event && event.currentTarget) event.currentTarget.classList.add('active');
+  window.scrollTo(0, 0);
+}
+function toggle(el) {
+  const body = el.nextElementSibling;
+  const chevron = el.querySelector('.chv');
+  body.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open');
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="system_design_tips.html">‹ System Design Interview Playbook</a><a class="bkc" href="index.html">📖 Contents</a><a href="operational_excellence.html">Operational Excellence &amp; SRE ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

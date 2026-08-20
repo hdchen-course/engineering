@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redis Deep Dive — System Design Interview Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* TAB NAV */
+.tab-nav {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center;
+  padding: 0 32px;
+  box-shadow: var(--shadow-sm);
+}
+.tab-brand {
+  font-size: 14px; font-weight: 800; color: var(--red);
+  margin-right: 32px; padding: 14px 0;
+  letter-spacing: -0.5px;
+}
+.tab-btn {
+  padding: 14px 18px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text3);
+  cursor: pointer; border: none; background: none;
+  border-bottom: 2px solid transparent;
+  transition: all .2s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--red); border-bottom-color: var(--red); font-weight: 600; }
+
+/* HEADER */
+.page-header {
+  background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 40%, #f87171 100%);
+  padding: 40px 44px;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #fca5a5; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 700px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+/* Body sits inside the shared handbook content column (which already supplies the
+   40px inset + top gap), so this legacy section wrapper must NOT add its own
+   horizontal padding or top padding — that double-inset pushed the Redis body to
+   left=424px (vs 380px on the sibling DB deep-dives) and left a ~68px empty band
+   under the masthead. Keep only bottom spacing to separate stacked sections. */
+.sec { padding: 0 0 36px; display: none; max-width: 1100px; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: #fff; border-radius: var(--r); margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.dp { background: var(--purple-l); color: var(--purple); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+
+/* INTERVIEW QUOTE */
+.iq {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+  border-left: 4px solid var(--red);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--text2);
+  font-size: 13px;
+  position: relative;
+}
+.iq::before {
+  content: 'SAY THIS';
+  position: absolute;
+  top: -8px; left: 14px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  background: var(--red);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* CODE */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--red);
+}
+pre {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 14px 18px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 10px 0;
+  line-height: 1.6;
+}
+pre code { background: none; color: inherit; padding: 0; }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--red-l); color: var(--red); font-size: 11px; font-weight: 500; margin: 2px; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* MINI CARD */
+.mini-card {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 14px 16px;
+}
+.mini-card h4 { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.mini-card p { font-size: 12px; color: var(--text2); }
+
+/* SVG diagram container */
+.diagram { margin: 20px 0; text-align: center; }
+.diagram svg { max-width: 100%; height: auto; }
+
+/* Complexity badge */
+.complexity {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  background: var(--green-l);
+  color: var(--green);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 4px;
+}
+.complexity.warn { background: var(--yellow-l); color: var(--yellow); }
+.complexity.bad { background: var(--red-l); color: var(--red); }
+
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part V · Chapter 3 — <b>Redis Deep Dive</b></span><span class="bkspacer"></span></nav>
+
+<!-- TAB NAVIGATION -->
+<nav class="tab-nav">
+  <div class="tab-brand">REDIS</div>
+  <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+  <button class="tab-btn" onclick="switchTab('datastructures')">Data Structures</button>
+  <button class="tab-btn" onclick="switchTab('usecases')">Use Cases</button>
+  <button class="tab-btn" onclick="switchTab('persistence')">Persistence</button>
+  <button class="tab-btn" onclick="switchTab('cluster')">Cluster</button>
+  <button class="tab-btn" onclick="switchTab('interview')">Interview</button>
+</nav>
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="htag">Senior-Level System Design Interview Prep</div>
+  <h1 class="ht">Redis <span>Deep Dive</span></h1>
+  <p class="hd">In-memory data structure server — everything you need to discuss Redis intelligently in a system design interview. Covers internals, data structures, patterns, and trade-offs.</p>
+  <div class="hm">
+    <span class="chip"><b>O(1)</b> reads/writes</span>
+    <span class="chip"><b>Single-threaded</b> command core</span>
+    <span class="chip"><b>16384</b> hash slots</span>
+    <span class="chip"><b>10+</b> data structures</span>
+    <span class="chip"><b>Sub-ms</b> latency</span>
+  </div>
+</div>
+
+<!-- ==================== OVERVIEW TAB ==================== -->
+<section id="sec-overview" class="sec active">
+  <h2 class="stitle">Redis Overview</h2>
+  <p class="sdesc">What Redis is, why it's fast, and how it manages memory — the foundational knowledge for any interview discussion.</p>
+
+  <h3 class="sub">What is Redis?</h3>
+  <p>Redis (Remote Dictionary Server) is an open-source, in-memory data structure store used as a database, cache, message broker, and streaming engine. Unlike simple key-value stores, Redis supports rich data structures (strings, hashes, lists, sets, sorted sets, streams, bitmaps, HyperLogLogs).</p>
+
+  <div class="iq">
+    "Redis is fundamentally an in-memory data structure server with optional persistence. It's not just a cache — it provides atomic operations on complex data structures, which makes it ideal for use cases like rate limiting, leaderboards, and distributed locks."
+  </div>
+
+  <h3 class="sub">Why is Redis Fast?</h3>
+  <div class="g2">
+    <div class="mini-card">
+      <h4>In-Memory Storage</h4>
+      <p>All data resides in RAM. No disk I/O on reads. Memory access is ~100ns vs ~10ms for disk seeks — a 100,000x difference.</p>
+    </div>
+    <div class="mini-card">
+      <h4>Single-Threaded Event Loop</h4>
+      <p>No context switching, no lock contention, no race conditions. One thread processes all commands sequentially using I/O multiplexing (epoll/kqueue).</p>
+    </div>
+    <div class="mini-card">
+      <h4>Efficient Data Structures</h4>
+      <p>Purpose-built C implementations: SDS for strings, skiplists for sorted sets, ziplists for small collections — optimized for the exact access patterns needed.</p>
+    </div>
+    <div class="mini-card">
+      <h4>Non-blocking I/O</h4>
+      <p>Uses multiplexed I/O (epoll on Linux, kqueue on macOS) to handle thousands of connections without threading overhead.</p>
+    </div>
+  </div>
+
+  <div class="tip">
+    <div class="tipl">PERFORMANCE NUMBERS</div>
+    <p>Single Redis instance: ~100K-200K operations/sec. With pipelining: up to 1M ops/sec. Average latency: &lt;1ms. These are on commodity hardware.</p>
+  </div>
+
+  <h3 class="sub">Threading Model</h3>
+
+  <div class="diagram">
+    <svg width="700" height="320" viewBox="0 0 700 320" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#59677c"/>
+        </marker>
+      </defs>
+      <!-- Title -->
+      <text x="350" y="20" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#0f172a">Redis Threading Model (6.0+)</text>
+
+      <!-- Client connections -->
+      <rect x="20" y="50" width="100" height="30" rx="6" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+      <text x="70" y="69" text-anchor="middle" font-family="Inter" font-size="11" fill="#1d4ed8">Client 1</text>
+      <rect x="20" y="90" width="100" height="30" rx="6" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+      <text x="70" y="109" text-anchor="middle" font-family="Inter" font-size="11" fill="#1d4ed8">Client 2</text>
+      <rect x="20" y="130" width="100" height="30" rx="6" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+      <text x="70" y="149" text-anchor="middle" font-family="Inter" font-size="11" fill="#1d4ed8">Client N</text>
+
+      <!-- I/O Threads box -->
+      <rect x="170" y="40" width="140" height="150" rx="8" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="240" y="62" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#59677c">I/O THREADS (6.0+)</text>
+      <rect x="185" y="75" width="110" height="24" rx="4" fill="#ccfbf1" stroke="#0b786e" stroke-width="1"/>
+      <text x="240" y="91" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#0b786e">Read socket</text>
+      <rect x="185" y="105" width="110" height="24" rx="4" fill="#ccfbf1" stroke="#0b786e" stroke-width="1"/>
+      <text x="240" y="121" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#0b786e">Parse command</text>
+      <rect x="185" y="150" width="110" height="24" rx="4" fill="#ccfbf1" stroke="#0b786e" stroke-width="1"/>
+      <text x="240" y="166" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#0b786e">Write response</text>
+
+      <!-- Main Thread -->
+      <rect x="370" y="60" width="160" height="120" rx="8" fill="#fee2e2" stroke="#c62020" stroke-width="2"/>
+      <text x="450" y="82" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#c62020">MAIN THREAD</text>
+      <text x="450" y="100" text-anchor="middle" font-family="Inter" font-size="10" fill="#334155">(Single-threaded)</text>
+      <rect x="385" y="110" width="130" height="24" rx="4" fill="#fff" stroke="#c62020" stroke-width="1"/>
+      <text x="450" y="126" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#c62020">Execute command</text>
+      <rect x="385" y="142" width="130" height="24" rx="4" fill="#fff" stroke="#c62020" stroke-width="1"/>
+      <text x="450" y="158" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#c62020">Data manipulation</text>
+
+      <!-- Background threads -->
+      <rect x="580" y="50" width="100" height="140" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+      <text x="630" y="72" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#7c3aed">BG THREADS</text>
+      <text x="630" y="95" text-anchor="middle" font-family="Inter" font-size="10" fill="#334155">fsync AOF</text>
+      <text x="630" y="115" text-anchor="middle" font-family="Inter" font-size="10" fill="#334155">Close FDs</text>
+      <text x="630" y="135" text-anchor="middle" font-family="Inter" font-size="10" fill="#334155">Lazy free</text>
+      <text x="630" y="155" text-anchor="middle" font-family="Inter" font-size="10" fill="#334155">RDB save</text>
+      <text x="630" y="175" text-anchor="middle" font-family="Inter" font-size="10" fill="#334155">(fork)</text>
+
+      <!-- Arrows -->
+      <line x1="120" y1="65" x2="168" y2="85" stroke="#59677c" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="120" y1="105" x2="168" y2="105" stroke="#59677c" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="120" y1="145" x2="168" y2="130" stroke="#59677c" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="310" y1="110" x2="368" y2="120" stroke="#59677c" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="530" y1="120" x2="578" y2="120" stroke="#59677c" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Key point -->
+      <rect x="150" y="230" width="400" height="70" rx="8" fill="#fef3c7" stroke="#a35905" stroke-width="1.5"/>
+      <text x="350" y="252" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#92400e">KEY INSIGHT</text>
+      <text x="350" y="272" text-anchor="middle" font-family="Inter" font-size="11" fill="#334155">Core command execution is single-threaded (no locks needed).</text>
+      <text x="350" y="290" text-anchor="middle" font-family="Inter" font-size="11" fill="#334155">I/O threads (6.0+) do network I/O; Redis 8 adds more parallelism.</text>
+    </svg>
+  </div>
+
+  <div class="ins">
+    <div class="insl">INTERVIEW INSIGHT</div>
+    <p>When asked "isn't single-threaded a bottleneck?" — explain that Redis is I/O bound, not CPU bound. The bottleneck is network bandwidth, not CPU. A single core at 100K ops/sec with sub-ms latency is sufficient for most workloads. For more throughput, shard across multiple instances.</p>
+  </div>
+
+  <h3 class="sub">Memory Management</h3>
+  <table class="tbl">
+    <tr><th>Concept</th><th>Detail</th><th>Interview Relevance</th></tr>
+    <tr><td><code>maxmemory</code></td><td>Hard cap on memory usage</td><td>Must be configured in production</td></tr>
+    <tr><td><code>maxmemory-policy</code></td><td>What happens when limit is reached</td><td>allkeys-lru is most common for cache</td></tr>
+    <tr><td>jemalloc</td><td>Memory allocator used by Redis</td><td>Reduces fragmentation vs glibc malloc</td></tr>
+    <tr><td>Memory fragmentation</td><td><code>mem_fragmentation_ratio</code> in INFO</td><td>Ratio &gt;1.5 indicates problem</td></tr>
+    <tr><td>Object encoding</td><td>Redis picks compact encoding for small data</td><td>ziplist for small hashes/lists saves 10x memory</td></tr>
+  </table>
+
+  <h4 class="sub2">Eviction Policies</h4>
+  <table class="tbl">
+    <tr><th>Policy</th><th>Behavior</th><th>Use Case</th></tr>
+    <tr><td><code>noeviction</code></td><td>Return error on write</td><td>When data loss is unacceptable</td></tr>
+    <tr><td><code>allkeys-lru</code></td><td>Evict least recently used</td><td>General-purpose cache</td></tr>
+    <tr><td><code>allkeys-lfu</code></td><td>Evict least frequently used</td><td>When access frequency matters</td></tr>
+    <tr><td><code>volatile-lru</code></td><td>LRU among keys with TTL</td><td>Mix of cache + persistent data</td></tr>
+    <tr><td><code>volatile-ttl</code></td><td>Evict shortest TTL first</td><td>When TTL reflects priority</td></tr>
+    <tr><td><code>allkeys-random</code></td><td>Random eviction</td><td>Uniform access patterns</td></tr>
+  </table>
+
+  <div class="warn">
+    <div class="warnl">PITFALL</div>
+    <p>Redis LRU is approximated — it samples N keys (default 5) and evicts the oldest. Not true LRU. Increasing <code>maxmemory-samples</code> improves accuracy at cost of CPU. LFU (Redis 4.0+) is generally better for caches.</p>
+  </div>
+
+<div class="card">
+<div class="ch" onclick="toggle(this)"><span class="cn">LIC</span><span class="ct">Licensing &amp; the Valkey Fork (2024-2025)</span><span class="db de">EcoSystem</span><span class="chv">&#9654;</span></div>
+<div class="cb">
+
+<div class="note"><div class="notel">NOTE</div><p>This is a licensing / ecosystem story, not a data-structure one — but it shows up in system-design and "tell me about a tech decision" rounds, and it directly changes what your cloud provider actually ships. Know the timeline and the one-sentence nuanced answer.</p></div>
+
+<h3 class="sub">The timeline</h3>
+
+<div class="mini-card">
+<p><b>Origins &rarr; March 2024:</b> The <b>Redis core</b> shipped under the <b>BSD 3-Clause</b> license for its entire life — a permissive, OSI-approved open-source license. (Some Redis Ltd. add-on modules, e.g. RediSearch/RedisGraph, had already moved off open-source terms — Commons Clause in 2018, then RSAL in 2019 — but the core stayed BSD.) In <b>March 2024</b>, <b>Redis Ltd.</b> (the company, formerly Redis Labs) relicensed the core, starting with <b>Redis 7.4</b>, to a <b>dual license</b>: <b>RSALv2</b> (Redis Source Available License v2) <b>OR</b> <b>SSPLv1</b> (Server Side Public License v1). Both are <b>source-available</b> — you can read and modify the code — but <b>neither is OSI-approved open source</b>. The stated target was hyperscalers reselling Redis-as-a-service without contributing back.</p>
+</div>
+
+<div class="mini-card">
+<p><b>The fork — Valkey:</b> Within days (late March 2024), core contributors plus the <b>Linux Foundation</b> forked the last BSD-licensed commit (Redis <code>7.2.4</code>) into <b>Valkey</b>, kept under the original <b>BSD 3-Clause</b> license. It was rapidly adopted as the drop-in replacement by <b>AWS (ElastiCache &amp; MemoryDB)</b>, <b>Google Cloud Memorystore</b>, <b>Oracle</b>, Ericsson, Snap, and others. Valkey is <b>wire-protocol and API compatible</b> — same RESP protocol, same commands, same client libraries — so migration is typically a config/endpoint change.</p>
+</div>
+
+<div class="mini-card">
+<p><b>May 2025 &rarr; Redis 8.0:</b> Redis reversed course and <b>added AGPLv3</b> as a <b>third</b> license option in <b>Redis 8.0</b> (GA May 2025), making it a <b>tri-license</b>: <b>RSALv2 / SSPLv1 / AGPLv3</b>. AGPLv3 <b>is</b> OSI-approved open source, so Redis 8.0 can again legitimately be called "open source" under that option. antirez (Salvatore Sanfilippo), who had rejoined Redis, championed the move.</p>
+</div>
+
+<h3 class="sub">Comparison at a glance</h3>
+
+<table class="tbl">
+<thead>
+<tr><th>Release</th><th>License(s)</th><th>Governance</th><th>OSI open source?</th></tr>
+</thead>
+<tbody>
+<tr><td>Redis (pre-7.4)</td><td>BSD 3-Clause</td><td>Redis Ltd.</td><td><b>Yes</b></td></tr>
+<tr><td>Redis 7.4 – 7.x</td><td>RSALv2 <b>or</b> SSPLv1 (dual, source-available)</td><td>Redis Ltd.</td><td><b>No</b></td></tr>
+<tr><td>Redis 8.0+ (May 2025)</td><td>RSALv2 <b>or</b> SSPLv1 <b>or</b> AGPLv3 (tri-license)</td><td>Redis Ltd.</td><td><b>Yes, via AGPLv3</b></td></tr>
+<tr><td>Valkey (fork, Mar 2024)</td><td>BSD 3-Clause</td><td>Linux Foundation (community)</td><td><b>Yes</b></td></tr>
+</tbody>
+</table>
+
+<div class="tip"><div class="tipl">TIP</div><p>The distinction that matters is <b>"source-available" vs "open source."</b> RSALv2 and SSPLv1 let you see and modify source, but SSPLv1 in particular imposes copyleft-style obligations on anyone offering the software <i>as a service</i> — which is precisely why the OSI does not consider it open source and why cloud providers forked rather than adopt it.</p></div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>If your production cache is on AWS ElastiCache/MemoryDB or GCP Memorystore's newer tiers, you are very likely running <b>Valkey</b>, not Redis Ltd.'s Redis — even if the console still says "Redis OSS compatible." Verify the engine before assuming Redis 8.x-only features are available.</p></div>
+
+<h4 class="sub2">"Is Redis open source?" — the nuanced answer</h4>
+<div class="iq">"It depends on the version. Redis was BSD open source until March 2024, when 7.4 went source-available under RSALv2/SSPLv1 — which OSI does not count as open source and which triggered the community's Valkey fork under the Linux Foundation, still BSD. Then Redis 8.0 in May 2025 re-added a genuinely open-source option, AGPLv3, making it a tri-license. So today: Redis 8+ can be open source under AGPLv3, and Valkey is the fully-BSD, cloud-provider-backed drop-in fork."</div>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>The takeaway for design discussions: Redis-the-protocol won so decisively that its own relicensing couldn't dislodge it — the ecosystem simply forked and kept the API. When you say "Redis" in an architecture, you're really committing to the <b>RESP protocol and command surface</b>, which both Redis 8 and Valkey honor.</p></div>
+
+</div>
+</div>
+</section>
+
+<!-- ==================== DATA STRUCTURES TAB ==================== -->
+<section id="sec-datastructures" class="sec">
+  <h2 class="stitle">Data Structures</h2>
+  <p class="sdesc">The most interview-critical section. Know the internal implementation, time complexity, and when to use each structure.</p>
+
+  <!-- STRING -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">1. String (SDS)</span>
+      <span class="cn">GET / SET / INCR</span>
+      <span class="db dh">CRITICAL</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h3 class="sub2">Internal Implementation: Simple Dynamic String (SDS)</h3>
+      <p>Not a C string! SDS stores: <code>len</code> (used bytes), <code>alloc</code> (allocated bytes), <code>flags</code> (type), <code>buf[]</code> (data). Benefits over C strings:</p>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li>O(1) length retrieval (no strlen traversal)</li>
+        <li>Binary safe (can store \0 bytes)</li>
+        <li>Pre-allocation prevents frequent realloc (doubles up to 1MB, then +1MB)</li>
+        <li>Lazy free — doesn't immediately release on shrink</li>
+      </ul>
+
+      <h4 class="sub2">Encoding Variants</h4>
+      <table class="tbl">
+        <tr><th>Encoding</th><th>Condition</th><th>Memory</th></tr>
+        <tr><td><code>int</code></td><td>Value is integer in long range</td><td>8 bytes (stored as long)</td></tr>
+        <tr><td><code>embstr</code></td><td>String <= 44 bytes</td><td>Single allocation (robj + SDS together)</td></tr>
+        <tr><td><code>raw</code></td><td>String > 44 bytes</td><td>Two allocations (robj + SDS separate)</td></tr>
+      </table>
+
+      <h4 class="sub2">Key Operations & Complexity</h4>
+      <table class="tbl">
+        <tr><th>Command</th><th>Complexity</th><th>Note</th></tr>
+        <tr><td><code>GET / SET</code></td><td><span class="complexity">O(1)</span></td><td>Basic read/write</td></tr>
+        <tr><td><code>INCR / INCRBY</code></td><td><span class="complexity">O(1)</span></td><td>Atomic increment</td></tr>
+        <tr><td><code>SETNX</code></td><td><span class="complexity">O(1)</span></td><td>Set if not exists (for locks)</td></tr>
+        <tr><td><code>MGET / MSET</code></td><td><span class="complexity">O(N)</span></td><td>Batch operations, reduces RTTs</td></tr>
+        <tr><td><code>SETEX</code></td><td><span class="complexity">O(1)</span></td><td>Set with expiry (atomic)</td></tr>
+      </table>
+
+      <h4 class="sub2">When to Use</h4>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>Caching:</b> Store serialized objects, HTML fragments</li>
+        <li><b>Counters:</b> INCR is atomic — page views, API quotas</li>
+        <li><b>Distributed locks:</b> SET key value NX EX 30</li>
+        <li><b>Rate limiting:</b> INCR + EXPIRE for fixed window</li>
+      </ul>
+
+      <div class="iq">"I'd use a Redis String with INCR for the counter because it's atomic without requiring locks — a single Redis command is always atomic since the server is single-threaded."</div>
+
+      <pre><code>// Cache pattern
+SET user:1001 "{\"name\":\"Alice\",\"age\":30}" EX 3600
+
+// Atomic counter
+INCR page:views:homepage
+INCRBY inventory:item:42 -1
+
+// Distributed lock (Redis 2.6.12+)
+SET lock:order:123 "owner-uuid" NX EX 30</code></pre>
+    </div>
+  </div>
+
+  <!-- HASH -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">2. Hash</span>
+      <span class="cn">HGET / HSET / HGETALL</span>
+      <span class="db dh">CRITICAL</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Internal Implementation</h4>
+      <p>Two encodings based on size:</p>
+      <table class="tbl">
+        <tr><th>Encoding</th><th>Condition</th><th>Structure</th></tr>
+        <tr><td><code>listpack</code> (was ziplist)</td><td>&lt;= 128 fields AND all values &lt;= 64 bytes</td><td>Contiguous memory block, linear scan</td></tr>
+        <tr><td><code>hashtable</code></td><td>Exceeds above thresholds</td><td>dict with chaining, incremental rehashing</td></tr>
+      </table>
+      <p style="margin-top:8px">Listpack is extremely memory-efficient (no pointers, no per-entry overhead) but O(N) access. For small hashes (&lt;128 fields), this is faster than hashtable due to cache locality.</p>
+
+      <h4 class="sub2">Incremental Rehashing</h4>
+      <p>When the hashtable grows, Redis doesn't block. It maintains two hash tables simultaneously and migrates entries in small batches during each command execution until complete.</p>
+
+      <h4 class="sub2">Key Operations & Complexity</h4>
+      <table class="tbl">
+        <tr><th>Command</th><th>Complexity</th><th>Note</th></tr>
+        <tr><td><code>HGET / HSET</code></td><td><span class="complexity">O(1)</span></td><td>Single field access</td></tr>
+        <tr><td><code>HMGET / HMSET</code></td><td><span class="complexity">O(N)</span></td><td>Multiple fields</td></tr>
+        <tr><td><code>HGETALL</code></td><td><span class="complexity warn">O(N)</span></td><td>All fields — careful with large hashes!</td></tr>
+        <tr><td><code>HINCRBY</code></td><td><span class="complexity">O(1)</span></td><td>Atomic increment on field</td></tr>
+        <tr><td><code>HSCAN</code></td><td><span class="complexity">O(1)/call</span></td><td>Iterate without blocking</td></tr>
+      </table>
+
+      <h4 class="sub2">When to Use</h4>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>Object storage:</b> User profiles (partial reads/updates vs GET/SET full JSON)</li>
+        <li><b>Memory optimization:</b> Store many small objects in one hash (Instagram technique: 1000 objects per hash key saves ~5x, roughly 75-80% memory)</li>
+        <li><b>Configuration:</b> Store app config as hash fields</li>
+      </ul>
+
+      <div class="iq">"I'd model the user profile as a Redis Hash rather than a serialized String. This way we can read/update individual fields without deserializing the entire object — HGET user:1001 email is O(1) and saves bandwidth."</div>
+
+      <pre><code>// Object storage
+HSET user:1001 name "Alice" email "alice@example.com" age 30
+HGET user:1001 email
+HINCRBY user:1001 login_count 1
+
+// Memory optimization pattern (Instagram)
+// Instead of SET user:1001 "..." (overhead per key)
+// Pack 1000 users per bucket:
+HSET users:1 1001 "{...}" 1002 "{...}" ...
+// bucket = user_id / 1000, field = user_id</code></pre>
+
+      <div class="warn">
+        <div class="warnl">PITFALL</div>
+        <p>Never use HGETALL on a hash with thousands of fields in production — it blocks the event loop. Use HSCAN for iteration. Configure <code>hash-max-listpack-entries</code> and <code>hash-max-listpack-value</code> based on your data.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">3. List (Quicklist)</span>
+      <span class="cn">LPUSH / RPOP / LRANGE</span>
+      <span class="db dm">HIGH</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Internal Implementation: Quicklist</h4>
+      <p>A doubly-linked list of listpacks (previously ziplists). Combines benefits of both:</p>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li>Linked list: O(1) push/pop at head/tail</li>
+        <li>Listpack nodes: cache-friendly, memory-efficient for each segment</li>
+        <li>Configurable node size: <code>list-max-listpack-size</code> (default -2 = 8KB per node)</li>
+        <li>Compression: middle nodes can be LZF compressed (<code>list-compress-depth</code>)</li>
+      </ul>
+
+      <div class="diagram">
+        <svg width="600" height="140" viewBox="0 0 600 140" xmlns="http://www.w3.org/2000/svg">
+          <text x="300" y="18" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#0f172a">Quicklist Structure</text>
+          <!-- Nodes -->
+          <rect x="30" y="40" width="100" height="50" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+          <text x="80" y="60" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#117e39">listpack</text>
+          <text x="80" y="78" text-anchor="middle" font-family="Inter" font-size="10" fill="#334155">[A,B,C,D]</text>
+
+          <rect x="170" y="40" width="100" height="50" rx="6" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+          <text x="220" y="60" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#1658ea">listpack (LZF)</text>
+          <text x="220" y="78" text-anchor="middle" font-family="Inter" font-size="10" fill="#334155">[E,F,G,H]</text>
+
+          <rect x="310" y="40" width="100" height="50" rx="6" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+          <text x="360" y="60" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#1658ea">listpack (LZF)</text>
+          <text x="360" y="78" text-anchor="middle" font-family="Inter" font-size="10" fill="#334155">[I,J,K,L]</text>
+
+          <rect x="450" y="40" width="100" height="50" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+          <text x="500" y="60" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#117e39">listpack</text>
+          <text x="500" y="78" text-anchor="middle" font-family="Inter" font-size="10" fill="#334155">[M,N,O,P]</text>
+
+          <!-- Arrows (bidirectional) -->
+          <line x1="130" y1="65" x2="170" y2="65" stroke="#59677c" stroke-width="1.2" marker-end="url(#arrow)"/>
+          <line x1="170" y1="70" x2="130" y2="70" stroke="#59677c" stroke-width="1.2" marker-end="url(#arrow)"/>
+          <line x1="270" y1="65" x2="310" y2="65" stroke="#59677c" stroke-width="1.2" marker-end="url(#arrow)"/>
+          <line x1="310" y1="70" x2="270" y2="70" stroke="#59677c" stroke-width="1.2" marker-end="url(#arrow)"/>
+          <line x1="410" y1="65" x2="450" y2="65" stroke="#59677c" stroke-width="1.2" marker-end="url(#arrow)"/>
+          <line x1="450" y1="70" x2="410" y2="70" stroke="#59677c" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+          <!-- Labels -->
+          <text x="80" y="110" text-anchor="middle" font-family="Inter" font-size="9" fill="#117e39">HEAD (uncompressed)</text>
+          <text x="500" y="110" text-anchor="middle" font-family="Inter" font-size="9" fill="#117e39">TAIL (uncompressed)</text>
+          <text x="290" y="120" text-anchor="middle" font-family="Inter" font-size="9" fill="#1658ea">Middle nodes: optionally LZF compressed</text>
+        </svg>
+      </div>
+
+      <h4 class="sub2">Key Operations & Complexity</h4>
+      <table class="tbl">
+        <tr><th>Command</th><th>Complexity</th><th>Note</th></tr>
+        <tr><td><code>LPUSH / RPUSH</code></td><td><span class="complexity">O(1)</span></td><td>Add to head/tail</td></tr>
+        <tr><td><code>LPOP / RPOP</code></td><td><span class="complexity">O(1)</span></td><td>Remove from head/tail</td></tr>
+        <tr><td><code>LINDEX</code></td><td><span class="complexity warn">O(N)</span></td><td>Random access — avoid!</td></tr>
+        <tr><td><code>LRANGE</code></td><td><span class="complexity warn">O(S+N)</span></td><td>S=offset, N=count. OK for small ranges.</td></tr>
+        <tr><td><code>LLEN</code></td><td><span class="complexity">O(1)</span></td><td>Stored in metadata</td></tr>
+        <tr><td><code>BRPOP</code></td><td><span class="complexity">O(1)</span></td><td>Blocking pop — for queues</td></tr>
+      </table>
+
+      <h4 class="sub2">When to Use</h4>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>Message queue:</b> LPUSH + BRPOP (simple task queue)</li>
+        <li><b>Recent items:</b> LPUSH + LTRIM (keep last N items, e.g., recent activity feed)</li>
+        <li><b>Timeline:</b> Twitter-style fan-out-on-write</li>
+      </ul>
+
+      <pre><code>// Task queue pattern
+LPUSH queue:emails "{\"to\":\"user@example.com\",\"subject\":\"...\"}"
+BRPOP queue:emails 30  // Blocking pop with 30s timeout
+
+// Recent items (keep last 100)
+LPUSH user:1001:feed "posted photo"
+LTRIM user:1001:feed 0 99
+LRANGE user:1001:feed 0 9  // Get latest 10</code></pre>
+
+      <div class="warn">
+        <div class="warnl">PITFALL</div>
+        <p>For reliable queues, List alone is not enough (messages lost on consumer crash). Use RPOPLPUSH/LMOVE to a processing list, or better — use Redis Streams for production message queues.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SET -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">4. Set</span>
+      <span class="cn">SADD / SMEMBERS / SINTER</span>
+      <span class="db dm">HIGH</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Internal Implementation</h4>
+      <table class="tbl">
+        <tr><th>Encoding</th><th>Condition</th><th>Structure</th></tr>
+        <tr><td><code>intset</code></td><td>All elements are integers AND &lt;= 512 elements (takes precedence for integer-only sets)</td><td>Sorted integer array, O(log N) binary search</td></tr>
+        <tr><td><code>listpack</code></td><td>&lt;= 128 elements AND contains non-integer members (small strings)</td><td>Compact array, O(N) membership test</td></tr>
+        <tr><td><code>hashtable</code></td><td>Exceeds thresholds</td><td>Hash table (values are NULL)</td></tr>
+      </table>
+
+      <h4 class="sub2">Key Operations & Complexity</h4>
+      <table class="tbl">
+        <tr><th>Command</th><th>Complexity</th><th>Note</th></tr>
+        <tr><td><code>SADD / SREM</code></td><td><span class="complexity">O(1)</span></td><td>Add/remove member</td></tr>
+        <tr><td><code>SISMEMBER</code></td><td><span class="complexity">O(1)</span></td><td>Membership check</td></tr>
+        <tr><td><code>SCARD</code></td><td><span class="complexity">O(1)</span></td><td>Cardinality</td></tr>
+        <tr><td><code>SINTER</code></td><td><span class="complexity warn">O(N*M)</span></td><td>N=smallest set, M=num sets. Can be slow!</td></tr>
+        <tr><td><code>SUNION</code></td><td><span class="complexity warn">O(N)</span></td><td>N=total elements across all sets</td></tr>
+        <tr><td><code>SRANDMEMBER</code></td><td><span class="complexity">O(count)</span></td><td>Random sampling</td></tr>
+      </table>
+
+      <h4 class="sub2">When to Use</h4>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>Tags/Labels:</b> SADD post:1:tags "redis" "database"</li>
+        <li><b>Unique visitors:</b> SADD visitors:2024-01-15 "user:1001" (then SCARD for count)</li>
+        <li><b>Social graphs:</b> SINTER user:1:friends user:2:friends (mutual friends)</li>
+        <li><b>Deduplication:</b> Check SISMEMBER before processing</li>
+      </ul>
+
+      <pre><code>// Unique daily visitors
+SADD dau:2024-01-15 "user:1001" "user:1002" "user:1003"
+SCARD dau:2024-01-15  // -> 3
+
+// Mutual friends
+SINTER user:alice:friends user:bob:friends
+
+// Random recommendation
+SRANDMEMBER products:recommended 5</code></pre>
+    </div>
+  </div>
+
+  <!-- SORTED SET -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">5. Sorted Set (ZSet)</span>
+      <span class="cn">ZADD / ZRANGE / ZRANGEBYSCORE</span>
+      <span class="db dh">CRITICAL</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Internal Implementation: Skip List + Hash Table</h4>
+      <p>Sorted Set uses TWO data structures simultaneously:</p>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>Skip list:</b> Maintains elements sorted by score — O(log N) insert, delete, range queries</li>
+        <li><b>Hash table:</b> Maps member -> score — O(1) score lookup by member</li>
+      </ul>
+      <p style="margin-top:8px">For small sorted sets (&lt;= 128 elements, values &lt;= 64 bytes), uses <code>listpack</code> encoding instead.</p>
+
+      <div class="diagram">
+        <svg width="650" height="220" viewBox="0 0 650 220" xmlns="http://www.w3.org/2000/svg">
+          <text x="325" y="18" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#0f172a">Skip List Structure (Sorted Set)</text>
+          <!-- Levels -->
+          <text x="20" y="55" font-family="Inter" font-size="10" fill="#59677c">L3</text>
+          <text x="20" y="85" font-family="Inter" font-size="10" fill="#59677c">L2</text>
+          <text x="20" y="115" font-family="Inter" font-size="10" fill="#59677c">L1</text>
+          <text x="20" y="145" font-family="Inter" font-size="10" fill="#59677c">L0</text>
+
+          <!-- Header -->
+          <rect x="50" y="40" width="40" height="115" rx="4" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1"/>
+          <text x="70" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#59677c">HEAD</text>
+
+          <!-- Node: score=1 "alice" -->
+          <rect x="140" y="100" width="60" height="55" rx="4" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+          <text x="170" y="120" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#117e39">1.0</text>
+          <text x="170" y="140" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">alice</text>
+
+          <!-- Node: score=3 "bob" -->
+          <rect x="250" y="70" width="60" height="85" rx="4" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+          <text x="280" y="90" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#1658ea">3.0</text>
+          <text x="280" y="140" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">bob</text>
+
+          <!-- Node: score=5 "carol" -->
+          <rect x="360" y="100" width="60" height="55" rx="4" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+          <text x="390" y="120" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#117e39">5.0</text>
+          <text x="390" y="140" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">carol</text>
+
+          <!-- Node: score=8 "dave" -->
+          <rect x="470" y="40" width="60" height="115" rx="4" fill="#fee2e2" stroke="#c62020" stroke-width="1.5"/>
+          <text x="500" y="60" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#c62020">8.0</text>
+          <text x="500" y="140" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">dave</text>
+
+          <!-- Node: score=12 "eve" -->
+          <rect x="580" y="100" width="50" height="55" rx="4" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+          <text x="605" y="120" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#117e39">12.0</text>
+          <text x="605" y="140" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">eve</text>
+
+          <!-- Forward pointers L0 -->
+          <line x1="90" y1="142" x2="138" y2="142" stroke="#117e39" stroke-width="1" marker-end="url(#arrow)"/>
+          <line x1="200" y1="142" x2="248" y2="142" stroke="#117e39" stroke-width="1" marker-end="url(#arrow)"/>
+          <line x1="310" y1="142" x2="358" y2="142" stroke="#117e39" stroke-width="1" marker-end="url(#arrow)"/>
+          <line x1="420" y1="142" x2="468" y2="142" stroke="#117e39" stroke-width="1" marker-end="url(#arrow)"/>
+          <line x1="530" y1="142" x2="578" y2="142" stroke="#117e39" stroke-width="1" marker-end="url(#arrow)"/>
+
+          <!-- Forward pointers L1 -->
+          <line x1="90" y1="112" x2="138" y2="112" stroke="#1658ea" stroke-width="1" marker-end="url(#arrow)"/>
+          <line x1="200" y1="112" x2="248" y2="112" stroke="#1658ea" stroke-width="1" marker-end="url(#arrow)"/>
+          <line x1="310" y1="112" x2="358" y2="112" stroke="#1658ea" stroke-width="1" marker-end="url(#arrow)"/>
+          <line x1="420" y1="112" x2="468" y2="112" stroke="#1658ea" stroke-width="1" marker-end="url(#arrow)"/>
+
+          <!-- Forward pointers L2 -->
+          <line x1="90" y1="82" x2="248" y2="82" stroke="#7c3aed" stroke-width="1" marker-end="url(#arrow)"/>
+          <line x1="310" y1="82" x2="468" y2="82" stroke="#7c3aed" stroke-width="1" marker-end="url(#arrow)"/>
+
+          <!-- Forward pointers L3 -->
+          <line x1="90" y1="52" x2="468" y2="52" stroke="#c62020" stroke-width="1" marker-end="url(#arrow)"/>
+
+          <!-- Explanation -->
+          <text x="325" y="180" text-anchor="middle" font-family="Inter" font-size="11" fill="#334155">Search: start at highest level, skip forward, drop down when overshoot</text>
+          <text x="325" y="198" text-anchor="middle" font-family="Inter" font-size="11" fill="#334155">Expected O(log N) per operation, randomized level assignment (p=0.25)</text>
+        </svg>
+      </div>
+
+      <h4 class="sub2">Key Operations & Complexity</h4>
+      <table class="tbl">
+        <tr><th>Command</th><th>Complexity</th><th>Note</th></tr>
+        <tr><td><code>ZADD</code></td><td><span class="complexity">O(log N)</span></td><td>Insert/update with score</td></tr>
+        <tr><td><code>ZREM</code></td><td><span class="complexity">O(log N)</span></td><td>Remove member</td></tr>
+        <tr><td><code>ZSCORE</code></td><td><span class="complexity">O(1)</span></td><td>Get score (via hashtable)</td></tr>
+        <tr><td><code>ZRANK</code></td><td><span class="complexity">O(log N)</span></td><td>Get rank by score</td></tr>
+        <tr><td><code>ZRANGE</code></td><td><span class="complexity">O(log N + M)</span></td><td>Range by rank, M = returned count</td></tr>
+        <tr><td><code>ZRANGEBYSCORE</code></td><td><span class="complexity">O(log N + M)</span></td><td>Range by score</td></tr>
+        <tr><td><code>ZREMRANGEBYSCORE</code></td><td><span class="complexity">O(log N + M)</span></td><td>Remove by score range</td></tr>
+      </table>
+
+      <h4 class="sub2">When to Use</h4>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>Leaderboard:</b> Score = points, member = player_id</li>
+        <li><b>Rate limiter (sliding window):</b> Score = timestamp, member = request_id</li>
+        <li><b>Priority queue:</b> Score = priority, member = task_id</li>
+        <li><b>Time-series index:</b> Score = timestamp, member = event_id</li>
+        <li><b>Autocomplete:</b> Score = frequency, member = term</li>
+      </ul>
+
+      <div class="iq">"For the leaderboard, I'd use a Redis Sorted Set. ZADD gives us O(log N) insertions, ZREVRANGE gives top-K in O(log N + K), and ZRANK gives any player's position in O(log N). It's the perfect data structure for ordered data with fast rank queries."</div>
+
+      <pre><code>// Leaderboard
+ZADD leaderboard 1500 "player:alice" 2300 "player:bob" 1800 "player:carol"
+ZREVRANGE leaderboard 0 9 WITHSCORES  // Top 10
+ZRANK leaderboard "player:alice"       // Alice's rank
+
+// Sliding window rate limiter
+// Score = timestamp, Member = unique request ID
+ZADD rate:user:1001 1706000001.123 "req-uuid-1"
+ZADD rate:user:1001 1706000001.456 "req-uuid-2"
+ZREMRANGEBYSCORE rate:user:1001 0 (now - window_size)
+ZCARD rate:user:1001  // Current count in window
+
+// Priority queue
+ZADD tasks:priority 1 "critical-task" 5 "normal-task" 10 "low-task"
+ZPOPMIN tasks:priority  // Get highest priority (lowest score)</code></pre>
+
+      <div class="tip">
+        <div class="tipl">WHY SKIP LIST OVER BALANCED TREE?</div>
+        <p>Redis author Salvatore Sanfilippo (antirez) chose skip lists because: (1) simpler implementation, (2) easy range operations (just follow forward pointers), (3) same O(log N) expected performance, (4) memory-efficient and tunable (the level probability is configurable; Redis uses p=1/4). Concurrency was not among the reasons — Redis runs commands single-threaded.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- STREAM -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">6. Stream</span>
+      <span class="cn">XADD / XREAD / XREADGROUP</span>
+      <span class="db dm">HIGH</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Internal Implementation</h4>
+      <p>Streams are an append-only data structure built on a radix tree of macro-nodes. Each node contains multiple entries stored in a listpack, keyed by entry ID (timestamp-sequence).</p>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li>Entry IDs: <code>&lt;ms-timestamp&gt;-&lt;sequence&gt;</code> (auto-generated or explicit)</li>
+        <li>Consumer groups: independent cursors on the same stream, with acknowledgment</li>
+        <li>Pending Entries List (PEL): tracks delivered-but-unacknowledged messages</li>
+      </ul>
+
+      <h4 class="sub2">Key Operations</h4>
+      <table class="tbl">
+        <tr><th>Command</th><th>Complexity</th><th>Note</th></tr>
+        <tr><td><code>XADD</code></td><td><span class="complexity">O(1)</span></td><td>Append entry (amortized)</td></tr>
+        <tr><td><code>XREAD</code></td><td><span class="complexity">O(N)</span></td><td>Read entries (can block)</td></tr>
+        <tr><td><code>XREADGROUP</code></td><td><span class="complexity">O(N)</span></td><td>Consumer group read</td></tr>
+        <tr><td><code>XACK</code></td><td><span class="complexity">O(1)</span></td><td>Acknowledge processing</td></tr>
+        <tr><td><code>XLEN</code></td><td><span class="complexity">O(1)</span></td><td>Stream length</td></tr>
+        <tr><td><code>XTRIM</code></td><td><span class="complexity">O(N)</span></td><td>Cap stream size</td></tr>
+      </table>
+
+      <h4 class="sub2">When to Use</h4>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>Event sourcing:</b> Immutable event log with consumer groups</li>
+        <li><b>Message queue (reliable):</b> Unlike List, supports ACK and re-delivery</li>
+        <li><b>Activity feed:</b> Time-ordered events with fan-out</li>
+        <li><b>Audit log:</b> Append-only with automatic trimming</li>
+      </ul>
+
+      <pre><code>// Create stream entry
+XADD orders * user_id 1001 product "widget" qty 3
+
+// Consumer group
+XGROUP CREATE orders processing $ MKSTREAM
+XREADGROUP GROUP processing worker-1 COUNT 10 BLOCK 5000 STREAMS orders >
+XACK orders processing "1706000001234-0"
+
+// Trim to max 10000 entries
+XTRIM orders MAXLEN ~ 10000  // ~ means approximate (faster)</code></pre>
+
+      <div class="ins">
+        <div class="insl">STREAMS VS PUB/SUB</div>
+        <p>Pub/Sub is fire-and-forget (no persistence, offline subscribers miss messages). Streams persist data, support consumer groups with ACK, and allow replaying history. Use Streams for reliable message processing; Pub/Sub for real-time broadcasting where message loss is acceptable.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- BITMAP -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">7. Bitmap</span>
+      <span class="cn">SETBIT / GETBIT / BITCOUNT</span>
+      <span class="db de">MEDIUM</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Internal Implementation</h4>
+      <p>Bitmaps are not a separate data type — they are Strings with bit-level operations. A String can hold up to 512MB = 2^32 bits (4 billion bits).</p>
+
+      <h4 class="sub2">Key Operations</h4>
+      <table class="tbl">
+        <tr><th>Command</th><th>Complexity</th><th>Note</th></tr>
+        <tr><td><code>SETBIT</code></td><td><span class="complexity">O(1)</span></td><td>Set/clear a specific bit</td></tr>
+        <tr><td><code>GETBIT</code></td><td><span class="complexity">O(1)</span></td><td>Get value of a bit</td></tr>
+        <tr><td><code>BITCOUNT</code></td><td><span class="complexity warn">O(N)</span></td><td>Count set bits (uses popcount CPU instruction)</td></tr>
+        <tr><td><code>BITOP</code></td><td><span class="complexity warn">O(N)</span></td><td>AND/OR/XOR/NOT between bitmaps</td></tr>
+        <tr><td><code>BITPOS</code></td><td><span class="complexity warn">O(N)</span></td><td>Find first set/unset bit</td></tr>
+      </table>
+
+      <h4 class="sub2">When to Use</h4>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>Daily active users:</b> One bit per user_id. SETBIT dau:2024-01-15 user_id 1</li>
+        <li><b>Feature flags:</b> Which users have feature X enabled</li>
+        <li><b>Bloom filter (manual):</b> Multiple hash functions, set bits</li>
+        <li><b>Online status:</b> SETBIT online user_id 1/0</li>
+      </ul>
+
+      <pre><code>// Daily Active Users tracking
+SETBIT dau:2024-01-15 1001 1  // user 1001 visited
+SETBIT dau:2024-01-15 1002 1  // user 1002 visited
+BITCOUNT dau:2024-01-15       // -> 2 active users
+
+// Weekly active users (OR of 7 daily bitmaps)
+BITOP OR wau:2024-w03 dau:2024-01-15 dau:2024-01-16 ... dau:2024-01-21
+BITCOUNT wau:2024-w03
+
+// Memory: 100M users = 12.5 MB per day bitmap</code></pre>
+
+      <div class="tip">
+        <div class="tipl">MEMORY EFFICIENCY</div>
+        <p>For 100 million users: Bitmap = 12.5 MB/day. A Set of the same 100M user IDs = several GB/day (~60-90 bytes overhead per member). Bitmap wins dramatically for dense populations. But if only 1% of users are active, the bitmap wastes space — use a Set or HyperLogLog instead.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- HYPERLOGLOG -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">8. HyperLogLog</span>
+      <span class="cn">PFADD / PFCOUNT / PFMERGE</span>
+      <span class="db de">MEDIUM</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Internal Implementation</h4>
+      <p>Probabilistic data structure for cardinality estimation. Uses 16384 registers (6 bits each). Key properties:</p>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li>Fixed memory: 12 KB maximum regardless of cardinality</li>
+        <li>Standard error: 0.81% (for 16384 registers)</li>
+        <li>Can count up to 2^64 unique elements</li>
+        <li>Mergeable: PFMERGE combines multiple HLLs</li>
+        <li>Two encodings: sparse (memory-efficient for small counts) and dense (12KB fixed)</li>
+      </ul>
+
+      <h4 class="sub2">Key Operations</h4>
+      <table class="tbl">
+        <tr><th>Command</th><th>Complexity</th><th>Note</th></tr>
+        <tr><td><code>PFADD</code></td><td><span class="complexity">O(1)</span></td><td>Add element</td></tr>
+        <tr><td><code>PFCOUNT</code></td><td><span class="complexity">O(1)</span></td><td>Get estimated cardinality</td></tr>
+        <tr><td><code>PFMERGE</code></td><td><span class="complexity">O(N)</span></td><td>Merge multiple HLLs</td></tr>
+      </table>
+
+      <h4 class="sub2">When to Use</h4>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>Unique visitor count:</b> When 0.81% error is acceptable</li>
+        <li><b>Unique search queries per day:</b> Massive cardinality, low memory</li>
+        <li><b>Unique IP addresses:</b> Network monitoring</li>
+        <li><b>NOT for:</b> Cases requiring exact count or membership testing</li>
+      </ul>
+
+      <div class="iq">"For counting unique visitors where we don't need exact precision, I'd use HyperLogLog. It gives us constant 12KB memory per counter regardless of cardinality, with only 0.81% standard error. If we need exact counts, we'd use a Set, but that could be GBs of memory for high-cardinality data."</div>
+
+      <pre><code>// Unique visitors (12 KB vs potentially GBs with Set)
+PFADD unique:visitors:2024-01-15 "user:1001" "user:1002" "user:1003"
+PFCOUNT unique:visitors:2024-01-15  // ~3 (approximate)
+
+// Monthly unique visitors (merge daily HLLs)
+PFMERGE unique:visitors:2024-01 unique:visitors:2024-01-01 ... unique:visitors:2024-01-31
+PFCOUNT unique:visitors:2024-01
+
+// Memory comparison for 10M unique items:
+// Set: ~800 MB
+// HyperLogLog: 12 KB (constant!)</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== USE CASES TAB ==================== -->
+<section id="sec-usecases" class="sec">
+  <h2 class="stitle">Common Use Cases</h2>
+  <p class="sdesc">Problem-to-solution patterns with data structure choices, code patterns, and gotchas. These are the patterns that come up in system design interviews.</p>
+
+  <!-- CACHE -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">1. Cache (Cache-Aside, Write-Through, Write-Behind)</span>
+      <span class="cn">Caching Patterns</span>
+      <span class="db dh">CRITICAL</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h3 class="sub2">Cache-Aside (Lazy Loading)</h3>
+      <p>Application manages cache. Read: check cache first, on miss read from DB and populate cache. Write: update DB, then invalidate/update cache.</p>
+
+      <div class="diagram">
+        <svg width="550" height="180" viewBox="0 0 550 180" xmlns="http://www.w3.org/2000/svg">
+          <text x="275" y="18" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#0f172a">Cache-Aside Pattern</text>
+          <!-- App -->
+          <rect x="220" y="40" width="110" height="40" rx="6" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+          <text x="275" y="64" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#1d4ed8">Application</text>
+          <!-- Redis -->
+          <rect x="50" y="120" width="110" height="40" rx="6" fill="#fee2e2" stroke="#c62020" stroke-width="1.5"/>
+          <text x="105" y="144" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#c62020">Redis Cache</text>
+          <!-- DB -->
+          <rect x="390" y="120" width="110" height="40" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+          <text x="445" y="144" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#117e39">Database</text>
+
+          <!-- Arrows -->
+          <line x1="240" y1="80" x2="130" y2="118" stroke="#c62020" stroke-width="1.3" marker-end="url(#arrow)"/>
+          <text x="165" y="92" font-family="Inter" font-size="9" fill="#c62020">1. Check cache</text>
+
+          <line x1="310" y1="80" x2="420" y2="118" stroke="#117e39" stroke-width="1.3" marker-end="url(#arrow)"/>
+          <text x="380" y="92" font-family="Inter" font-size="9" fill="#117e39">2. Cache miss: read DB</text>
+
+          <line x1="390" y1="140" x2="162" y2="140" stroke="#7c3aed" stroke-width="1.3" stroke-dasharray="4" marker-end="url(#arrow)"/>
+          <text x="275" y="155" text-anchor="middle" font-family="Inter" font-size="9" fill="#7c3aed">3. Populate cache (SET with TTL)</text>
+        </svg>
+      </div>
+
+      <pre><code>// Cache-Aside (most common pattern)
+def get_user(user_id):
+    # 1. Check cache
+    cached = redis.get(f"user:{user_id}")
+    if cached:
+        return deserialize(cached)
+
+    # 2. Cache miss - read from DB
+    user = db.query("SELECT * FROM users WHERE id = ?", user_id)
+
+    # 3. Populate cache with TTL
+    redis.setex(f"user:{user_id}", 3600, serialize(user))
+    return user
+
+def update_user(user_id, data):
+    db.update("UPDATE users SET ... WHERE id = ?", user_id)
+    redis.delete(f"user:{user_id}")  # Invalidate (safer than update)</code></pre>
+
+      <h4 class="sub2">Write-Through</h4>
+      <p>Every write goes to both cache and DB synchronously. Ensures cache is always fresh but adds write latency.</p>
+
+      <h4 class="sub2">Write-Behind (Write-Back)</h4>
+      <p>Write to cache immediately, asynchronously flush to DB in batches. Lower write latency but risk of data loss if Redis crashes before flush.</p>
+
+      <div class="g2">
+        <div class="tip">
+          <div class="tipl">CACHE-ASIDE PROS</div>
+          <p>Only requested data is cached (no wasted memory). Works even if cache goes down (graceful degradation). Simple to implement.</p>
+        </div>
+        <div class="warn">
+          <div class="warnl">CACHE-ASIDE CONS</div>
+          <p>Cache miss = extra latency (DB read + cache write). Stale data possible between DB update and cache invalidation. Thundering herd on popular key expiry.</p>
+        </div>
+      </div>
+
+      <div class="trap">
+        <div class="trapl">PITFALLS</div>
+        <p><b>Thundering herd:</b> Popular key expires, 1000 requests simultaneously hit DB. Solution: use locking (SETNX) so only one request rebuilds cache. <b>Inconsistency:</b> Delete cache after DB write (not before). Use <code>SET ... EX</code> with TTL as a safety net. <b>Cache penetration:</b> Queries for non-existent data always miss. Solution: cache null results with short TTL, or use Bloom filter.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SESSION STORE -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">2. Session Store</span>
+      <span class="cn">Hash + TTL</span>
+      <span class="db de">MEDIUM</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Problem</h4>
+      <p>HTTP is stateless. Need server-side session storage that works across multiple app servers (horizontal scaling). Traditional: sticky sessions (bad for HA) or DB-backed sessions (slow).</p>
+
+      <h4 class="sub2">Solution</h4>
+      <pre><code>// Store session as Hash (partial read/write of fields)
+HSET session:abc123 user_id 1001 role "admin" cart_size 3 last_active 1706000000
+EXPIRE session:abc123 1800  // 30 min TTL
+
+// Read specific fields (efficient)
+HMGET session:abc123 user_id role
+
+// Update on activity (reset TTL)
+HSET session:abc123 last_active 1706001000
+EXPIRE session:abc123 1800
+
+// OR use String with serialized JSON for simpler access
+SET session:abc123 "{\"user_id\":1001,\"role\":\"admin\"}" EX 1800</code></pre>
+
+      <h4 class="sub2">Design Decisions</h4>
+      <table class="tbl">
+        <tr><th>Choice</th><th>String</th><th>Hash</th></tr>
+        <tr><td>Read pattern</td><td>Always read full session</td><td>Can read individual fields</td></tr>
+        <tr><td>Write pattern</td><td>Must rewrite entire object</td><td>Update single fields</td></tr>
+        <tr><td>Memory</td><td>Less overhead per key</td><td>Slightly more, but listpack helps</td></tr>
+        <tr><td>Best for</td><td>Small, rarely-updated sessions</td><td>Large sessions with frequent partial updates</td></tr>
+      </table>
+
+      <div class="warn">
+        <div class="warnl">PITFALL</div>
+        <p>Before Redis 7.4, EXPIRE could only be set on the whole key, not individual hash fields — so per-field TTL required separate keys or application-level expiry. As of Redis 7.4 you can set per-field TTL natively with HEXPIRE/HPEXPIRE (and inspect/clear it with HTTL/HPERSIST); on older versions the whole-key limitation still applies. Also: session fixation attacks — always regenerate session ID on login.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RATE LIMITER -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">3. Rate Limiter</span>
+      <span class="cn">Fixed Window + Sliding Window</span>
+      <span class="db dh">CRITICAL</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Fixed Window (Simple)</h4>
+      <pre><code>// Fixed window: 100 requests per minute
+key = f"rate:{user_id}:{current_minute}"
+count = INCR key
+if count == 1:
+    EXPIRE key 60  // First request in window
+if count > 100:
+    return 429  // Too Many Requests</code></pre>
+      <p style="margin-top:8px"><b>Problem:</b> Boundary issue. User sends 100 requests at 12:00:59 and 100 more at 12:01:00 = 200 requests in 2 seconds.</p>
+
+      <h4 class="sub2">Sliding Window with Sorted Set (Production-grade)</h4>
+      <pre><code>// Sliding window: 100 requests per 60 seconds
+def is_allowed(user_id, limit=100, window=60):
+    key = f"rate:{user_id}"
+    now = time.time()
+    pipe = redis.pipeline()   # redis-py pipelines default to transaction=True (MULTI/EXEC), so the ops below run atomically; for conditional logic use a Lua/EVAL script instead
+
+    # Remove entries outside window
+    pipe.zremrangebyscore(key, 0, now - window)
+    # Count remaining entries
+    pipe.zcard(key)
+    # Add current request
+    pipe.zadd(key, {str(uuid4()): now})
+    # Set expiry on key as safety net
+    pipe.expire(key, window)
+
+    results = pipe.execute()
+    current_count = results[1]
+
+    return current_count < limit</code></pre>
+
+      <div class="diagram">
+        <svg width="550" height="150" viewBox="0 0 550 150" xmlns="http://www.w3.org/2000/svg">
+          <text x="275" y="18" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#0f172a">Sliding Window Rate Limiter (Sorted Set)</text>
+          <!-- Timeline -->
+          <line x1="50" y1="70" x2="500" y2="70" stroke="#cbd5e1" stroke-width="2"/>
+          <!-- Window bracket -->
+          <line x1="150" y1="55" x2="150" y2="85" stroke="#c62020" stroke-width="2"/>
+          <line x1="450" y1="55" x2="450" y2="85" stroke="#c62020" stroke-width="2"/>
+          <line x1="150" y1="55" x2="450" y2="55" stroke="#c62020" stroke-width="1.5" stroke-dasharray="4"/>
+          <text x="300" y="48" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#c62020">60 second window</text>
+          <!-- Dots (requests) -->
+          <circle cx="100" cy="70" r="5" fill="#94a3b8"/>
+          <circle cx="120" cy="70" r="5" fill="#94a3b8"/>
+          <text x="110" y="100" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">expired (removed)</text>
+          <circle cx="200" cy="70" r="6" fill="#117e39"/>
+          <circle cx="250" cy="70" r="6" fill="#117e39"/>
+          <circle cx="320" cy="70" r="6" fill="#117e39"/>
+          <circle cx="380" cy="70" r="6" fill="#117e39"/>
+          <circle cx="430" cy="70" r="6" fill="#117e39"/>
+          <text x="315" y="100" text-anchor="middle" font-family="Inter" font-size="9" fill="#117e39">counted (ZCARD)</text>
+          <!-- Now marker -->
+          <line x1="450" y1="60" x2="450" y2="80" stroke="#1658ea" stroke-width="2"/>
+          <text x="450" y="125" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#1658ea">NOW</text>
+          <!-- New request -->
+          <circle cx="460" cy="70" r="6" fill="#1658ea" stroke="#1d4ed8" stroke-width="1.5"/>
+          <text x="480" y="65" font-family="Inter" font-size="9" fill="#1658ea">new req</text>
+        </svg>
+      </div>
+
+      <div class="iq">"For a sliding window rate limiter, I'd use a Redis Sorted Set where the score is the request timestamp. On each request: ZREMRANGEBYSCORE to remove expired entries, ZCARD to count current requests in the window, and ZADD for the new request — wrapped in a Lua script (or MULTI/EXEC) so the count-check and insert run atomically, with no other client interleaving between them."</div>
+
+      <div class="warn">
+        <div class="warnl">PITFALLS</div>
+        <p><b>Memory:</b> Sorted Set stores every request ID — for high-volume APIs, this uses significant memory. Consider fixed-window with INCR for most cases, or the sliding window log only for low-volume endpoints that need precision. <b>Race condition:</b> Use MULTI/EXEC or Lua script for atomicity between ZCARD check and ZADD.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DISTRIBUTED LOCK -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">4. Distributed Lock</span>
+      <span class="cn">SETNX + Redlock</span>
+      <span class="db dh">CRITICAL</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Simple Lock (Single Instance)</h4>
+      <pre><code>// Acquire lock (atomic SET NX EX)
+SET lock:order:123 "owner-uuid-abc" NX EX 30
+// NX = only if not exists, EX = expire in 30s
+
+// Release lock (must verify ownership!)
+// Use Lua script for atomic check-and-delete:
+EVAL "if redis.call('get',KEYS[1]) == ARGV[1] then
+        return redis.call('del',KEYS[1])
+      else return 0 end"
+      1 lock:order:123 "owner-uuid-abc"</code></pre>
+
+      <h4 class="sub2">Why Owner UUID Matters</h4>
+      <p>Without ownership check: Client A acquires lock, takes too long (lock expires), Client B acquires lock, Client A finishes and deletes B's lock. With UUID: Client A can only delete its own lock.</p>
+
+      <h4 class="sub2">Redlock Algorithm (Multi-Instance)</h4>
+      <p>For environments where a single Redis instance is not acceptable for safety:</p>
+      <ol style="margin:8px 0 8px 18px;font-size:13px;">
+        <li>Get current time in milliseconds</li>
+        <li>Try to acquire lock on N (typically 5) independent Redis instances with same key/value/TTL</li>
+        <li>Lock is acquired if: majority (N/2 + 1) instances grant lock AND total elapsed time &lt; TTL</li>
+        <li>If lock fails, unlock all instances</li>
+        <li>Effective lock validity = TTL - elapsed_time_to_acquire</li>
+      </ol>
+
+      <div class="trap">
+        <div class="trapl">CRITICAL PITFALL: MARTIN KLEPPMANN'S CRITIQUE</div>
+        <p>Redlock assumes bounded clock drift and bounded process pauses. In practice: (1) GC pauses can exceed lock TTL, (2) clock jumps can invalidate timing assumptions. If you need strong mutual exclusion, use fencing tokens (monotonic counter) alongside the lock, or use a consensus system like ZooKeeper/etcd. Redis locks are best for <b>efficiency</b> (prevent duplicate work) not <b>correctness</b> (prevent data corruption).</p>
+      </div>
+
+      <div class="iq">"I'd use Redis SET with NX and EX flags for a distributed lock. The key consideration is the lock must have an owner identifier and TTL to prevent deadlocks. For release, a Lua script ensures atomic check-and-delete. However, I want to note this only provides efficiency guarantees, not correctness — for strict correctness under network partitions, we'd need fencing tokens or a CP system like ZooKeeper."</div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">5. Leaderboard</span>
+      <span class="cn">Sorted Set</span>
+      <span class="db dm">HIGH</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Solution: Sorted Set</h4>
+      <pre><code>// Add/update scores
+ZADD leaderboard 2500 "player:alice"
+ZADD leaderboard 3200 "player:bob"
+ZINCRBY leaderboard 100 "player:alice"  // +100 points
+
+// Top 10 (highest scores)
+ZREVRANGE leaderboard 0 9 WITHSCORES
+
+// Player's rank (0-indexed from top)
+ZREVRANK leaderboard "player:alice"
+
+// Players around a specific rank (contextual leaderboard)
+rank = ZREVRANK leaderboard "player:alice"
+ZREVRANGE leaderboard (rank-5) (rank+5) WITHSCORES
+
+// Time-boxed leaderboard (weekly)
+ZADD leaderboard:week:2024-03 2500 "player:alice"
+EXPIRE leaderboard:week:2024-03 604800  // 7 days</code></pre>
+
+      <h4 class="sub2">Scaling Considerations</h4>
+      <table class="tbl">
+        <tr><th>Scale</th><th>Approach</th><th>Notes</th></tr>
+        <tr><td>&lt; 10M players</td><td>Single sorted set</td><td>Redis handles this easily on one instance</td></tr>
+        <tr><td>10M - 100M</td><td>Sharded by score ranges or time periods</td><td>Top-K queries may span shards</td></tr>
+        <tr><td>&gt; 100M</td><td>Approximate: top-K only + sampling</td><td>Exact global rank becomes expensive</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- PUB/SUB vs STREAMS -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">6. Pub/Sub vs Streams</span>
+      <span class="cn">Messaging Comparison</span>
+      <span class="db dm">HIGH</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <table class="tbl">
+        <tr><th>Feature</th><th>Pub/Sub</th><th>Streams</th></tr>
+        <tr><td>Persistence</td><td>No (fire-and-forget)</td><td>Yes (append-only log)</td></tr>
+        <tr><td>Consumer groups</td><td>No</td><td>Yes (with ACK)</td></tr>
+        <tr><td>History replay</td><td>No (miss = gone)</td><td>Yes (read from any ID)</td></tr>
+        <tr><td>Fan-out</td><td>All subscribers get all messages</td><td>Consumer groups distribute messages</td></tr>
+        <tr><td>Backpressure</td><td>Subscriber buffer can grow unbounded</td><td>Consumers control read pace</td></tr>
+        <tr><td>Use case</td><td>Real-time notifications, chat</td><td>Event sourcing, task queues, reliable messaging</td></tr>
+        <tr><td>Delivery guarantee</td><td>At-most-once</td><td>At-least-once (with XACK)</td></tr>
+      </table>
+
+      <div class="iq">"For this use case I'd choose Redis Streams over Pub/Sub because we need message persistence and at-least-once delivery. If a consumer crashes mid-processing, unacknowledged messages in the Pending Entries List can be re-claimed by another consumer. Pub/Sub would lose those messages."</div>
+    </div>
+  </div>
+
+  <!-- COUNTER/ANALYTICS -->
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">7. Counter / Analytics</span>
+      <span class="cn">INCR + HyperLogLog</span>
+      <span class="db de">MEDIUM</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <h4 class="sub2">Total Count (Exact): INCR</h4>
+      <pre><code>// Page views - exact count
+INCR pageviews:homepage:2024-01-15
+INCRBY pageviews:homepage:2024-01-15 1
+
+// API call counter per user
+INCR api:calls:user:1001:2024-01-15-14  // per hour bucket
+EXPIRE api:calls:user:1001:2024-01-15-14 7200</code></pre>
+
+      <h4 class="sub2">Unique Count (Approximate): HyperLogLog</h4>
+      <pre><code>// Unique visitors - approximate (0.81% error, 12KB memory)
+PFADD uv:homepage:2024-01-15 "user:1001" "user:1002"
+PFCOUNT uv:homepage:2024-01-15  // ~2
+
+// Merge for weekly uniques
+PFMERGE uv:homepage:week:03 uv:homepage:2024-01-15 ... uv:homepage:2024-01-21</code></pre>
+
+      <h4 class="sub2">Unique Count (Exact): Set or Bitmap</h4>
+      <pre><code>// If you need exact unique count AND can enumerate users:
+SETBIT dau:2024-01-15 user_id 1  // Bitmap: 12.5 MB for 100M users
+BITCOUNT dau:2024-01-15
+
+// If user IDs are sparse or non-numeric:
+SADD unique:api:2024-01-15 "api-key-xyz"  // Set: more memory
+SCARD unique:api:2024-01-15</code></pre>
+
+      <table class="tbl">
+        <tr><th>Method</th><th>Exact?</th><th>Memory (100M items)</th><th>Best For</th></tr>
+        <tr><td>INCR (String)</td><td>Yes (total, not unique)</td><td>~100 bytes/counter</td><td>Total counts</td></tr>
+        <tr><td>HyperLogLog</td><td>No (~0.81% error)</td><td>12 KB fixed</td><td>High-cardinality unique counts</td></tr>
+        <tr><td>Bitmap</td><td>Yes</td><td>12.5 MB/bitmap</td><td>Dense, numeric ID population</td></tr>
+        <tr><td>Set</td><td>Yes</td><td>~6-8 GB</td><td>Small cardinality, need membership test</td></tr>
+      </table>
+    </div>
+  </div>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">TX</span><span class="ct">Pipelining, Transactions, Lua &amp; Functions</span><span class="db de">EXECUTION</span><span class="chv">&#9654;</span></div><div class="cb">
+
+<div class="iq">"Pipelining bundles the network, MULTI bundles the intent, Lua bundles the logic — only the last two bundle atomicity, and even MULTI won't roll back a mistake."</div>
+
+<p>Four mechanisms that all reduce round-trips or group commands, but they differ sharply on <strong>atomicity</strong> and <strong>where the logic runs</strong>. A common probe is the gap between "batched" and "atomic".</p>
+
+<h3 class="sub">1. Pipelining — batch the wire, not the atom</h3>
+<p>The client writes many commands to the socket <em>without</em> waiting for each reply, then reads all replies at the end. This collapses N network round-trips (RTT) into essentially 1, which is the dominant win for chatty workloads on high-latency links.</p>
+<p class="ins">INSIGHT: Pipelining is purely a <strong>client-side / transport optimization</strong>. The server still executes each command independently, and because Redis is single-threaded it processes your pipelined commands in order — but there is <strong>no isolation guarantee</strong>: nothing prevents other clients' commands from being served around the batch (a pipeline drained in a single socket read runs consecutively, but once it spans multiple reads other clients can be interleaved). No atomicity.</p>
+<p class="note">NOTE: Keep pipeline batches bounded (e.g. a few thousand commands). A giant pipeline forces the server to buffer all replies in the output buffer, inflating memory and latency for other clients.</p>
+
+<h3 class="sub">2. MULTI / EXEC / WATCH — transactions with optimistic locking</h3>
+<p>Wrap commands between <code>MULTI</code> and <code>EXEC</code>. Commands are <em>queued</em> (each returns <code>+QUEUED</code>) and then executed as a single isolated, serialized unit at <code>EXEC</code> — no other client's commands run in the middle. <code>DISCARD</code> flushes the queue and cancels the transaction before <code>EXEC</code>.</p>
+<p><code>WATCH key [key ...]</code> adds <strong>optimistic locking</strong> (compare-and-swap): if any watched key is modified by anyone between <code>WATCH</code> and <code>EXEC</code>, the whole transaction aborts and <code>EXEC</code> returns a <em>nil</em> reply — the client must retry. <code>UNWATCH</code> clears all watches. This is the canonical pattern for check-then-set without holding a lock.</p>
+
+<p class="trap">TRAP: <strong>MULTI/EXEC has NO rollback.</strong> Redis distinguishes two error classes:<br>
+&bull; <strong>Queuing-time errors</strong> (e.g. a syntactically wrong command or unknown command name): detected during queuing, and since <strong>Redis 2.6.5</strong> the server flags the transaction so that <code>EXEC</code> refuses to run and discards the whole batch.<br>
+&bull; <strong>Runtime errors</strong> (e.g. running <code>INCR</code> against a key holding a list — a wrong-type error only knowable at execution): the offending command fails, but <strong>every other command in the transaction still executes and commits</strong>. There is no undo. If you sent <code>SET a 1</code>, <code>LPUSH a x</code>, <code>SET b 2</code>, then <code>a=1</code> and <code>b=2</code> both persist and only the <code>LPUSH</code> errors. This is deliberate: Redis has no rollback machinery because such errors are programming bugs, and skipping rollback keeps it fast and simple.</p>
+
+<h3 class="sub">3. Lua scripting — EVAL / EVALSHA (server-side atomic)</h3>
+<p><code>EVAL script numkeys key... arg...</code> ships a Lua script to the server and runs it <strong>atomically</strong>: because Redis is single-threaded, the script runs to completion with no other command interleaved (same isolation as EXEC, but you get real control flow, conditionals, and computation server-side — eliminating client round-trips inside the logic).</p>
+<p><code>SCRIPT LOAD</code> caches a script and returns its SHA1; <code>EVALSHA &lt;sha1&gt; ...</code> then invokes it by digest to avoid re-sending the body. If the server doesn't have it cached you get a <code>NOSCRIPT</code> error and fall back to <code>EVAL</code>.</p>
+<p class="tip">TIP: Pass keys via <code>KEYS[]</code> (not hardcoded) so the script is <strong>cluster-safe</strong> — Redis can verify every key maps to the same hash slot and route correctly — and pass other data via <code>ARGV[]</code>. (You no longer need to obsess over determinism: since Redis 5.0, scripts replicate their write <em>effects</em> rather than the script body, so the old "no unguarded <code>RANDOMKEY</code>/<code>TIME</code>/<code>SRANDMEMBER</code>" rule is largely relaxed.) Keep scripts short — a long-running script blocks the entire server; only <code>SCRIPT KILL</code> (if no write has happened yet) or <code>SHUTDOWN NOSAVE</code> can stop it.</p>
+
+<h3 class="sub">4. Redis Functions — FUNCTION LOAD (the persistent successor)</h3>
+<p>Introduced in <strong>Redis 7.0</strong> (GA April 2022), Functions are the modern, first-class replacement for the "load a Lua script on every deploy" pattern. You <code>FUNCTION LOAD</code> a <em>library</em> of named functions (registered via <code>redis.register_function</code> in the default Lua engine), then invoke them with <code>FCALL</code>. Use <code>FCALL_RO</code> to invoke in read-only mode: it refuses to run any function not flagged <code>no-writes</code> (and by extension is the variant usable on read-only replicas/connections) — the same relationship as <code>EVAL_RO</code>/<code>EVALSHA_RO</code> vs <code>EVAL</code>.</p>
+<p class="ins">INSIGHT: The key advantage over <code>EVAL</code> is <strong>persistence &amp; replication</strong>. Loaded functions are part of the dataset — they survive restarts (saved in RDB), are written to the AOF, and propagate to replicas. With plain scripts the SHA1 cache is ephemeral and must be reloaded after a restart or failover. Functions also support declarative flags (e.g. <code>no-writes</code>); a library is <em>named</em> and replaced in place via <code>FUNCTION LOAD REPLACE</code>, and managed with <code>FUNCTION DUMP</code>/<code>RESTORE</code>/<code>DELETE</code>/<code>LIST</code>.</p>
+
+<h3 class="sub">Comparison</h3>
+<table class="tbl"><thead><tr><th>Mechanism</th><th>Atomic / isolated?</th><th>Network round-trips</th><th>Persists across restart?</th><th>Typical use</th></tr></thead><tbody>
+<tr><td>Pipelining</td><td><strong>No</strong> — no isolation guarantee; commands run independently</td><td>~1 for the whole batch</td><td>N/A (transport only)</td><td>Bulk ingest / mass reads; cut RTT on chatty workloads</td></tr>
+<tr><td>MULTI / EXEC (+WATCH)</td><td><strong>Yes</strong> — serialized, isolated; but <em>no rollback</em></td><td>Multiple (each queued command is sent), or 1 if pipelined together</td><td>No (control commands, not stored)</td><td>Grouped writes; optimistic CAS via WATCH</td></tr>
+<tr><td>Lua (EVAL / EVALSHA)</td><td><strong>Yes</strong> — runs to completion single-threaded</td><td>1 call; logic runs server-side</td><td>No — SHA1 cache is ephemeral, lost on restart/failover</td><td>Multi-step atomic logic with branching/computation</td></tr>
+<tr><td>Functions (FCALL)</td><td><strong>Yes</strong> — same server-side atomicity</td><td>1 call by name</td><td><strong>Yes</strong> — in RDB/AOF, replicated to replicas</td><td>Deployed server-side APIs; long-lived stored procedures</td></tr>
+</tbody></table>
+
+<p class="warn">WATCH: Atomic does not mean "safe to be slow". Lua scripts and Functions block the single event loop for their entire duration; a heavy loop stalls every client. Push heavy computation to the app tier and keep server-side scripts to fast, decisive key manipulation.</p>
+
+</div></div>
+</section>
+
+<!-- ==================== PERSISTENCE TAB ==================== -->
+<section id="sec-persistence" class="sec">
+  <h2 class="stitle">Persistence</h2>
+  <p class="sdesc">How Redis durably stores data despite being in-memory. Critical for interview discussions about data loss trade-offs.</p>
+
+  <h3 class="sub">RDB Snapshots</h3>
+  <p>Point-in-time snapshot of the entire dataset saved as a compact binary file (<code>dump.rdb</code>).</p>
+
+  <div class="g2">
+    <div class="mini-card">
+      <h4>How It Works</h4>
+      <p>1. Redis forks a child process<br>2. Child writes dataset to temp RDB file<br>3. Parent continues serving (COW pages on write)<br>4. When complete, child atomically replaces old RDB<br>5. Triggered by config rules (e.g., "save 900 1" = save if 1+ change in 900s)</p>
+    </div>
+    <div class="mini-card">
+      <h4>Trade-offs</h4>
+      <p><b>Pros:</b> Compact file, fast restarts, minimal performance impact (fork COW)<br><br><b>Cons:</b> Data loss between snapshots (minutes of data), fork can be slow with large datasets (COW memory spike)</p>
+    </div>
+  </div>
+
+  <h3 class="sub">AOF (Append-Only File)</h3>
+  <p>Logs every write operation. On restart, replays the log to reconstruct state.</p>
+
+  <div class="g2">
+    <div class="mini-card">
+      <h4>How It Works</h4>
+      <p>1. Every write command appended to AOF buffer<br>2. Buffer fsynced to disk per policy:<br>&nbsp;&nbsp;- <code>always</code>: fsync every command (safest, slowest)<br>&nbsp;&nbsp;- <code>everysec</code>: fsync every second (good balance)<br>&nbsp;&nbsp;- <code>no</code>: OS decides (fastest, most risk)<br>3. AOF rewrite: compacts log by generating minimal command set</p>
+    </div>
+    <div class="mini-card">
+      <h4>Trade-offs</h4>
+      <p><b>Pros:</b> Minimal data loss (1 sec with everysec), human-readable, append-only is crash-safe<br><br><b>Cons:</b> Larger file than RDB, slower restarts (replay commands), AOF rewrite causes I/O spike</p>
+    </div>
+  </div>
+
+  <h3 class="sub">RDB + AOF Hybrid (Redis 4.0+)</h3>
+  <p>Best of both worlds: AOF rewrite generates an RDB-format prefix + AOF-format suffix. Fast restarts (load RDB part) with minimal data loss (replay AOF tail).</p>
+
+  <div class="diagram">
+    <svg width="700" height="340" viewBox="0 0 700 340" xmlns="http://www.w3.org/2000/svg">
+      <text x="350" y="20" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#0f172a">Persistence Data Flow</text>
+
+      <!-- RDB Flow -->
+      <rect x="30" y="50" width="200" height="130" rx="8" fill="#fff" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="130" y="72" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#c62020">RDB SNAPSHOT</text>
+
+      <rect x="50" y="82" width="160" height="22" rx="4" fill="#fee2e2" stroke="#c62020" stroke-width="1"/>
+      <text x="130" y="97" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#c62020">fork() child process</text>
+
+      <rect x="50" y="110" width="160" height="22" rx="4" fill="#fee2e2" stroke="#c62020" stroke-width="1"/>
+      <text x="130" y="125" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#c62020">child: write full dataset</text>
+
+      <rect x="50" y="138" width="160" height="22" rx="4" fill="#fee2e2" stroke="#c62020" stroke-width="1"/>
+      <text x="130" y="153" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#c62020">parent: COW on writes</text>
+
+      <!-- AOF Flow -->
+      <rect x="260" y="50" width="200" height="130" rx="8" fill="#fff" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="360" y="72" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#1658ea">AOF LOG</text>
+
+      <rect x="280" y="82" width="160" height="22" rx="4" fill="#dbeafe" stroke="#1658ea" stroke-width="1"/>
+      <text x="360" y="97" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#1658ea">append command to buffer</text>
+
+      <rect x="280" y="110" width="160" height="22" rx="4" fill="#dbeafe" stroke="#1658ea" stroke-width="1"/>
+      <text x="360" y="125" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#1658ea">fsync per policy</text>
+
+      <rect x="280" y="138" width="160" height="22" rx="4" fill="#dbeafe" stroke="#1658ea" stroke-width="1"/>
+      <text x="360" y="153" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#1658ea">rewrite compacts log</text>
+
+      <!-- Hybrid Flow -->
+      <rect x="490" y="50" width="190" height="130" rx="8" fill="#fff" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="585" y="72" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#117e39">HYBRID (4.0+)</text>
+
+      <rect x="510" y="82" width="150" height="22" rx="4" fill="#dcfce7" stroke="#117e39" stroke-width="1"/>
+      <text x="585" y="97" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#117e39">RDB prefix (bulk data)</text>
+
+      <rect x="510" y="110" width="150" height="22" rx="4" fill="#dcfce7" stroke="#117e39" stroke-width="1"/>
+      <text x="585" y="125" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#117e39">+ AOF suffix (recent)</text>
+
+      <rect x="510" y="138" width="150" height="22" rx="4" fill="#dcfce7" stroke="#117e39" stroke-width="1"/>
+      <text x="585" y="153" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#117e39">fast load + low loss</text>
+
+      <!-- Comparison bar chart -->
+      <rect x="30" y="210" width="640" height="120" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+      <text x="350" y="232" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#0f172a">Comparison</text>
+
+      <!-- Data loss -->
+      <text x="50" y="258" font-family="Inter" font-size="10" fill="#59677c">Data loss risk:</text>
+      <rect x="170" y="248" width="150" height="14" rx="3" fill="#fee2e2"/>
+      <text x="245" y="259" text-anchor="middle" font-family="Inter" font-size="9" fill="#c62020">RDB: minutes of data</text>
+      <rect x="170" y="266" width="40" height="14" rx="3" fill="#dbeafe"/>
+      <text x="250" y="277" font-family="Inter" font-size="9" fill="#1658ea">AOF: ~1 second (everysec)</text>
+      <rect x="170" y="284" width="25" height="14" rx="3" fill="#dcfce7"/>
+      <text x="250" y="295" font-family="Inter" font-size="9" fill="#117e39">Hybrid: ~1 second</text>
+
+      <!-- Restart time -->
+      <text x="400" y="258" font-family="Inter" font-size="10" fill="#59677c">Restart time:</text>
+      <rect x="500" y="248" width="40" height="14" rx="3" fill="#dcfce7"/>
+      <text x="560" y="259" font-family="Inter" font-size="9" fill="#117e39">RDB: fast (load binary)</text>
+      <rect x="500" y="266" width="130" height="14" rx="3" fill="#fee2e2"/>
+      <text x="560" y="277" font-family="Inter" font-size="9" fill="#c62020">AOF: slow (replay cmds)</text>
+      <rect x="500" y="284" width="50" height="14" rx="3" fill="#dbeafe"/>
+      <text x="560" y="295" font-family="Inter" font-size="9" fill="#1658ea">Hybrid: fast + complete</text>
+    </svg>
+  </div>
+
+  <h3 class="sub">When to Use Which</h3>
+  <table class="tbl">
+    <tr><th>Scenario</th><th>Recommendation</th><th>Rationale</th></tr>
+    <tr><td>Pure cache (data can be regenerated)</td><td>No persistence (or RDB for faster restarts)</td><td>No durability needed, maximize performance</td></tr>
+    <tr><td>Session store</td><td>RDB + AOF hybrid</td><td>Sessions are important but recoverable; fast restart preferred</td></tr>
+    <tr><td>Primary data store</td><td>AOF (everysec) + periodic RDB backups</td><td>Minimize data loss, RDB for offsite backup</td></tr>
+    <tr><td>High-write workload</td><td>AOF everysec (not always)</td><td><code>always</code> fsync destroys write throughput</td></tr>
+    <tr><td>Disaster recovery</td><td>RDB shipped to remote storage</td><td>Compact, portable, fast to load anywhere</td></tr>
+  </table>
+
+  <div class="iq">"For this service, I'd enable the hybrid AOF persistence mode — it gives us fast restart times since the bulk of data loads from the RDB prefix, while the AOF tail ensures we lose at most one second of writes. We'd also take periodic RDB snapshots for disaster recovery and ship them to object storage."</div>
+
+  <div class="warn">
+    <div class="warnl">FORK MEMORY OVERHEAD</div>
+    <p>When Redis forks for RDB/AOF-rewrite, Linux uses copy-on-write (COW). If the parent writes heavily during the fork, pages get copied — worst case 2x memory usage. Solutions: (1) set <code>vm.overcommit_memory=1</code>, (2) schedule saves during low-write periods, (3) provision 2x memory headroom.</p>
+  </div>
+</section>
+
+<!-- ==================== CLUSTER TAB ==================== -->
+<section id="sec-cluster" class="sec">
+  <h2 class="stitle">Cluster & High Availability</h2>
+  <p class="sdesc">Sentinel for HA, Cluster for sharding. Understanding these architectures is critical for scaling discussions in interviews.</p>
+
+  <h3 class="sub">Redis Sentinel (HA without Sharding)</h3>
+  <p>Sentinel provides high availability through monitoring, notification, automatic failover, and configuration provider. It does NOT shard data — all data lives on one primary.</p>
+
+  <div class="diagram">
+    <svg width="600" height="280" viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg">
+      <text x="300" y="20" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#0f172a">Redis Sentinel Architecture</text>
+
+      <!-- Sentinel nodes -->
+      <rect x="120" y="45" width="90" height="35" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+      <text x="165" y="67" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#7c3aed">Sentinel 1</text>
+      <rect x="255" y="45" width="90" height="35" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+      <text x="300" y="67" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#7c3aed">Sentinel 2</text>
+      <rect x="390" y="45" width="90" height="35" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+      <text x="435" y="67" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#7c3aed">Sentinel 3</text>
+
+      <!-- Quorum note -->
+      <text x="300" y="100" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Quorum: majority must agree on failure detection</text>
+
+      <!-- Primary -->
+      <rect x="230" y="120" width="140" height="45" rx="8" fill="#fee2e2" stroke="#c62020" stroke-width="2"/>
+      <text x="300" y="140" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#c62020">PRIMARY</text>
+      <text x="300" y="155" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">Read + Write</text>
+
+      <!-- Replicas -->
+      <rect x="80" y="200" width="120" height="40" rx="6" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+      <text x="140" y="218" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#1658ea">Replica 1</text>
+      <text x="140" y="232" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Read-only</text>
+
+      <rect x="240" y="200" width="120" height="40" rx="6" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+      <text x="300" y="218" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#1658ea">Replica 2</text>
+      <text x="300" y="232" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Read-only</text>
+
+      <rect x="400" y="200" width="120" height="40" rx="6" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+      <text x="460" y="218" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#1658ea">Replica 3</text>
+      <text x="460" y="232" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Read-only</text>
+
+      <!-- Replication arrows -->
+      <line x1="270" y1="165" x2="160" y2="198" stroke="#1658ea" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="300" y1="165" x2="300" y2="198" stroke="#1658ea" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <line x1="330" y1="165" x2="440" y2="198" stroke="#1658ea" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- Sentinel monitoring arrows -->
+      <line x1="165" y1="80" x2="260" y2="118" stroke="#7c3aed" stroke-width="0.8" stroke-dasharray="3"/>
+      <line x1="300" y1="80" x2="300" y2="118" stroke="#7c3aed" stroke-width="0.8" stroke-dasharray="3"/>
+      <line x1="435" y1="80" x2="340" y2="118" stroke="#7c3aed" stroke-width="0.8" stroke-dasharray="3"/>
+
+      <!-- Labels -->
+      <text x="300" y="270" text-anchor="middle" font-family="Inter" font-size="10" fill="#1658ea">Async replication (potential data loss on failover)</text>
+    </svg>
+  </div>
+
+  <h4 class="sub2">Sentinel Failover Process</h4>
+  <ol style="margin:8px 0 8px 18px;font-size:13px;">
+    <li>Sentinels detect primary is unreachable (SDOWN -> ODOWN after quorum agrees)</li>
+    <li>Sentinel leader is elected (Raft-like)</li>
+    <li>Leader selects best replica (priority, replication offset, runID)</li>
+    <li>Promotes replica to primary (<code>REPLICAOF NO ONE</code>; <code>SLAVEOF</code> is the deprecated alias)</li>
+    <li>Reconfigures other replicas to replicate from new primary</li>
+    <li>Clients are notified via Sentinel to connect to new primary</li>
+  </ol>
+
+  <h3 class="sub">Redis Cluster (Sharding)</h3>
+  <p>Distributed implementation with automatic sharding across multiple nodes. Data is partitioned using 16384 hash slots.</p>
+
+  <div class="diagram">
+    <svg width="700" height="350" viewBox="0 0 700 350" xmlns="http://www.w3.org/2000/svg">
+      <text x="350" y="20" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#0f172a">Redis Cluster — Hash Slot Distribution</text>
+
+      <!-- Hash slot bar -->
+      <rect x="50" y="45" width="600" height="30" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+      <rect x="50" y="45" width="200" height="30" rx="4" fill="#fee2e2" stroke="#c62020" stroke-width="1"/>
+      <rect x="250" y="45" width="200" height="30" rx="4" fill="#dbeafe" stroke="#1658ea" stroke-width="1"/>
+      <rect x="450" y="45" width="200" height="30" rx="4" fill="#dcfce7" stroke="#117e39" stroke-width="1"/>
+      <text x="150" y="64" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#c62020">Slots 0-5460</text>
+      <text x="350" y="64" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#1658ea">Slots 5461-10922</text>
+      <text x="550" y="64" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#117e39">Slots 10923-16383</text>
+
+      <!-- Hash function -->
+      <rect x="250" y="85" width="200" height="24" rx="4" fill="#fef3c7" stroke="#a35905" stroke-width="1"/>
+      <text x="350" y="101" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#92400e">slot = CRC16(key) % 16384</text>
+
+      <!-- Node A -->
+      <rect x="50" y="130" width="180" height="90" rx="8" fill="#fff" stroke="#c62020" stroke-width="2"/>
+      <text x="140" y="152" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#c62020">Node A (Primary)</text>
+      <text x="140" y="170" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">Slots 0-5460</text>
+      <rect x="70" y="180" width="140" height="24" rx="4" fill="#fee2e2"/>
+      <text x="140" y="196" text-anchor="middle" font-family="Inter" font-size="9" fill="#c62020">user:*, session:*</text>
+
+      <!-- Node B -->
+      <rect x="260" y="130" width="180" height="90" rx="8" fill="#fff" stroke="#1658ea" stroke-width="2"/>
+      <text x="350" y="152" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#1658ea">Node B (Primary)</text>
+      <text x="350" y="170" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">Slots 5461-10922</text>
+      <rect x="280" y="180" width="140" height="24" rx="4" fill="#dbeafe"/>
+      <text x="350" y="196" text-anchor="middle" font-family="Inter" font-size="9" fill="#1658ea">order:*, product:*</text>
+
+      <!-- Node C -->
+      <rect x="470" y="130" width="180" height="90" rx="8" fill="#fff" stroke="#117e39" stroke-width="2"/>
+      <text x="560" y="152" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#117e39">Node C (Primary)</text>
+      <text x="560" y="170" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">Slots 10923-16383</text>
+      <rect x="490" y="180" width="140" height="24" rx="4" fill="#dcfce7"/>
+      <text x="560" y="196" text-anchor="middle" font-family="Inter" font-size="9" fill="#117e39">cache:*, rate:*</text>
+
+      <!-- Replicas -->
+      <rect x="70" y="250" width="140" height="35" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1"/>
+      <text x="140" y="272" text-anchor="middle" font-family="Inter" font-size="9" fill="#c62020">Replica A1</text>
+
+      <rect x="280" y="250" width="140" height="35" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1"/>
+      <text x="350" y="272" text-anchor="middle" font-family="Inter" font-size="9" fill="#1658ea">Replica B1</text>
+
+      <rect x="490" y="250" width="140" height="35" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+      <text x="560" y="272" text-anchor="middle" font-family="Inter" font-size="9" fill="#117e39">Replica C1</text>
+
+      <!-- Replication arrows -->
+      <line x1="140" y1="220" x2="140" y2="248" stroke="#c62020" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="350" y1="220" x2="350" y2="248" stroke="#1658ea" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="560" y1="220" x2="560" y2="248" stroke="#117e39" stroke-width="1" marker-end="url(#arrow)"/>
+
+      <!-- MOVED redirect note -->
+      <rect x="150" y="305" width="400" height="30" rx="6" fill="#fef3c7" stroke="#a35905" stroke-width="1"/>
+      <text x="350" y="324" text-anchor="middle" font-family="Inter" font-size="10" fill="#92400e">Client gets MOVED redirect if key hashes to different node</text>
+    </svg>
+  </div>
+
+  <h4 class="sub2">Key Cluster Concepts</h4>
+  <table class="tbl">
+    <tr><th>Concept</th><th>Detail</th></tr>
+    <tr><td>Hash slots</td><td>16384 slots. <code>slot = CRC16(key) % 16384</code>. Each node owns a range.</td></tr>
+    <tr><td>Hash tags</td><td><code>{user}.profile</code> and <code>{user}.orders</code> hash to same slot (use text inside {}). Enables multi-key operations.</td></tr>
+    <tr><td>MOVED redirect</td><td>Client sends to wrong node -> gets <code>MOVED slot ip:port</code>. Smart clients cache slot mapping.</td></tr>
+    <tr><td>ASK redirect</td><td>During resharding, slot is migrating. <code>ASK slot ip:port</code> = try destination for this key.</td></tr>
+    <tr><td>Gossip protocol</td><td>Nodes exchange heartbeats (PING/PONG) to detect failures and propagate config.</td></tr>
+    <tr><td>Cluster bus</td><td>Separate port (data port + 10000) for node-to-node communication.</td></tr>
+  </table>
+
+  <h3 class="sub">Client-Side vs Proxy-Based Sharding</h3>
+  <table class="tbl">
+    <tr><th>Approach</th><th>How</th><th>Pros</th><th>Cons</th></tr>
+    <tr><td>Client-side (Redis Cluster)</td><td>Smart client maintains slot map, routes directly</td><td>No extra hop, lower latency</td><td>All clients must understand protocol, harder to upgrade</td></tr>
+    <tr><td>Proxy (Twemproxy, Envoy)</td><td>Proxy sits between client and Redis instances</td><td>Simple clients, centralized management</td><td>Extra network hop, proxy becomes bottleneck / single point of failure (SPOF)</td></tr>
+    <tr><td>Redis Cluster + smart client</td><td>Official approach, clients cache slot map</td><td>Built-in, auto-resharding, failover</td><td>Multi-key ops limited to same slot, no strong consistency</td></tr>
+  </table>
+
+  <h3 class="sub">Consistency Model</h3>
+
+  <div class="trap">
+    <div class="trapl">CRITICAL: ASYNC REPLICATION</div>
+    <p>Redis Cluster uses <b>asynchronous replication</b>. After a write is acknowledged to the client, it's replicated to replicas asynchronously. On primary failure, the promoted replica may be missing the last few writes. <b>Redis does NOT guarantee strong consistency.</b> It provides best-effort consistency with a "last failover wins" approach.</p>
+  </div>
+
+  <h4 class="sub2">Data Loss Scenarios</h4>
+  <ol style="margin:8px 0 8px 18px;font-size:13px;">
+    <li><b>Primary failure before replication:</b> Client gets OK, primary dies, replica promoted without that write = data lost</li>
+    <li><b>Network partition (split brain):</b> Primary isolated from majority. Minority partition still accepts writes for <code>cluster-node-timeout</code> period. When partition heals, those writes are discarded.</li>
+    <li><b>Mitigation:</b> <code>min-replicas-to-write N</code> — primary refuses writes if fewer than N replicas are connected. This shrinks the data-loss window but does NOT make replication synchronous: the primary still acks the client without waiting for a replica, so an acked write can still be lost on failover (unlike Kafka's <code>acks=all</code>, which withholds the ack until the in-sync replicas have it — use the <code>WAIT</code> command for closer-to-synchronous behavior)</li>
+  </ol>
+
+  <h4 class="sub2">Split-Brain Scenario</h4>
+  <div class="diagram">
+    <svg width="600" height="200" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+      <text x="300" y="18" text-anchor="middle" font-family="Inter" font-size="12" font-weight="600" fill="#0f172a">Split-Brain: Network Partition</text>
+
+      <!-- Partition line -->
+      <line x1="300" y1="35" x2="300" y2="190" stroke="#c62020" stroke-width="2" stroke-dasharray="5,3"/>
+      <text x="300" y="198" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="#c62020">NETWORK PARTITION</text>
+
+      <!-- Minority side -->
+      <rect x="30" y="50" width="240" height="130" rx="8" fill="#fee2e2" stroke="#c62020" stroke-width="1" opacity="0.3"/>
+      <text x="150" y="70" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#c62020">MINORITY PARTITION</text>
+
+      <rect x="50" y="80" width="100" height="35" rx="6" fill="#fff" stroke="#c62020" stroke-width="1.5"/>
+      <text x="100" y="102" text-anchor="middle" font-family="Inter" font-size="10" fill="#c62020">Primary A</text>
+
+      <rect x="50" y="125" width="80" height="25" rx="4" fill="#dbeafe" stroke="#1658ea" stroke-width="1"/>
+      <text x="90" y="142" text-anchor="middle" font-family="Inter" font-size="9" fill="#1658ea">Client X</text>
+      <text x="90" y="162" font-family="Inter" font-size="8" fill="#c62020">writes accepted!</text>
+      <text x="90" y="172" font-family="Inter" font-size="8" fill="#c62020">(will be lost)</text>
+
+      <!-- Majority side -->
+      <rect x="330" y="50" width="240" height="130" rx="8" fill="#dcfce7" stroke="#117e39" stroke-width="1" opacity="0.3"/>
+      <text x="450" y="70" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#117e39">MAJORITY PARTITION</text>
+
+      <rect x="350" y="80" width="100" height="35" rx="6" fill="#fff" stroke="#1658ea" stroke-width="1.5"/>
+      <text x="400" y="102" text-anchor="middle" font-family="Inter" font-size="10" fill="#1658ea">Replica A1</text>
+      <text x="400" y="125" font-family="Inter" font-size="8" fill="#117e39">promoted to primary</text>
+
+      <rect x="462" y="80" width="96" height="35" rx="6" fill="#fff" stroke="#7c3aed" stroke-width="1"/>
+      <text x="510" y="98" text-anchor="middle" font-family="Inter" font-size="8" fill="#7c3aed">Primary majority</text>
+      <text x="510" y="110" text-anchor="middle" font-family="Inter" font-size="8" fill="#7c3aed">votes (cluster bus)</text>
+
+      <rect x="350" y="140" width="80" height="25" rx="4" fill="#dbeafe" stroke="#1658ea" stroke-width="1"/>
+      <text x="390" y="157" text-anchor="middle" font-family="Inter" font-size="9" fill="#1658ea">Client Y</text>
+      <text x="390" y="175" font-family="Inter" font-size="8" fill="#117e39">writes to new primary</text>
+    </svg>
+  </div>
+
+  <div class="iq">"Redis provides eventual consistency with asynchronous replication. In a failover, we could lose the last few milliseconds of acknowledged writes. If this is unacceptable, we'd need the WAIT command for stronger, closer-to-synchronous durability (at the cost of latency — replication is still async, WAIT just blocks until N replicas ack), or choose a CP system. For most use cases like caching and rate limiting, this trade-off is acceptable."</div>
+</section>
+
+<!-- ==================== INTERVIEW TAB ==================== -->
+<section id="sec-interview" class="sec">
+  <h2 class="stitle">Interview Quick Reference</h2>
+  <p class="sdesc">Cheat sheet for system design interviews. Quick lookup of which data structure to use, common questions, and talking points.</p>
+
+  <h3 class="sub">Data Structure Selection Guide</h3>
+  <table class="tbl">
+    <tr><th>Problem</th><th>Data Structure</th><th>Key Commands</th><th>Why</th></tr>
+    <tr><td>Cache objects</td><td>String / Hash</td><td>GET/SET, HGET/HSET</td><td>String for opaque blobs, Hash for partial access</td></tr>
+    <tr><td>Counter (total)</td><td>String</td><td>INCR, INCRBY</td><td>Atomic O(1) increment</td></tr>
+    <tr><td>Counter (unique)</td><td>HyperLogLog / Set / Bitmap</td><td>PFADD, SADD, SETBIT</td><td>HLL for approximate, Set/Bitmap for exact</td></tr>
+    <tr><td>Leaderboard / Ranking</td><td>Sorted Set</td><td>ZADD, ZREVRANGE, ZRANK</td><td>O(log N) insert + O(log N + K) top-K</td></tr>
+    <tr><td>Rate limiter</td><td>String (fixed) / Sorted Set (sliding)</td><td>INCR+EXPIRE / ZADD+ZCARD</td><td>Sorted Set gives true sliding window</td></tr>
+    <tr><td>Distributed lock</td><td>String</td><td>SET NX EX</td><td>Atomic conditional set with TTL</td></tr>
+    <tr><td>Queue (simple)</td><td>List</td><td>LPUSH, BRPOP</td><td>O(1) push/pop, blocking available</td></tr>
+    <tr><td>Queue (reliable)</td><td>Stream</td><td>XADD, XREADGROUP, XACK</td><td>Consumer groups, ACK, redelivery</td></tr>
+    <tr><td>Session store</td><td>Hash with EXPIRE</td><td>HSET, HMGET, EXPIRE</td><td>Partial field access, built-in TTL</td></tr>
+    <tr><td>Social graph (mutual friends)</td><td>Set</td><td>SINTER, SUNION</td><td>Set operations for relationships</td></tr>
+    <tr><td>Real-time messaging</td><td>Pub/Sub</td><td>PUBLISH, SUBSCRIBE</td><td>Fire-and-forget broadcasting</td></tr>
+    <tr><td>Event sourcing</td><td>Stream</td><td>XADD, XREAD</td><td>Append-only, replayable, consumer groups</td></tr>
+    <tr><td>Daily active users</td><td>Bitmap</td><td>SETBIT, BITCOUNT, BITOP</td><td>1 bit per user, OR for weekly/monthly</td></tr>
+    <tr><td>Priority queue</td><td>Sorted Set</td><td>ZADD, ZPOPMIN</td><td>Score = priority, O(log N) operations</td></tr>
+    <tr><td>Autocomplete</td><td>Sorted Set</td><td>ZRANGEBYLEX, ZADD</td><td>Lexicographic range queries</td></tr>
+    <tr><td>Geospatial</td><td>Sorted Set (GEO)</td><td>GEOADD, GEOSEARCH</td><td>Built on sorted set with geohash scores (GEORADIUS deprecated since 6.2)</td></tr>
+  </table>
+
+  <h3 class="sub">Common Interview Questions</h3>
+
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">Q: How would you design a rate limiter using Redis?</span>
+      <span class="db dh">COMMON</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <p><b>Answer framework:</b></p>
+      <ol style="margin:8px 0 8px 18px;font-size:13px;">
+        <li>Clarify requirements: fixed window vs sliding window, precision needed, scale</li>
+        <li>For simple fixed window: INCR + EXPIRE (O(1), minimal memory)</li>
+        <li>For sliding window: Sorted Set with timestamp scores (precise but more memory)</li>
+        <li>For distributed: a Lua script (or a MULTI/EXEC transaction) for atomicity across multi-step operations — a plain pipeline only batches round-trips and is NOT atomic</li>
+        <li>Discuss failure modes: what if Redis is down? (fail open vs fail closed)</li>
+      </ol>
+      <div class="iq">"I'd implement a sliding window rate limiter using a Redis Sorted Set. Each request adds an entry with the current timestamp as the score. Before allowing a request, I remove entries outside the window, count remaining entries, and compare against the limit. I'd wrap this in a Lua script for atomicity. If Redis is unavailable, I'd fail open to avoid blocking all traffic, with a local in-memory fallback."</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">Q: How does Redis handle the thundering herd problem?</span>
+      <span class="db dh">COMMON</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <p><b>Problem:</b> Popular cache key expires, hundreds of concurrent requests all miss cache and hit the database simultaneously.</p>
+      <p><b>Solutions:</b></p>
+      <ol style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>Locking:</b> Use SETNX to allow only one request to rebuild cache. Others wait or get stale data.</li>
+        <li><b>Stale-while-revalidate:</b> Cache stores expiry in value. Return stale data while one process refreshes.</li>
+        <li><b>Probabilistic early expiration:</b> Each request has a small chance of refreshing before TTL (XFetch algorithm).</li>
+        <li><b>Never expire:</b> Use background job to refresh popular keys, never set TTL on hot keys.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">Q: Redis vs Memcached — when would you choose each?</span>
+      <span class="db dm">COMMON</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <table class="tbl">
+        <tr><th>Dimension</th><th>Redis</th><th>Memcached</th></tr>
+        <tr><td>Data structures</td><td>Rich (strings, hashes, lists, sets, sorted sets, streams...)</td><td>Strings only (key-value)</td></tr>
+        <tr><td>Persistence</td><td>RDB + AOF</td><td>None (pure cache)</td></tr>
+        <tr><td>Replication</td><td>Built-in (async primary/replica)</td><td>None (client-side)</td></tr>
+        <tr><td>Clustering</td><td>Redis Cluster (hash slots)</td><td>Client-side consistent hashing</td></tr>
+        <tr><td>Threading</td><td>Single-threaded command execution (I/O threads in 6.0+)</td><td>Multi-threaded</td></tr>
+        <tr><td>Memory efficiency</td><td>Overhead per key (but encodings help)</td><td>Slab allocator, less fragmentation for uniform sizes</td></tr>
+        <tr><td>Max value size</td><td>512 MB</td><td>1 MB (default)</td></tr>
+        <tr><td>Pub/Sub</td><td>Yes</td><td>No</td></tr>
+        <tr><td>Lua scripting</td><td>Yes</td><td>No</td></tr>
+        <tr><td>Best for</td><td>Complex data patterns, persistence needed, Pub/Sub, atomic operations</td><td>Simple caching of large blobs, multi-threaded high-throughput KV</td></tr>
+      </table>
+
+      <div class="iq">"I'd choose Redis over Memcached here because we need sorted set operations for the leaderboard and atomic INCR for counters. Memcached only supports string values. I'd only prefer Memcached for a pure, simple KV cache layer where the multi-threaded architecture gives better throughput for uniform-size objects."</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">Q: What happens when Redis runs out of memory?</span>
+      <span class="db dm">COMMON</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <p><b>Answer:</b> Behavior depends on the configured <code>maxmemory-policy</code>:</p>
+      <ul style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>noeviction:</b> Returns an out-of-memory (OOM) error on writes (reads still work)</li>
+        <li><b>allkeys-lru:</b> Evicts least recently used keys (best for general caches)</li>
+        <li><b>allkeys-lfu:</b> Evicts least frequently used (better for skewed access patterns)</li>
+        <li><b>volatile-*:</b> Only evicts keys with TTL set (allows persistent + cache data to coexist)</li>
+      </ul>
+      <p style="margin-top:8px"><b>Key points:</b> Redis LRU is approximated (samples N keys, not true LRU). In production, always set <code>maxmemory</code> to prevent OOM killer from terminating the process. Monitor <code>evicted_keys</code> metric — high eviction rate means cache is too small.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch" onclick="toggle(this)">
+      <span class="ct">Q: Can Redis lose data? When?</span>
+      <span class="db dh">COMMON</span>
+      <span class="chv">&#9654;</span>
+    </div>
+    <div class="cb">
+      <p><b>Yes. Data loss scenarios:</b></p>
+      <ol style="margin:8px 0 8px 18px;font-size:13px;">
+        <li><b>No persistence configured:</b> All data lost on restart</li>
+        <li><b>RDB only:</b> Data since last snapshot lost on crash (could be minutes)</li>
+        <li><b>AOF everysec:</b> Up to 1 second of data lost on crash</li>
+        <li><b>Async replication failover:</b> Writes acknowledged but not replicated are lost when primary fails</li>
+        <li><b>Split-brain:</b> Minority partition accepts writes that are discarded on heal</li>
+        <li><b>Eviction:</b> Keys evicted under memory pressure are gone</li>
+      </ol>
+      <p style="margin-top:8px"><b>Mitigation:</b> AOF always (slowest, safest), WAIT command for closer-to-synchronous durability (blocks until N replicas ack; replication stays async), min-replicas-to-write, proper monitoring.</p>
+    </div>
+  </div>
+
+  <h3 class="sub">Trade-offs to Discuss</h3>
+  <div class="g2">
+    <div class="mini-card">
+      <h4>Memory vs Speed</h4>
+      <p>Redis is fast BECAUSE it's in-memory. But RAM is expensive. Discuss: hot/warm/cold data tiers, TTL strategies, compression (listpack encodings), memory-optimized instances.</p>
+    </div>
+    <div class="mini-card">
+      <h4>Consistency vs Availability</h4>
+      <p>Redis is AP (available + partition-tolerant). Async replication means eventual consistency. For CP needs, consider: WAIT command, min-replicas-to-write, or switching to etcd/ZooKeeper.</p>
+    </div>
+    <div class="mini-card">
+      <h4>Simplicity vs Features</h4>
+      <p>Single-threaded simplicity enables atomicity without locks. But limits CPU-bound operations. For CPU-intensive (Lua scripts, large SORT), consider offloading to application layer.</p>
+    </div>
+    <div class="mini-card">
+      <h4>Persistence vs Performance</h4>
+      <p>No persistence = fastest. AOF always = safest but 10-30% write overhead. Fork for RDB = memory spike. Hybrid = good balance. Choose based on data criticality.</p>
+    </div>
+  </div>
+
+  <h3 class="sub">When NOT to Use Redis</h3>
+  <div class="trap">
+    <div class="trapl">ANTI-PATTERNS</div>
+    <p>Redis is the wrong primary store when you need multi-key ACID with rollback, durable-by-default writes, large blobs, or rich queries. It's a complement to a database, not a replacement. The table below maps each mismatch to a better fit.</p>
+  </div>
+  <table class="tbl">
+    <tr><th>Scenario</th><th>Why Not Redis</th><th>Better Alternative</th></tr>
+    <tr><td>Primary database (ACID needed)</td><td>No transactions with rollback, async replication</td><td>PostgreSQL, MySQL</td></tr>
+    <tr><td>Large objects (&gt;100MB)</td><td>Single-threaded blocks on large value ops</td><td>Object storage (S3), database BLOBs</td></tr>
+    <tr><td>Full-text search</td><td>Not designed for it (RediSearch module exists but limited)</td><td>Elasticsearch, Solr</td></tr>
+    <tr><td>Complex queries / joins</td><td>No query language, no relational model</td><td>RDBMS, document DB</td></tr>
+    <tr><td>Data larger than RAM</td><td>Fundamental constraint — all data must fit in memory</td><td>Disk-based DB, Redis-on-Flash</td></tr>
+    <tr><td>Strong consistency required</td><td>Async replication, no consensus protocol</td><td>etcd, ZooKeeper, CockroachDB</td></tr>
+    <tr><td>Multi-key transactions across slots</td><td>Redis Cluster doesn't support cross-slot transactions</td><td>Single-instance Redis or RDBMS</td></tr>
+  </table>
+
+  <h3 class="sub">Key Numbers to Remember</h3>
+  <table class="tbl">
+    <tr><th>Metric</th><th>Value</th></tr>
+    <tr><td>Throughput (single instance)</td><td>~100K-200K ops/sec</td></tr>
+    <tr><td>Throughput (with pipelining)</td><td>~1M ops/sec</td></tr>
+    <tr><td>Average latency</td><td>&lt;1ms (sub-millisecond)</td></tr>
+    <tr><td>Max string value (and key) size</td><td>512 MB</td></tr>
+    <tr><td>Hash slots (cluster)</td><td>16384</td></tr>
+    <tr><td>HyperLogLog memory</td><td>12 KB fixed</td></tr>
+    <tr><td>HyperLogLog error</td><td>0.81%</td></tr>
+    <tr><td>Cluster minimum nodes</td><td>3 primaries to form; 6 (3 primary + 3 replica) recommended for HA</td></tr>
+    <tr><td>Max connections (default)</td><td>10,000</td></tr>
+  </table>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">OPS</span><span class="ct">Operational Pitfalls: SCAN vs KEYS, Expiration, Big/Hot Keys</span><span class="db de">PROD</span><span class="chv">&#9654;</span></div><div class="cb">
+
+<div class="iq">"Redis executes commands on a single thread, so any O(N) command doesn't just slow itself down — it stalls <em>every other client</em> for the duration. Most production incidents are a <code>KEYS *</code> or a big-key operation, not a hardware limit."</div>
+
+<h3 class="sub">1. Never <code>KEYS</code> in production &rarr; use the <code>SCAN</code> family</h3>
+
+<p><code>KEYS pattern</code> walks the <em>entire</em> keyspace in a single blocking call: <span class="complexity">O(N)</span> over all keys. Because command execution is single-threaded, a multi-million-key <code>KEYS *</code> monopolizes the main thread for hundreds of ms to seconds, during which all reads/writes queue behind it.</p>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>TRAP — <code>KEYS</code> blocks the whole server.</strong> It is <em>not</em> just slow for the caller. While <code>KEYS *</code> runs, the single command-execution thread is busy, so latency-sensitive traffic times out, health checks fail, and the node can look "down" to clients and to Sentinel/Cluster failure detectors — potentially triggering a spurious failover. The same danger applies to <code>SMEMBERS</code>, <code>HGETALL</code>, <code>LRANGE 0 -1</code>, and <code>SORT</code> on large keys.</p></div>
+
+<p><code>SCAN cursor [MATCH pat] [COUNT n] [TYPE t]</code> is the safe replacement: a <strong>cursor-based, incremental</strong> iterator. Each call is roughly <span class="complexity">O(1)</span> amortized and returns a small batch plus the next cursor; iteration ends when the cursor returns to <code>0</code>. Collection variants iterate the fields/members of one key: <code>HSCAN</code> (hash), <code>SSCAN</code> (set), <code>ZSCAN</code> (sorted set).</p>
+
+<table class="tbl"><thead><tr><th>Property</th><th>What to know</th></tr></thead><tbody>
+<tr><td>COUNT</td><td>A <em>hint</em> for work per call, default <code>10</code>. Not a page-size guarantee — a call can return 0 elements yet a non-zero cursor (keep going until cursor is 0).</td></tr>
+<tr><td>Guarantee</td><td>Every element present for the full duration of the scan is returned at least once; elements may be returned <strong>more than once</strong> (caller must dedupe/be idempotent).</td></tr>
+<tr><td>MATCH</td><td>Filtering happens <em>after</em> retrieval from the table, so a highly selective <code>MATCH</code> can still cost many empty-looking iterations.</td></tr>
+<tr><td>HSCAN NOVALUES</td><td>Since Redis 7.4, <code>HSCAN key cursor NOVALUES</code> returns fields only — cheaper when you don't need values.</td></tr>
+</tbody></table>
+
+<div class="tip"><div class="tipl">TIP</div><p><strong>TIP.</strong> Drive iteration with <code>redis-cli --scan --pattern 'user:*'</code> (wraps <code>SCAN</code> for you), and bound throughput with <code>--count</code>. For collections that have grown huge, <code>HSCAN</code>/<code>SSCAN</code>/<code>ZSCAN</code> let you delete members in batches instead of one blocking <code>DEL</code> — or use <code>UNLINK</code> (Redis 4.0+) to free the key on a background thread.</p></div>
+
+<h3 class="sub">2. Key expiration: passive vs active</h3>
+
+<p>A key with a TTL is not deleted exactly at its expiry instant. Redis reclaims expired keys via <strong>two complementary mechanisms</strong>:</p>
+
+<div class="g2">
+<div class="mini-card"><strong>Passive (lazy) expiration</strong><br>When a client <em>accesses</em> a key, Redis checks its TTL; if expired, it deletes it then and returns "not found." Zero background cost, but a key that is never touched again would otherwise leak memory forever — hence active expiration is also needed.</div>
+<div class="mini-card"><strong>Active (proactive) expiration</strong><br>A background cycle (<code>activeExpireCycle</code>) runs on the server frequency <code>hz</code> (default <code>10</code> &rarr; ~10x/sec). Per database it: (1) samples <strong>~20</strong> keys from the set of keys that have a TTL, (2) deletes the expired ones, (3) if <strong>more than 25%</strong> of the sampled keys were expired, it <em>repeats immediately</em>; otherwise it moves on. This adaptively drains large batches of just-expired keys while staying bounded when few are expiring.</div>
+</div>
+
+<div class="note"><div class="notel">NOTE</div><p><strong>NOTE.</strong> Consequences worth stating in an interview: (a) memory for expired-but-untouched keys is freed lazily, so RSS can lag real logical size; (b) on replicas, keys are <em>not</em> expired independently — the primary drives expiry and propagates a <code>DEL</code>/<code>UNLINK</code> to replicas, so a replica may still hold an expired key but a correct Redis will not serve it. <code>lazyfree-lazy-expire yes</code> makes expiry deletions happen off-thread, avoiding a stall when a big collection expires.</p></div>
+
+<h3 class="sub">3. Diagnostic tooling</h3>
+
+<table class="tbl"><thead><tr><th>Tool</th><th>Purpose &amp; key defaults</th></tr></thead><tbody>
+<tr><td><code>redis-cli --bigkeys</code></td><td>Runs <code>SCAN</code> + type-appropriate size probes to report the largest key <em>per type</em>. Safe (no <code>KEYS</code>), read-only, samples the live DB. Companions: <code>--memkeys</code> (biggest by memory) and <code>--hotkeys</code> (needs an LFU eviction policy, e.g. <code>maxmemory-policy allkeys-lfu</code>).</td></tr>
+<tr><td><code>SLOWLOG GET [n]</code></td><td>Ring buffer of commands whose <em>execution</em> exceeded <code>slowlog-log-slower-than</code> microseconds (default <code>10000</code> = 10 ms; set to 0 to log all, -1 to disable). Depth is <code>slowlog-max-len</code> (default <code>128</code>). Excludes I/O time — measures server-side work only.</td></tr>
+<tr><td><code>LATENCY LATEST</code> / <code>LATENCY HISTORY</code> / <code>LATENCY DOCTOR</code></td><td>Latency-spike monitor; arm it by setting <code>latency-monitor-threshold</code> (ms; 0 = off). <code>DOCTOR</code> gives a human-readable diagnosis of spike sources (fork, expire cycle, slow commands).</td></tr>
+<tr><td><code>MEMORY USAGE key [SAMPLES n]</code></td><td>Estimated bytes for one key including overhead; complements <code>MEMORY DOCTOR</code> and <code>MEMORY STATS</code> for finding memory hogs.</td></tr>
+</tbody></table>
+
+<h3 class="sub">4. Big keys &amp; hot keys</h3>
+
+<p><strong>Big keys</strong> (a single hash/set/zset/list with millions of elements, or a multi-MB string) are dangerous on two fronts. On the command path, any O(N) op — <code>DEL</code>, <code>HGETALL</code>, a synchronous big delete — blocks the single command thread. On the persistence/replication path the cost is different: <code>BGSAVE</code> and the initial replica sync run in a <em>forked child process</em>, so serialization doesn't stall the main thread — instead a big dataset inflates <code>fork()</code> latency and copy-on-write memory pressure (page faults as the parent keeps writing), plus diskless-transfer time. Mitigation: shard the value across many keys (e.g. <code>hash:{id}:part:0..N</code>), delete with <code>UNLINK</code> or incremental <code>HSCAN</code>+<code>HDEL</code> batches, and set <code>lazyfree-lazy-*</code> options so frees run off-thread.</p>
+
+<p><strong>Hot keys</strong> (one key taking a disproportionate share of traffic) can saturate a single shard/node even in a Cluster, since one key hashes to one slot. Mitigation stack:</p>
+
+<table class="tbl"><thead><tr><th>Technique</th><th>Notes</th></tr></thead><tbody>
+<tr><td>Client-side caching (RESP3 tracking)</td><td>Server-assisted caching added in <strong>Redis 6.0</strong>: with RESP3, <code>CLIENT TRACKING ON</code> lets the server push invalidation messages when a cached key changes, so clients safely cache hot reads locally. Broadcast mode (<code>BCAST</code>) tracks by key prefix without per-key bookkeeping.</td></tr>
+<tr><td>Read replicas</td><td>Fan out hot <em>reads</em> across replicas (accept eventual consistency / replication lag). Doesn't help hot writes.</td></tr>
+<tr><td>Local (in-process) cache</td><td>A short-TTL near-cache (e.g. Caffeine) in front of Redis absorbs the hottest reads entirely; pair with pub/sub or tracking invalidation to bound staleness.</td></tr>
+<tr><td>Key replication / sharding of the hot key</td><td>Write the value to N suffixed copies (<code>hotkey:0..N-1</code>) and have clients read a random copy to spread load across slots.</td></tr>
+</tbody></table>
+
+<div class="ins"><div class="insl">INSIGHT</div><p><strong>INSIGHT.</strong> The unifying theme of every gotcha here is Redis's <em>single-threaded command execution</em>: <code>KEYS</code>, big-key ops, and synchronous big deletes are all bad for the same reason — they hold the one thread. The fixes rhyme too: make the work <em>incremental</em> (<code>SCAN</code>, batched deletes), <em>asynchronous</em> (<code>UNLINK</code>, <code>lazyfree-*</code>), or <em>elsewhere</em> (replicas, client-side cache).</p></div>
+
+</div></div>
+
+  <h2>Terminology &amp; Acronyms</h2>
+  <p class="lead">Quick reference for the key terms in this chapter.</p>
+  <table class="tbl">
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td><strong>AOF</strong></td><td>Append-Only File — persistence log of every write command, replayed on restart to rebuild state.</td></tr>
+    <tr><td><strong>AP system</strong></td><td>Under the CAP theorem, one that stays Available under network Partitions, trading strong consistency — Redis's default posture.</td></tr>
+    <tr><td><strong>COW</strong></td><td>Copy-on-Write — after <code>fork()</code> the OS shares memory pages until one is written; used during RDB save and AOF rewrite.</td></tr>
+    <tr><td><strong>CRC16</strong></td><td>16-bit Cyclic Redundancy Check; hashes a key to one of 16,384 cluster slots via <code>CRC16(key) % 16384</code>.</td></tr>
+    <tr><td><strong>HyperLogLog (HLL)</strong></td><td>Probabilistic cardinality estimator: ~0.81% error in a fixed 12 KB regardless of element count.</td></tr>
+    <tr><td><strong>jemalloc</strong></td><td>General-purpose memory allocator Redis uses to reduce fragmentation versus glibc malloc.</td></tr>
+    <tr><td><strong>LFU</strong></td><td>Least Frequently Used — eviction of the least-accessed key (Redis 4.0+).</td></tr>
+    <tr><td><strong>LRU</strong></td><td>Least Recently Used — eviction of the key unused for the longest time; Redis approximates it by sampling.</td></tr>
+    <tr><td><strong>LZF</strong></td><td>Fast lossless compression (Lempel–Ziv family) applied to interior quicklist nodes.</td></tr>
+    <tr><td><strong>PEL</strong></td><td>Pending Entries List — stream entries delivered to a consumer group but not yet acknowledged via <code>XACK</code>.</td></tr>
+    <tr><td><strong>RDB</strong></td><td>Redis Database snapshot — a compact point-in-time binary dump of the whole dataset (<code>dump.rdb</code>).</td></tr>
+    <tr><td><strong>Redlock</strong></td><td>Redis's distributed-lock algorithm that acquires a lock on a majority of N independent instances.</td></tr>
+    <tr><td><strong>RESP</strong></td><td>REdis Serialization Protocol — the client/server wire protocol; RESP3 adds server-assisted client-side caching.</td></tr>
+    <tr><td><strong>RSALv2 / SSPLv1</strong></td><td>Redis Source Available License v2 / Server Side Public License v1 — source-available (not OSI open source) licenses Redis adopted in 2024.</td></tr>
+    <tr><td><strong>RTT</strong></td><td>Round-Trip Time — the client-to-server-and-back network latency that pipelining collapses across many commands.</td></tr>
+    <tr><td><strong>SDS</strong></td><td>Simple Dynamic String — Redis's binary-safe string type with O(1) length and pre-allocation.</td></tr>
+    <tr><td><strong>SDOWN / ODOWN</strong></td><td>Subjectively Down / Objectively Down — one Sentinel's local suspicion vs quorum-confirmed primary failure.</td></tr>
+    <tr><td><strong>Sorted Set (ZSet)</strong></td><td>Score-ordered collection backed by a skip list plus hash table; O(log N) inserts and range queries.</td></tr>
+    <tr><td><strong>TTL</strong></td><td>Time To Live — expiry set on a key (or, since 7.4, a hash field) after which it is removed.</td></tr>
+    <tr><td><strong>WAIT</strong></td><td>Command that blocks until N replicas acknowledge a write; replication stays async, so it is closer-to-synchronous, not fully synchronous.</td></tr>
+  </table>
+</section>
+
+<script>
+// Tab switching
+function switchTab(tabId) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + tabId).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Card toggle (collapsible)
+function toggle(el) {
+  const body = el.nextElementSibling;
+  const chevron = el.querySelector('.chv');
+  body.classList.toggle('open');
+  chevron.classList.toggle('open');
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="mysql_deep_dive.html">‹ MySQL / InnoDB Deep Dive</a><a class="bkc" href="index.html">📖 Contents</a><a href="mongodb_deep_dive.html">MongoDB Deep Dive ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

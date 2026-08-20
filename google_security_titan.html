@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Titan — Hardware Root of Trust | Google Security Deep-Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #114f8c; --blue-l: #d0ebff; --green: #1d6b2e; --green-l: #d3f9d8;
+  --yellow: #a85700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #4a2fa8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.crumb { text-align:center; margin-bottom: 24px; font-size: 13px; color: var(--text3); }
+.crumb a { color: var(--blue); text-decoration: none; }
+.nav { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 40px; position: sticky; top: 0; background: var(--bg); padding: 16px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+.hsub { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; white-space: pre-wrap; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.iv { background: var(--purple-l); border-left: 3px solid var(--purple); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.iv p { color: #4a2fa8; margin: 0 0 8px 0; }
+/* Prose links inside the purple .iv callout: default prose blue (#1b62d6) on the
+   #e5dbff tint is 4.23:1 (just under AA). Darken this callout's links to clear
+   4.5:1. Light mode only — dark mode keeps the bright accent link color. */
+html:not([data-theme="dark"]) .iv p a { color: #1550b5 !important; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.svg-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; margin: 20px 0; text-align: center; overflow-x: auto; }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 18px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius: 20px; background: var(--purple-l); color: var(--purple); margin-left:6px; }
+.star { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius: 20px; background: var(--green-l); color: var(--green); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VII · Chapter 3 — <b>Titan — Hardware Root of Trust</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Titan — Hardware Root of Trust</h1>
+  <div class="sub">Google's secure chip for machine identity, secure boot &amp; attestation · deep-dive &amp; interview prep</div>
+</header>
+<div class="crumb">📚 <a href="google_security_index.html">Google Security Systems — Overview</a> &nbsp;›&nbsp; Titan</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'overview')">Overview</button>
+  <button class="nav-btn" onclick="showSection(event,'design')">How it's designed</button>
+  <button class="nav-btn" onclick="showSection(event,'why')">Why this way</button>
+  <button class="nav-btn" onclick="showSection(event,'scale')">Scale &amp; throughput</button>
+  <button class="nav-btn" onclick="showSection(event,'challenges')">Challenges</button>
+  <button class="nav-btn" onclick="showSection(event,'interview')">Interview angle</button>
+</div>
+
+<!-- OVERVIEW -->
+<div class="section active" id="overview">
+
+<div class="card">
+<h2>In one picture — the big idea</h2>
+<p><strong>Analogy — a sealed relay race.</strong> Imagine a relay where the baton (control of the machine) is passed runner to runner, but <em>each runner must check the next runner's ID badge before handing over the baton</em>. The very first runner is someone everyone already trusts without asking — that's the <strong>root of trust</strong>. If any badge looks forged, the baton is never passed and the race simply stops.</p>
+<p><strong>Tiny concrete example.</strong> You power on a server. Before the operating system — even before the BIOS — a tiny separate chip called Titan wakes up, checks that the startup software's cryptographic signature is genuine, and only <em>then</em> lets the machine run it. Swap in a tampered BIOS and Titan refuses to release the machine from reset: it never boots.</p>
+<div class="insight"><p>Titan does two jobs. <strong>(1) Verified boot:</strong> it is the trusted first runner and it checks every badge up the chain (firmware → boot loader → OS), so malware can't hide <em>below</em> the operating system. <strong>(2) Machine identity:</strong> it hands the server an unforgeable, hardware-anchored ID card that other Google systems (<a href="google_security_alts.html">ALTS</a>, <a href="google_security_beyondprod.html">BeyondProd</a>) trust. Everything below is just the careful engineering that makes those two guarantees hold — even against an attacker who already has root.</p></div>
+</div>
+
+<div class="card">
+<h2>What Titan is</h2>
+<p>
+Titan is a <strong>secure, low-power microcontroller custom-designed by Google</strong> (introduced at Cloud Next '17). It sits on the server's motherboard, interposing on the <strong>SPI bus</strong> between the boot-firmware flash and the platform controller (PCH/BMC). Its job is to be the <strong>hardware root of trust</strong> for a machine: to guarantee that a server boots only Google-verified firmware and software, and to give the machine a strong, hardware-anchored cryptographic identity.
+</p>
+<h3 class="hsub">Internal components</h3>
+<ul>
+  <li>Secure application processor</li>
+  <li>Cryptographic co-processor</li>
+  <li>Hardware random number generator (RNG)</li>
+  <li>A sophisticated <strong>key hierarchy</strong></li>
+  <li>Embedded SRAM, embedded flash, and an immutable <strong>ROM</strong> block</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>The problem it solves</h3>
+<p>Titan targets <strong>privileged software attacks and firmware rootkits</strong> — malware that hides <em>below</em> the OS in BIOS/BMC firmware, where traditional defenses can't see it. Beyond typical secure boot (signed bootloaders and boot files), Titan adds two properties:</p>
+<table>
+  <tr><th>Property</th><th>What it means</th></tr>
+  <tr><td><strong>First-instruction integrity</strong></td><td>Knowing the <em>earliest</em> boot-firmware code executed at power-on — verified before the CPU/PCH is released from reset — which is exactly what Titan gates over the SPI bus.</td></tr>
+  <tr><td><strong>Remediation</strong></td><td>Trust can be <em>re-established</em> after bugs in Titan firmware are found and patched — you can cryptographically distinguish patched from unpatched chips.</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3>What Titan gives the data center</h3>
+<ul>
+  <li><strong>Strong machine identity</strong> — hardware-rooted, used to make security decisions and validate system health. This is the anchor <a href="google_security_beyondprod.html">BeyondProd</a> and <a href="google_security_alts.html">ALTS</a> build machine credentials on.</li>
+  <li><strong>Secret/key provisioning</strong> — back-end systems can securely provision secrets/keys to specific Titan-enabled machines, or even to specific jobs on them.</li>
+  <li><strong>Tamper-evident audit logging</strong> — Titan signs audit logs and chains them to a secure monotonic counter, so logs can't be altered or deleted without detection — even by insiders with root.</li>
+  <li><strong>In-house hardware logic</strong> — Google designed the logic internally to reduce the chance of hardware backdoors.</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>Jargon buster — read this first</h3>
+<p>Plain-English versions of the hardware/crypto terms used below:</p>
+<table>
+  <tr><th>Term</th><th>Plain meaning</th></tr>
+  <tr><td><strong>root of trust</strong></td><td>The one thing you trust <em>without</em> proof, that everything else is checked against. If it's solid, the whole chain above it can be trusted. Titan is the hardware root of trust for a machine.</td></tr>
+  <tr><td><strong>secure boot</strong></td><td>Checking, at power-on, that each piece of startup software is genuine and unmodified <em>before</em> running it — so malware can't hide below the operating system.</td></tr>
+  <tr><td><strong>MemBIST</strong> (memory built-in self-test)</td><td>A circuit built into the chip that, at every power-on, makes the chip <em>test its own memory</em> (SRAM, ROM) for hardware faults — no external tester needed. It's a health self-test, not a security check: tamper- and integrity-verification comes from the ROM-anchored signature checks Titan runs afterward. Titan does MemBIST first because it's the trust root — it can't even assume its own memory is working. Like a spacesuit self-checking before you leave the airlock.</td></tr>
+  <tr><td><strong>in the field</strong></td><td>"Out in real-world use, after leaving the factory" — the opposite of <em>at manufacture</em>. A chip gets its keys <em>at manufacture</em> (factory), then proves its identity <em>in the field</em> (deployed in a data center).</td></tr>
+  <tr><td><strong>firmware</strong></td><td>Low-level software built into hardware that runs before the OS (BIOS, etc.). A favorite hiding spot for stealthy malware — which is what Titan guards.</td></tr>
+  <tr><td><strong>attestation</strong></td><td>A device cryptographically <em>proving</em> "I'm genuine, and here's exactly what software I'm running." Others can verify it without trusting the device's word.</td></tr>
+  <tr><td><strong>SPI bus</strong></td><td>The little wire/channel between the chip and the boot-firmware storage. Titan sits <em>on</em> this wire so it can inspect every byte the machine tries to boot.</td></tr>
+  <tr><td><strong>BMC</strong> (baseboard management controller)</td><td>A tiny always-on computer on the motherboard for <em>remote managing</em> the server — power on/off, reinstall the OS, read temps — even when the main CPU/OS is off or crashed. Powerful and sits <em>below</em> the OS, so it's a prime hiding spot for stealthy malware — which is exactly what Titan guards its boot firmware against.</td></tr>
+  <tr><td><strong>PCH</strong> (platform controller hub)</td><td>The motherboard chip that manages the CPU's connections to the rest of the system (storage, USB, boot firmware, etc.). Titan gates the PCH/BMC's access to the boot firmware until it has verified that firmware.</td></tr>
+  <tr><td><strong>CA</strong> (Certificate Authority)</td><td>The trusted issuer that signs identity certificates. The Titan CA signs each chip's identity.</td></tr>
+  <tr><td><strong>CSR</strong> (certificate signing request)</td><td>A device's request to the CA: "here's my <em>public</em> key — please sign a certificate saying it's mine." The <em>private</em> key never leaves the device; the CSR only carries the public half. Like a passport application: you send your photo + form (public info), the office issues a stamped passport, and your fingerprints (private key) never leave your hands.</td></tr>
+  <tr><td><strong>quorum</strong></td><td>"Enough authorized people must act together before it happens." The top key is split into shares (one per admin); you need enough shares combined (e.g. 3 of 5) to use it — not a vote, actual key-shares. So no single person (or one hacked account) can forge chip identities. Like a nuclear launch needing two keys turned at once.</td></tr>
+  <tr><td><strong>bound the blast radius</strong></td><td>Design so that if one thing is compromised, the damage stays small instead of spreading everywhere. (Keeping the root offline + quorum-locked is one way.)</td></tr>
+  <tr><td><strong>remediation</strong></td><td>Being able to <em>recover trust</em> after a bug is found and patched — e.g. re-issue identities so only fixed chips are trusted again.</td></tr>
+</table>
+</div>
+
+<div class="iv"><p><strong>Interview angle.</strong> If asked "what problem does a hardware root of trust actually solve?", lead with the layer it defends: everything above the OS can be checked by software, but firmware/BIOS/BMC run <em>below</em> it, so software-based verification is circular — malware there can lie to whatever asks. Titan breaks the circle by being a <em>separate</em> chip with immutable ROM that gates boot from outside the CPU's trust domain, and it doubles as the anchor for machine identity. Naming that "below-the-OS, break-the-circular-trust" framing signals you understand <em>why</em> the root must be hardware, not just <em>what</em> it does.</p></div>
+</div>
+
+<!-- DESIGN -->
+<div class="section" id="design">
+<div class="card">
+<h2>Secure boot: interposing on the SPI bus</h2>
+<p>The clever architectural move: Titan physically sits <strong>between the boot-firmware flash and the first privileged component</strong> (the BMC / Platform Controller Hub) on the SPI bus, so it can <strong>observe every byte of boot firmware</strong> and gate access to it.</p>
+<div class="svg-wrap">
+<svg viewBox="0 0 660 360" width="100%" style="max-width:920px" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <!-- step boxes -->
+  <rect x="30" y="20" width="600" height="46" rx="8" fill="#c92a2a"/>
+  <text x="330" y="40" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">1 · Power-on → Titan executes its immutable boot ROM</text>
+  <text x="330" y="58" text-anchor="middle" fill="#ffe3e3" font-size="10">laid down at fabrication, trusted implicitly, validated at every reset</text>
+
+  <rect x="30" y="74" width="600" height="46" rx="8" fill="#4a2fa8"/>
+  <text x="330" y="94" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">2 · MemBIST self-test → verify Titan's own firmware (public-key)</text>
+  <text x="330" y="112" text-anchor="middle" fill="#e5dbff" font-size="10">firmware code identity is HASHED INTO the on-chip key hierarchy</text>
+
+  <rect x="30" y="128" width="600" height="46" rx="8" fill="#114f8c"/>
+  <text x="330" y="148" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">3 · Titan verifies the HOST's boot firmware (public-key crypto)</text>
+  <text x="330" y="166" text-anchor="middle" fill="#d0ebff" font-size="10">reading it over the SPI bus it interposes on</text>
+
+  <rect x="30" y="182" width="600" height="46" rx="8" fill="#a85700"/>
+  <text x="330" y="202" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">4 · Gate PCH/BMC — hold machine in RESET until verification passes</text>
+  <text x="330" y="220" text-anchor="middle" fill="#fff3bf" font-size="10">this is what delivers FIRST-INSTRUCTION INTEGRITY</text>
+
+  <rect x="30" y="236" width="600" height="46" rx="8" fill="#1d6b2e"/>
+  <text x="330" y="256" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">5 · Verified boot firmware → loads &amp; verifies boot loader → OS</text>
+  <text x="330" y="274" text-anchor="middle" fill="#d3f9d8" font-size="10">chain of trust continues up the stack</text>
+
+  <rect x="90" y="300" width="480" height="44" rx="8" fill="none" stroke="#868e96" stroke-dasharray="4"/>
+  <text x="330" y="320" text-anchor="middle" fill="#495057" font-size="11" font-weight="bold">Because firmware identity is hashed into the key hierarchy,</text>
+  <text x="330" y="337" text-anchor="middle" fill="#495057" font-size="11">a different firmware ⇒ a different chip identity (enables remediation)</text>
+</svg>
+</div>
+</div>
+
+<div class="card">
+<h3>Walk the boot chain (replayable)</h3>
+<p>The static diagram above lists the stages; this one lets you <em>run</em> them. The rule of a <strong>chain of trust</strong>: each stage <strong>measures and verifies the next</strong> (checks its cryptographic signature) <em>before</em> handing control to it. It bottoms out at Titan's immutable Boot ROM — the one link trusted without proof. Press <em>Step</em> to advance. Tick <em>Tamper</em> and replay to watch a modified stage get rejected and the machine held in reset.</p>
+<div class="svg-wrap">
+<svg id="tb-svg" viewBox="0 0 640 470" width="100%" style="max-width:620px" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <defs>
+    <marker id="tb-arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#868e96"/></marker>
+  </defs>
+  <!-- node 0 -->
+  <rect id="tb-r0" x="60" y="16" width="520" height="56" rx="8" fill="#f1f3f5" stroke="#dee2e6" stroke-width="2"/>
+  <text x="80" y="40" fill="#212529" font-size="13" font-weight="bold">Titan Boot ROM</text>
+  <text x="80" y="59" fill="#495057" font-size="10.5">immutable · laid down at fabrication · trusted without proof (the root)</text>
+  <text id="tb-g0" x="562" y="50" text-anchor="end" font-size="20" font-weight="bold"></text>
+  <line x1="320" y1="72" x2="320" y2="104" stroke="#868e96" stroke-width="2" marker-end="url(#tb-arr)"/>
+  <!-- node 1 -->
+  <rect id="tb-r1" x="60" y="104" width="520" height="56" rx="8" fill="#f1f3f5" stroke="#dee2e6" stroke-width="2"/>
+  <text x="80" y="128" fill="#212529" font-size="13" font-weight="bold">Titan firmware</text>
+  <text x="80" y="147" fill="#495057" font-size="10.5">MemBIST memory self-test, then verified by public-key signature</text>
+  <text id="tb-g1" x="562" y="138" text-anchor="end" font-size="20" font-weight="bold"></text>
+  <line x1="320" y1="160" x2="320" y2="192" stroke="#868e96" stroke-width="2" marker-end="url(#tb-arr)"/>
+  <!-- node 2 -->
+  <rect id="tb-r2" x="60" y="192" width="520" height="56" rx="8" fill="#f1f3f5" stroke="#dee2e6" stroke-width="2"/>
+  <text x="80" y="216" fill="#212529" font-size="13" font-weight="bold">Host boot firmware (BIOS)</text>
+  <text x="80" y="235" fill="#495057" font-size="10.5">read &amp; verified by Titan over the SPI bus, while PCH/BMC held in reset</text>
+  <text id="tb-g2" x="562" y="226" text-anchor="end" font-size="20" font-weight="bold"></text>
+  <line x1="320" y1="248" x2="320" y2="280" stroke="#868e96" stroke-width="2" marker-end="url(#tb-arr)"/>
+  <!-- node 3 -->
+  <rect id="tb-r3" x="60" y="280" width="520" height="56" rx="8" fill="#f1f3f5" stroke="#dee2e6" stroke-width="2"/>
+  <text x="80" y="304" fill="#212529" font-size="13" font-weight="bold">Boot loader</text>
+  <text x="80" y="323" fill="#495057" font-size="10.5">measured &amp; verified by the host firmware</text>
+  <text id="tb-g3" x="562" y="314" text-anchor="end" font-size="20" font-weight="bold"></text>
+  <line x1="320" y1="336" x2="320" y2="368" stroke="#868e96" stroke-width="2" marker-end="url(#tb-arr)"/>
+  <!-- node 4 -->
+  <rect id="tb-r4" x="60" y="368" width="520" height="56" rx="8" fill="#f1f3f5" stroke="#dee2e6" stroke-width="2"/>
+  <text x="80" y="392" fill="#212529" font-size="13" font-weight="bold">Operating system</text>
+  <text x="80" y="411" fill="#495057" font-size="10.5">verified by the boot loader — now the machine runs normally</text>
+  <text id="tb-g4" x="562" y="402" text-anchor="end" font-size="20" font-weight="bold"></text>
+</svg>
+<div style="margin-top:12px; text-align:left; background:var(--bg3); border-radius:8px; padding:12px 16px;">
+  <div id="tb-caption" style="color:var(--text2); font-size:13.5px; min-height:3em;"></div>
+  <div id="tb-status" style="margin-top:8px; font-weight:700; color:var(--text); font-size:12.5px;"></div>
+</div>
+<div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:center;">
+  <button id="tb-step" class="nav-btn" type="button">▶ Step</button>
+  <button id="tb-reset" class="nav-btn" type="button">↺ Reset</button>
+  <label style="font-size:13px; color:var(--text2); cursor:pointer; display:inline-flex; align-items:center; gap:6px;"><input type="checkbox" id="tb-tamper"> Tamper with host boot firmware</label>
+</div>
+</div>
+<script>
+(function(){
+  var svg = document.getElementById('tb-svg');
+  if(!svg) return;
+  var stepBtn = document.getElementById('tb-step');
+  var resetBtn = document.getElementById('tb-reset');
+  var tamper = document.getElementById('tb-tamper');
+  var caption = document.getElementById('tb-caption');
+  var status = document.getElementById('tb-status');
+  var N = 5, cur = 0, failed = false;
+  var C = { nF:'#f1f3f5', nS:'#dee2e6', okF:'#d3f9d8', okS:'#1d6b2e', badF:'#ffe3e3', badS:'#c92a2a', curS:'#114f8c' };
+  var caps = [
+    'Ready. Power is off. Press ▶ Step to power on and walk the chain of trust.',
+    'Power-on: Titan runs its immutable Boot ROM — laid down at fabrication and trusted without proof. This is the root every other link hangs from.',
+    'The Boot ROM runs MemBIST (a memory self-test), then verifies Titan’s own firmware by public-key signature before executing it.',
+    'Titan reads the host’s boot firmware over the SPI bus and verifies its signature — all while holding the PCH/BMC in RESET. That is first-instruction integrity.',
+    'The verified host firmware measures and verifies the boot loader before handing control to it.',
+    'The boot loader verifies the OS. Every link was checked — the machine boots with a hardware-anchored identity.'
+  ];
+  function setNode(i, st){
+    var r = document.getElementById('tb-r'+i), g = document.getElementById('tb-g'+i);
+    if(st==='ok'){ r.setAttribute('fill',C.okF); r.setAttribute('stroke',C.okS); g.textContent='✓'; g.setAttribute('fill',C.okS); }
+    else if(st==='bad'){ r.setAttribute('fill',C.badF); r.setAttribute('stroke',C.badS); g.textContent='✗'; g.setAttribute('fill',C.badS); }
+    else { r.setAttribute('fill',C.nF); r.setAttribute('stroke',C.nS); g.textContent=''; }
+  }
+  function reset(){
+    cur = 0; failed = false;
+    for(var i=0;i<N;i++) setNode(i,'neutral');
+    caption.textContent = caps[0];
+    status.textContent = 'Stage 0 / '+N;
+    stepBtn.disabled = false;
+  }
+  function step(){
+    if(failed || cur>=N) return;
+    if(cur===2 && tamper.checked){
+      setNode(2,'bad'); failed = true;
+      caption.textContent = 'Signature mismatch on the host boot firmware! Titan refuses to release RESET, so the machine never boots. (Separately, if TITAN’s own firmware were altered, its key hierarchy would change and it could not obtain a valid identity certificate — that is the remediation property.)';
+      status.textContent = 'REJECTED at stage 3 — machine held in reset';
+      stepBtn.disabled = true;
+      return;
+    }
+    setNode(cur,'ok');
+    cur++;
+    caption.textContent = caps[cur];
+    if(cur>=N){ status.textContent = 'Booted ✓ — full chain verified'; stepBtn.disabled = true; }
+    else status.textContent = 'Stage '+cur+' / '+N;
+  }
+  stepBtn.addEventListener('click', step);
+  resetBtn.addEventListener('click', reset);
+  tamper.addEventListener('change', reset);
+  reset();
+})();
+</script>
+</div>
+
+<div class="card">
+<h3>Manufacture-time key provisioning &amp; the Titan CA</h3>
+<p>This is the classic device-manufacturing identity pattern:</p>
+<ul>
+  <li>During manufacture, <strong>each chip generates its own unique key pair on-die</strong> — the private key never leaves the chip.</li>
+  <li>That material — plus <strong>provenance information</strong> — is stored in a <strong>registry database</strong>.</li>
+  <li>The registry is cryptographically protected by keys held in an <strong>offline, quorum-based Titan Certification Authority (CA)</strong>.</li>
+</ul>
+<div class="insight"><p><strong>The general pattern:</strong> a per-chip key generated at fabrication ↔ an offline quorum CA that signs it ↔ a registry database recording chip identity + provenance ↔ later attestation validating the chain back to the root. This is the same "mint a hardware identity at manufacture, verify it later" shape used across the industry for secure elements, smart cards, and IoT device provisioning.</p></div>
+
+<h4>How "offline + quorum" actually protects the registry</h4>
+<p>The registry is the <em>single source of truth</em> for "which chips are genuine," so faking a chip = tampering with the registry, and tampering with the registry = needing the CA's key. That key is locked down two ways:</p>
+<ul>
+  <li><strong>Offline</strong> — the CA key isn't on any networked server; it lives in an isolated, air-gapped environment. An attacker who breaks into Google's online systems still can't reach it, because it's physically not on the network.</li>
+  <li><strong>Quorum</strong> — the CA key isn't held whole by anyone. It's <em>split into shares</em> (threshold cryptography, e.g. Shamir's Secret Sharing) and each administrator holds one share (usually on a hardware token). Using the key requires gathering <em>enough</em> shares — say 3 of 5 — to reconstruct signing power. It's not a show of hands: the machine only trusts "enough real key-shares were combined," so one bribed admin or one stolen account can't do anything alone. (Think nuclear-launch two-key rule, or a vault needing several keyholders present.)</li>
+</ul>
+<p>So to forge a Titan identity you'd need to <em>both</em> physically reach the air-gapped machine <em>and</em> assemble enough administrators' key-shares at once — which is what makes a single chip's identity trustworthy all the way up to "data-center root of trust."</p>
+</div>
+
+<div class="card">
+<h3>Chip identity &amp; remote attestation</h3>
+<p>Putting it together — the full lifecycle from the factory to a verified identity later:</p>
+
+<div class="svg-wrap">
+<svg viewBox="0 0 760 430" width="100%" style="max-width:940px" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <!-- lane labels -->
+  <text x="140" y="26" text-anchor="middle" fill="#495057" font-size="12" font-weight="bold">AT MANUFACTURE (once)</text>
+  <text x="560" y="26" text-anchor="middle" fill="#495057" font-size="12" font-weight="bold">LATER, IN THE FIELD (at provisioning)</text>
+  <line x1="380" y1="38" x2="380" y2="410" stroke="#dee2e6" stroke-width="2" stroke-dasharray="5"/>
+
+  <!-- 1 fabrication -->
+  <rect x="30" y="44" width="300" height="56" rx="8" fill="#c92a2a"/>
+  <text x="180" y="66" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">① Fabrication</text>
+  <text x="180" y="84" text-anchor="middle" fill="#ffe3e3" font-size="10.5">chip generates its own unique key pair;</text>
+  <text x="180" y="97" text-anchor="middle" fill="#ffe3e3" font-size="10.5">private key never leaves the chip</text>
+
+  <line x1="180" y1="100" x2="180" y2="122" stroke="#868e96" stroke-width="2" marker-end="url(#tt)"/>
+
+  <!-- 2 registry -->
+  <rect x="30" y="124" width="300" height="72" rx="8" fill="#4a2fa8"/>
+  <text x="180" y="146" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">② Registry DB</text>
+  <text x="180" y="165" text-anchor="middle" fill="#e5dbff" font-size="10.5">records each chip's public identity</text>
+  <text x="180" y="179" text-anchor="middle" fill="#e5dbff" font-size="10.5">+ provenance (proof it's genuine)</text>
+  <text x="180" y="193" text-anchor="middle" fill="#e5dbff" font-size="9.5">protected by the CA key ↓</text>
+
+  <line x1="180" y1="196" x2="180" y2="218" stroke="#868e96" stroke-width="2" marker-end="url(#tt)"/>
+
+  <!-- 3 CA -->
+  <rect x="30" y="220" width="300" height="86" rx="8" fill="#232f3e"/>
+  <text x="180" y="242" text-anchor="middle" fill="#ff9900" font-size="12" font-weight="bold">③ Titan CA — the trust root</text>
+  <text x="180" y="262" text-anchor="middle" fill="#cbd5e0" font-size="10.5">🔒 OFFLINE (air-gapped, not on network)</text>
+  <text x="180" y="278" text-anchor="middle" fill="#cbd5e0" font-size="10.5">👥 QUORUM (enough admins' key-shares needed)</text>
+  <text x="180" y="296" text-anchor="middle" fill="#cbd5e0" font-size="9.5">holds the key that protects the registry</text>
+
+  <!-- field side -->
+  <!-- 4 CSR -->
+  <rect x="430" y="60" width="300" height="60" rx="8" fill="#d0ebff" stroke="#114f8c"/>
+  <text x="580" y="82" text-anchor="middle" fill="#114f8c" font-size="12" font-weight="bold">④ Chip sends a CSR</text>
+  <text x="580" y="102" text-anchor="middle" fill="#114f8c" font-size="10.5">"here's my public key — sign my identity"</text>
+  <text x="580" y="114" text-anchor="middle" fill="#114f8c" font-size="9.5">(private key stays on the chip)</text>
+
+  <line x1="580" y1="120" x2="580" y2="146" stroke="#868e96" stroke-width="2" marker-end="url(#tt)"/>
+
+  <!-- 5 verify -->
+  <rect x="430" y="148" width="300" height="72" rx="8" fill="#fff3bf" stroke="#a85700"/>
+  <text x="580" y="170" text-anchor="middle" fill="#a85700" font-size="12" font-weight="bold">⑤ CA verifies against registry</text>
+  <text x="580" y="189" text-anchor="middle" fill="#a85700" font-size="10.5">checks the chip is genuine (provenance)</text>
+  <text x="580" y="203" text-anchor="middle" fill="#a85700" font-size="10.5">AND which firmware it runs (baked into</text>
+  <text x="580" y="215" text-anchor="middle" fill="#a85700" font-size="10.5">the key hierarchy)</text>
+
+  <line x1="580" y1="220" x2="580" y2="246" stroke="#868e96" stroke-width="2" marker-end="url(#tt)"/>
+
+  <!-- 6 cert -->
+  <rect x="430" y="248" width="300" height="58" rx="8" fill="#d3f9d8" stroke="#1d6b2e"/>
+  <text x="580" y="270" text-anchor="middle" fill="#1d6b2e" font-size="12" font-weight="bold">⑥ CA issues an identity certificate</text>
+  <text x="580" y="290" text-anchor="middle" fill="#1d6b2e" font-size="10.5">now the machine can prove who it is</text>
+  <text x="580" y="302" text-anchor="middle" fill="#1d6b2e" font-size="9.5">(this is what ALTS builds machine identity on)</text>
+
+  <!-- registry ↔ verify link across the divide -->
+  <line x1="330" y1="160" x2="428" y2="175" stroke="#4a2fa8" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#tp)"/>
+  <text x="378" y="145" text-anchor="middle" fill="#4a2fa8" font-size="9">checked against ②</text>
+
+  <!-- remediation note -->
+  <rect x="60" y="336" width="640" height="66" rx="8" fill="none" stroke="#c92a2a" stroke-dasharray="4"/>
+  <text x="380" y="360" text-anchor="middle" fill="#c92a2a" font-size="11.5" font-weight="bold">Remediation: firmware identity is hashed into the chip's keys.</text>
+  <text x="380" y="380" text-anchor="middle" fill="#742020" font-size="10.5">Patch the firmware → the key hierarchy changes → a different identity. So after a bug,</text>
+  <text x="380" y="395" text-anchor="middle" fill="#742020" font-size="10.5">the CA can issue certs that ONLY patched chips can use — unpatched chips can't get a valid one.</text>
+
+  <defs>
+    <marker id="tt" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#868e96"/></marker>
+    <marker id="tp" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#4a2fa8"/></marker>
+  </defs>
+</svg>
+</div>
+
+<p>Step by step:</p>
+<ol>
+  <li>Individual Titan chips generate <strong>CSRs</strong> directed at the Titan CA.</li>
+  <li>Under the direction of a <strong>quorum of Titan identity administrators</strong>, the CA verifies each CSR against the registry database before issuing an <strong>identity certificate</strong>.</li>
+  <li>Crucially the system verifies <em>not just chip provenance but also the firmware running on the chip</em> — because firmware code identity is hashed into the on-chip key hierarchy.</li>
+</ol>
+<p><strong>Remediation in practice:</strong> after patching firmware, the CA can issue certificates that <em>only patched chips can use</em> — unpatched firmware yields a different key hierarchy → a different identity → no valid cert. That's how you re-establish trust after a firmware bug.</p>
+</div>
+
+<div class="card">
+<h3>Tamper-evident audit logging</h3>
+<p>Titan cryptographically associates each log message with successive values of a <strong>secure monotonic counter</strong> it maintains, then signs those associations with its private key. Because the counter only moves forward and each entry is signed, logs <strong>cannot be altered or deleted without detection — even by insiders with root access</strong>, giving a non-repudiable audit trail (no one can later deny or disown what the logs recorded).</p>
+<div class="iv"><p><strong>Interview angle.</strong> The design detail worth calling out is <em>interposition</em>: Titan doesn't just hold a signature to compare against — it physically sits on the SPI bus <em>between</em> the flash and the first privileged consumer, so it can hold the machine in reset until verification passes. That's what upgrades ordinary "signed boot" into <em>first-instruction integrity</em>. If asked to critique the design, note the trade: interposition adds boot latency and a hard dependency on one chip, which is why remediation (recovering trust after a firmware bug without swapping hardware) has to be designed in from day one.</p></div>
+</div>
+</div>
+
+<!-- WHY -->
+<div class="section" id="why">
+<div class="card">
+<h2>Why this design</h2>
+
+<h3>Why a discrete chip instead of trusting the CPU/firmware?</h3>
+<p>The threat is firmware/BIOS-level malware that runs <em>before and below</em> the OS. If the thing verifying boot is itself part of the boot firmware, a rootkit can subvert it. A separate chip with immutable ROM that <strong>interposes on the SPI bus</strong> can observe and gate the host firmware from outside the CPU's trust domain — you can't tamper your way past something that holds you in reset until you pass.</p>
+
+<h3>Why hash firmware identity into the key hierarchy?</h3>
+<div class="insight"><p>This one design choice buys two properties at once: (1) <strong>attestation</strong> — the identity a chip can prove <em>includes</em> which firmware it runs, so a verifier learns the exact software state; and (2) <strong>remediation</strong> — patched vs unpatched chips have different identities, so you can issue certs only patched chips can use. Binding code identity into keys is the elegant core of Titan.</p></div>
+
+<h3>Why offline, quorum-based CA?</h3>
+<p>The Titan CA mints the identity for every machine in the fleet — it's the ultimate root. Keeping it offline and requiring a quorum of administrators means no single person (or single compromised online system) can forge machine identities. Same discipline as keeping a real PKI root CA offline, and as delivering a device and its access secret through separate channels so neither alone is enough.</p>
+
+<h3>Why in-house hardware logic?</h3>
+<p>Designing the logic internally reduces the risk of hardware backdoors introduced somewhere in a third-party supply chain — the root of trust should have the smallest, most-controlled trust surface possible.</p>
+
+<div class="iv"><p><strong>Interview angle.</strong> Every "why" here reduces to one principle: <em>minimize what you have to trust, and make that minimum impossible to subvert with software alone</em>. A discrete chip shrinks the trust surface; immutable ROM removes a mutable attack point; an offline quorum CA removes the single-human and single-server failure modes; in-house logic removes supply-chain trust. A strong candidate connects these into that single thread rather than listing them, and can name the cost being paid for each (latency, hardware cost, operational complexity of quorum ceremonies).</p></div>
+</div>
+</div>
+
+<!-- SCALE -->
+<div class="section" id="scale">
+<div class="card">
+<h2>Scale &amp; throughput — a root of trust across a global fleet</h2>
+<p>Titan isn't a per-request QPS system, so "scale" here means <em>issuing and using hardware identity across an entire data-center fleet</em> without the root becoming a bottleneck:</p>
+<ul>
+  <li><strong>Offline CA, online identities.</strong> The Titan CA is offline and quorum-gated — it isn't in any hot path. Machines generate CSRs and receive identity certs; the expensive root operation happens rarely, not per boot or per RPC.</li>
+  <li><strong>Hardware-rooted identity, then ALTS takes over.</strong> Titan establishes the <em>machine</em> identity once at boot; ALTS then derives fast, rotatable service identities from it. The costly hardware step is amortized; the frequent operations are cheap software creds.</li>
+  <li><strong>Verified boot happens once per boot, not per request.</strong> First-instruction integrity is a startup cost, then the machine serves normally — so the security guarantee doesn't tax steady-state throughput.</li>
+  <li><strong>Attestation via certificates, checkable offline.</strong> Because identity is a cert chain to the root, relying parties validate it without calling the CA each time — the same "verify locally against a root" pattern that lets ALTS/BeyondProd scale.</li>
+</ul>
+<div class="insight"><p><strong>The scaling lesson:</strong> keep the ultimate root offline and out of the hot path; do the expensive hardware/attestation step <em>once</em> (per boot / per provisioning) and let cheaper, rotatable credentials carry the per-request load — validated locally against the root, never by calling it.</p></div>
+<div class="iv"><p><strong>Interview angle.</strong> "Scale" for a root of trust is a trap question — the real test is whether you notice the root must <em>not</em> be in the request path at all. The winning answer inverts the usual QPS framing: the expensive operation (hardware attestation, CA signing) happens rarely and offline; frequent operations verify a cert chain <em>locally</em> against a pre-distributed root, so there is no per-request round trip to the CA. This is the identical pattern behind <a href="google_security_alts.html">ALTS</a> and web PKI — say that explicitly to show you see the shared shape.</p></div>
+</div>
+</div>
+
+<!-- CHALLENGES -->
+<div class="section" id="challenges">
+<div class="card">
+<h2>Hard problems</h2>
+
+<h3 class="hsub">Supply-chain trust for the root itself</h3>
+<p>Titan <em>is</em> the root of trust, so its own manufacture and firmware must be trustworthy. Mitigations: in-house hardware logic, immutable boot ROM laid down at fab and validated every reset, MemBIST at every boot, and provenance recorded in the CA-protected registry.</p>
+
+<h3 class="hsub">Firmware bugs in the root of trust</h3>
+<p>If the thing that establishes trust has a bug, you need a way out that doesn't require replacing every chip. Remediation (firmware identity hashed into keys → patched chips get new valid identities) is the answer — designed <em>in</em> from the start rather than added on.</p>
+
+<h3 class="hsub">Scaling identity issuance across a global fleet</h3>
+<p>Every machine needs an identity cert, verified against the registry, gated by a quorum — at data-center scale. The CSR-to-CA flow plus a registry DB is how that's made systematic rather than manual.</p>
+
+<h3 class="hsub">Log integrity against root-level insiders</h3>
+<div class="warning"><p>Ordinary logging can be edited by anyone with root. Titan's monotonic-counter + signature approach is specifically designed so that even an insider with full host privileges can't rewrite history undetectably — a hard guarantee that requires hardware to enforce.</p></div>
+
+<div class="iv"><p><strong>Interview angle.</strong> The hardest problems here share a shape: <em>the thing you rely on is also the thing under attack</em> — the root's own supply chain, the root's own firmware bugs, and logs an all-powerful insider wants to erase. That's why each answer pushes the guarantee <em>below</em> where the attacker operates: immutable ROM and MemBIST for the root itself, remediation-by-identity for firmware bugs, and a hardware monotonic counter for logs. When a question feels circular ("who watches the watcher?"), name that circularity out loud and show which hardware primitive breaks it.</p></div>
+</div>
+</div>
+
+<!-- INTERVIEW -->
+<div class="section" id="interview">
+<div class="card">
+<h2>Interview angle</h2>
+<div class="iv"><p><strong>Why this is the most on-topic system:</strong> for a <em>Security Backend, Silicon</em> role, Titan is the closest of the four to the hardware/identity boundary the team works on. Device-manufacturing identity — minting a per-unit key at fabrication and attesting to it later — is the transferable pattern to be fluent in, whatever hardware provisioning experience you bring.</p></div>
+
+<h3>The transferable pattern to internalize</h3>
+<table>
+  <tr><th>Titan concept</th><th>The general principle</th></tr>
+  <tr><td>Per-chip key generated at fabrication</td><td>Generate a unique key pair <em>on</em> the unit at manufacture so the private key never has to travel</td></tr>
+  <tr><td>Offline quorum-based Titan CA</td><td>The signing CA's private key lives in tamper-resistant hardware, stays offline, and requires a quorum — no single actor can forge identities</td></tr>
+  <tr><td>Registry DB of chip identity + provenance</td><td>Record each unit's public identity + provenance in a protected registry so it can be recognized later</td></tr>
+  <tr><td>CSR → CA verifies → identity certificate</td><td>Unit emits a CSR; the CA verifies against the registry before issuing a cert</td></tr>
+  <tr><td>Attestation: verify identity later</td><td>A relying party validates the unit's cert chain back to the trusted root at connect time</td></tr>
+  <tr><td>Firmware identity hashed into key hierarchy</td><td>Bind code identity into the key hierarchy so attestation covers software state and enables remediation</td></tr>
+</table>
+<div class="tip"><p>Rehearse the pattern out loud: <em>"Secure device provisioning means the unit generates its own key pair at manufacture, a per-product CA whose private key is sealed in tamper-resistant hardware signs the certificate, and the public identity is recorded centrally so the unit can be attested later. Titan applies exactly this to data-center machines — a per-chip key at fab, an offline quorum CA, a registry, and CSR-based identity certs — and adds the twist of hashing firmware identity into the key hierarchy, so attestation covers software state and enables remediation after a firmware patch."</em></p></div>
+
+<h3>Likely questions</h3>
+<div class="qa"><div class="q">Q: "Design a hardware root of trust / secure boot for a fleet of servers."</div>
+<p>Discrete chip with immutable ROM interposing on the boot-firmware bus; verify own firmware then host firmware by public key; gate the host in reset until verified (first-instruction integrity); per-device key at manufacture; offline quorum CA + registry; CSR-based identity certs; hash firmware identity into keys for attestation + remediation.</p></div>
+<div class="qa"><div class="q">Q: "How do you provision device identity securely at manufacture?"</div>
+<p>Generate the key on the device (never leaves it); sign with a CA whose private key lives in tamper-resistant hardware and never exports; record provenance in a protected registry; deliver access secrets through a separate channel; validate the chain to a root later.</p></div>
+<div class="qa"><div class="q">Q: "A firmware vulnerability is found in your root-of-trust chip. Now what?"</div>
+<p>Remediation via identity: patch firmware; because firmware identity is bound into the key hierarchy, unpatched chips can no longer obtain valid certs — the CA issues certs only patched chips can use. No mass hardware swap needed.</p></div>
+<div class="qa"><div class="q">Q: "How do you make audit logs insider-proof?"</div>
+<p>Hardware-maintained monotonic counter + per-entry signatures chained to that counter; deletion/alteration breaks the chain and is detectable even against root.</p></div>
+
+<div class="tip"><p><strong>System-of-systems close:</strong> "Titan is the anchor — it gives each machine a hardware-rooted identity and guarantees verified boot. ALTS turns that machine identity into service identity for every RPC; BeyondProd authorizes those services and enforces code provenance; KMS protects the data they touch, rooted in the same kind of hardware/quorum discipline. Titan is where the whole trust chain bottoms out."</p></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>ALTS</strong> (Application Layer Transport Security)</td><td>Google's mutual-auth and encryption system that turns Titan's machine identity into per-RPC service identity.</td></tr>
+<tr><td><strong>Attestation</strong></td><td>A device cryptographically proving it is genuine and exactly what software it runs, verifiable without trusting its word.</td></tr>
+<tr><td><strong>BeyondProd</strong></td><td>Google's cloud-native security model that authorizes services and enforces code provenance, anchored on Titan machine identity.</td></tr>
+<tr><td><strong>BMC</strong> (baseboard management controller)</td><td>Always-on motherboard chip for remote server management that runs below the OS — a prime hiding spot for stealthy malware.</td></tr>
+<tr><td><strong>CA</strong> (certificate authority)</td><td>Trusted issuer that signs identity certificates; the Titan CA signs each chip's identity.</td></tr>
+<tr><td><strong>CSR</strong> (certificate signing request)</td><td>A device's request asking a CA to sign a certificate for its public key; the private key never leaves the device.</td></tr>
+<tr><td><strong>Firmware</strong></td><td>Low-level software built into hardware that runs before the OS (e.g., BIOS) — a favorite hiding spot for stealthy malware.</td></tr>
+<tr><td><strong>First-instruction integrity</strong></td><td>Knowing and verifying the earliest boot-firmware code before the CPU/PCH is released from reset.</td></tr>
+<tr><td><strong>Key hierarchy</strong></td><td>On-chip tree of cryptographic keys; firmware identity is hashed into it, so different firmware yields a different chip identity.</td></tr>
+<tr><td><strong>MemBIST</strong> (memory built-in self-test)</td><td>On-chip circuit that self-tests the chip's own memory (SRAM/ROM) for faults at every power-on.</td></tr>
+<tr><td><strong>Monotonic counter</strong></td><td>A secure, only-ever-incrementing counter Titan chains signed audit logs to, making any tampering detectable.</td></tr>
+<tr><td><strong>PCH</strong> (platform controller hub)</td><td>Motherboard chip managing the CPU's connections to storage, USB, and boot firmware; Titan gates its access until firmware is verified.</td></tr>
+<tr><td><strong>Quorum</strong></td><td>Requiring enough authorized key-shares combined (e.g., 3 of 5) before the CA key can be used — no single actor suffices.</td></tr>
+<tr><td><strong>Remediation</strong></td><td>Recovering trust after a firmware bug by re-issuing identities so that only patched chips are trusted again.</td></tr>
+<tr><td><strong>ROM</strong> (read-only memory)</td><td>Immutable on-chip memory holding Titan's boot code, laid down at fabrication and trusted without proof.</td></tr>
+<tr><td><strong>Root of trust</strong></td><td>The one component trusted without proof that everything else is verified against; Titan is a machine's hardware root of trust.</td></tr>
+<tr><td><strong>Secure boot</strong> (verified boot)</td><td>Verifying, at power-on, that each startup component is genuine and unmodified before running it.</td></tr>
+<tr><td><strong>SPI bus</strong></td><td>The serial wire between a chip and boot-firmware flash; Titan interposes on it to inspect and gate every boot byte.</td></tr>
+</table>
+</div>
+
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  evt.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_security_zanzibar.html">‹ Zanzibar — Global Authorization</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_security_kms.html">Key Management &amp; Encryption at Rest ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

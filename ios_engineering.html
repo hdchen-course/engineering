@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iOS Engineering — Swift, SwiftUI, ARC &amp; Concurrency</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --sw: 260px;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+#sb {
+  width: var(--sw);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; bottom: 0;
+  overflow-y: auto; z-index: 100;
+  transition: width .3s ease;
+}
+#sb::-webkit-scrollbar { width: 4px; }
+#sb::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.sbh {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.sbt { font-size: 13px; font-weight: 700; color: var(--blue-d); text-transform: uppercase; letter-spacing: 1px; }
+.sbs { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.ng { padding: 12px 8px 0; }
+.ngl { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 6px; }
+.ni {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: var(--text2);
+  transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+}
+.ni:hover { background: var(--bg3); color: var(--text); }
+.ni.active { background: var(--blue-l); color: var(--blue-d); font-weight: 600; }
+.ni-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.ni-text { flex: 1; font-size: 12px; }
+.badge { margin-left: auto; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+.bh { background: var(--red-l); color: var(--red); }
+.bg { background: var(--green-l); color: var(--green); }
+.bp { background: var(--purple-l); color: var(--purple); }
+.bt { background: var(--teal-l); color: var(--teal); }
+.bo { background: var(--orange-l); color: var(--orange); }
+
+/* MAIN — normal document flow, centered like the rest of the book */
+#main { background: var(--bg); }
+.container { max-width: 1080px; margin: 0 auto; padding: 20px 20px 0; }
+
+/* TOP SECTION NAV (site style, sticky) */
+.nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 14px 0; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; font-family: 'Inter', sans-serif; transition: all .2s; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue-d); border-color: var(--blue); }
+
+/* HEADER */
+.ph {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px;
+  border-radius: var(--r);
+  margin: 8px 0 4px;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #93c5fd; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 650px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+.sec { padding: 28px 4px; display: none; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: #fff; border-radius: var(--r); margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--blue-l); color: var(--blue-d); font-size: 11px; font-weight: 500; margin: 2px; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+/* Let grid children shrink below their content's intrinsic width so the code
+   blocks inside scroll internally (overflow-x:auto) instead of forcing the
+   grid track — and the document — wider than the viewport at narrow widths. */
+.g2 > *, .g3 > * { min-width: 0; }
+pre.codeblock { max-width: 100%; }
+
+/* INTERVIEW QUOTE */
+.iq {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--text2);
+  font-size: 13px;
+  position: relative;
+}
+.iq::before {
+  content: 'SAY THIS';
+  position: absolute;
+  top: -8px; left: 14px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  background: var(--blue);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* SKILL BOX */
+.skill-box {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 18px; margin: 10px 0; box-shadow: var(--shadow-sm);
+}
+.skill-box h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.skill-box ul { padding-left: 18px; font-size: 13px; color: var(--text2); }
+.skill-box li { margin-bottom: 4px; }
+
+/* SVG CONTAINERS */
+.svg-container {
+  margin: 20px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.svg-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* PROGRESS */
+.prog { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.pc { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow-sm); text-align: center; }
+.pc .num { font-size: 28px; font-weight: 800; color: var(--blue-d); }
+.pc .lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg3); padding: 1px 5px; border-radius: 4px; color: var(--blue-d); }
+
+pre, pre.codeblock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+  line-height: 1.6;
+  color: var(--text2);
+  white-space: pre;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: 12px; }
+
+/* LIST STYLING */
+.content-list { padding-left: 20px; margin: 8px 0; }
+.content-list li { margin-bottom: 6px; font-size: 13px; color: var(--text2); }
+.content-list li strong { color: var(--text); }
+
+/* DECISION GRID */
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.decision-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.decision-item .di-t {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-d);
+  margin-bottom: 6px;
+}
+.decision-item p {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.decision-item .di-key {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+@media (max-width: 768px) {
+  #sb { width: 0; overflow: hidden; }
+  #main { left: 0; }
+  .sec { padding: 20px 16px; }
+  .ph { padding: 24px 16px; }
+}
+a.lc { color: var(--blue); text-decoration: none; font-weight: 500; }
+a.lc:hover { text-decoration: underline; color: var(--blue-d); }
+</style>
+
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<style id="chapter-extra">
+/* code syntax spans */
+pre .kw{color:#c586c0;font-weight:600}
+pre .cm{color:#6a9955;font-style:italic}
+pre .num{color:#b5cea8}
+pre .str{color:#ce9178}
+pre .fn{color:#4ec9b0}
+/* dark code look for this chapter's pre blocks */
+pre.codeblock{background:#1a1b26;color:#c0caf5;border-color:#2a2b3c}
+/* replayable step players */
+.player{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;margin:16px 0;box-shadow:var(--shadow-sm)}
+.player-stage{background:var(--bg3);border-radius:8px;padding:8px;overflow-x:auto}
+.player-ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.player-ctrls button{padding:7px 14px;border-radius:8px;border:1px solid var(--blue);background:var(--blue);color:#fff;cursor:pointer;font-size:12.5px;font-weight:600;font-family:'Inter',sans-serif;transition:all .15s}
+.player-ctrls button:hover{background:var(--blue-d)}
+.player-ctrls button.ghost{background:#fff;color:var(--blue-d)}
+.player-ctrls button:disabled{opacity:.45;cursor:not-allowed}
+.player-step{font-size:13px;color:var(--text2);margin-left:6px;min-height:1.4em}
+.player-step b{color:var(--text)}
+.pill{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--blue-l);color:var(--blue-d);letter-spacing:.4px}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part IX · Chapter 2 — <b>iOS Engineering</b></span><span class="bkspacer"></span></nav>
+
+<div id="main">
+<div class="container">
+
+<div class="ph">
+  <div class="htag">Part IX · Chapter 2 · Mobile &amp; Client Engineering</div>
+  <div class="ht">iOS Engineering &mdash; <span>Swift, SwiftUI &amp; the Runtime</span></div>
+  <div class="hd">What a software engineer actually needs to know to build, reason about, and interview on iOS apps: the Swift type system, the shift from imperative UIKit to declarative SwiftUI, the view-controller and app lifecycles, how ARC manages memory (and how retain cycles leak), modern concurrency with async/await and actors, storage and networking, and the one rule that governs it all &mdash; touch the UI only on the main thread. Analogy-first for newcomers, interview-depth for seniors, with a note for readers coming from Android or the web.</div>
+  <div class="hm">
+    <div class="chip">Tabs <b>10</b></div>
+    <div class="chip">Memory <b>ARC, not GC</b></div>
+    <div class="chip">UI <b>SwiftUI + UIKit</b></div>
+    <div class="chip">Rule <b>Main-thread UI</b></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="go('swift')">Swift Essentials</button>
+  <button class="nav-btn" onclick="go('ui')">UIKit vs SwiftUI</button>
+  <button class="nav-btn" onclick="go('vclife')">View-Controller Lifecycle</button>
+  <button class="nav-btn" onclick="go('arc')">ARC &amp; Retain Cycles</button>
+  <button class="nav-btn" onclick="go('concurrency')">Concurrency</button>
+  <button class="nav-btn" onclick="go('applife')">App Lifecycle &amp; Scenes</button>
+  <button class="nav-btn" onclick="go('memory')">Memory &amp; Leaks</button>
+  <button class="nav-btn" onclick="go('data')">Storage &amp; Networking</button>
+  <button class="nav-btn" onclick="go('perf')">Performance</button>
+  <button class="nav-btn" onclick="go('cross')">From Android/Web</button>
+</nav>
+
+<!-- ============================= SWIFT ESSENTIALS ============================= -->
+<div class="sec active" id="tab-swift">
+<h2 class="stitle">Swift Essentials</h2>
+<div class="sdesc">Three ideas power almost every Swift design decision: value vs reference types, optionals, and protocols. Get these and the rest of the language reads cleanly.</div>
+
+<p><strong>Analogy first.</strong> A <em>value type</em> is like emailing someone a <em>photocopy</em> of a document &mdash; they can scribble on their copy and yours is untouched. A <em>reference type</em> is like emailing a <em>shared Google Doc link</em> &mdash; everyone edits the same underlying thing. Swift makes you choose which one you mean, and that single choice removes a huge class of "who changed my data?" bugs.</p>
+
+<h3 class="sub">Value types vs reference types</h3>
+<p><code>struct</code>, <code>enum</code>, and the standard collections (<code>Array</code>, <code>Dictionary</code>, <code>String</code>) are <strong>value types</strong>: assigning or passing them copies the value. <code>class</code> is a <strong>reference type</strong>: assigning shares one instance, and multiple variables can mutate it.</p>
+
+<pre class="codeblock"><span class="kw">struct</span> Point { <span class="kw">var</span> x: Int; <span class="kw">var</span> y: Int }   <span class="cm">// value type — copied</span>
+<span class="kw">class</span>  Node  { <span class="kw">var</span> value = <span class="num">0</span> }            <span class="cm">// reference type — shared</span>
+
+<span class="kw">var</span> a = Point(x: <span class="num">1</span>, y: <span class="num">2</span>)
+<span class="kw">var</span> b = a          <span class="cm">// COPY: b is independent of a</span>
+b.x = <span class="num">99</span>           <span class="cm">// a.x is STILL 1</span>
+
+<span class="kw">let</span> n1 = Node()
+<span class="kw">let</span> n2 = n1        <span class="cm">// SAME instance, two names</span>
+n2.value = <span class="num">99</span>      <span class="cm">// n1.value is now 99 too</span></pre>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Swift's standard library is value-type-first, made cheap by <strong>copy-on-write</strong>: an <code>Array</code> shares its buffer until someone mutates it, then it copies. So "everything copies" is the mental model, and the runtime avoids the cost until a write actually happens. Value semantics are what make Swift concurrency safe &mdash; a copied struct can't be mutated out from under you by another thread.</p></div>
+
+<h4 class="sub2">When to reach for which</h4>
+<ul class="content-list">
+<li><strong>Prefer <code>struct</code> by default</strong> &mdash; models, DTOs, small state. Local reasoning, no shared mutation, thread-friendly.</li>
+<li><strong>Use <code>class</code> when you need identity or shared mutable state</strong> &mdash; a view controller, a cache, an object that must be the <em>same</em> object everywhere (compared with <code>===</code>), or one that inherits from a UIKit class.</li>
+<li><strong><code>enum</code> with associated values</strong> models "one of N shapes" precisely &mdash; e.g. <code>enum LoadState { case idle, loading, loaded([Post]), failed(Error) }</code>.</li>
+</ul>
+
+<h3 class="sub">Optionals &mdash; nil made explicit</h3>
+<p><strong>Analogy:</strong> an <code>Optional</code> is a box that is either empty or holds a value. The type system forces you to open the box before using what's inside, so "null pointer" surprises become compile-time checks. A <code>String</code> is always a string; a <code>String?</code> might be a string or nothing.</p>
+
+<pre class="codeblock"><span class="kw">var</span> name: String? = <span class="kw">nil</span>              <span class="cm">// may hold a String, or nothing</span>
+
+<span class="cm">// 1. Optional binding — safest</span>
+<span class="kw">if let</span> real = name { greet(real) }
+
+<span class="cm">// 2. guard — bind and exit early; keeps the happy path un-indented</span>
+<span class="kw">func</span> <span class="fn">greetIfPossible</span>() {
+    <span class="kw">guard let</span> real = name <span class="kw">else</span> { <span class="kw">return</span> }
+    greet(real)                        <span class="cm">// `real` is a non-optional String here</span>
+}
+
+<span class="cm">// 3. Optional chaining + nil-coalescing</span>
+<span class="kw">let</span> len = name?.count ?? <span class="num">0</span>          <span class="cm">// count if present, else 0</span>
+
+<span class="cm">// 4. Force-unwrap — crashes if nil. Reserve for "impossible to be nil".</span>
+<span class="kw">let</span> forced = name!                    <span class="cm">// code smell in most places</span></pre>
+
+<div class="trap"><div class="trapl">TRAP</div><p>The force-unwrap operator <code>!</code> and implicitly-unwrapped optionals (<code>String!</code>) are the iOS equivalent of a landmine. In interviews, reaching for <code>!</code> to "make the compiler happy" reads as junior. Show you default to <code>guard let</code> / <code>if let</code> and can explain the one legitimate <code>!</code> case: a value that is genuinely guaranteed non-nil after initialization (e.g. an <code>@IBOutlet</code>).</p></div>
+
+<h3 class="sub">Protocols &mdash; capability, not hierarchy</h3>
+<p><strong>Analogy:</strong> a protocol is a job description ("anything that can <code>draw()</code>"), not a family tree. A type can adopt many protocols, so Swift favors <em>composition of capabilities</em> over deep inheritance chains. This is "protocol-oriented programming".</p>
+
+<pre class="codeblock"><span class="kw">protocol</span> Drawable {
+    <span class="kw">func</span> <span class="fn">draw</span>()
+}
+
+<span class="cm">// Protocol EXTENSION gives a default implementation — free for adopters</span>
+<span class="kw">extension</span> Drawable {
+    <span class="kw">func</span> <span class="fn">draw</span>() { print(<span class="str">"default shape"</span>) }
+}
+
+<span class="kw">struct</span> Circle: Drawable {
+    <span class="kw">func</span> <span class="fn">draw</span>() { print(<span class="str">"○"</span>) }   <span class="cm">// override the default</span>
+}
+<span class="kw">struct</span> Blank: Drawable {}              <span class="cm">// uses the default draw()</span>
+
+<span class="kw">func</span> <span class="fn">renderAll</span>(_ shapes: [Drawable]) {   <span class="cm">// program to the protocol, not a class</span>
+    <span class="kw">for</span> s <span class="kw">in</span> shapes { s.draw() }
+}</pre>
+
+<ul class="content-list">
+<li><strong>Protocol extensions</strong> provide shared default behavior without a base class &mdash; how the standard library gives every <code>Collection</code> a <code>map</code>/<code>filter</code>.</li>
+<li><strong>Generics + protocol constraints</strong> (<code>func max&lt;T: Comparable&gt;(...)</code>) give type-safe reuse; associated types (<code>associatedtype Element</code>) let a protocol be generic.</li>
+<li><strong>Delegation</strong>, the go-to UIKit pattern, is just a protocol: a view controller adopts <code>UITableViewDataSource</code> and the table asks it for rows.</li>
+</ul>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Expect "struct or class here, and why?" The strong answer names value semantics, thread-safety, and copy-on-write &mdash; then picks <code>struct</code> unless identity, inheritance, or shared mutable state is required. On optionals, show you treat <code>nil</code> as a modeled state, not an error, and avoid <code>!</code>. On protocols, contrast protocol-oriented composition with classical inheritance and mention protocol extensions as the "default method" mechanism.</p></div>
+</div>
+
+<!-- ============================= UIKIT VS SWIFTUI ============================= -->
+<div class="sec" id="tab-ui">
+<h2 class="stitle">UIKit vs SwiftUI &mdash; Imperative vs Declarative</h2>
+<div class="sdesc">The same screen, two philosophies. UIKit: you hold references to views and mutate them step by step. SwiftUI: you describe what the UI should look like for a given state, and the framework figures out the changes.</div>
+
+<p><strong>Analogy.</strong> UIKit is <em>giving turn-by-turn driving directions</em> ("set the label text, now change its color, now hide the spinner"). SwiftUI is <em>handing over the destination address</em> ("the screen shows this count") &mdash; the framework computes the route. When state changes, you don't touch the views; you change the state and SwiftUI re-renders.</p>
+
+<div class="g2">
+<div>
+<div class="sub2">UIKit — imperative</div>
+<pre class="codeblock"><span class="kw">class</span> CounterVC: UIViewController {
+    <span class="kw">let</span> label = UILabel()
+    <span class="kw">var</span> count = <span class="num">0</span>
+
+    <span class="cm">// YOU mutate the view by hand</span>
+    @objc <span class="kw">func</span> <span class="fn">tapped</span>() {
+        count += <span class="num">1</span>
+        label.text = <span class="str">"</span>\(count)<span class="str">"</span>
+    }
+}</pre>
+</div>
+<div>
+<div class="sub2">SwiftUI — declarative</div>
+<pre class="codeblock"><span class="kw">struct</span> CounterView: View {
+    @State <span class="kw">private var</span> count = <span class="num">0</span>
+
+    <span class="cm">// UI is a function of state</span>
+    <span class="kw">var</span> body: some View {
+        VStack {
+            Text(<span class="str">"</span>\(count)<span class="str">"</span>)
+            Button(<span class="str">"Tap"</span>) { count += <span class="num">1</span> }
+        }
+    }
+}</pre>
+</div>
+</div>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>The mental shift: in SwiftUI you never write "update this label." You write <code>body</code> as a pure-ish function <code>state &rarr; view tree</code>. When an <code>@State</code>/<code>@Published</code> value changes, SwiftUI re-invokes <code>body</code>, diffs the returned tree against the previous one, and mutates only the underlying UIKit/AppKit views that actually changed. It's the same core idea as React's render + reconciliation.</p></div>
+
+<h3 class="sub">State &amp; data flow in SwiftUI</h3>
+<table class="tbl">
+<thead><tr><th>State mechanism</th><th>Use it for</th><th>Owns the data?</th></tr></thead>
+<tbody>
+<tr><td><code>@State</code></td><td>Simple value-type state private to one view</td><td>Yes (the view)</td></tr>
+<tr><td><code>@Binding</code></td><td>A two-way reference to state owned by a parent</td><td>No (parent does)</td></tr>
+<tr><td><code>@Observable</code> model in <code>@State</code></td><td>Modern reference-type model / view-model (business logic). <code>@Observable</code> is a macro on the model <em>class</em>; the view stores the instance in <code>@State</code>.</td><td>Yes (the view, via <code>@State</code>)</td></tr>
+<tr><td><code>@StateObject</code></td><td>A legacy <code>ObservableObject</code> the view creates and owns</td><td>Yes (creates &amp; owns it)</td></tr>
+<tr><td><code>@ObservedObject</code> / <code>@Environment</code></td><td>A model passed in / shared down the tree</td><td>No</td></tr>
+</tbody>
+</table>
+<p><em>(Modern Swift uses the <code>@Observable</code> macro; older code uses <code>ObservableObject</code> + <code>@Published</code>. Both mean "reference-type model that publishes changes".)</em></p>
+
+<h3 class="sub">When to use which</h3>
+<div class="decision-grid">
+<div class="decision-item"><div class="di-t">Reach for SwiftUI</div><p>New screens, rapid iteration, cross-Apple-platform UI, live previews, simple-to-moderate state.</p><div class="di-key">Key: default for greenfield</div></div>
+<div class="decision-item"><div class="di-t">Reach for UIKit</div><p>Fine-grained control, complex collection/scroll behavior, legacy codebase, a control SwiftUI doesn't expose yet.</p><div class="di-key">Key: control &amp; maturity</div></div>
+<div class="decision-item"><div class="di-t">Mix them</div><p><code>UIHostingController</code> embeds SwiftUI in UIKit; <code>UIViewRepresentable</code> wraps a UIKit view for SwiftUI. Real apps do both.</p><div class="di-key">Key: interop is first-class</div></div>
+</div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>SwiftUI's declarative model is not free of imperative escape hatches, and misusing them is the classic beginner error: mutating <code>@State</code> from inside <code>body</code> (infinite re-render), or getting model ownership wrong. For a <em>legacy</em> <code>ObservableObject</code> view-model, own it with <code>@StateObject</code> (not <code>@ObservedObject</code>, which is re-created when the parent re-renders) so its <code>@Published</code> changes are observed; for a <em>modern</em> <code>@Observable</code> model, own it with <code>@State</code> (<code>@StateObject</code> can't be used with it — it requires <code>ObservableObject</code> conformance). Know the ownership rules for the wrappers above.</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Be able to state the imperative-vs-declarative distinction in one sentence and back it with the counter example. Then go deeper: how SwiftUI re-renders (invalidate &rarr; recompute <code>body</code> &rarr; diff &rarr; minimal mutation), why value-type views make that cheap, and the ownership semantics of <code>@State</code> vs <code>@StateObject</code> vs <code>@Binding</code>. Senior signal: knowing when UIKit is still the right tool and how to bridge the two.</p></div>
+</div>
+
+<!-- ============================= VC LIFECYCLE ============================= -->
+<div class="sec" id="tab-vclife">
+<h2 class="stitle">The View-Controller Lifecycle</h2>
+<div class="sdesc">A UIViewController is born, its view loads, appears, disappears, and dies &mdash; on a fixed, ordered set of callbacks. Knowing which work belongs in which callback is essential iOS knowledge.</div>
+
+<p><strong>Analogy.</strong> Think of a stage actor. <code>viewDidLoad</code> is the one-time dress rehearsal (set up the set). <code>viewWillAppear</code>/<code>viewDidAppear</code> fire every time they walk on stage (refresh what the audience sees, start the spotlight). <code>viewWillDisappear</code>/<code>viewDidDisappear</code> fire every time they exit (pause, save). <code>deinit</code> is when the actor leaves the building for good.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 190" width="100%" role="img" aria-label="UIViewController lifecycle callbacks in order">
+  <defs>
+    <marker id="vcah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#748099"/></marker>
+  </defs>
+  <g font-family="Inter" font-size="11" text-anchor="middle">
+    <text x="430" y="20" font-size="12" font-weight="700" fill="#0f172a">Lifecycle order — once vs every appearance</text>
+    <rect x="12" y="45" width="120" height="46" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="72" y="65" fill="#5b21b6" font-weight="700">init</text><text x="72" y="80" fill="#5b21b6">create VC</text>
+    <rect x="152" y="45" width="120" height="46" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+    <text x="212" y="65" fill="#5b21b6" font-weight="700">viewDidLoad</text><text x="212" y="80" fill="#5b21b6">once — set up</text>
+    <rect x="292" y="45" width="130" height="46" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="357" y="65" fill="#1e40af" font-weight="700">viewWillAppear</text><text x="357" y="80" fill="#1e40af">every time — refresh</text>
+    <rect x="442" y="45" width="130" height="46" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="507" y="65" fill="#1e40af" font-weight="700">viewDidAppear</text><text x="507" y="80" fill="#1e40af">on screen — animate</text>
+    <rect x="592" y="45" width="140" height="46" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+    <text x="662" y="65" fill="#92400e" font-weight="700">viewWillDisappear</text><text x="662" y="80" fill="#92400e">leaving — save/pause</text>
+    <rect x="752" y="45" width="96" height="46" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="800" y="65" fill="#b91c1c" font-weight="700">deinit</text><text x="800" y="80" fill="#b91c1c">freed</text>
+    <line x1="132" y1="68" x2="150" y2="68" stroke="#748099" marker-end="url(#vcah)"/>
+    <line x1="272" y1="68" x2="290" y2="68" stroke="#748099" marker-end="url(#vcah)"/>
+    <line x1="422" y1="68" x2="440" y2="68" stroke="#748099" marker-end="url(#vcah)"/>
+    <line x1="572" y1="68" x2="590" y2="68" stroke="#748099" marker-end="url(#vcah)"/>
+    <line x1="732" y1="68" x2="750" y2="68" stroke="#748099" marker-end="url(#vcah)"/>
+    <path d="M357 91 C357 140, 250 140, 250 140 L470 140 C470 140, 507 140, 507 91" fill="none" stroke="#2563eb" stroke-dasharray="4 3" marker-end="url(#vcah)"/>
+    <text x="430" y="158" fill="#2563eb" font-size="10">appear/disappear repeat every navigation — didLoad does not</text>
+  </g>
+</svg>
+</div>
+
+<h3 class="sub">What goes where</h3>
+<table class="tbl">
+<thead><tr><th>Callback</th><th>Fires</th><th>Put here</th></tr></thead>
+<tbody>
+<tr><td><code>viewDidLoad()</code></td><td>Once, after the view is loaded into memory</td><td>One-time setup: subviews, static config, initial data request wiring</td></tr>
+<tr><td><code>viewWillAppear(_:)</code></td><td>Every time the view is about to show</td><td>Refresh data that may have changed, update UI to current state</td></tr>
+<tr><td><code>viewDidAppear(_:)</code></td><td>Every time, after it's on screen</td><td>Start animations, analytics "screen viewed", begin location/camera</td></tr>
+<tr><td><code>viewWillDisappear(_:)</code></td><td>Every time it's about to hide</td><td>Save edits, resign first responder, pause work</td></tr>
+<tr><td><code>viewDidDisappear(_:)</code></td><td>Every time, after it's hidden</td><td>Stop timers/observers, release expensive resources</td></tr>
+<tr><td><code>deinit</code></td><td>When the VC is deallocated</td><td>Final cleanup; a <code>deinit</code> that never prints is your leak alarm</td></tr>
+</tbody>
+</table>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Doing one-time setup in <code>viewWillAppear</code>.</strong> It fires on every return-to-screen, so adding subviews or observers there duplicates them each time (stacked views, double callbacks). Rule of thumb: build once in <code>viewDidLoad</code>, refresh in <code>viewWillAppear</code>. And layout math belongs in <code>viewDidLayoutSubviews</code> &mdash; frames are not final in <code>viewDidLoad</code>.</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Classic question: "Where would you start/stop a location manager or a timer, and why?" Start in <code>viewDidAppear</code> / stop in <code>viewDidDisappear</code> so you don't hold hardware or fire callbacks while off-screen. A senior answer connects this to memory: a timer or observer not torn down keeps the VC alive &mdash; verify by checking <code>deinit</code> actually runs. SwiftUI's analog is <code>onAppear</code>/<code>onDisappear</code> and the <code>task</code> modifier, which auto-cancels when the view leaves.</p></div>
+</div>
+
+<!-- ============================= ARC & RETAIN CYCLES ============================= -->
+<div class="sec" id="tab-arc">
+<h2 class="stitle">ARC &amp; Retain Cycles</h2>
+<div class="sdesc">iOS has no tracing garbage collector. Instead the compiler inserts retain/release calls at compile time &mdash; Automatic Reference Counting. It's deterministic and pause-free, but it can't detect cycles: two objects that hold each other never reach zero and leak forever.</div>
+
+<p><strong>Analogy.</strong> Each object keeps a tally of how many people are "holding its hand" (its <em>retain count</em>). When the last person lets go (count hits 0), the object is freed immediately &mdash; no waiting for a garbage collector to sweep. The catch: if object A holds B's hand <em>and</em> B holds A's hand, then even after everyone else lets go, the two of them keep each other alive. Nobody can leave. That's a <strong>retain cycle</strong>.</p>
+
+<pre class="codeblock"><span class="kw">class</span> Person {
+    <span class="kw">let</span> name: String
+    <span class="kw">var</span> apartment: Apartment?         <span class="cm">// strong → Apartment</span>
+    <span class="kw">init</span>(_ name: String) { <span class="kw">self</span>.name = name }
+    <span class="kw">deinit</span> { print(<span class="str">"</span>\(name)<span class="str"> freed"</span>) }
+}
+
+<span class="kw">class</span> Apartment {
+    <span class="kw">let</span> unit: String
+    <span class="kw">var</span> tenant: Person?               <span class="cm">// strong → Person  ← this closes the cycle</span>
+    <span class="kw">init</span>(_ unit: String) { <span class="kw">self</span>.unit = unit }
+    <span class="kw">deinit</span> { print(<span class="str">"Apt </span>\(unit)<span class="str"> freed"</span>) }
+}
+
+<span class="kw">var</span> alice: Person?    = Person(<span class="str">"Alice"</span>)
+<span class="kw">var</span> u4a:   Apartment? = Apartment(<span class="str">"4A"</span>)
+alice?.apartment = u4a          <span class="cm">// Alice —strong→ 4A</span>
+u4a?.tenant      = alice        <span class="cm">// 4A —strong→ Alice   (cycle!)</span>
+
+alice = <span class="kw">nil</span>                     <span class="cm">// external ref gone…</span>
+u4a   = <span class="kw">nil</span>                     <span class="cm">// …both gone, but NEITHER deinit prints. Leaked.</span></pre>
+
+<h3 class="sub">See it leak, then see <code>weak</code> break it</h3>
+<p>Step through the exact scenario. Watch each object's retain count. Steps 1&ndash;3 build the cycle and orphan it (leak); steps 4&ndash;5 apply the <code>weak</code> fix and free both. Press <b>Step</b>; <b>Reset</b> replays it.</p>
+
+<div class="player" id="rc-player">
+  <div class="player-stage">
+    <svg id="rc-svg" viewBox="0 0 640 240" width="100%" role="img" aria-label="Two objects strong-referencing each other, leaking, then fixed with weak"></svg>
+  </div>
+  <div class="player-ctrls">
+    <button id="rc-step">Step ▶</button>
+    <button id="rc-reset" class="ghost">Reset ⟲</button>
+    <span class="pill" id="rc-stage">Step 0 / 5</span>
+    <span class="player-step" id="rc-msg">Ready. Two objects created; each held once by a local variable.</span>
+  </div>
+</div>
+
+<h3 class="sub">The fix: <code>weak</code> and <code>unowned</code></h3>
+<p>A <strong>weak</strong> reference does not increase the retain count and automatically becomes <code>nil</code> when its target is freed &mdash; so it must be an <code>Optional</code> (<code>weak var tenant: Person?</code>). An <strong>unowned</strong> reference also doesn't retain, but is assumed to always be valid while used (non-optional); accessing it after the target is freed crashes.</p>
+
+<pre class="codeblock"><span class="kw">class</span> Apartment {
+    <span class="kw">weak var</span> tenant: Person?          <span class="cm">// weak breaks the cycle — no retain</span>
+}
+
+<span class="cm">// Closures capture self strongly too — the #1 real-world cycle:</span>
+<span class="kw">class</span> ViewModel {
+    <span class="kw">var</span> onDone: (() -&gt; Void)?
+    <span class="kw">func</span> <span class="fn">setup</span>() {
+        onDone = { [<span class="kw">weak</span> self] <span class="kw">in</span>   <span class="cm">// capture list breaks VM ⇄ closure cycle</span>
+            self?.finish()
+        }
+    }
+    <span class="kw">func</span> <span class="fn">finish</span>() {}
+}</pre>
+
+<table class="tbl">
+<thead><tr><th></th><th><code>weak</code></th><th><code>unowned</code></th></tr></thead>
+<tbody>
+<tr><td>Retains target?</td><td>No</td><td>No</td></tr>
+<tr><td>Type</td><td>Optional (auto-nils)</td><td>Non-optional</td></tr>
+<tr><td>After target freed</td><td>Becomes <code>nil</code> (safe)</td><td>Dangling &rarr; crash if used</td></tr>
+<tr><td>Use when</td><td>Reference can outlive/be nil (delegates, parent from child)</td><td>Reference is guaranteed to live as long (tight, same-lifetime pairs)</td></tr>
+</tbody>
+</table>
+
+<div class="tip"><div class="tipl">RULE OF THUMB</div><p>The "child" or "back" reference is the one you make <code>weak</code>: a delegate is <code>weak</code>, a child's pointer back to its parent is <code>weak</code>, and closures that outlive their owner capture <code>[weak self]</code>. Pick <code>unowned</code> only when you can prove the two objects share a lifetime (e.g. a value and its own helper created together and never separated).</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>"What is ARC and how does it differ from garbage collection?" &mdash; deterministic, compile-time-inserted retain/release, immediate deallocation at count 0, no GC pauses, <em>but no cycle collector</em>. Then: "What's a retain cycle and how do you find/fix one?" Walk the two-object example, name <code>weak</code> vs <code>unowned</code>, and mention closures capturing <code>self</code> as the most common production leak. Bonus: Xcode's Memory Graph Debugger and a non-firing <code>deinit</code> as detection tools.</p></div>
+</div>
+
+<!-- ============================= CONCURRENCY ============================= -->
+<div class="sec" id="tab-concurrency">
+<h2 class="stitle">Concurrency &mdash; GCD, async/await &amp; Actors</h2>
+<div class="sdesc">Two eras coexist. GCD (Grand Central Dispatch) is the callback-and-queues model that has run iOS for a decade. Swift Concurrency (async/await + actors) is the modern, structured, compiler-checked model. You'll use both.</div>
+
+<p><strong>Analogy.</strong> A <em>queue</em> is a line at a service desk. The <strong>main queue</strong> is the one desk that's allowed to touch the screen &mdash; keep it moving or the UI freezes. <em>Global (background) queues</em> are extra desks for slow work (network, parsing) so the main desk stays free. The golden move: do the slow work on a background desk, then hop back to the main desk to update the UI.</p>
+
+<h3 class="sub">GCD &mdash; the classic model</h3>
+<pre class="codeblock">DispatchQueue.global(qos: .userInitiated).async {
+    <span class="kw">let</span> data = heavyParse()                 <span class="cm">// off the main thread — UI stays smooth</span>
+    DispatchQueue.main.async {               <span class="cm">// hop back to touch UI</span>
+        <span class="kw">self</span>.label.text = data
+    }
+}</pre>
+<ul class="content-list">
+<li><strong>QoS (quality of service)</strong> tells the system how to prioritize: <code>.userInteractive</code> &gt; <code>.userInitiated</code> &gt; <code>.utility</code> &gt; <code>.background</code>.</li>
+<li><strong>Serial vs concurrent</strong> queues: a serial queue runs one task at a time (great for protecting shared state); a concurrent queue runs many.</li>
+<li><code>DispatchQueue.main</code> is a <em>serial</em> queue bound to the main thread &mdash; the only safe place for UI.</li>
+</ul>
+
+<h3 class="sub">async / await &mdash; the modern model</h3>
+<p>Same idea, but the "hop back" and the callback nesting vanish. <code>await</code> suspends the function without blocking the thread; the code reads top-to-bottom like synchronous code but runs asynchronously.</p>
+
+<pre class="codeblock"><span class="kw">func</span> <span class="fn">loadUser</span>() <span class="kw">async throws</span> -&gt; User {
+    <span class="kw">let</span> (data, _) = <span class="kw">try await</span> URLSession.shared.data(from: url)
+    <span class="kw">return try</span> JSONDecoder().decode(User.self, from: data)
+}
+
+Task { @MainActor <span class="kw">in</span>                          <span class="cm">// bridge sync → async, pinned to the main actor</span>
+    <span class="kw">do</span> {
+        <span class="kw">let</span> user = <span class="kw">try await</span> loadUser()
+        name = user.name                     <span class="cm">// safe: this Task is explicitly @MainActor-isolated</span>
+    } <span class="kw">catch</span> { showError(error) }
+}
+
+<span class="cm">// Structured concurrency: run two fetches in parallel, await both</span>
+<span class="kw">async let</span> a = loadUser()
+<span class="kw">async let</span> b = loadSettings()
+<span class="kw">let</span> (user, settings) = <span class="kw">try await</span> (a, b)</pre>
+
+<h3 class="sub">Actors &amp; @MainActor</h3>
+<p>An <strong>actor</strong> is a reference type that serializes access to its own mutable state &mdash; the compiler guarantees no two tasks touch it at once, eliminating data races. <code>@MainActor</code> is a special actor tied to the main thread; annotate UI code with it and the compiler enforces the main-thread rule for you.</p>
+
+<pre class="codeblock"><span class="kw">actor</span> Counter {
+    <span class="kw">private var</span> value = <span class="num">0</span>
+    <span class="kw">func</span> <span class="fn">increment</span>() { value += <span class="num">1</span> }     <span class="cm">// runs serially — no locks needed</span>
+    <span class="kw">func</span> <span class="fn">get</span>() -&gt; Int { value }
+}
+<span class="kw">let</span> c = Counter()
+<span class="kw">await</span> c.increment()                        <span class="cm">// cross-actor access is awaited</span>
+
+@MainActor
+<span class="kw">class</span> ProfileVM: ObservableObject {           <span class="cm">// all members run on the main thread</span>
+    @Published <span class="kw">var</span> name = <span class="str">""</span>            <span class="cm">// safe to update UI-bound state directly</span>
+}</pre>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Don't <code>DispatchQueue.main.sync { ... }</code> from the main thread &mdash; instant deadlock. And never block the main thread with synchronous network or disk I/O; that's the classic beach-ball/frozen-UI bug. In async/await land, avoid mixing raw GCD hops with actors &mdash; let <code>@MainActor</code> do the hopping.</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Be fluent in both: "How would you fetch data without freezing the UI?" &mdash; background queue / <code>async</code> function, hop to main / <code>@MainActor</code> for UI. Deeper: contrast GCD callbacks with structured concurrency (cancellation propagation, no callback pyramids, compile-time data-race safety), and explain what an actor guarantees and why it removes manual locks. Name the deadlock trap and the main-thread rule.</p></div>
+</div>
+
+<!-- ============================= APP LIFECYCLE ============================= -->
+<div class="sec" id="tab-applife">
+<h2 class="stitle">App Lifecycle &amp; Scene Phases</h2>
+<div class="sdesc">Above individual screens sits the app's own lifecycle: launching, foreground/active, inactive, background, and (maybe) termination. Modern iOS also splits an app into scenes (windows) for multitasking.</div>
+
+<p><strong>Analogy.</strong> Your app is a shop. <em>Active</em> = open and serving customers. <em>Inactive</em> = briefly interrupted (a phone call overlays, the app switcher is open) &mdash; lights on, no transactions. <em>Background</em> = shutters down but staff still tidying up for a few seconds (save the till, finish the receipt). <em>Suspended/terminated</em> = closed; the system may quietly demolish the shop to reclaim land (memory).</p>
+
+<h3 class="sub">SwiftUI: scenePhase</h3>
+<pre class="codeblock">@main
+<span class="kw">struct</span> MyApp: App {
+    @Environment(\.scenePhase) <span class="kw">private var</span> phase
+    <span class="kw">var</span> body: some Scene {
+        WindowGroup { ContentView() }
+            .onChange(of: phase) { _, newPhase <span class="kw">in</span>
+                <span class="kw">switch</span> newPhase {
+                <span class="kw">case</span> .active:     resume()      <span class="cm">// visible &amp; receiving events</span>
+                <span class="kw">case</span> .inactive:   pauseTimers() <span class="cm">// transitioning / interrupted</span>
+                <span class="kw">case</span> .background: saveState()   <span class="cm">// last chance to persist</span>
+                @unknown <span class="kw">default</span>: <span class="kw">break</span>
+                }
+            }
+    }
+}</pre>
+
+<h3 class="sub">UIKit: AppDelegate + SceneDelegate</h3>
+<ul class="content-list">
+<li><strong>AppDelegate</strong> &mdash; process-level events: <code>application(_:didFinishLaunchingWithOptions:)</code>, push-notification registration, background fetch.</li>
+<li><strong>SceneDelegate</strong> &mdash; per-window UI state (since multi-window/iPad): <code>sceneDidBecomeActive</code>, <code>sceneWillResignActive</code>, <code>sceneDidEnterBackground</code>, <code>sceneWillEnterForeground</code>, <code>sceneDidDisconnect</code>.</li>
+<li>A single app can have <strong>multiple scenes</strong> (windows) alive at once; the app delegate is shared, scene delegates are per-window.</li>
+</ul>
+
+<h3 class="sub">What to do in each phase</h3>
+<table class="tbl">
+<thead><tr><th>Phase</th><th>Do</th><th>Don't</th></tr></thead>
+<tbody>
+<tr><td>Launch</td><td>Minimal setup; get to first frame fast (launch-time budget)</td><td>Heavy sync work &mdash; it delays the launch and can trigger a watchdog kill</td></tr>
+<tr><td>Active</td><td>Resume timers/animations, refresh live data</td><td>Assume you were never backgrounded &mdash; state may be stale</td></tr>
+<tr><td>Inactive</td><td>Pause games/media, dim sensitive content</td><td>Start long work &mdash; you may be about to background</td></tr>
+<tr><td>Background</td><td>Persist state, flush, request extra time via a background task if needed</td><td>Expect unlimited time &mdash; you get seconds, then suspension</td></tr>
+</tbody>
+</table>
+
+<div class="trap"><div class="trapl">TRAP</div><p>Assuming <code>applicationWillTerminate</code> always runs. When the system reclaims a <em>suspended</em> app's memory, it usually kills it <strong>without</strong> calling terminate. So persistence must happen on entering <em>background</em>, not on termination. Treat "entered background" as "I might never wake up here again."</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>"Where do you save user state so nothing is lost?" &mdash; on backgrounding (<code>scenePhase == .background</code> / <code>sceneDidEnterBackground</code>), because termination isn't guaranteed. Follow-ups probe launch performance (why heavy work at launch is dangerous) and multi-scene apps (AppDelegate is process-wide, SceneDelegate is per-window). Bonus: background execution limits and background tasks/modes.</p></div>
+</div>
+
+<!-- ============================= MEMORY & LEAKS ============================= -->
+<div class="sec" id="tab-memory">
+<h2 class="stitle">Memory Management &amp; Common Leaks</h2>
+<div class="sdesc">ARC handles the routine work, but a handful of patterns reliably leak. Knowing the usual suspects &mdash; and the tools that catch them &mdash; is a strong practical signal.</div>
+
+<p><strong>Analogy.</strong> ARC is a diligent janitor who throws out anything nobody is holding. But it can't throw out two objects clutching each other, and it can't see a note you pinned to the bulletin board (a global/observer) that still points at something. Leaks are almost always "someone is still holding on when they shouldn't be."</p>
+
+<h3 class="sub">The usual suspects</h3>
+<div class="g2">
+<div class="skill-box"><h4>Closures capturing self</h4><ul>
+<li>A stored closure that references <code>self</code> keeps <code>self</code> alive.</li>
+<li>Fix: <code>[weak self]</code> (then <code>guard let self else { return }</code>).</li>
+<li>The single most common production leak.</li>
+</ul></div>
+<div class="skill-box"><h4>Strong delegates</h4><ul>
+<li>A delegate should be <code>weak var delegate: FooDelegate?</code>.</li>
+<li>Strong delegate + child holding parent = cycle.</li>
+</ul></div>
+<div class="skill-box"><h4>Timers &amp; observers</h4><ul>
+<li>A target-action <code>Timer</code> retains its target (the VC), so <code>deinit</code> won't fire until it's invalidated &mdash; invalidate it from a lifecycle callback like <code>viewDidDisappear</code>. Only a block-based timer capturing <code>[weak self]</code> can safely be invalidated in <code>deinit</code>.</li>
+<li>Block-based <code>NotificationCenter</code> observers capture strongly &mdash; use <code>[weak self]</code> and remove them.</li>
+</ul></div>
+<div class="skill-box"><h4>Unbounded caches</h4><ul>
+<li>A growing dictionary cache is a "leak" in effect (memory climbs).</li>
+<li>Use <code>NSCache</code> (auto-evicts under pressure) or a bounded LRU.</li>
+</ul></div>
+</div>
+
+<h3 class="sub">Detection toolkit</h3>
+<ul class="content-list">
+<li><strong>A <code>deinit</code> that never prints</strong> &mdash; the cheapest leak detector. Add one to suspect classes.</li>
+<li><strong>Memory Graph Debugger</strong> (Xcode) &mdash; pause and see who still references an object; purple <code>!</code> flags cycles.</li>
+<li><strong>Instruments &rarr; Leaks &amp; Allocations</strong> &mdash; track live bytes and abandoned memory over time.</li>
+<li><strong>Malloc Stack Logging</strong> &mdash; capture allocation backtraces to find where a leaked object was created.</li>
+</ul>
+
+<pre class="codeblock"><span class="cm">// Autorelease pool: in a tight loop that creates many temporaries,</span>
+<span class="cm">// drain per-iteration so peak memory doesn't balloon.</span>
+<span class="kw">for</span> url <span class="kw">in</span> imageURLs {
+    autoreleasepool {
+        <span class="kw">let</span> img = UIImage(contentsOfFile: url.path)
+        process(img)                          <span class="cm">// temporaries freed each pass</span>
+    }
+}</pre>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Not every memory growth is a "leak" ARC can see. <em>Abandoned</em> memory (still referenced but never used again &mdash; e.g. an ever-growing array) won't show up in the Leaks instrument because it's technically reachable. Use Allocations/Memory Graph to catch those.</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Expect "your app's memory climbs over time &mdash; how do you debug it?" Structure the answer: reproduce &rarr; add <code>deinit</code> logging / Memory Graph to find retained objects &rarr; identify the cycle or unbounded structure &rarr; fix with <code>weak</code>/removal/eviction &rarr; verify <code>deinit</code> now fires. Naming the closure-capture cycle and the strong-delegate cycle unprompted is what marks a senior answer.</p></div>
+</div>
+
+<!-- ============================= STORAGE & NETWORKING ============================= -->
+<div class="sec" id="tab-data">
+<h2 class="stitle">Storage &amp; Networking</h2>
+<div class="sdesc">Where data lives on-device, and how it comes off the wire. Pick the right persistence tool for the size and shape of the data, and treat every network call as slow, failable, and off the main thread.</div>
+
+<h3 class="sub">On-device storage &mdash; pick by shape</h3>
+<table class="tbl">
+<thead><tr><th>Tool</th><th>Best for</th><th>Not for</th></tr></thead>
+<tbody>
+<tr><td><code>UserDefaults</code></td><td>Small key-value prefs (flags, last tab)</td><td>Large data, secrets, object graphs</td></tr>
+<tr><td>Keychain</td><td>Secrets: tokens, passwords (encrypted)</td><td>Bulk data</td></tr>
+<tr><td>Files / <code>Codable</code> JSON</td><td>Documents, exportable blobs, simple caches</td><td>Complex queries, relationships</td></tr>
+<tr><td>Core Data / SwiftData</td><td>Structured object graphs, relationships, queries, large sets</td><td>A single flag (overkill)</td></tr>
+</tbody>
+</table>
+
+<p><strong>Analogy.</strong> <code>UserDefaults</code> is a sticky note, Keychain is a locked safe, a JSON file is a labeled folder, and Core Data / SwiftData is a filing-cabinet database with an index &mdash; use the cabinet only when you have enough related paperwork to justify it.</p>
+
+<h3 class="sub">SwiftData / Core Data</h3>
+<p><strong>Core Data</strong> is Apple's mature object-graph persistence framework (an ORM-like layer, usually backed by SQLite) with contexts, fetch requests, and relationships. <strong>SwiftData</strong> is the modern Swift-native wrapper over the same engine: declare a model with the <code>@Model</code> macro and query with <code>@Query</code>.</p>
+
+<pre class="codeblock"><span class="kw">import</span> SwiftData
+
+@Model
+<span class="kw">final class</span> TodoItem {
+    <span class="kw">var</span> title: String
+    <span class="kw">var</span> done: Bool
+    <span class="kw">var</span> createdAt: Date
+    <span class="kw">init</span>(title: String, done: Bool = <span class="kw">false</span>) {
+        <span class="kw">self</span>.title = title
+        <span class="kw">self</span>.done = done
+        <span class="kw">self</span>.createdAt = .now
+    }
+}
+
+<span class="kw">struct</span> TodoList: View {
+    @Query(sort: \TodoItem.createdAt) <span class="kw">private var</span> items: [TodoItem]
+    @Environment(\.modelContext) <span class="kw">private var</span> context
+    <span class="kw">var</span> body: some View {
+        List(items) { Text($0.title) }
+            .toolbar {
+                Button(<span class="str">"Add"</span>) { context.insert(TodoItem(title: <span class="str">"New"</span>)) }
+            }
+    }
+}</pre>
+
+<h3 class="sub">Networking with URLSession</h3>
+<p><code>URLSession</code> is the built-in HTTP client. It is asynchronous by design &mdash; <strong>its work never runs on the main thread</strong>, and its completion handlers historically ran on a background queue. With async/await it reads cleanly:</p>
+
+<pre class="codeblock"><span class="kw">struct</span> Post: Codable { <span class="kw">let</span> id: Int; <span class="kw">let</span> title: String }
+
+<span class="kw">func</span> <span class="fn">fetchPosts</span>() <span class="kw">async throws</span> -&gt; [Post] {
+    <span class="kw">var</span> req = URLRequest(url: URL(string: <span class="str">"https://api.example.com/posts"</span>)!)
+    req.httpMethod = <span class="str">"GET"</span>
+    <span class="kw">let</span> (data, resp) = <span class="kw">try await</span> URLSession.shared.data(for: req)
+    <span class="kw">guard let</span> http = resp <span class="kw">as?</span> HTTPURLResponse,
+          (<span class="num">200</span>..&lt;<span class="num">300</span>).contains(http.statusCode) <span class="kw">else</span> {
+        <span class="kw">throw</span> URLError(.badServerResponse)
+    }
+    <span class="kw">return try</span> JSONDecoder().decode([Post].self, from: data)   <span class="cm">// Codable parsing</span>
+}</pre>
+
+<div class="tip"><div class="tipl">TIP</div><p>Standard production touches: set timeouts and caching policy on the <code>URLSessionConfiguration</code>, decode JSON with <code>Codable</code>, surface typed errors, and for uploads/downloads that must survive backgrounding use a <em>background</em> <code>URLSession</code>. Update UI only after hopping to the main actor.</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>"Design the data layer for a feed screen." Talk network (<code>URLSession</code> + <code>Codable</code>, async/await, error &amp; retry, caching), persistence (SwiftData/Core Data for the cached feed, <code>NSCache</code> for images), and the main-thread rule for rendering. Then the storage decision matrix: why not <code>UserDefaults</code> for a feed, why Keychain for the auth token, and where the offline cache lives.</p></div>
+</div>
+
+<!-- ============================= PERFORMANCE ============================= -->
+<div class="sec" id="tab-perf">
+<h2 class="stitle">Performance &amp; the Main-Thread Rule</h2>
+<div class="sdesc">On iOS, performance is mostly one discipline: keep the main thread free so every frame ships on time. Everything else &mdash; scrolling, memory, launch &mdash; flows from that.</div>
+
+<p><strong>Analogy.</strong> The screen redraws like a flip-book: 60 (or 120) pages a second. Each page must be drawn within its slot &mdash; about <strong>16&nbsp;ms at 60fps, 8&nbsp;ms at 120fps</strong>. If the main thread is busy parsing JSON or resizing a giant image when the page is due, that page is skipped: the user sees a stutter (a "dropped frame" or "hitch"). So the rule is blunt: <em>do slow work off the main thread; only touch UI on it.</em></p>
+
+<div class="ins"><div class="insl">THE ONE RULE</div><p><strong>UIKit and SwiftUI are not thread-safe. All view reads and writes must happen on the main thread.</strong> Network, disk, image decoding, JSON parsing, and heavy computation must happen off it, then hop back (<code>DispatchQueue.main.async</code> / <code>@MainActor</code>) for the UI update. Violating this causes intermittent crashes and corrupted layout that are miserable to reproduce.</p></div>
+
+<h3 class="sub">The high-leverage techniques</h3>
+<table class="tbl">
+<thead><tr><th>Area</th><th>Do this</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Lists</td><td>Cell reuse (<code>dequeueReusableCell</code>) / diffable data source; <code>LazyVStack</code>/<code>List</code> in SwiftUI</td><td>Render only what's visible; recycle views instead of allocating</td></tr>
+<tr><td>Images</td><td>Downsample to the display size before showing; cache decoded images</td><td>A full-res photo in a thumbnail wastes memory and decode time</td></tr>
+<tr><td>Main thread</td><td>Move parsing/IO to background; keep frame work &lt; 16 ms</td><td>Every over-budget frame is a visible hitch</td></tr>
+<tr><td>SwiftUI re-render</td><td>Scope <code>@State</code> narrowly; split views; make models <code>Equatable</code></td><td>Limits how much of the tree recomputes on each change</td></tr>
+<tr><td>Launch</td><td>Defer non-critical work off the launch path</td><td>Slow launch risks a watchdog kill and hurts first impressions</td></tr>
+<tr><td>Memory</td><td>Bound caches (<code>NSCache</code>), <code>autoreleasepool</code> in big loops</td><td>Memory pressure gets your app killed in the background</td></tr>
+</tbody>
+</table>
+
+<h3 class="sub">Measure, don't guess &mdash; Instruments</h3>
+<ul class="content-list">
+<li><strong>Time Profiler</strong> &mdash; where CPU time goes; find the main-thread hot path.</li>
+<li><strong>Core Animation / Animation Hitches</strong> &mdash; dropped frames and scrolling smoothness.</li>
+<li><strong>Allocations &amp; Leaks</strong> &mdash; memory growth and cycles.</li>
+<li><strong>Hangs</strong> &mdash; main-thread stalls the user actually feels.</li>
+</ul>
+
+<div class="warn"><div class="warnl">WATCH</div><p>The most common self-inflicted jank: doing image decode/resize or JSON parsing inside <code>cellForRowAt</code> / a SwiftUI <code>body</code>. Both run on the main thread and both run per visible cell during a scroll &mdash; guaranteeing dropped frames. Precompute off-thread and cache.</p></div>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>"Your table view scrolls poorly &mdash; how do you fix it?" Structure it: confirm cell reuse, move image decode/resize and any IO off the main thread, cache decoded images, and profile with the Time Profiler + Animation Hitches instruments to prove the fix. Tie every point back to the 16&nbsp;ms frame budget and the main-thread rule &mdash; that framing is what separates a senior answer from a list of tips.</p></div>
+</div>
+
+<!-- ============================= FROM ANDROID/WEB ============================= -->
+<div class="sec" id="tab-cross">
+<h2 class="stitle">Coming From Android or the Web</h2>
+<div class="sdesc">Most iOS concepts have a direct analog you already know. Map the vocabulary and the one genuinely different idea (memory model), and you'll ramp fast.</div>
+
+<h3 class="sub">Concept map</h3>
+<table class="tbl">
+<thead><tr><th>iOS</th><th>Android</th><th>Web</th></tr></thead>
+<tbody>
+<tr><td><code>UIViewController</code></td><td>Activity / Fragment</td><td>A route / page component</td></tr>
+<tr><td>SwiftUI</td><td>Jetpack Compose</td><td>React / declarative UI</td></tr>
+<tr><td><code>@State</code> / <code>@Observable</code></td><td>Compose state / <code>StateFlow</code>, <code>LiveData</code></td><td><code>useState</code> / store</td></tr>
+<tr><td><code>body</code> recomputed on state change</td><td><code>@Composable</code> recomposition</td><td>Component re-render + reconciliation</td></tr>
+<tr><td>async/await + <code>Task</code> / actors</td><td>Coroutines / <code>suspend</code> / <code>Dispatchers</code></td><td><code>async</code>/<code>await</code>, Promises</td></tr>
+<tr><td><code>@MainActor</code> / <code>DispatchQueue.main</code></td><td><code>Dispatchers.Main</code> / UI thread</td><td>The (single) main thread; DOM on main</td></tr>
+<tr><td>SwiftData / Core Data</td><td>Room</td><td>IndexedDB / a local ORM</td></tr>
+<tr><td><code>URLSession</code></td><td>Retrofit / OkHttp</td><td><code>fetch</code> / axios</td></tr>
+<tr><td>Swift Package Manager / Xcode</td><td>Gradle</td><td>npm / bundler</td></tr>
+<tr><td><strong>ARC (ref counting)</strong></td><td><strong>Tracing GC</strong></td><td><strong>Tracing GC</strong></td></tr>
+</tbody>
+</table>
+
+<h3 class="sub">The one thing that's genuinely different: memory</h3>
+<div class="note"><div class="notel">NOTE</div><p>Android (JVM) and the web (JS) both use a <strong>tracing garbage collector</strong>: a background collector periodically finds unreachable objects, so mutual references get cleaned up automatically &mdash; but you pay unpredictable GC pauses. iOS uses <strong>ARC</strong>: deallocation is deterministic and pause-free, but <em>there is no cycle collector</em>. Two objects that strongly reference each other leak forever unless you break the cycle with <code>weak</code>/<code>unowned</code>. This is the habit web/Android devs must build on iOS &mdash; see the ARC tab.</p></div>
+
+<h3 class="sub">Things that transfer directly</h3>
+<ul class="content-list">
+<li><strong>Declarative UI intuition</strong> from React/Compose maps almost 1:1 onto SwiftUI &mdash; state drives the view, the framework diffs and re-renders.</li>
+<li><strong>Structured concurrency</strong> from Kotlin coroutines maps onto Swift's <code>async</code>/<code>await</code>, <code>Task</code>, and <code>TaskGroup</code>, including cooperative cancellation.</li>
+<li><strong>The main-thread UI rule</strong> is identical across all three platforms &mdash; only the main thread touches the UI; everything slow goes elsewhere.</li>
+<li><strong>MVVM / unidirectional data flow</strong> patterns carry over; the wrappers change names, not shape.</li>
+</ul>
+
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>If you're crossing over, lead with the analogy ("SwiftUI is React; coroutines are async/await") to show transfer, then pivot to the delta that matters: "The big adjustment is memory &mdash; iOS is ARC, not GC, so I actively watch for retain cycles with <code>weak</code>/<code>unowned</code>, especially in closures and delegates." Naming that difference unprompted signals you understand iOS on its own terms, not just by translation.</p></div>
+</div>
+
+<div style="margin-top:24px">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Value type</strong></td><td>A type (<code>struct</code>, <code>enum</code>) copied on assignment or passing, so each holder owns an independent value.</td></tr>
+<tr><td><strong>Reference type</strong></td><td>A type (<code>class</code>) shared on assignment, so multiple names point at the same mutable instance.</td></tr>
+<tr><td><strong>Copy-on-write (COW)</strong></td><td>Optimization where a value type shares its buffer until a mutation, then copies &mdash; making value semantics cheap.</td></tr>
+<tr><td><strong>Optional</strong></td><td>A type that either holds a value or <code>nil</code>, forcing the absence case to be handled explicitly.</td></tr>
+<tr><td><strong>Protocol</strong></td><td>A capability contract a type can adopt; basis of protocol-oriented programming (composition over inheritance).</td></tr>
+<tr><td><strong>UIKit</strong></td><td>Apple's imperative UI framework: you hold references to views and mutate them step by step.</td></tr>
+<tr><td><strong>SwiftUI</strong></td><td>Apple's declarative UI framework: the view is a function of state, re-rendered when state changes.</td></tr>
+<tr><td><strong>@State / @Observable</strong></td><td>SwiftUI's state model: @State owns view-local state; @Observable marks a reference-type model whose property changes trigger re-render. Older code uses ObservableObject + @Published.</td></tr>
+<tr><td><strong>deinit</strong></td><td>A class's deallocation callback; a <code>deinit</code> that never runs is a telltale sign of a leak.</td></tr>
+<tr><td><strong>ARC</strong></td><td>Automatic Reference Counting &mdash; compiler-inserted retain/release that frees an object when its count hits zero.</td></tr>
+<tr><td><strong>Retain cycle</strong></td><td>Two objects strongly referencing each other, so neither's count reaches zero &mdash; a leak ARC can't collect.</td></tr>
+<tr><td><strong>weak reference</strong></td><td>A non-retaining, optional reference that auto-nils when its target is freed; used to break cycles.</td></tr>
+<tr><td><strong>unowned reference</strong></td><td>A non-retaining, non-optional reference assumed always valid; crashes if used after the target is freed.</td></tr>
+<tr><td><strong>GCD</strong></td><td>Grand Central Dispatch &mdash; the queue-based API for dispatching work across threads via serial/concurrent queues.</td></tr>
+<tr><td><strong>QoS</strong></td><td>Quality of Service &mdash; a priority hint (<code>.userInteractive</code> down to <code>.background</code>) for how the system schedules work.</td></tr>
+<tr><td><strong>async / await</strong></td><td>Swift syntax for asynchronous code that suspends without blocking the thread and reads top-to-bottom.</td></tr>
+<tr><td><strong>actor</strong></td><td>A reference type that serializes access to its own mutable state, eliminating data races without manual locks.</td></tr>
+<tr><td><strong>@MainActor</strong></td><td>A global actor tied to the main thread; annotating UI code enforces the main-thread rule at compile time.</td></tr>
+<tr><td><strong>scenePhase</strong></td><td>SwiftUI environment value reporting the app's phase: <code>active</code>, <code>inactive</code>, or <code>background</code>.</td></tr>
+<tr><td><strong>URLSession</strong></td><td>The built-in asynchronous HTTP client; its work runs off the main thread by design.</td></tr>
+<tr><td><strong>Codable</strong></td><td>Protocol for encoding and decoding Swift types to and from formats like JSON.</td></tr>
+<tr><td><strong>Core Data / SwiftData</strong></td><td>Apple's object-graph persistence; SwiftData is the modern <code>@Model</code>-based wrapper over the same engine.</td></tr>
+</table>
+</div>
+
+</div>
+</div>
+
+<script>
+function go(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  if (typeof event !== 'undefined' && event && event.currentTarget) event.currentTarget.classList.add('active');
+  window.scrollTo(0, 0);
+}
+function toggle(el) {
+  const body = el.nextElementSibling;
+  const chevron = el.querySelector('.chv');
+  body.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open');
+}
+
+/* ===== Retain-cycle leak → weak fix step player (namespaced IIFE) ===== */
+(function(){
+  var svg=document.getElementById('rc-svg');
+  if(!svg) return;
+  var stepBtn=document.getElementById('rc-step'), resetBtn=document.getElementById('rc-reset');
+  var stageEl=document.getElementById('rc-stage'), msgEl=document.getElementById('rc-msg');
+
+  // Each step describes the world: links + which externals hold each object + weak-mode.
+  // linkPA: person.apartment  (left → right)  : 'none' | 'strong'
+  // linkAP: apartment.tenant   (right → left)  : 'none' | 'strong' | 'weak'
+  var steps=[
+    {linkPA:'none',  linkAP:'none',  extP:true,  extA:true,  weak:false,
+     m:'Two objects created. person and apartment are each held by one local variable. Retain counts: 1 and 1.'},
+    {linkPA:'strong',linkAP:'none',  extP:true,  extA:true,  weak:false,
+     m:'person.apartment = apartment → a STRONG reference. Apartment is now held twice (local + person). RC: 1 and 2.'},
+    {linkPA:'strong',linkAP:'strong',extP:true,  extA:true,  weak:false,
+     m:'apartment.tenant = person → STRONG. Now they hold each other. A cycle exists. RC: 2 and 2.'},
+    {linkPA:'strong',linkAP:'strong',extP:false, extA:false, weak:false,
+     m:'Set both locals to nil. External refs gone — but each object is still held by the OTHER. RC: 1 and 1. ☠ LEAKED: neither deinit runs.'},
+    {linkPA:'strong',linkAP:'weak',  extP:true,  extA:true,  weak:true,
+     m:'FIX: declare tenant as `weak var`. Replay the setup — apartment→person is now WEAK (dashed), does not bump RC. RC: 1 (person, ext only) and 2 (apartment).'},
+    {linkPA:'strong',linkAP:'weak',  extP:false, extA:false, weak:true,
+     m:'Set both locals to nil. person RC → 0, deallocates, releasing its strong ref to apartment → apartment RC → 0. ✅ Both freed. Cycle broken.'}
+  ];
+  var cur;
+
+  function liveness(){ // which objects are still alive this step
+    var s=steps[cur];
+    var pStrongToA=(s.linkPA==='strong'), aStrongToP=(s.linkAP==='strong');
+    // Reachability from an external root (a still-held local) via STRONG edges.
+    var pReach=!!s.extP, aReach=!!s.extA;
+    for(var i=0;i<2;i++){                       // 2 nodes → 2 passes reach fixpoint
+      if(aReach && aStrongToP) pReach=true;
+      if(pReach && pStrongToA) aReach=true;
+    }
+    // A pure strong cycle keeps both alive even with no root — that's the leak.
+    var cycle = pStrongToA && aStrongToP;
+    return { person:(pReach||cycle), apartment:(aReach||cycle) };
+  }
+
+  function rc(o){ // retain count: a strong inbound ref only counts while its SOURCE is alive
+    var s=steps[cur], al=liveness();
+    if(o==='person'){ return (s.extP?1:0) + ((s.linkAP==='strong' && al.apartment)?1:0); }
+    return (s.extA?1:0) + ((s.linkPA==='strong' && al.person)?1:0);
+  }
+
+  function box(x,label,sub,count,dead){
+    var stroke = dead ? '#dc2626' : '#2563eb';
+    var fill   = dead ? '#fee2e2' : '#dbeafe';
+    var h='';
+    h+='<rect x="'+x+'" y="70" width="180" height="90" rx="10" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2"/>';
+    h+='<text x="'+(x+90)+'" y="98" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="'+(dead?'#991b1b':'#1e40af')+'">'+label+'</text>';
+    h+='<text x="'+(x+90)+'" y="116" text-anchor="middle" font-family="Inter" font-size="10" fill="#475569">'+sub+'</text>';
+    var rcColor = (count===0)?'#166534':(dead?'#b91c1c':'#334155');
+    var rcText = (count===0)? 'RC 0 — freed' : ('retain count: '+count);
+    h+='<text x="'+(x+90)+'" y="140" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="'+rcColor+'">'+rcText+'</text>';
+    return h;
+  }
+
+  function arrow(y,fromX,toX,kind,label){
+    if(kind==='none') return '';
+    var dash = (kind==='weak') ? ' stroke-dasharray="6 4"' : '';
+    var color = (kind==='weak') ? '#7c3aed' : '#0f172a';
+    var mk = (kind==='weak') ? 'rcahw' : 'rcah';
+    var h='';
+    h+='<line x1="'+fromX+'" y1="'+y+'" x2="'+toX+'" y2="'+y+'" stroke="'+color+'" stroke-width="2"'+dash+' marker-end="url(#'+mk+')"/>';
+    var midX=(fromX+toX)/2;
+    h+='<text x="'+midX+'" y="'+(y-6)+'" text-anchor="middle" font-family="Inter" font-size="10" font-weight="700" fill="'+color+'">'+label+'</text>';
+    return h;
+  }
+
+  function render(){
+    var s=steps[cur];
+    var pCount=rc('person'), aCount=rc('apartment');
+    var pDead=(pCount===1 && s.linkAP==='strong' && !s.extP); // held only by cycle
+    var aDead=(aCount===1 && s.linkPA==='strong' && !s.extA);
+    var leaked = pDead && aDead;
+    var h='';
+    // Arrowhead markers must live inside this SVG — innerHTML replacement wipes any external defs.
+    h+='<defs>'
+      +'<marker id="rcah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0f172a"/></marker>'
+      +'<marker id="rcahw" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#7c3aed"/></marker>'
+      +'</defs>';
+    h+='<text x="320" y="24" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#0f172a">person  ⇄  apartment</text>';
+    // person left (x=60), apartment right (x=400); boxes occupy y=70..160
+    h+=box(60, 'Person', 'name: "Alice"', pCount, leaked);
+    h+=box(400,'Apartment','unit: "4A"', aCount, leaked);
+    // top arrow: person.apartment (left→right) connecting the box edges, upper band
+    h+=arrow(102, 244, 398, s.linkPA, 'person.apartment (strong)');
+    // bottom arrow: apartment.tenant (right→left) connecting the box edges, lower band
+    h+=arrow(146, 398, 244, s.linkAP, s.linkAP==='weak' ? 'apartment.tenant (weak)' : 'apartment.tenant (strong)');
+    // external holders
+    if(s.extP){ h+='<text x="150" y="200" text-anchor="middle" font-family="Inter" font-size="9" fill="#586479">↑ held by local `alice`</text>'; }
+    if(s.extA){ h+='<text x="490" y="200" text-anchor="middle" font-family="Inter" font-size="9" fill="#586479">↑ held by local `u4a`</text>'; }
+    if(leaked){ h+='<text x="320" y="222" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#b91c1c">☠ LEAK — orphaned but alive</text>'; }
+    if(pCount===0 && aCount===0){ h+='<text x="320" y="222" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#166534">✅ both deallocated</text>'; }
+    svg.innerHTML=h;
+  }
+
+  function setLabel(){ stageEl.textContent = (cur>=steps.length-1) ? ('Done · '+cur+' / '+(steps.length-1)) : ('Step '+cur+' / '+(steps.length-1)); }
+  function init(){ cur=0; msgEl.textContent=steps[0].m; stepBtn.disabled=false; setLabel(); render(); }
+  function doStep(){
+    if(cur>=steps.length-1) return;
+    cur++;
+    msgEl.textContent=steps[cur].m;
+    setLabel();
+    render();
+    if(cur>=steps.length-1) stepBtn.disabled=true;
+  }
+  stepBtn.addEventListener('click',doStep);
+  resetBtn.addEventListener('click',init);
+  init();
+})();
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="android_engineering.html">‹ Android Engineering</a><a class="bkc" href="index.html">📖 Contents</a><a href="mobile_system_design.html">Mobile System Design ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

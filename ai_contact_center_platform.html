@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Contact Center Platform — System Design Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --border: #e2e8f0;
+  --text: #1e293b; --text2: #475569; --text3: #94a3b8;
+  --blue: #2563eb; --blue-l: #dbeafe; --green: #16a34a; --green-l: #dcfce7;
+  --orange: #ea580c; --orange-l: #ffedd5; --yellow: #ca8a04; --yellow-l: #fef9c3;
+  --red: #dc2626; --red-l: #fee2e2; --purple: #7c3aed; --purple-l: #ede9fe;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --sidebar-w: 260px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+
+
+/* Main content */
+.container { padding: 40px 48px; max-width: 1050px; margin: 0 auto; }
+.container header { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+.container header h1 { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+.container header .sub { color: var(--text3); font-size: 13px; }
+
+/* Sections */
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Cards (collapsible) */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 16px; box-shadow: var(--shadow); overflow: hidden; }
+.card-header {
+  padding: 16px 24px; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+  font-size: 15px; font-weight: 600; color: var(--text); transition: background 0.2s; user-select: none;
+}
+.card-header:hover { background: var(--bg3); }
+.card-header::after { content: '\25BC'; font-size: 11px; color: var(--text3); transition: transform 0.3s; }
+.card.collapsed .card-header::after { transform: rotate(-90deg); }
+.card-body { padding: 0 24px 20px; }
+.card.collapsed .card-body { display: none; }
+
+/* Typography */
+h2 { font-size: 22px; font-weight: 700; margin: 0 0 16px; color: var(--blue); }
+h3 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; }
+h4 { font-size: 14px; font-weight: 600; margin: 14px 0 6px; color: var(--text2); }
+p { margin-bottom: 10px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 24px; color: var(--text2); }
+li { margin-bottom: 5px; }
+strong { color: var(--text); }
+
+/* Code */
+pre { background: #1e293b; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.6; color: #e2e8f0; white-space: pre-wrap; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+
+/* Callout boxes */
+.ins { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.ins p, .ins li { color: #1e40af; margin: 0; }
+.ins strong { color: #1e3a8a; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.tip p, .tip li { color: #166534; margin: 0; }
+.tip strong { color: #14532d; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.warn p, .warn li { color: #854d0e; margin: 0; }
+.warn strong { color: #713f12; }
+.note { background: var(--purple-l); border-left: 3px solid var(--purple); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.note p, .note li { color: #5b21b6; margin: 0; }
+.note strong { color: #4c1d95; }
+.note ul { margin: 6px 0 0 18px; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+th, td { padding: 9px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+/* Flow diagram text */
+.flow { background: var(--bg3); border-radius: 8px; padding: 16px 20px; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 2; color: var(--text); }
+.flow .blackbox { color: var(--orange); font-weight: 600; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .container { padding: 24px 16px; }
+}
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VI · Chapter 7 — <b>AI Contact Center Platform</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header>
+  <h1>AI Contact Center Platform &mdash; System Design</h1>
+  <div class="sub">Backend Engineer Interview Prep &bull; Hub for 5 Full Design Deep-Dives &bull; Real-time + Batch + ML Integration</div>
+</header>
+
+<!-- ===== Section 1: Overview ===== -->
+<div class="section active" id="overview">
+<h2>Overview: What Interviewers Want</h2>
+
+<div class="card">
+<div class="card-header">What They Evaluate</div>
+<div class="card-body">
+<ul>
+  <li><strong>Scope management:</strong> Can you ask clarifying questions and narrow scope in 5 minutes?</li>
+  <li><strong>Architecture clarity:</strong> Clean separation of concerns, clear data flow</li>
+  <li><strong>ML integration awareness:</strong> You do NOT design ML models — you design the infrastructure around them</li>
+  <li><strong>Scale reasoning:</strong> Back-of-envelope math, bottleneck identification</li>
+  <li><strong>Trade-off articulation:</strong> Latency vs consistency, cost vs performance, build vs buy</li>
+</ul>
+<div class="ins">
+  <p><strong>Key insight:</strong> In an AI platform company, the system design interview tests whether you can build reliable, low-latency infrastructure AROUND ML models. The models themselves are black boxes. Your job is plumbing, scaling, and reliability.</p>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Assumed Tech Stack</div>
+<div class="card-body">
+<table>
+  <tr><th>Layer</th><th>Technologies</th><th>Notes</th></tr>
+  <tr><td>Language</td><td>Go, Python, Java</td><td>Go for services, Python for ML glue</td></tr>
+  <tr><td>Messaging</td><td>Kafka, Google Pub/Sub, SQS</td><td>Event-driven architecture</td></tr>
+  <tr><td>Storage</td><td>PostgreSQL, Redis, S3, BigQuery</td><td>OLTP + cache + lake</td></tr>
+  <tr><td>Search</td><td>Elasticsearch, Pinecone/Weaviate</td><td>Keyword + vector</td></tr>
+  <tr><td>Real-time</td><td>WebSocket, gRPC streaming</td><td>Agent UI delivery</td></tr>
+  <tr><td>Compute</td><td>Kubernetes, ECS/Fargate</td><td>Microservices orchestration</td></tr>
+  <tr><td>ML Serving</td><td>Triton, TensorFlow Serving, vLLM</td><td>Treat as black-box API</td></tr>
+</table>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">General Tips for AI Platform System Design</div>
+<div class="card-body">
+<ol>
+  <li><strong>Draw the boundary:</strong> "The ML model is a black box that takes X and returns Y in Z ms. I'm designing everything else."</li>
+  <li><strong>Start with latency budget:</strong> If end-to-end is 200ms, allocate: network 20ms + preprocessing 30ms + model inference 100ms + postprocessing 20ms + delivery 30ms</li>
+  <li><strong>Identify the hot path:</strong> What happens on every single request? Optimize ruthlessly there. What's async? Be lazy there.</li>
+  <li><strong>Show graceful degradation:</strong> If the ML model is slow/down, what fallback exists? Never let AI failures break the core product.</li>
+  <li><strong>Mention observability early:</strong> Latency percentiles, model accuracy drift, error rates — shows production maturity.</li>
+</ol>
+<div class="tip">
+  <p><strong>Interview structure (45 min):</strong> 5 min requirements + 5 min estimation + 15 min high-level design + 15 min deep dive + 5 min scaling/trade-offs. Don't spend 20 min on requirements.</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ===== Section 2: Real-time Agent Assist ===== -->
+<div class="section" id="agent-assist">
+<h2>Real-time Agent Assist</h2>
+<p>Design a system that listens to live conversations and provides real-time suggestions to human agents.</p>
+<div class="ins"><p>📘 <strong>Full 14-section deep dive:</strong> <a href="realtime_agent_assist_design.html" style="font-weight:700;">Real-time Agent Assist — System Design →</a> (SVG architecture, session manager internals, latency budget, interview script)</p></div>
+
+<div class="card">
+<div class="card-header">Requirements & Scale</div>
+<div class="card-body">
+<h3>Functional Requirements</h3>
+<ul>
+  <li>Process live audio/chat streams and deliver context-aware suggestions to agents</li>
+  <li>Support multiple suggestion types: next-best-action, knowledge articles, compliance alerts</li>
+  <li>Maintain conversation context across the full session (up to 30 min)</li>
+  <li>Allow supervisors to configure suggestion rules per team/campaign</li>
+</ul>
+<h3>Non-Functional Requirements</h3>
+<table>
+  <tr><th>Metric</th><th>Target</th><th>Rationale</th></tr>
+  <tr><td>End-to-end latency</td><td>&lt;200ms (from utterance end to suggestion)</td><td>Agent must see suggestion while context is fresh</td></tr>
+  <tr><td>Availability</td><td>99.9%</td><td>Failure = agent has no guidance during a live call</td></tr>
+  <tr><td>Concurrent sessions</td><td>10,000</td><td>Large enterprise contact center at peak</td></tr>
+</table>
+<h3>Scale Estimates</h3>
+<ul>
+  <li><strong>QPS:</strong> 10K sessions x ~1 utterance/3s = ~3,300 utterances/sec to process</li>
+  <li><strong>WebSocket connections:</strong> 10K persistent connections (one per agent)</li>
+  <li><strong>Context storage:</strong> ~50KB per session x 10K = 500MB active memory <em>(this is the full retained per-session context; the linked Real-time Agent Assist deep dive sizes only the ~10KB hot sliding-window working set at ~100MB)</em></li>
+  <li><strong>Daily transcripts:</strong> ~1.2M calls/day x 50KB avg (5-min calls) = ~60GB/day raw text</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">High-Level Architecture</div>
+<div class="card-body">
+<div class="flow">
+Audio Stream &rarr; <span class="blackbox">[STT Service - BLACK BOX]</span> &rarr; Transcript Chunks<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Transcript Chunks &rarr; Session Manager (context accumulation) &rarr; NLP Preprocessor<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+NLP Preprocessor &rarr; <span class="blackbox">[ML Suggestion Engine - BLACK BOX]</span> &rarr; Raw Suggestions<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Raw Suggestions &rarr; Post-processor (filtering, ranking, dedup) &rarr; WebSocket Gateway &rarr; Agent UI
+</div>
+<h3>Component Responsibilities</h3>
+<ul>
+  <li><strong>Audio Gateway:</strong> Accepts WebRTC/telephony streams, forwards to STT (you don't build this)</li>
+  <li><strong>Session Manager:</strong> Maintains per-conversation state: full transcript, speaker turns, detected intents. Key-value store (Redis) keyed by session_id</li>
+  <li><strong>NLP Preprocessor:</strong> Extracts features from transcript: intent, entities, sentiment. Lightweight — rule-based + small models</li>
+  <li><strong>ML Suggestion Engine:</strong> BLACK BOX. Takes context JSON, returns ranked suggestions. ~80ms P95 latency</li>
+  <li><strong>Post-processor:</strong> Applies business rules (suppress duplicates, enforce rate limiting on suggestions), ranks by confidence</li>
+  <li><strong>WebSocket Gateway:</strong> Manages persistent connections to agent UIs, handles reconnection, message ordering</li>
+</ul>
+<div class="warn">
+  <p><strong>Critical path is ~3 hops you control:</strong> Session Manager (10ms) + Post-processor (15ms) + WebSocket delivery (5ms) = 30ms budget for your code. The rest is STT + ML model (~80ms P95). Design accordingly — keep your services stateless and fast.</p>
+  <p style="margin-top:8px;"><strong>Pitfall to preempt:</strong> the &lt;200ms budget is measured from <em>utterance end</em>. STT endpointing/finalization latency (~150&ndash;300ms to decide the speaker stopped) sits <em>outside</em> this budget, so customer-perceived time is higher. Call this out and note you'd process partial (interim) transcripts to hide it.</p>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Deep Dive: Session Manager</div>
+<div class="card-body">
+<h3>Why This Component</h3>
+<p>The Session Manager is the most interesting backend challenge: it must accumulate state at high throughput, serve reads with sub-5ms latency, and handle failover without losing conversation context mid-call.</p>
+
+<h3>API Schema</h3>
+<pre>// Append new utterance to session
+POST /sessions/{session_id}/utterances
+{
+  "speaker": "customer" | "agent",
+  "text": "I need to cancel my subscription",
+  "timestamp_ms": 1704067200000,
+  "confidence": 0.95
+}
+
+// Get current session context (called by ML engine)
+GET /sessions/{session_id}/context
+Response:
+{
+  "session_id": "sess_abc123",
+  "started_at": "2024-01-01T10:00:00Z",
+  "duration_sec": 180,
+  "utterances": [...],
+  "detected_intents": ["cancellation", "billing_dispute"],
+  "customer_sentiment": "frustrated",
+  "suggestions_delivered": 3
+}</pre>
+
+<h3>Data Model (Redis)</h3>
+<pre>Key: session:{session_id}
+Type: Hash
+Fields:
+  meta        → JSON (start_time, agent_id, customer_id, campaign)
+  intents     → Set of detected intents
+  last_update → timestamp (for TTL/cleanup)
+
+Key: session:{session_id}:utterances
+Type: List (RPUSH per utterance — O(1) ordered, atomic append)
+
+TTL: 2 hours on both keys (auto-cleanup after call ends)
+Backup: Async write to PostgreSQL every 30s for recovery</pre>
+
+<h3>Key Design Decisions</h3>
+<ul>
+  <li><strong>Redis over DB for hot path:</strong> Sub-ms reads; utterances as a List give O(1) atomic RPUSH appends (no read-modify-write). PostgreSQL as async backup only.</li>
+  <li><strong>Client-side consistent hashing for session affinity:</strong> The gateway hashes <code>session_id</code> to always route a session to the same Redis node — avoids cross-node reads. (This is a client/proxy-side sharding choice; a Redis Cluster instead maps keys to 16384 hash slots.)</li>
+  <li><strong>Sliding window context:</strong> ML engine only needs last 20 utterances (not full history) — reduces payload size</li>
+  <li><strong>Graceful failover:</strong> If Redis node dies, rebuild state from PostgreSQL backup (stale by max 30s)</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Scaling & Trade-offs</div>
+<div class="card-body">
+<h3>Bottlenecks and Solutions</h3>
+<table>
+  <tr><th>Bottleneck</th><th>At 10K</th><th>At 100K (10x)</th><th>Solution</th></tr>
+  <tr><td>WebSocket connections</td><td>Single gateway OK</td><td>Need connection pooling cluster</td><td>Horizontal gateway fleet behind L4 LB, sticky sessions</td></tr>
+  <tr><td>Redis memory</td><td>500MB (fits one node)</td><td>5GB (still one node)</td><td>Redis Cluster, which shards keys across 16384 hash slots, at 500K+</td></tr>
+  <tr><td>ML inference</td><td>3.3K QPS (manageable)</td><td>33K QPS</td><td>Batch similar requests, GPU autoscaling, request coalescing</td></tr>
+  <tr><td>STT throughput</td><td>10K streams</td><td>100K streams</td><td>Not your problem (external service) but need backpressure</td></tr>
+</table>
+
+<h3>Key Trade-offs</h3>
+<ul>
+  <li><strong>Latency vs accuracy:</strong> Could wait for more context (3 utterances) before suggesting → better accuracy but 9s delay. Chose: suggest after each utterance, accept lower precision for faster feedback.</li>
+  <li><strong>Consistency vs availability:</strong> If Redis failover takes 30s, agent loses suggestions for 30s. Acceptable — prefer availability over perfect consistency.</li>
+  <li><strong>Push vs pull:</strong> Push suggestions via WebSocket (chosen) vs agent UI polling. Push = lower latency, more complex connection management.</li>
+</ul>
+</div>
+</div>
+
+<div class="card collapsed">
+<div class="card-header">Industry Insight: Voice Integration Patterns</div>
+<div class="card-body">
+<div class="ins">
+  <p><strong>How real AI contact center platforms handle audio:</strong></p>
+  <ul>
+    <li><strong>Protocols:</strong> SIP TRUNK, SIPREC, WebSocket streaming, gRPC streams, raw RTP packets. AI Agent needs bidirectional; Agent Assist only needs listen-only dual-channel.</li>
+    <li><strong>Latency target:</strong> Sub-300ms for natural conversation flow. Above 800ms, conversational quality "degrades sharply."</li>
+    <li><strong>Correlation challenge:</strong> Audio streams and call metadata arrive via SEPARATE channels with mismatched identifiers. Must correlate before agent answers.</li>
+    <li><strong>Vendor state machines:</strong> Each CCaaS vendor (Cisco, Five9, Genesys) fires different event sequences for identical actions (e.g., consultative transfer). Each requires its own state machine implementation.</li>
+    <li><strong>Design pattern:</strong> Treat AI agents and human agents as equivalent entities on the same platform — same tools, same monitoring, same orchestration.</li>
+  </ul>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Relevant Experience to Draw On</div>
+<div class="card-body">
+<div class="note">
+  <p><strong>Hands-on experience that maps well to this design:</strong></p>
+  <ul>
+    <li><strong>Push notification / pub-sub delivery:</strong> If you've built a topic-based delivery system (e.g. Google Pub/Sub), it's the same pattern as routing suggestions to the right agent. Talk about fan-out to large subscriber counts and how message ordering was managed.</li>
+    <li><strong>Taming unbounded concurrency:</strong> Directly relevant to WebSocket connection management — unbounded goroutines/threads per connection cause OOM; bounded worker pools fix it. The same pattern applies to managing 10K concurrent sessions. Mention any experience diagnosing and fixing this class of problem.</li>
+    <li><strong>Redis at scale:</strong> Any production experience with Redis for real-time data lets you speak to TTL strategies, memory management, and failover.</li>
+    <li><strong>Container orchestration (ECS/Fargate, Kubernetes):</strong> For stateless services (preprocessor, post-processor). Mention autoscaling policies based on connection count.</li>
+  </ul>
+</div>
+</div>
+</div>
+
+<div class="card collapsed">
+<div class="card-header">Common Follow-ups</div>
+<div class="card-body">
+<h3>Q: "What happens if the ML model latency spikes to 500ms?"</h3>
+<p>Implement a timeout + fallback. After 150ms, return cached suggestions from similar contexts (last successful suggestion for this intent). Show stale data rather than nothing. Alert on P99 latency drift.</p>
+
+<h3>Q: "How do you handle agent disconnection mid-call?"</h3>
+<p>WebSocket gateway detects disconnect, keeps session alive in Redis. On reconnect (same session_id cookie), replay last 3 suggestions. Session state is independent of connection state.</p>
+
+<h3>Q: "How do you A/B test different suggestion models?"</h3>
+<p>Route at session level (not request level — consistency within a call). Session Manager tags each session with experiment_variant. Post-processor routes to model A or B based on tag. Track acceptance rate per variant.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Section 3: Knowledge Retrieval (RAG) ===== -->
+<div class="section" id="rag">
+<h2>Knowledge Retrieval (RAG)</h2>
+<p>Design an enterprise knowledge search system that proactively delivers answers during conversations.</p>
+<div class="ins"><p>📘 <strong>Full 14-section deep dive:</strong> <a href="knowledge_retrieval_rag_design.html" style="font-weight:700;">Knowledge Retrieval (RAG) — System Design →</a> (hybrid search + RRF, Elasticsearch mapping, vector DB, reranking, interview script)</p></div>
+
+<div class="card">
+<div class="card-header">Requirements & Scale</div>
+<div class="card-body">
+<h3>Functional Requirements</h3>
+<ul>
+  <li>Ingest enterprise documents (PDFs, wikis, FAQs, product manuals) and keep them searchable</li>
+  <li>Given a conversation context, retrieve the most relevant knowledge passages</li>
+  <li>Generate a natural language answer from retrieved passages (LLM, black box)</li>
+  <li>Support incremental updates — new/modified docs indexed within 15 minutes</li>
+  <li>Track which documents are used, surface staleness and gaps</li>
+</ul>
+<h3>Non-Functional Requirements</h3>
+<table>
+  <tr><th>Metric</th><th>Target</th><th>Rationale</th></tr>
+  <tr><td>Retrieval latency</td><td>&lt;300ms (search + rerank)</td><td>Retrieval is the part we own. The LLM answer is <em>streamed</em>: target first token &lt;500ms, full answer 1&ndash;2s. Don't claim a full answer in 200ms.</td></tr>
+  <tr><td>Indexing freshness</td><td>&lt;15 min from doc update</td><td>Stale answers erode agent trust</td></tr>
+  <tr><td>Retrieval recall@10</td><td>&gt;85%</td><td>Relevant doc must be in top-10 candidates</td></tr>
+</table>
+<h3>Scale Estimates</h3>
+<ul>
+  <li><strong>Document corpus:</strong> 500K documents, 50M chunks (~200 tokens each)</li>
+  <li><em>These figures are a larger enterprise tier chosen to motivate sharding and quantization; the linked Knowledge Retrieval (RAG) deep dive deliberately works a right-sized ~100K-doc / ~6&nbsp;GB single-node example, so the two chapters use different scales on purpose.</em></li>
+  <li><strong>Embedding storage:</strong> 50M vectors x 1536 dims x 4 bytes (fp32) = ~300GB <em>raw</em>. The HNSW graph edges add only a small fraction on top for high-dim fp32 vectors (~10&ndash;20%, i.e. ~30&ndash;60GB), but budget ~500&ndash;600GB RAM once you add query working memory, replicas, and fragmentation headroom. Lever: int8 scalar quantization drops raw vectors to ~75GB (rerank exact top-k to recover accuracy).</li>
+  <li><strong>Query QPS:</strong> ~2,000 searches/sec (one per agent utterance that triggers search)</li>
+  <li><strong>Ingestion:</strong> ~1,000 doc updates/day (batch + real-time)</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">High-Level Architecture</div>
+<div class="card-body">
+<h3>Ingestion Pipeline</h3>
+<div class="flow">
+Doc Source (wiki, CMS, S3) &rarr; Crawler/Webhook &rarr; Chunker (split by section, ~200 tokens)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Chunks &rarr; <span class="blackbox">[Embedding Model - BLACK BOX]</span> &rarr; Vectors<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Vectors &rarr; Vector DB (Pinecone/Weaviate) + Chunks &rarr; Elasticsearch (BM25 index)
+</div>
+
+<h3>Query Pipeline</h3>
+<div class="flow">
+Conversation Context &rarr; Query Formulator (extract search query from transcript)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Query &rarr; Hybrid Search: [ES BM25 top-20] + [Vector DB ANN top-20]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Candidates (merged, deduped) &rarr; <span class="blackbox">[Reranker Model - BLACK BOX]</span> &rarr; Top-5 passages<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Top-5 + Conversation Context &rarr; <span class="blackbox">[LLM Answer Generator - BLACK BOX]</span> &rarr; Answer to Agent
+</div>
+
+<h3>Components</h3>
+<ul>
+  <li><strong>Crawler:</strong> Polls doc sources on schedule + listens for webhooks. Detects changes via content hash.</li>
+  <li><strong>Chunker:</strong> Splits documents intelligently (by heading, paragraph). Preserves metadata (source, section, last_modified).</li>
+  <li><strong>Vector DB:</strong> Stores embeddings, supports ANN search. Handles ~50M vectors.</li>
+  <li><strong>Elasticsearch:</strong> Traditional BM25 keyword search. Handles exact term matches that embeddings miss.</li>
+  <li><strong>Query Formulator:</strong> Converts conversation transcript into a concise search query. (Small model or heuristic.)</li>
+  <li><strong>Reranker:</strong> BLACK BOX. Takes query + 40 candidate passages, returns top-5 ranked by relevance.</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Deep Dive: Hybrid Search & Freshness</div>
+<div class="card-body">
+<h3>Why Hybrid Search</h3>
+<p>BM25 alone misses semantic similarity ("cancel my plan" vs "subscription termination"). Vectors alone miss exact terms (product IDs, error codes). Combine both.</p>
+
+<h3>Merge Strategy: Reciprocal Rank Fusion (RRF)</h3>
+<pre>// Reciprocal Rank Fusion
+score(doc) = sum over each ranker R:
+    1 / (k + rank_R(doc))
+
+// where k = 60 (standard constant)
+// Example: doc ranked #2 in BM25, #5 in vector
+// score = 1/(60+2) + 1/(60+5) = 0.016 + 0.015 = 0.031</pre>
+
+<h3>Data Model</h3>
+<pre>// Document metadata (PostgreSQL)
+Table: documents
+  id          UUID PRIMARY KEY
+  source_url  TEXT
+  title       TEXT
+  content_hash TEXT  -- detect changes
+  last_crawled TIMESTAMP
+  status      ENUM('active', 'stale', 'deleted')
+
+// Chunk (stored in both ES and Vector DB)
+Table: chunks
+  id          UUID PRIMARY KEY
+  document_id UUID REFERENCES documents
+  chunk_index INT
+  text        TEXT
+  embedding   VECTOR(1536)  -- in vector DB only
+  metadata    JSONB  -- section_title, page_num, etc.</pre>
+
+<h3>Freshness Strategy</h3>
+<ul>
+  <li><strong>Change detection:</strong> Crawler computes content_hash. If hash changed, re-chunk and re-embed only affected chunks.</li>
+  <li><strong>Staleness scoring:</strong> Boost recently-updated docs in retrieval. Docs not updated in 90 days get staleness flag.</li>
+  <li><strong>Incremental indexing:</strong> New chunks indexed into a "hot" partition. Merged into main index in background.</li>
+  <li><strong>Deletion handling:</strong> Soft-delete with 24h grace period. Tombstone in vector DB prevents serving deleted content.</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Scaling & Trade-offs</div>
+<div class="card-body">
+<h3>Bottlenecks</h3>
+<table>
+  <tr><th>Component</th><th>Current</th><th>At 10x</th><th>Solution</th></tr>
+  <tr><td>Vector DB</td><td>50M vectors, 300GB raw (~360GB with HNSW index; ~500–600GB RAM with replicas + working memory)</td><td>500M vectors, ~3TB raw</td><td>Quantize (int8/PQ) to cut memory 4&ndash;8x; shard by tenant/domain; tiered storage (hot/warm)</td></tr>
+  <tr><td>Embedding generation</td><td>1K docs/day</td><td>10K docs/day</td><td>Batch embedding with GPU queue; skip unchanged chunks</td></tr>
+  <tr><td>Search QPS</td><td>2K/s</td><td>20K/s</td><td>Read replicas for ES; vector DB caching layer for frequent queries</td></tr>
+  <tr><td>LLM generation</td><td>2K/s</td><td>20K/s</td><td>Cache popular Q&A pairs; pre-generate answers for top FAQs</td></tr>
+</table>
+
+<h3>Trade-offs</h3>
+<ul>
+  <li><strong>Freshness vs cost:</strong> Real-time embedding on every doc change is expensive (GPU). Chose: 15-min batch window balances freshness and cost.</li>
+  <li><strong>Recall vs latency:</strong> Searching more candidates improves recall but adds latency. Chose: top-20 from each source (40 total to reranker) as the best balance.</li>
+  <li><strong>Chunk size:</strong> Smaller chunks = better precision but more vectors (cost). Larger chunks = fewer vectors but may include irrelevant text. Chose: ~200 tokens with overlap.</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Relevant Experience to Draw On</div>
+<div class="card-body">
+<div class="note">
+  <p><strong>Hands-on experience that maps well to this design:</strong></p>
+  <ul>
+    <li><strong>Custom search / Elasticsearch work:</strong> If you've built a custom search plugin or tuned a search index, speak to index design, query optimization, and relevance tuning. This maps directly to the BM25 side of hybrid search.</li>
+    <li><strong>Indexing pipeline experience:</strong> Discuss challenges of incremental indexing, handling schema evolution, managing index aliases for zero-downtime reindexing.</li>
+    <li><strong>Serverless ingestion (S3 + Lambda):</strong> A document ingestion pipeline where storage events (e.g. S3) trigger a function (e.g. Lambda) is a clean way to describe a serverless chunking pipeline.</li>
+  </ul>
+</div>
+</div>
+</div>
+
+<div class="card collapsed">
+<div class="card-header">Common Follow-ups</div>
+<div class="card-body">
+<h3>Q: "How do you handle conflicting information across documents?"</h3>
+<p>Use document metadata (last_modified, source authority ranking). If two docs conflict, prefer the more recent one from a higher-authority source. Surface the conflict to the agent with both answers + sources.</p>
+
+<h3>Q: "How do you evaluate retrieval quality?"</h3>
+<p>Offline: human-labeled relevance judgments, compute NDCG@10. Online: track agent feedback (thumbs up/down on suggested answers), click-through on source links. A/B test retrieval changes.</p>
+
+<h3>Q: "What if the corpus grows to 1B chunks?"</h3>
+<p>Hierarchical retrieval: first narrow by domain/category (metadata filter), then search within subset. Pre-filtering reduces vector search space by 10-100x. Also consider: do all chunks need to be active? Archive old versions.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Section 4: Conversation Analytics Pipeline ===== -->
+<div class="section" id="analytics">
+<h2>Conversation Analytics Pipeline</h2>
+<p>Process and analyze millions of conversations for business insights — topics, sentiment, resolution rates.</p>
+<div class="ins"><p>📘 <strong>Full 14-section deep dive:</strong> <a href="conversation_analytics_design.html" style="font-weight:700;">Conversation Analytics Pipeline — System Design →</a> (Lambda architecture, Kafka design, ML enrichment, aggregation, interview script)</p></div>
+
+<div class="card">
+<div class="card-header">Requirements & Scale</div>
+<div class="card-body">
+<h3>Functional Requirements</h3>
+<ul>
+  <li>Analyze 100% of conversations (voice + chat) for topics, sentiment, intent, and outcome</li>
+  <li>Support both near-real-time (within 5 min) and batch (daily aggregation) processing</li>
+  <li>Generate dashboards: trend reports, agent performance, topic distribution</li>
+  <li>Alert on anomalies: sentiment spike, new emerging topic, resolution rate drop</li>
+  <li>Multi-language support (at least 5 languages)</li>
+</ul>
+<h3>Non-Functional Requirements</h3>
+<table>
+  <tr><th>Metric</th><th>Target</th><th>Rationale</th></tr>
+  <tr><td>Processing latency</td><td>&lt;5 min (near-real-time path)</td><td>Supervisors need same-day visibility</td></tr>
+  <tr><td>Throughput</td><td>500K conversations/day</td><td>Large enterprise, multi-region</td></tr>
+  <tr><td>Data retention</td><td>2 years raw, 5 years aggregated</td><td>Compliance and trend analysis</td></tr>
+</table>
+<h3>Scale Estimates</h3>
+<ul>
+  <li><strong>Daily volume:</strong> 500K conversations x ~12KB avg transcript (~2000 words) = ~6GB/day raw text</li>
+  <li><strong>Busy-hour average QPS:</strong> 500K / 8 hours (business hours concentration) = ~17 conversations/sec; expect 3&ndash;10x bursts at peak, so size for ~50&ndash;170/sec</li>
+  <li><strong>ML processing:</strong> Each conversation needs ~5 model calls (topic, sentiment, intent, entity, compliance)</li>
+  <li><strong>Storage (2 years):</strong> ~6GB/day x 730 days = ~4.4TB raw + enriched metadata</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">High-Level Architecture</div>
+<div class="card-body">
+<div class="flow">
+Conversation End Event &rarr; Event Bus (Kafka/Pub-Sub)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+[Near-Real-Time Path]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Batch Path]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Stream Processor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Daily Batch Job (aggregation)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+<span class="blackbox">[ML Pipeline - BLACK BOX]</span>&nbsp;&nbsp;&nbsp;&nbsp;Aggregate Tables (BigQuery)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Enriched Records &rarr; Data Lake&nbsp;&nbsp;Dashboards + Alerts (Grafana)
+</div>
+
+<h3>Components</h3>
+<ul>
+  <li><strong>Event Bus (Kafka):</strong> Decouples conversation completion from processing. Guarantees at-least-once delivery. Partitioned by tenant_id.</li>
+  <li><strong>Stream Processor:</strong> Consumes events, orchestrates ML calls, writes enriched records. Stateless workers with auto-scaling.</li>
+  <li><strong>ML Pipeline (BLACK BOX):</strong> Topic extraction, sentiment analysis, intent classification, language detection. ~200ms per conversation.</li>
+  <li><strong>Data Lake (S3/GCS):</strong> Raw transcripts + enriched metadata in Parquet format. Source of truth.</li>
+  <li><strong>Aggregation Layer (BigQuery):</strong> Pre-computed rollups: hourly/daily topic counts, sentiment averages, resolution rates by team.</li>
+  <li><strong>Dashboard Service (Grafana):</strong> Real-time + historical charts. Queries aggregation tables, not raw data.</li>
+  <li><strong>Alert Engine:</strong> Monitors streaming aggregates. Fires alerts on anomalies (e.g., "cancellation intent up 40% in last hour").</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Deep Dive: Lambda Architecture (Stream + Batch)</div>
+<div class="card-body">
+<h3>Why Both Streaming and Batch?</h3>
+<p>Streaming gives you speed (5-min visibility). Batch gives you accuracy (reprocess with updated models, fix errors). Classic Lambda architecture.</p>
+
+<h3>Stream Processing Design</h3>
+<pre>// Stream processor worker (Go)
+type ConversationEvent struct {
+    SessionID    string    `json:"session_id"`
+    TenantID     string    `json:"tenant_id"`
+    Transcript   []Turn    `json:"transcript"`
+    Metadata     Metadata  `json:"metadata"`
+    CompletedAt  time.Time `json:"completed_at"`
+}
+
+type EnrichedConversation struct {
+    ConversationEvent
+    Topics      []string  `json:"topics"`
+    Sentiment   float64   `json:"sentiment"`      // -1.0 to 1.0
+    Intent      string    `json:"primary_intent"`
+    Language    string    `json:"language"`
+    Resolution  string    `json:"resolution"`      // resolved|escalated|abandoned
+    QualityScore float64  `json:"quality_score"`
+}
+
+// Processing pipeline (per conversation)
+// 1. Validate + normalize transcript
+// 2. Call ML enrichment API (batched if possible)
+// 3. Write enriched record to data lake
+// 4. Update streaming aggregates (Redis counters)
+// 5. Check alert conditions</pre>
+
+<h3>Aggregation Schema</h3>
+<pre>-- Hourly rollup table (BigQuery)
+CREATE TABLE conversation_hourly_agg (
+    tenant_id       STRING,
+    hour            TIMESTAMP,
+    topic           STRING,
+    conversation_count  INT64,
+    avg_sentiment       FLOAT64,
+    resolution_rate     FLOAT64,
+    avg_handle_time_sec FLOAT64,
+    language        STRING
+)
+PARTITION BY DATE(hour)
+CLUSTER BY tenant_id, topic;</pre>
+
+<h3>Batch Correction</h3>
+<p>Nightly job reprocesses the day's conversations with the latest ML models. If results differ from stream results, batch overwrites. Dashboards always show batch-corrected data for T-1 and earlier.</p>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Scaling & Trade-offs</div>
+<div class="card-body">
+<h3>Bottlenecks</h3>
+<table>
+  <tr><th>Component</th><th>At 500K/day</th><th>At 5M/day (10x)</th><th>Solution</th></tr>
+  <tr><td>Stream processing</td><td>~17/sec, 10 workers</td><td>~170/sec, 100 workers</td><td>Horizontal scaling, Kafka partition increase</td></tr>
+  <tr><td>ML inference</td><td>~85 QPS to ML (~17/sec &times; 5 calls)</td><td>~850 QPS</td><td>Batch multiple conversations per ML call; GPU autoscaling</td></tr>
+  <tr><td>Storage</td><td>~4.4TB/2yr</td><td>~44TB/2yr</td><td>Tiered storage: hot (30d) / warm (1yr) / cold (archive)</td></tr>
+  <tr><td>Dashboard queries</td><td>Simple aggregates</td><td>Complex cross-tenant</td><td>Pre-materialized views; query result caching</td></tr>
+</table>
+
+<h3>Trade-offs</h3>
+<ul>
+  <li><strong>Latency vs completeness:</strong> Stream path may miss conversations (retry later). Batch ensures 100% coverage but T+1. Chose: both paths, batch is source of truth.</li>
+  <li><strong>Single model vs per-language models:</strong> One multilingual model is simpler but less accurate per language. Chose: language detection first, then route to language-specific models for top-5 languages.</li>
+  <li><strong>Pre-aggregation vs query-time:</strong> Pre-agg limits flexibility (can't slice by new dimension). Chose: pre-agg for common queries + raw data access for ad-hoc.</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Relevant Experience to Draw On</div>
+<div class="card-body">
+<div class="note">
+  <p><strong>Hands-on experience that maps well to this design:</strong></p>
+  <ul>
+    <li><strong>Log / data ingestion pipeline (e.g. Fluentd to BigQuery):</strong> Exactly this pattern. If you've built a schema-driven ingestion pipeline that decoupled producers from consumers, mention generic table design, how schema evolution was handled, and the interface contract between data producers and the data team.</li>
+    <li><strong>Monitoring and alerting:</strong> Experience configuring dashboards with alert rules (e.g. Grafana) is the same skill needed for the anomaly detection layer here.</li>
+    <li><strong>Sync-to-async migrations:</strong> Converting synchronous processing to async event-driven pipelines (often a large throughput win) is directly relevant to the stream processing design.</li>
+    <li><strong>Event bus experience (SQS/SNS, Kafka):</strong> These are conceptually similar — mention ordering guarantees and dead-letter queue patterns.</li>
+  </ul>
+</div>
+</div>
+</div>
+
+<div class="card collapsed">
+<div class="card-header">Common Follow-ups</div>
+<div class="card-body">
+<h3>Q: "How do you handle late-arriving data?"</h3>
+<p>Watermark-based processing. Stream processor waits 2 minutes for stragglers. Late arrivals beyond watermark go to a "late" topic, processed separately and merged into batch results. Dashboard shows "data completeness" indicator.</p>
+
+<h3>Q: "How do you add a new analytics dimension without reprocessing everything?"</h3>
+<p>Backfill job: read from data lake, apply new model, write new column to enriched table. Run as a batch job with cost controls (limit parallelism). Takes ~4 hours for 1 year of data at 500K/day.</p>
+
+<h3>Q: "How do you ensure data privacy across tenants?"</h3>
+<p>Tenant isolation at every layer: Kafka partitions by tenant, separate BigQuery datasets or row-level security, encryption at rest with per-tenant keys. Audit log for all data access.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Section 5: AI-to-Human Handoff ===== -->
+<div class="section" id="handoff">
+<h2>AI-to-Human Handoff</h2>
+<p>Seamless context transfer when an AI agent escalates to a human agent — zero context loss, minimal wait time.</p>
+<div class="ins"><p>📘 <strong>Full 14-section deep dive:</strong> <a href="ai_human_handoff_design.html" style="font-weight:700;">AI-to-Human Handoff — System Design →</a> (escalation triggers, routing algorithm, transfer state machine, supervision, interview script)</p></div>
+
+<div class="card">
+<div class="card-header">Requirements & Scale</div>
+<div class="card-body">
+<h3>Functional Requirements</h3>
+<ul>
+  <li>Detect when AI agent should escalate (confidence drop, customer request, policy rule)</li>
+  <li>Serialize full conversation context: history, intent, sentiment, attempted resolutions</li>
+  <li>Route to optimal human agent based on skill, availability, and load</li>
+  <li>Deliver context to agent desktop before/during connection (warm transfer)</li>
+  <li>Track SLA: time from escalation trigger to human agent connected</li>
+</ul>
+<h3>Non-Functional Requirements</h3>
+<table>
+  <tr><th>Metric</th><th>Target</th><th>Rationale</th></tr>
+  <tr><td>Handoff latency</td><td>&lt;2s (trigger to agent connected)</td><td>Customer shouldn't feel "stuck"</td></tr>
+  <tr><td>Context delivery</td><td>0% data loss</td><td>Agent re-asking questions = terrible CX</td></tr>
+  <tr><td>Agent match accuracy</td><td>&gt;90% first-route success</td><td>Avoid re-routing (adds 30s+)</td></tr>
+</table>
+<h3>Scale Estimates</h3>
+<ul>
+  <li><strong>Escalation rate:</strong> ~20% of AI conversations escalate = 100K/day of 500K total</li>
+  <li><strong>Peak escalations/sec:</strong> 100K / 8hr / 3600 = ~3.5/sec (bursty — peaks at 10x during incidents)</li>
+  <li><strong>Agent pool:</strong> 5,000 human agents across multiple skill groups</li>
+  <li><strong>Context payload:</strong> ~10KB per handoff (transcript + metadata + suggestions)</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">High-Level Architecture</div>
+<div class="card-body">
+<div class="flow">
+AI Agent Session &rarr; Escalation Trigger (confidence &lt; threshold OR customer request)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Context Serializer &rarr; Handoff Payload (structured summary + full transcript)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Agent Router &rarr; Skill Matching + Availability Check + Load Balancer<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Queue Manager &rarr; Priority Queue (VIP, SLA urgency, wait time)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Agent Desktop Push (WebSocket) &rarr; Context Card + Conversation Transfer
+</div>
+
+<h3>Components</h3>
+<ul>
+  <li><strong>Escalation Trigger:</strong> Rule engine evaluating: AI confidence score, customer explicit request ("talk to a human"), compliance rules (financial advice requires human), max AI turns reached.</li>
+  <li><strong>Context Serializer:</strong> Packages conversation state into a structured handoff payload. Includes: summary, full transcript, detected intent, sentiment history, AI actions taken, suggested next steps.</li>
+  <li><strong>Agent Router:</strong> Matches escalation to best agent. Inputs: required skills, language, VIP status. Considers: agent availability, current load, historical performance on this topic.</li>
+  <li><strong>Queue Manager:</strong> Priority queue per skill group. Manages SLA tracking, overflow routing (if primary skill group is full, expand to secondary).</li>
+  <li><strong>Agent Desktop Push:</strong> Delivers context to agent UI via WebSocket before voice/chat is connected. Agent sees customer history while phone rings.</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Deep Dive: Agent Router</div>
+<div class="card-body">
+<h3>Why This Component</h3>
+<p>Routing quality directly impacts customer experience AND agent efficiency. Bad routing = rerouting = +30s wait + frustrated customer. This is where backend engineering matters most.</p>
+
+<h3>Routing Algorithm</h3>
+<pre>// Agent scoring function
+func ScoreAgent(escalation Escalation, agent Agent) float64 {
+    score := 0.0
+
+    // Skill match (must-have)
+    if !agent.HasSkill(escalation.RequiredSkill) {
+        return -1  // disqualify
+    }
+
+    // Language match
+    if agent.Language == escalation.Language {
+        score += 30
+    }
+
+    // Current load (prefer less busy)
+    score += (1 - agent.CurrentLoad) * 25  // 0-25 points
+
+    // Historical performance on this topic
+    score += agent.TopicSuccessRate(escalation.Topic) * 20  // 0-20 points
+
+    // Freshness (prefer recently-rested agents; penalize long stretches without a break)
+    score += (1 - min(agent.MinutesSinceBreak / 120, 1.0)) * 10  // 0-10 points
+
+    // VIP handling (experienced agents for VIPs)
+    if escalation.IsVIP && agent.Tier >= 2 {
+        score += 15
+    }
+
+    return score
+}</pre>
+
+<h3>Handoff Payload Schema</h3>
+<pre>{
+  "handoff_id": "hoff_xyz789",
+  "priority": "high",
+  "escalation_reason": "customer_request",
+  "context": {
+    "summary": "Customer wants to cancel premium plan. AI offered retention discount (20%), customer declined. Sentiment: frustrated.",
+    "transcript": [...],
+    "detected_intent": "cancellation",
+    "sentiment_trajectory": [0.2, -0.1, -0.4, -0.6],
+    "ai_actions_taken": ["offered_discount", "explained_benefits"],
+    "suggested_next_steps": ["offer_pause_instead", "supervisor_approval_for_higher_discount"],
+    "customer_profile": {
+      "tenure_months": 24,
+      "ltv": 2880,
+      "previous_escalations": 1
+    }
+  },
+  "routing": {
+    "required_skills": ["retention", "billing"],
+    "language": "en",
+    "vip": true
+  }
+}</pre>
+
+<h3>Queue Design</h3>
+<ul>
+  <li><strong>Multi-level priority queue:</strong> VIP > SLA-breaching > standard. Within each level, FIFO.</li>
+  <li><strong>Overflow routing:</strong> If primary skill group wait > 30s, expand to agents with secondary skill match.</li>
+  <li><strong>Predictive staffing:</strong> Track queue depth trends. Alert supervisors when predicted wait exceeds SLA.</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Scaling & Trade-offs</div>
+<div class="card-body">
+<h3>Bottlenecks</h3>
+<table>
+  <tr><th>Component</th><th>Normal</th><th>During incident (10x burst)</th><th>Solution</th></tr>
+  <tr><td>Router decisions</td><td>3.5/sec</td><td>35/sec</td><td>Pre-compute agent scores, cache availability; O(1) routing with sorted sets</td></tr>
+  <tr><td>Queue management</td><td>5K agents tracked</td><td>All agents saturated</td><td>Redis sorted sets for O(log N) insert/pop; overflow to secondary pools</td></tr>
+  <tr><td>Context delivery</td><td>10KB payload, 3.5/sec</td><td>35/sec</td><td>Already trivial bandwidth; ensure WebSocket gateway scales</td></tr>
+  <tr><td>State consistency</td><td>Agent available/busy</td><td>Race conditions</td><td>Optimistic locking on agent state; retry on conflict</td></tr>
+</table>
+
+<h3>Trade-offs</h3>
+<ul>
+  <li><strong>Optimal routing vs speed:</strong> Could wait 5s to find the "best" agent vs immediately route to first available. Chose: score top-5 available agents (10ms), pick best. Don't wait for unavailable agents to free up.</li>
+  <li><strong>Context completeness vs latency:</strong> Could include 50-turn full transcript (slow to load) vs 5-line summary. Chose: summary first (instant), full transcript lazy-loaded in background.</li>
+  <li><strong>Sticky routing vs load balance:</strong> If customer calls back, same agent is ideal (context continuity) but may be busy. Chose: prefer same agent if available within 10s, else route to next best.</li>
+</ul>
+</div>
+</div>
+
+<div class="card collapsed">
+<div class="card-header">Industry Insight: Real-time Supervision & Handoff</div>
+<div class="card-body">
+<div class="ins">
+  <p><strong>How real platforms handle AI supervision and handoff:</strong></p>
+  <ul>
+    <li><strong>Grid view:</strong> Supervisors monitor 100+ concurrent AI conversations. Visual hierarchy (color, motion) encodes priority — scan, then drill into specific conversations.</li>
+    <li><strong>Demand/supply routing:</strong> Works like ride-hailing — AI agent requests (demand) matched to supervisor skills/availability (supply). Handles overflow, timeouts, and re-surfacing.</li>
+    <li><strong>Multi-turn takeover:</strong> Supervisor pauses AI → engages customer directly for multiple turns → stabilizes → hands back to AI. Not just a one-shot transfer.</li>
+    <li><strong>Transfer types:</strong> Cold (direct handoff), Warm (AI introduces human first), Conference (AI stays to brief human, then exits).</li>
+    <li><strong>Unified entity model:</strong> AI and human agents treated as equivalent entities on same platform — same monitoring tools, same orchestration, same escalation patterns.</li>
+  </ul>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Relevant Experience to Draw On</div>
+<div class="card-body">
+<div class="note">
+  <p><strong>Hands-on experience that maps well to this design:</strong></p>
+  <ul>
+    <li><strong>Notification routing / pub-sub:</strong> Routing messages to the right recipient based on subscription/topic (e.g. Pub/Sub) is the same pattern as routing escalations to the right agent based on skills. Discuss fan-out strategies, handling large subscriber counts, and delivery guarantees.</li>
+    <li><strong>State management under concurrency:</strong> Experience with concurrent state management (e.g. fixing OOM from unbounded worker pools) is directly relevant to tracking agent availability without race conditions.</li>
+    <li><strong>Queue management (e.g. SQS):</strong> Priority queues, dead-letter queues, and visibility timeouts all apply to the handoff queue design.</li>
+    <li><strong>Sharding at scale (e.g. MongoDB):</strong> Relevant to agent state management at scale — sharding by skill group mirrors sharding by any partition key.</li>
+  </ul>
+</div>
+</div>
+</div>
+
+<div class="card collapsed">
+<div class="card-header">Common Follow-ups</div>
+<div class="card-body">
+<h3>Q: "What happens if no agent is available?"</h3>
+<p>Tiered fallback: (1) Expand skill search to secondary skills, (2) Offer callback option with estimated wait time, (3) AI continues with disclaimer "agent will join shortly." Never leave customer in silent queue. Track queue abandonment rate.</p>
+
+<h3>Q: "How do you prevent the same customer from being escalated repeatedly?"</h3>
+<p>Track escalation history per customer. If 3+ escalations in 7 days for same intent, auto-route to supervisor or specialized retention team. Flag the AI model that this customer pattern isn't being resolved by standard agents.</p>
+
+<h3>Q: "How do you measure handoff quality?"</h3>
+<p>Metrics: (1) Did agent ask a question already answered by AI? (repeat-question rate), (2) Time-to-resolution after handoff, (3) Customer satisfaction post-handoff vs post-AI-only. A/B test different context summary formats.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Section 6: Automated QA Scoring ===== -->
+<div class="section" id="qa-scoring">
+<h2>Automated QA Scoring</h2>
+<p>Evaluate 100% of conversations for quality — compliance, tone, resolution, efficiency.</p>
+<div class="ins"><p>📘 <strong>Full 14-section deep dive:</strong> <a href="automated_qa_scoring_design.html" style="font-weight:700;">Automated QA Scoring — System Design →</a> (rule engine, LLM-as-judge, cost optimization, calibration, interview script)</p></div>
+
+<div class="card">
+<div class="card-header">Requirements & Scale</div>
+<div class="card-body">
+<h3>Functional Requirements</h3>
+<ul>
+  <li>Score every conversation across multiple dimensions: compliance, tone, resolution, efficiency</li>
+  <li>Rule engine for hard requirements (identity verification, disclosure statements, prohibited phrases)</li>
+  <li>ML scoring for soft dimensions (empathy, clarity, professionalism) — black box</li>
+  <li>Generate per-agent scorecards with trends and coaching recommendations</li>
+  <li>Real-time alerts for critical compliance violations (within 5 min of conversation end)</li>
+</ul>
+<h3>Non-Functional Requirements</h3>
+<table>
+  <tr><th>Metric</th><th>Target</th><th>Rationale</th></tr>
+  <tr><td>Scoring latency</td><td>&lt;5 min after conversation end</td><td>Compliance violations need immediate flagging</td></tr>
+  <tr><td>Coverage</td><td>100% of conversations</td><td>Traditional QA covers 2-5%; AI enables 100%</td></tr>
+  <tr><td>Rule accuracy</td><td>99%+ (hard rules)</td><td>False positive on compliance = agent wrongly flagged</td></tr>
+  <tr><td>ML score correlation</td><td>&gt;0.85 with human QA</td><td>Must match human judgment to be trusted</td></tr>
+</table>
+<h3>Scale Estimates</h3>
+<ul>
+  <li><strong>Conversations/day:</strong> 500K scored (same as analytics — shares transcript source)</li>
+  <li><strong>Rules per conversation:</strong> ~50 rules evaluated (compliance checklist)</li>
+  <li><strong>ML scoring dimensions:</strong> 4 models called per conversation</li>
+  <li><strong>Scorecard queries:</strong> ~5K agents x daily scorecard refresh = 5K batch computations</li>
+  <li><strong>Alert volume:</strong> ~0.5% critical violations = 2,500 alerts/day</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">High-Level Architecture</div>
+<div class="card-body">
+<div class="flow">
+Conversation Transcript (from Analytics Pipeline or direct) &rarr; QA Orchestrator<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+[Rule Engine]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="blackbox">[ML Scoring Models - BLACK BOX]</span><br>
+(deterministic checks)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(empathy, clarity, professionalism, effectiveness)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Rule Results + ML Scores &rarr; Score Aggregator &rarr; Final QA Score<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&darr;<br>
+Alert Service&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Scorecard DB&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Audit Trail
+</div>
+
+<h3>Components</h3>
+<ul>
+  <li><strong>QA Orchestrator:</strong> Receives conversation, fans out to rule engine and ML models in parallel. Aggregates results. Stateless worker.</li>
+  <li><strong>Rule Engine:</strong> Evaluates deterministic rules against transcript. Examples: "Did agent verify customer identity in first 60s?", "Was hold disclosure given before hold?" Configurable per campaign/team.</li>
+  <li><strong>ML Scoring (BLACK BOX):</strong> 4 models: empathy (0-10), clarity (0-10), professionalism (0-10), effectiveness (0-10). Each takes full transcript + conversation metadata.</li>
+  <li><strong>Score Aggregator:</strong> Combines rule pass/fail with ML scores into a composite QA score. Applies weighting by campaign config.</li>
+  <li><strong>Alert Service:</strong> Critical rule failures (compliance) trigger immediate notification to supervisor. Non-critical issues aggregate for daily coaching.</li>
+  <li><strong>Scorecard DB:</strong> Per-agent rolling scores, trends, percentile rankings within team.</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Deep Dive: Rule Engine</div>
+<div class="card-body">
+<h3>Why This Component</h3>
+<p>The rule engine is what you (backend engineer) fully own and design. It must be: fast (50 rules in &lt;50ms), configurable (non-engineers define rules), auditable (every pass/fail is traceable), and extensible (new rule types without code deploy).</p>
+
+<h3>Rule Definition Schema</h3>
+<pre>{
+  "rule_id": "compliance_001",
+  "name": "Identity Verification",
+  "category": "compliance",
+  "severity": "critical",
+  "description": "Agent must verify customer identity within first 2 minutes",
+  "condition": {
+    "type": "pattern_in_window",
+    "pattern": ["verify", "confirm", "date of birth", "last four", "account number"],
+    "speaker": "agent",
+    "window": {"from_start": true, "max_seconds": 120}
+  },
+  "pass_criteria": "at_least_one_match",
+  "failure_action": "alert_supervisor",
+  "active": true,
+  "campaigns": ["financial_services", "insurance"]
+}</pre>
+
+<h3>Rule Engine Architecture</h3>
+<pre>// Rule evaluation pipeline
+type RuleEngine struct {
+    rules       []Rule           // loaded from config DB
+    evaluators  map[string]Evaluator  // pattern_in_window, phrase_detection, etc.
+}
+
+type EvaluationResult struct {
+    RuleID      string
+    Passed      bool
+    Evidence    []Evidence  // which utterances matched/failed
+    Confidence  float64
+    EvalTimeMs  int
+}
+
+// Evaluator types:
+// 1. PatternInWindow — regex/keyword match within time window
+// 2. PhraseDetection — exact phrase must appear (disclosures)
+// 3. SequenceCheck — steps must happen in order (greet → verify → resolve → close)
+// 4. NegativePattern — prohibited phrases must NOT appear
+// 5. TimingRule — action must happen within N seconds of trigger</pre>
+
+<h3>Configuration Management</h3>
+<ul>
+  <li><strong>Rule authoring UI:</strong> QA managers create/edit rules without code deploys. Rules stored in PostgreSQL with version history.</li>
+  <li><strong>A/B testing rules:</strong> New rules run in shadow mode (evaluate but don't alert) for 1 week before going live.</li>
+  <li><strong>Rule performance tracking:</strong> Track each rule's false positive rate. Auto-disable rules with FP rate > 5%.</li>
+</ul>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Scaling & Trade-offs</div>
+<div class="card-body">
+<h3>Bottlenecks</h3>
+<table>
+  <tr><th>Component</th><th>At 500K/day</th><th>At 5M/day (10x)</th><th>Solution</th></tr>
+  <tr><td>Rule evaluation</td><td>~17/sec, trivial</td><td>~170/sec, still trivial</td><td>CPU-bound, scales linearly with workers</td></tr>
+  <tr><td>ML scoring</td><td>4 models x 17/sec = 68 QPS</td><td>680 QPS</td><td>Batch scoring (group 10 conversations per call); GPU autoscaling</td></tr>
+  <tr><td>Scorecard computation</td><td>5K agents daily</td><td>50K agents daily</td><td>Incremental updates (update on each new score, not full recompute)</td></tr>
+  <tr><td>Alert fatigue</td><td>2.5K alerts/day</td><td>25K alerts/day</td><td>Alert grouping, severity tiers, supervisor digest mode</td></tr>
+</table>
+
+<h3>Trade-offs</h3>
+<ul>
+  <li><strong>Strict rules vs ML flexibility:</strong> Rules catch exact violations (high precision, lower recall). ML catches nuance (higher recall, lower precision). Chose: rules for compliance (must be precise), ML for coaching (can tolerate noise).</li>
+  <li><strong>Real-time vs batch scoring:</strong> Could batch-score hourly for cost efficiency. Chose: near-real-time for compliance (5 min), batch for coaching scores (daily refresh acceptable).</li>
+  <li><strong>Transparency vs complexity:</strong> Agents need to understand why they scored low. Rule results are transparent ("you didn't verify identity at 0:45"). ML scores are opaque. Chose: always show rule evidence; for ML, show example phrases that influenced the score.</li>
+</ul>
+</div>
+</div>
+
+<div class="card collapsed">
+<div class="card-header">Industry Insight: STT Evaluation & QA Framework</div>
+<div class="card-body">
+<div class="ins">
+  <p><strong>How real platforms evaluate speech and conversation quality:</strong></p>
+  <ul>
+    <li><strong>4-layer evaluation:</strong> Lexical (WER/CER) → Entity (keyword recall, entity accuracy with 3-5x weight multiplier) → Semantic (LLM-as-judge) → Task (end-to-end success rate). Task layer is the ultimate gate.</li>
+    <li><strong>LLM-as-judge patterns:</strong> Three modes — (1) Judge: reference vs hypothesis, rated 1-5; (2) Extractor: independently extract facts from both, compare; (3) Consistency-checker: single-transcript contradiction detection.</li>
+    <li><strong>Critical insight:</strong> "LLMs do not fail gracefully on STT errors — they fail confidently." One digit swap triggers wrong tool calls. A missed negation flips intent entirely.</li>
+    <li><strong>Test coverage from real data:</strong> Mine historical conversations for test cases. 3 types — happy path (early), critical deviations (pre-launch), post-launch feedback (continuous regression).</li>
+    <li><strong>Evaluator drift:</strong> Human-rated samples required to catch LLM judge drift. When disagreements occur, "humans win and the judge gets re-tuned." Loop until agreement rates stabilize.</li>
+    <li><strong>Slice-based evaluation:</strong> Segment by language × noise condition × speaker role. Worst-slice behavior matters more than averages.</li>
+  </ul>
+</div>
+</div>
+</div>
+
+<div class="card">
+<div class="card-header">Relevant Experience to Draw On</div>
+<div class="card-body">
+<div class="note">
+  <p><strong>Hands-on experience that maps well to this design:</strong></p>
+  <ul>
+    <li><strong>Test automation frameworks:</strong> Building a system that evaluates 100% of items against a set of rules is conceptually identical to test automation — frameworks that run assertions against outputs, generate reports, and flag failures. If you've built one, frame QA scoring as "test automation for conversations."</li>
+    <li><strong>Batch processing at scale:</strong> Running large batches of tests with result aggregation is the same pattern as scoring 500K conversations daily and computing agent scorecards.</li>
+    <li><strong>Monitoring and alerting:</strong> Experience setting up alerting (e.g. Grafana) is relevant to the alert service that notifies supervisors of compliance violations. Discuss alert grouping, threshold tuning, and reducing noise.</li>
+    <li><strong>Rule configurability:</strong> Test frameworks need configurable assertions — the same as the rule engine needing non-engineer configurability.</li>
+  </ul>
+</div>
+</div>
+</div>
+
+<div class="card collapsed">
+<div class="card-header">Common Follow-ups</div>
+<div class="card-body">
+<h3>Q: "How do you handle disagreements between ML score and human QA?"</h3>
+<p>Human QA score always wins for that specific conversation. But log the disagreement and feed it back as training data. Track disagreement rate per dimension — if empathy model disagrees with humans >20% of the time, retrain. Show "confidence" alongside ML scores.</p>
+
+<h3>Q: "How do you prevent gaming — agents optimizing for the score vs actual quality?"</h3>
+<p>Goodhart's Law defense: (1) Don't make individual rules visible to agents (only dimension-level scores), (2) Rotate rule weights periodically, (3) Include outcome metrics (customer satisfaction, resolution rate) that can't be gamed by transcript manipulation, (4) Human QA samples 5% as calibration.</p>
+
+<h3>Q: "How do you onboard a new client with different QA criteria?"</h3>
+<p>Template-based rule sets: start with industry template (financial, healthcare, retail), then customize. New client runs in "calibration mode" for 2 weeks — human QA scores 200 conversations, system trains thresholds to match human judgment, then goes live with monitoring.</p>
+
+<h3>Q: "What if the conversation is in a language the rule engine doesn't support?"</h3>
+<p>Two approaches: (1) Translate to English first, then apply rules (adds ~100ms, some nuance lost), (2) Build language-specific rule patterns for top languages. Chose: translate for long-tail languages, native rules for top-5 (80% of volume). ML models are already multilingual (black box).</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Terminology & Acronyms ===== -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>STT</strong></td><td>Speech-to-Text — transcribes call audio into text; treated as a black-box service here.</td></tr>
+<tr><td><strong>NLP</strong></td><td>Natural Language Processing — extracting intent, entities, and sentiment from transcript text.</td></tr>
+<tr><td><strong>LLM</strong></td><td>Large Language Model — the black-box model that generates natural-language answers.</td></tr>
+<tr><td><strong>LLM-as-judge</strong></td><td>Using an LLM to score or evaluate another system's output against a reference or rubric.</td></tr>
+<tr><td><strong>RAG</strong></td><td>Retrieval-Augmented Generation — retrieve relevant passages, then have an LLM generate an answer from them.</td></tr>
+<tr><td><strong>Embedding</strong></td><td>A dense numeric vector representing text so that semantically similar text sits close together.</td></tr>
+<tr><td><strong>Vector DB</strong></td><td>Database that stores embeddings and serves similarity (nearest-neighbor) search over them.</td></tr>
+<tr><td><strong>ANN</strong></td><td>Approximate Nearest Neighbor — similarity search that trades exactness for speed at scale.</td></tr>
+<tr><td><strong>HNSW</strong></td><td>Hierarchical Navigable Small World — a graph index enabling fast approximate nearest-neighbor search.</td></tr>
+<tr><td><strong>BM25</strong></td><td>Best Match 25 — a keyword-based relevance ranking function used in traditional text search.</td></tr>
+<tr><td><strong>RRF</strong></td><td>Reciprocal Rank Fusion — merges multiple ranked lists by summing 1/(k + rank) per document.</td></tr>
+<tr><td><strong>Quantization</strong></td><td>Compressing vectors (e.g. fp32 to int8, or product quantization/PQ) to cut memory at some accuracy cost.</td></tr>
+<tr><td><strong>Recall@k / NDCG</strong></td><td>Retrieval-quality metrics: recall@k = fraction of relevant items in the top k; NDCG = Normalized Discounted Cumulative Gain — ranking gain weighted toward top positions.</td></tr>
+<tr><td><strong>Reranking</strong></td><td>A second-pass model (or exact scoring) that re-orders the top candidate set retrieved by ANN/BM25 to improve precision before the LLM sees them.</td></tr>
+<tr><td><strong>Lambda architecture</strong></td><td>Pattern pairing a fast streaming path with an accurate batch path that is the source of truth.</td></tr>
+<tr><td><strong>QPS</strong></td><td>Queries Per Second — request throughput a component must handle.</td></tr>
+<tr><td><strong>SLA</strong></td><td>Service Level Agreement — a committed performance or availability target (e.g. handoff &lt;2s).</td></tr>
+<tr><td><strong>TTL</strong></td><td>Time To Live — expiry after which cached or stored data is automatically removed.</td></tr>
+<tr><td><strong>WebSocket</strong></td><td>Persistent bidirectional connection used to push suggestions and context to agent UIs.</td></tr>
+<tr><td><strong>WebRTC</strong></td><td>Web Real-Time Communication — browser-native real-time audio/video streaming.</td></tr>
+<tr><td><strong>SIP / SIPREC</strong></td><td>Session Initiation Protocol and its recording extension — telephony call signaling and media recording.</td></tr>
+<tr><td><strong>CCaaS</strong></td><td>Contact Center as a Service — cloud-hosted contact-center platforms (e.g. the vendors named).</td></tr>
+<tr><td><strong>WER / CER</strong></td><td>Word Error Rate / Character Error Rate — lexical accuracy metrics for transcription quality.</td></tr>
+</table>
+</div>
+
+<script>
+// Collapsible cards
+document.querySelectorAll('.card-header').forEach(header => {
+  const card = header.parentElement;
+  header.setAttribute('role', 'button');
+  header.setAttribute('tabindex', '0');
+  header.setAttribute('aria-expanded', card.classList.contains('collapsed') ? 'false' : 'true');
+  const toggleCard = () => {
+    card.classList.toggle('collapsed');
+    header.setAttribute('aria-expanded', card.classList.contains('collapsed') ? 'false' : 'true');
+  };
+  header.addEventListener('click', toggleCard);
+  header.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCard(); }
+  });
+});
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="automated_qa_scoring_design.html">‹ Automated QA Scoring</a><a class="bkc" href="index.html">📖 Contents</a><a href="ai_contact_center_knowledge.html">AI Contact Center — Domain Primer ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

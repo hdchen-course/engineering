@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shell / Bash Scripting Refresher — Safe, Portable Bash for Interviews &amp; Ops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #114f8c; --blue-l: #d0ebff; --green: #1d6b2e; --green-l: #d3f9d8;
+  --yellow: #a85700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #4a2fa8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1050px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.nav { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin: 18px 0 32px; position: sticky; top: 0; background: var(--bg); padding: 14px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 23px; font-weight: 700; margin: 28px 0 14px; color: var(--blue); }
+h3 { font-size: 17px; font-weight: 600; margin: 22px 0 10px; }
+h4 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 14px 18px; overflow-x: auto; margin: 10px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #cdd6f4; white-space: pre; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.warn p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.old { background: var(--red-l); border-left: 3px solid var(--red); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.old p { color: #8a1c1c; margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 18px; padding: 22px 26px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th, td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 16px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--purple-l); color:var(--purple); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VIII · Chapter 8 — <b>Shell / Bash Scripting Refresher</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Shell / Bash Scripting Refresher</h1>
+  <div class="sub">The syntax, idioms, and pitfalls of Bash — a tight, practical brush-up for someone who already programs and wants to write scripts that don't silently do the wrong thing</div>
+</header>
+
+<style id="sh-code-hl">
+.container pre .kw{color:#cba6f7}
+.container pre .cm{color:#9aa0bd;font-style:italic}
+.container pre .str{color:#a6e3a1}
+.container pre .num{color:#fab387}
+.container pre .fn{color:#89b4fa}
+.container pre .type{color:#f9e2af}
+</style>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'preamble')">Safe preamble</button>
+  <button class="nav-btn" onclick="showSection(event,'vars')">Variables &amp; quoting</button>
+  <button class="nav-btn" onclick="showSection(event,'splitting')">Splitting &amp; globbing</button>
+  <button class="nav-btn" onclick="showSection(event,'tests')">Tests &amp; control flow</button>
+  <button class="nav-btn" onclick="showSection(event,'functions')">Functions &amp; status</button>
+  <button class="nav-btn" onclick="showSection(event,'arrays')">Arrays</button>
+  <button class="nav-btn" onclick="showSection(event,'params')">Parameter expansion</button>
+  <button class="nav-btn" onclick="showSection(event,'redir')">Pipes &amp; redirection</button>
+  <button class="nav-btn" onclick="showSection(event,'toolbelt')">Text toolbelt</button>
+  <button class="nav-btn" onclick="showSection(event,'traps')">Traps, pitfalls &amp; tooling</button>
+</div>
+
+<!-- PREAMBLE -->
+<div class="section active" id="preamble">
+<div class="card">
+<h2>The safe-scripting preamble</h2>
+<p>Bash's defaults are forgiving in exactly the wrong way: a typo'd variable expands to the empty string, a failing command in the middle of a script is ignored, and a broken pipeline still reports success. The near-universal fix is a two-line preamble at the top of every non-trivial script.</p>
+<pre><span class="cm">#!/usr/bin/env bash</span>
+<span class="kw">set</span> -euo pipefail</pre>
+<table>
+<tr><th>Flag</th><th>What it does</th><th>Why you want it</th></tr>
+<tr><td><code>set -e</code></td><td>Exit immediately if any command returns non-zero (with exceptions).</td><td>A failed step no longer silently falls through to the next.</td></tr>
+<tr><td><code>set -u</code></td><td>Treat an expansion of an <em>unset</em> variable as an error.</td><td>Catches an unset <code>$dir</code> in <code>rm -rf "$dir/"</code> before it silently becomes <code>rm -rf /</code>.</td></tr>
+<tr><td><code>set -o pipefail</code></td><td>A pipeline fails if <em>any</em> stage fails, not just the last.</td><td><code>curl … | tar x</code> no longer "succeeds" when <code>curl</code> died.</td></tr>
+</table>
+<p>The shebang <code>#!/usr/bin/env bash</code> finds <code>bash</code> on <code>PATH</code> rather than hard-coding <code>/bin/bash</code> — important on macOS, where <code>/bin/bash</code> is a frozen 3.2, and modern Bash lives elsewhere.</p>
+
+<h3><code>-u</code> catches unset variables</h3>
+<pre><span class="kw">set</span> -euo pipefail
+<span class="fn">echo</span> <span class="str">"before"</span>
+<span class="fn">echo</span> <span class="str">"value=[</span><span class="str">${missing}</span><span class="str">]"</span>   <span class="cm"># never defined</span>
+<span class="fn">echo</span> <span class="str">"after"</span></pre>
+<pre><span class="cm"># → output (script aborts on line 3, exit status 1):</span>
+before
+script.sh: line 3: missing: unbound variable</pre>
+
+<h3>When <code>set -e</code> trips you up</h3>
+<p><code>set -e</code> is not magic; it has surprising blind spots. The classic trap is arithmetic that evaluates to zero — <code>(( ))</code> returns exit status 1 when its result is 0, and that trips <code>set -e</code>.</p>
+<pre><span class="kw">set</span> -euo pipefail
+count=<span class="num">0</span>
+<span class="fn">echo</span> <span class="str">"start"</span>
+(( count++ ))          <span class="cm"># post-increment yields the OLD value 0 → status 1</span>
+<span class="fn">echo</span> <span class="str">"count is now </span><span class="str">$count</span><span class="str">"</span></pre>
+<pre><span class="cm"># → output (aborts before the second echo!):</span>
+start</pre>
+<p>The fix is to make the arithmetic's status irrelevant: <code>(( count++ )) || true</code>, or better, <code>count=$(( count + 1 ))</code>. The same idiom rescues any command whose non-zero exit is expected:</p>
+<pre><span class="cm"># grep exits 1 when there is no match; that would abort under set -e</span>
+matches=$(<span class="fn">grep</span> -c <span class="str">"nobody"</span> /etc/passwd || <span class="kw">true</span>)
+<span class="fn">echo</span> <span class="str">"nobody lines: </span><span class="str">$matches</span><span class="str">"</span></pre>
+<pre><span class="cm"># → output:</span>
+nobody lines: 1</pre>
+<div class="warn"><p><code>set -e</code> is also disabled inside a command that is part of an <code>if</code>/<code>while</code> condition, a <code>&amp;&amp;</code>/<code>||</code> chain (except the last), or a function called in those contexts. Rely on it as a safety net, not as your error handling — check the exit codes that matter explicitly.</p></div>
+</div>
+</div>
+
+<!-- VARIABLES & QUOTING -->
+<div class="section" id="vars">
+<div class="card">
+<h2>Variables, quoting &amp; substitution</h2>
+<p>There are no types — everything is a string (arrays and integers are shallow conveniences on top). Assignment has <strong>no spaces</strong> around <code>=</code>. The single most important habit in all of shell scripting: <strong>always quote your expansions</strong> — <code>"$var"</code>, not <code>$var</code>.</p>
+<pre>name=<span class="str">"Ada Lovelace"</span>          <span class="cm"># no spaces around =</span>
+<span class="fn">echo</span> <span class="str">"name is: </span><span class="str">$name</span><span class="str">"</span>       <span class="cm"># always quote expansions</span>
+
+today=$(<span class="fn">date</span> -u +%Y-%m-%d)     <span class="cm"># command substitution: $(...) nests cleanly</span>
+<span class="fn">echo</span> <span class="str">"date: </span><span class="str">$today</span><span class="str">"</span>
+
+n=<span class="num">7</span>
+<span class="fn">echo</span> <span class="str">"sum: </span><span class="str">$(( n * 6 ))</span><span class="str">"</span>      <span class="cm"># arithmetic expansion</span>
+<span class="fn">echo</span> <span class="str">"pow: </span><span class="str">$(( 2 ** 10 ))</span><span class="str">"</span></pre>
+<pre><span class="cm"># → output:</span>
+name is: Ada Lovelace
+date: 2026-08-17
+sum: 42
+pow: 1024</pre>
+<div class="tip"><p>Prefer <code>$(...)</code> over backticks for command substitution: it nests without escaping and reads better. Use <code>$(( ))</code> for integer math — bash has no floats; reach for <code>awk</code> or <code>bc</code> when you need them.</p></div>
+
+<h3><code>"$@"</code> vs <code>"$*"</code> — a real difference</h3>
+<p>Both hold the positional parameters, but quoted they behave differently: <code>"$@"</code> expands to <strong>one word per argument</strong> (what you almost always want); <code>"$*"</code> joins them all into a <strong>single word</strong> separated by the first char of <code>IFS</code> (a space by default).</p>
+<pre><span class="fn">show</span>() {
+  <span class="fn">echo</span> <span class="str">"count = </span><span class="str">$#</span><span class="str">"</span>
+  <span class="fn">echo</span> <span class="str">'"$*" ->'</span>; <span class="kw">for</span> a <span class="kw">in</span> <span class="str">"$*"</span>; <span class="kw">do</span> <span class="fn">echo</span> <span class="str">"  [</span><span class="str">$a</span><span class="str">]"</span>; <span class="kw">done</span>
+  <span class="fn">echo</span> <span class="str">'"$@" ->'</span>; <span class="kw">for</span> a <span class="kw">in</span> <span class="str">"$@"</span>; <span class="kw">do</span> <span class="fn">echo</span> <span class="str">"  [</span><span class="str">$a</span><span class="str">]"</span>; <span class="kw">done</span>
+}
+<span class="fn">show</span> one <span class="str">"two three"</span> four</pre>
+<pre><span class="cm"># → output:</span>
+count = 3
+"$*" ->
+  [one two three four]
+"$@" ->
+  [one]
+  [two three]
+  [four]</pre>
+<div class="insight"><p><strong>Rule of thumb:</strong> to forward a script's arguments to another command intact, write <code>cmd "$@"</code>. Reaching for <code>$*</code> (or unquoted <code>$@</code>) is almost always a bug when any argument can contain spaces.</p></div>
+</div>
+</div>
+
+<!-- SPLITTING & GLOBBING -->
+<div class="section" id="splitting">
+<div class="card">
+<h2>Word-splitting &amp; globbing — why unquoted expansion is dangerous</h2>
+<p>When you leave an expansion unquoted, bash performs two extra steps on the result: <strong>word-splitting</strong> (on the characters in <code>IFS</code> — space, tab, newline) and <strong>filename expansion / globbing</strong> (<code>*</code>, <code>?</code>, <code>[…]</code>). This is why a filename with a space, or a value that happens to contain <code>*</code>, silently turns one argument into many.</p>
+<pre><span class="fn">count</span>() { <span class="fn">echo</span> <span class="str">"received </span><span class="str">$#</span><span class="str"> argument(s)"</span>; }
+var=<span class="str">"a b c"</span>
+<span class="fn">count</span> $var       <span class="cm"># UNQUOTED: word-splits into 3 args</span>
+<span class="fn">count</span> <span class="str">"$var"</span>     <span class="cm"># QUOTED:   stays 1 arg</span></pre>
+<pre><span class="cm"># → output:</span>
+received 3 argument(s)
+received 1 argument(s)</pre>
+
+<h3>Globbing fires on unquoted values too</h3>
+<pre>pattern=<span class="str">'*.txt'</span>           <span class="cm"># dir contains a.txt and b.txt</span>
+<span class="fn">echo</span> $pattern            <span class="cm"># unquoted: the glob is expanded</span>
+<span class="fn">echo</span> <span class="str">"$pattern"</span>          <span class="cm"># quoted: stays literal</span></pre>
+<pre><span class="cm"># → output:</span>
+a.txt b.txt
+*.txt</pre>
+<div class="warn"><p>The danger is data-dependent: the same script works for months, then a file named <code>my report.pdf</code> or a variable holding <code>*</code> quietly corrupts a loop or a <code>rm</code>. Quote everything, and let <code>shellcheck</code> flag what you miss.</p></div>
+
+<h3><code>IFS</code> — controlled splitting when you actually want it</h3>
+<p>Splitting is a feature when scoped tightly. Prefix a command with <code>IFS=…</code> to change the separator for that command only, and pair it with <code>read -r</code> to parse structured lines.</p>
+<pre>line=<span class="str">"root:x:0:0:root:/root:/bin/bash"</span>
+IFS=<span class="str">':'</span> <span class="fn">read</span> -r user _ uid _ &lt;&lt;&lt; <span class="str">"$line"</span>   <span class="cm"># split on ':' just here</span>
+<span class="fn">echo</span> <span class="str">"user=</span><span class="str">$user</span><span class="str"> uid=</span><span class="str">$uid</span><span class="str">"</span></pre>
+<pre><span class="cm"># → output:</span>
+user=root uid=0</pre>
+<div class="tip"><p><code>read -r</code> should be your default: without <code>-r</code>, <code>read</code> treats backslash as an escape and mangles paths like <code>C:\temp</code>. The <code>_</code> is a conventional throwaway name for fields you don't need.</p></div>
+</div>
+</div>
+
+<!-- TESTS & CONTROL FLOW -->
+<div class="section" id="tests">
+<div class="card">
+<h2>Conditionals &amp; tests: <code>[[ ]]</code> vs <code>[ ]</code></h2>
+<p><code>[ ]</code> is the old POSIX <code>test</code> builtin; <code>[[ ]]</code> is a bash keyword that is safer and more capable. Prefer <code>[[ ]]</code> in bash: it doesn't word-split or glob its operands (so an empty variable can't break the syntax), and it adds <code>==</code> glob matching and <code>=~</code> regex.</p>
+<pre>x=<span class="num">10</span>; y=<span class="num">9</span>
+[[ <span class="str">$x</span> -gt <span class="str">$y</span> ]] &amp;&amp; <span class="fn">echo</span> <span class="str">"numeric: 10 > 9"</span>       <span class="cm"># -gt/-eq compare as NUMBERS</span>
+[[ <span class="str">"$x"</span> &gt; <span class="str">"$y"</span> ]] || <span class="fn">echo</span> <span class="str">"string: '10' &lt; '9'"</span>  <span class="cm"># &gt; compares lexicographically!</span>
+s=<span class="str">"hello.txt"</span>
+[[ <span class="str">$s</span> == *.txt ]] &amp;&amp; <span class="fn">echo</span> <span class="str">"glob match: ends in .txt"</span>   <span class="cm"># == does glob matching</span>
+[[ <span class="str">$s</span> =~ ^h.*t$ ]] &amp;&amp; <span class="fn">echo</span> <span class="str">"regex match: ^h.*t$"</span>     <span class="cm"># =~ regex</span></pre>
+<pre><span class="cm"># → output:</span>
+numeric: 10 > 9
+string: '10' &lt; '9'
+glob match: ends in .txt
+regex match: ^h.*t$</pre>
+<div class="warn"><p>Use numeric operators (<code>-eq -ne -lt -gt</code>) for numbers and string operators (<code>== != &lt; &gt;</code>) for strings — never mix them. <code>[[ 10 &gt; 9 ]]</code> is <em>false</em> because it compares character by character. Inside <code>[[ ]]</code>, <code>&lt;</code> and <code>&gt;</code> are comparison, not redirection.</p></div>
+
+<h3>File tests</h3>
+<pre>[[ -e <span class="str">$f</span> ]] &amp;&amp; <span class="fn">echo</span> <span class="str">"-e exists"</span>
+[[ -f <span class="str">$f</span> ]] &amp;&amp; <span class="fn">echo</span> <span class="str">"-f regular file"</span>
+[[ -s <span class="str">$f</span> ]] || <span class="fn">echo</span> <span class="str">"-s false: file is empty"</span>
+[[ -d /tmp ]] &amp;&amp; <span class="fn">echo</span> <span class="str">"-d /tmp is a directory"</span></pre>
+<pre><span class="cm"># → output (f is a fresh empty temp file):</span>
+-e exists
+-f regular file
+-s false: file is empty
+-d /tmp is a directory</pre>
+
+<h3>Loops and <code>case</code></h3>
+<pre><span class="kw">for</span> i <span class="kw">in</span> <span class="num">1</span> <span class="num">2</span> <span class="num">3</span>; <span class="kw">do</span> <span class="fn">printf</span> <span class="str">'%s '</span> <span class="str">"$i"</span>; <span class="kw">done</span>; <span class="fn">echo</span>
+n=<span class="num">0</span>; <span class="kw">while</span> (( n &lt; <span class="num">3</span> )); <span class="kw">do</span> <span class="fn">printf</span> <span class="str">'w%d '</span> <span class="str">"$n"</span>; (( n++ )) || <span class="kw">true</span>; <span class="kw">done</span>; <span class="fn">echo</span>
+<span class="kw">for</span> f <span class="kw">in</span> one two; <span class="kw">do</span>
+  <span class="kw">case</span> <span class="str">$f</span> <span class="kw">in</span>
+    one)       <span class="fn">echo</span> <span class="str">"matched one"</span>;;
+    two|three) <span class="fn">echo</span> <span class="str">"matched two-or-three"</span>;;
+    *)         <span class="fn">echo</span> <span class="str">"default"</span>;;
+  <span class="kw">esac</span>
+<span class="kw">done</span></pre>
+<pre><span class="cm"># → output:</span>
+1 2 3
+w0 w1 w2
+matched one
+matched two-or-three</pre>
+
+<h3>Reading a stream line by line</h3>
+<p>The canonical safe reader: <code>IFS= read -r line</code>. Clearing <code>IFS</code> preserves leading/trailing whitespace; <code>-r</code> keeps backslashes literal.</p>
+<pre><span class="fn">printf</span> <span class="str">'alpha\nbeta gamma\n'</span> | <span class="kw">while</span> IFS= <span class="fn">read</span> -r line; <span class="kw">do</span>
+  <span class="fn">echo</span> <span class="str">"line: [</span><span class="str">$line</span><span class="str">]"</span>
+<span class="kw">done</span></pre>
+<pre><span class="cm"># → output:</span>
+line: [alpha]
+line: [beta gamma]</pre>
+</div>
+</div>
+
+<!-- FUNCTIONS & STATUS -->
+<div class="section" id="functions">
+<div class="card">
+<h2>Functions, <code>local</code>, and return codes</h2>
+<p>Functions take arguments positionally (<code>$1</code>, <code>$2</code>, <code>"$@"</code>) — you don't declare a parameter list. Two things to internalize: declare working variables <code>local</code> (bash has one global namespace otherwise), and know the two ways a function "returns" a result.</p>
+<ul>
+  <li><strong>A status</strong> (0–255, where 0 = success/true) via <code>return</code> — test it with <code>if</code> or <code>$?</code>.</li>
+  <li><strong>A value/string</strong> by <code>echo</code>-ing it and capturing with <code>$(func …)</code>.</li>
+</ul>
+<pre><span class="cm"># Return a STRING: echo it, capture with $(...)</span>
+<span class="fn">join_path</span>() {
+  <span class="kw">local</span> dir=<span class="str">$1</span> file=<span class="str">$2</span>       <span class="cm"># local: invisible to the caller</span>
+  <span class="fn">echo</span> <span class="str">"${dir%/}/$file"</span>
+}
+
+<span class="cm"># Return a STATUS: the exit code of the last command is the return code</span>
+<span class="fn">is_even</span>() {
+  (( <span class="str">$1</span> % <span class="num">2</span> == <span class="num">0</span> ))          <span class="cm"># (( )) status becomes the function's status</span>
+}
+
+p=$(<span class="fn">join_path</span> /var/log <span class="str">"app.log"</span>)
+<span class="fn">echo</span> <span class="str">"path: </span><span class="str">$p</span><span class="str">"</span>
+
+<span class="kw">if</span> <span class="fn">is_even</span> <span class="num">4</span>; <span class="kw">then</span> <span class="fn">echo</span> <span class="str">"4 is even"</span>; <span class="kw">fi</span>
+<span class="kw">if</span> <span class="fn">is_even</span> <span class="num">7</span>; <span class="kw">then</span> <span class="fn">echo</span> <span class="str">"7 is even"</span>; <span class="kw">else</span> <span class="fn">echo</span> <span class="str">"7 is odd (returned non-zero)"</span>; <span class="kw">fi</span></pre>
+<pre><span class="cm"># → output:</span>
+path: /var/log/app.log
+4 is even
+7 is odd (returned non-zero)</pre>
+<div class="warn"><p><code>return</code> only accepts a number 0–255; it is <em>not</em> for returning data. And <code>$?</code> is fragile — it reflects only the <strong>immediately preceding</strong> command, so capture it right away (<code>rc=$?</code>) if you need it after other commands run.</p></div>
+<div class="insight"><p><strong>Interview angle.</strong> "How does a shell function return a value?" — distinguish the exit <em>status</em> (small integer, meant for success/failure) from <em>output</em> captured via command substitution. Mixing them up (e.g. <code>return 42</code> to hand back a count) is a common bug.</p></div>
+</div>
+</div>
+
+<!-- ARRAYS -->
+<div class="section" id="arrays">
+<div class="card">
+<h2>Arrays &amp; associative arrays</h2>
+<p>Bash has real indexed arrays, and — since bash 4 — associative arrays (hash maps). The one rule you must not forget: expand them as <code>"${arr[@]}"</code> (quoted, with <code>@</code>) so each element stays one word.</p>
+<pre><span class="cm"># Indexed array</span>
+fruits=(apple <span class="str">"dragon fruit"</span> cherry)
+<span class="fn">echo</span> <span class="str">"count: ${#fruits[@]}"</span>          <span class="cm"># length</span>
+<span class="fn">echo</span> <span class="str">"first: ${fruits[0]}"</span>
+<span class="kw">for</span> f <span class="kw">in</span> <span class="str">"${fruits[@]}"</span>; <span class="kw">do</span>          <span class="cm"># ALWAYS quote [@]</span>
+  <span class="fn">echo</span> <span class="str">"  - </span><span class="str">$f</span><span class="str">"</span>
+<span class="kw">done</span>
+fruits+=(pear)                        <span class="cm"># append</span>
+<span class="fn">echo</span> <span class="str">"after append: ${#fruits[@]}"</span></pre>
+<pre><span class="cm"># → output:</span>
+count: 3
+first: apple
+  - apple
+  - dragon fruit
+  - cherry
+after append: 4</pre>
+
+<h3>Associative arrays (<code>declare -A</code>, bash 4+)</h3>
+<pre><span class="kw">declare</span> -A caps=( [France]=Paris [Japan]=Tokyo )
+caps[Kenya]=Nairobi
+<span class="fn">echo</span> <span class="str">"France -> ${caps[France]}"</span>
+<span class="fn">echo</span> <span class="str">"keys: ${!caps[@]}"</span>              <span class="cm"># ${!arr[@]} = the keys</span>
+<span class="fn">echo</span> <span class="str">"size: ${#caps[@]}"</span></pre>
+<pre><span class="cm"># → output (key order is unspecified — it's a hash):</span>
+France -> Paris
+keys: Kenya France Japan
+size: 3</pre>
+<div class="warn"><p><code>declare -A</code> is <strong>required</strong> before assigning an associative array — without it, <code>caps[France]=Paris</code> is treated as an <em>indexed</em> array subscripted by the arithmetic value of <code>France</code> (0), silently wrong. Associative arrays don't exist at all in bash 3.2 (macOS's default) or in POSIX <code>sh</code>.</p></div>
+<div class="insight"><p><strong>Traps:</strong> a bare <code>$arr</code> is just <code>${arr[0]}</code>, not the whole array. <code>"${arr[@]}"</code> gives elements as separate words; <code>"${arr[*]}"</code> joins them into one string. Iteration order of an associative array is not the insertion order.</p></div>
+</div>
+</div>
+
+<!-- PARAMETER EXPANSION -->
+<div class="section" id="params">
+<div class="card">
+<h2>Parameter expansion — string surgery without extra processes</h2>
+<p>Bash can slice, trim, default, and substitute inside <code>${…}</code> directly — no <code>sed</code>/<code>cut</code> subprocess needed. Learning these makes scripts both faster and clearer.</p>
+<pre>name=<span class="str">${1:-anon}</span>                 <span class="cm"># default if $1 is unset or empty</span>
+<span class="fn">echo</span> <span class="str">"name: </span><span class="str">$name</span><span class="str">"</span>
+
+path=<span class="str">"/usr/local/bin/tool.tar.gz"</span>
+<span class="fn">echo</span> <span class="str">"basename:      ${path##*/}"</span>     <span class="cm"># strip longest leading */</span>
+<span class="fn">echo</span> <span class="str">"dirname:       ${path%/*}"</span>      <span class="cm"># strip shortest trailing /*</span>
+<span class="fn">echo</span> <span class="str">"strip .gz:     ${path%.gz}"</span>     <span class="cm"># % = shortest trailing match</span>
+<span class="fn">echo</span> <span class="str">"strip .tar.gz: ${path%%.*}"</span>     <span class="cm"># %% = longest trailing match</span>
+
+csv=<span class="str">"a,b,c,b"</span>
+<span class="fn">echo</span> <span class="str">"replace first: ${csv/b/X}"</span>      <span class="cm"># / = first match</span>
+<span class="fn">echo</span> <span class="str">"replace all:   ${csv//b/X}"</span>     <span class="cm"># // = every match</span>
+
+s=<span class="str">"hello world"</span>
+<span class="fn">echo</span> <span class="str">"substring 0:5: ${s:0:5}"</span>        <span class="cm"># offset:length</span>
+<span class="fn">echo</span> <span class="str">"length:        ${#s}"</span></pre>
+<pre><span class="cm"># → output:</span>
+name: anon
+basename:      tool.tar.gz
+dirname:       /usr/local/bin
+strip .gz:     /usr/local/bin/tool.tar
+strip .tar.gz: /usr/local/bin/tool
+replace first: a,X,c,b
+replace all:   a,X,c,X
+substring 0:5: hello
+length:        11</pre>
+<div class="tip"><p>Mnemonic for the trim operators: <code>#</code> is on the left of most keyboards, so <code>#</code>/<code>##</code> trim from the <strong>front</strong>; <code>%</code> is on the right, so <code>%</code>/<code>%%</code> trim from the <strong>back</strong>. Single = shortest match, doubled = longest.</p></div>
+
+<h3>Requiring a variable: <code>${x:?message}</code></h3>
+<pre>: <span class="str">"${API_TOKEN:?must be set}"</span>    <span class="cm"># abort with a message if unset/empty</span>
+<span class="fn">echo</span> <span class="str">"token present"</span></pre>
+<pre><span class="cm"># → output when API_TOKEN is unset (exit status 1):</span>
+script.sh: line 1: API_TOKEN: must be set</pre>
+<div class="insight"><p>The leading <code>:</code> is the no-op builtin — it does nothing but expand its arguments, which is exactly what triggers the <code>:?</code> check. This is the cleanest way to assert required inputs at the top of a script.</p></div>
+</div>
+</div>
+
+<!-- PIPES & REDIRECTION -->
+<div class="section" id="redir">
+<div class="card">
+<h2>Pipes, redirection &amp; here-documents</h2>
+<p>Every process has three standard streams: stdin (0), stdout (1), stderr (2). Redirection wires them to files or to each other; pipes wire one command's stdout to the next's stdin.</p>
+<pre><span class="fn">echo</span> <span class="str">"first line"</span>  &gt; log.txt     <span class="cm"># &gt; truncates/creates</span>
+<span class="fn">echo</span> <span class="str">"second line"</span> &gt;&gt; log.txt    <span class="cm"># &gt;&gt; appends</span>
+<span class="fn">cat</span> log.txt
+
+<span class="cm"># 2&gt;&amp;1 merges stderr into stdout so a pipe/redirect sees both</span>
+<span class="fn">ls</span> log.txt nope.txt <span class="num">2</span>&gt;&amp;<span class="num">1</span> | <span class="fn">sort</span></pre>
+<pre><span class="cm"># → output:</span>
+first line
+second line
+log.txt
+ls: nope.txt: No such file or directory</pre>
+<div class="warn"><p>Order matters: <code>&gt;file 2&gt;&amp;1</code> sends both streams to the file, but <code>2&gt;&amp;1 &gt;file</code> sends stderr to the <em>old</em> stdout (the terminal) and only stdout to the file — because <code>2&gt;&amp;1</code> copies wherever stdout points <em>at that moment</em>.</p></div>
+
+<h3>Here-documents and here-strings</h3>
+<pre><span class="cm"># here-doc: a multi-line block fed to stdin; $vars expand unless the tag is quoted</span>
+release=<span class="str">"1.2.0"</span>
+<span class="fn">cat</span> &lt;&lt;EOF
+version=<span class="str">$release</span>
+literal=\<span class="str">$release</span>
+EOF
+
+<span class="cm"># here-string: one string fed to stdin</span>
+<span class="fn">wc</span> -w &lt;&lt;&lt; <span class="str">"count these five little words"</span></pre>
+<pre><span class="cm"># → output:</span>
+version=1.2.0
+literal=$release
+       5</pre>
+<p>Quote the delimiter (<code>&lt;&lt;'EOF'</code>) to disable all expansion inside the body — essential when the block contains literal <code>$</code> or backticks (e.g. embedding another script).</p>
+
+<h3>Process substitution <code>&lt;(…)</code></h3>
+<p><code>&lt;(cmd)</code> makes a command's output look like a file, so tools that want file arguments can read a stream — no temp file needed.</p>
+<pre><span class="cm"># diff two command outputs directly</span>
+<span class="fn">diff</span> &lt;(<span class="fn">printf</span> <span class="str">'a\nb\nc\n'</span>) &lt;(<span class="fn">printf</span> <span class="str">'a\nB\nc\n'</span>)</pre>
+<pre><span class="cm"># → output:</span>
+2c2
+&lt; b
+---
+&gt; B</pre>
+</div>
+</div>
+
+<!-- TEXT TOOLBELT -->
+<div class="section" id="toolbelt">
+<div class="card">
+<h2>The text toolbelt: high-value one-liners</h2>
+<p>The real power of shell is gluing together small tools. The following operate on this sample (fruit + count per line), piped in via <code>echo "$data"</code>:</p>
+<pre>data=<span class="str">'apple 3
+banana 5
+apple 2
+cherry 9
+banana 1'</span></pre>
+
+<h3>sort by a numeric column, take the top 3</h3>
+<pre><span class="fn">echo</span> <span class="str">"$data"</span> | <span class="fn">sort</span> -k2 -nr | <span class="fn">head</span> -3</pre>
+<pre><span class="cm"># → output:</span>
+cherry 9
+banana 5
+apple 3</pre>
+
+<h3>sum a column with awk</h3>
+<pre><span class="fn">echo</span> <span class="str">"$data"</span> | <span class="fn">awk</span> <span class="str">'{ sum += $2 } END { print "total:", sum }'</span></pre>
+<pre><span class="cm"># → output:</span>
+total: 20</pre>
+
+<h3>count occurrences (the classic <code>sort | uniq -c</code>)</h3>
+<pre><span class="fn">echo</span> <span class="str">"$data"</span> | <span class="fn">cut</span> -d<span class="str">' '</span> -f1 | <span class="fn">sort</span> | <span class="fn">uniq</span> -c</pre>
+<pre><span class="cm"># → output:</span>
+   2 apple
+   2 banana
+   1 cherry</pre>
+<div class="warn"><p><code>uniq</code> only collapses <em>adjacent</em> duplicate lines, so it must be preceded by <code>sort</code>. <code>sort -u</code> is a shortcut for "sort then drop duplicates" but does not give you the counts.</p></div>
+
+<h3>substitute with sed, filter with grep</h3>
+<pre><span class="fn">echo</span> <span class="str">"$data"</span> | <span class="fn">sed</span> <span class="str">'s/apple/APPLE/'</span> | <span class="fn">grep</span> <span class="str">'^banana'</span></pre>
+<pre><span class="cm"># → output (sed replaces first match per line; grep keeps banana lines):</span>
+banana 5
+banana 1</pre>
+
+<h3>xargs: turn a stream into arguments</h3>
+<pre><span class="fn">printf</span> <span class="str">'a\nb\nc\n'</span> | <span class="fn">xargs</span> -n1 <span class="fn">echo</span> <span class="str">"item:"</span>
+<span class="fn">printf</span> <span class="str">'x\ny\n'</span>    | <span class="fn">xargs</span> -I{} <span class="fn">echo</span> <span class="str">"wrap [{}]"</span></pre>
+<pre><span class="cm"># → output:</span>
+item: a
+item: b
+item: c
+wrap [x]
+wrap [y]</pre>
+<div class="tip"><p>For filenames that may contain spaces or newlines, pair <code>find … -print0</code> with <code>xargs -0</code> (NUL-delimited) so nothing gets word-split. <code>-n1</code> runs the command once per input; <code>-I{}</code> substitutes each input into a template.</p></div>
+</div>
+</div>
+
+<!-- TRAPS, PITFALLS & TOOLING -->
+<div class="section" id="traps">
+<div class="card">
+<h2>Traps &amp; cleanup</h2>
+<p>Bash has no <code>finally</code>, but <code>trap … EXIT</code> is better: the handler runs on <em>every</em> exit path — normal return, <code>set -e</code> abort, or a signal. Combine it with <code>mktemp</code> for leak-free temp files.</p>
+<pre>work=$(<span class="fn">mktemp</span> -d)
+<span class="fn">cleanup</span>() { <span class="fn">rm</span> -rf <span class="str">"$work"</span>; <span class="fn">echo</span> <span class="str">"cleaned up temp dir"</span>; }
+<span class="kw">trap</span> cleanup EXIT          <span class="cm"># runs on ANY exit: normal, error, or signal</span>
+
+<span class="fn">echo</span> <span class="str">"working in a temp dir..."</span>
+<span class="fn">echo</span> data &gt; <span class="str">"$work/file"</span>
+<span class="cm"># no explicit rm needed — the trap handles it even on early exit</span></pre>
+<pre><span class="cm"># → output:</span>
+working in a temp dir...
+cleaned up temp dir</pre>
+<div class="tip"><p>Always create temp files with <code>mktemp</code> (or <code>mktemp -d</code> for a directory) — never a fixed path like <code>/tmp/mytmp</code>, which is a race condition and a symlink-attack vector. Register the cleanup trap immediately after creating the temp file.</p></div>
+</div>
+
+<div class="card">
+<h2>Common pitfalls (and their fixes)</h2>
+
+<h3>1 · <code>[ $x = yes ]</code> when <code>$x</code> is empty</h3>
+<p>With the old single-bracket test, an empty unquoted <code>$x</code> vanishes and the shell sees <code>[ = yes ]</code> — a syntax error.</p>
+<pre>x=<span class="str">""</span>
+<span class="kw">if</span> [ <span class="str">$x</span> = yes ]; <span class="kw">then</span> <span class="fn">echo</span> <span class="str">"unreachable"</span>; <span class="kw">fi</span></pre>
+<pre><span class="cm"># → output:</span>
+script.sh: line 2: [: =: unary operator expected</pre>
+<p>Fix: quote the variable, or use <code>[[ ]]</code> (which doesn't split its operands):</p>
+<pre>x=<span class="str">""</span>
+<span class="kw">if</span> [ <span class="str">"$x"</span> = yes ]; <span class="kw">then</span> …; <span class="kw">else</span> <span class="fn">echo</span> <span class="str">"quoted [ ]: not yes (no error)"</span>; <span class="kw">fi</span>
+<span class="kw">if</span> [[ <span class="str">$x</span> == yes ]]; <span class="kw">then</span> …; <span class="kw">else</span> <span class="fn">echo</span> <span class="str">"[[ ]]: safe even unquoted"</span>; <span class="kw">fi</span></pre>
+<pre><span class="cm"># → output:</span>
+quoted [ ]: not yes (no error)
+[[ ]]: safe even unquoted</pre>
+
+<h3>2 · A variable set inside a pipe is lost</h3>
+<p>Each stage of a pipeline runs in a <strong>subshell</strong>, so a variable modified in <code>… | while read</code> reverts once the pipe ends. Feed the loop with process substitution or a here-string instead, so it runs in the current shell.</p>
+<pre>count=<span class="num">0</span>
+<span class="fn">printf</span> <span class="str">'a\nb\nc\n'</span> | <span class="kw">while</span> <span class="fn">read</span> -r _; <span class="kw">do</span> (( count++ )) || <span class="kw">true</span>; <span class="kw">done</span>
+<span class="fn">echo</span> <span class="str">"after pipe:    count=</span><span class="str">$count</span><span class="str">"</span>   <span class="cm"># 0 — the while ran in a subshell</span>
+
+count=<span class="num">0</span>
+<span class="kw">while</span> <span class="fn">read</span> -r _; <span class="kw">do</span> (( count++ )) || <span class="kw">true</span>; <span class="kw">done</span> &lt; &lt;(<span class="fn">printf</span> <span class="str">'a\nb\nc\n'</span>)
+<span class="fn">echo</span> <span class="str">"after procsub: count=</span><span class="str">$count</span><span class="str">"</span>   <span class="cm"># 3 — same shell keeps the value</span></pre>
+<pre><span class="cm"># → output:</span>
+after pipe:    count=0
+after procsub: count=3</pre>
+
+<h3>3 · <code>cd</code> without a guard</h3>
+<p>If a <code>cd</code> fails and the script keeps going, the next commands run in the wrong directory — occasionally catastrophically (<code>cd build; rm -rf ./*</code>). Guard it.</p>
+<pre><span class="kw">cd</span> /no/such/dir || { <span class="fn">echo</span> <span class="str">"cd failed, aborting"</span>; <span class="fn">exit</span> <span class="num">1</span>; }
+<span class="fn">echo</span> <span class="str">"unreachable"</span></pre>
+<pre><span class="cm"># → output (exit status 1):</span>
+script.sh: line 1: cd: /no/such/dir: No such file or directory
+cd failed, aborting</pre>
+<div class="warn"><p>Other common traps: <strong>parsing <code>ls</code></strong> (<code>for f in $(ls)</code> breaks on spaces/newlines — glob directly with <code>for f in *</code>); forgetting <code>-r</code> on <code>read</code>; and unquoted expansions everywhere. A linter catches most of these mechanically — see below.</p></div>
+</div>
+
+<div class="card">
+<h2>Tooling &amp; portability</h2>
+<h3><code>shellcheck</code> — run it on every script</h3>
+<p><code>shellcheck</code> is a static analyzer that flags the exact mistakes above with links to explanations. Wire it into CI and your editor.</p>
+<pre><span class="cm"># bad.sh</span>
+<span class="cm">#!/usr/bin/env bash</span>
+<span class="kw">for</span> f <span class="kw">in</span> $(<span class="fn">ls</span> *.log); <span class="kw">do</span>
+  <span class="fn">rm</span> $f
+<span class="kw">done</span></pre>
+<pre><span class="cm"># → shellcheck bad.sh</span>
+In bad.sh line 2:
+for f in $(ls *.log); do
+         ^---------^ SC2045 (error): Iterating over ls output is fragile. Use globs.
+              ^-- SC2035 (info): Use ./*glob* or -- *glob* so names with dashes won't become options.
+
+In bad.sh line 3:
+  rm $f
+     ^-- SC2086 (info): Double quote to prevent globbing and word splitting.
+
+Did you mean:
+  rm "$f"</pre>
+
+<h3>bash vs POSIX <code>sh</code></h3>
+<p>Not every machine has bash, and <code>#!/bin/sh</code> may be a minimal POSIX shell (e.g. <code>dash</code> on Debian/Ubuntu). Bash-only features — arrays, <code>[[ ]]</code>, <code>local</code>, <code>${var//…}</code>, process substitution — are "bashisms" that break under a strict <code>sh</code>. The same array script run under <code>dash</code>:</p>
+<pre><span class="cm"># arr.sh:  arr=(one two three); echo "${arr[1]}"</span>
+<span class="cm"># → under bash:</span>
+two
+<span class="cm"># → under dash (a POSIX sh):</span>
+arr.sh: 1: Syntax error: "(" unexpected</pre>
+<div class="tip"><p>Decide up front: if you need arrays and the niceties, write <code>#!/usr/bin/env bash</code> and own it. If the script must run anywhere (init systems, containers, embedded), target POSIX <code>sh</code> and let <code>shellcheck -s sh</code> enforce it. Don't write <code>#!/bin/sh</code> at the top and then use bashisms — that's the combination that breaks mysteriously on another host.</p></div>
+<div class="insight"><p><strong>Interview angle.</strong> Good answers to "how do you write a robust shell script?" hit: the <code>set -euo pipefail</code> preamble, quoting every expansion, <code>[[ ]]</code> over <code>[ ]</code>, <code>mktemp</code> + <code>trap … EXIT</code> for cleanup, checking exit codes, and running <code>shellcheck</code>. Bonus: knowing <em>when</em> to stop and reach for Python — shell is superb glue but a poor place for data structures and real logic.</p></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Bash</strong></td><td>The GNU Bourne-Again Shell — the interactive shell and scripting language this chapter targets.</td></tr>
+<tr><td><strong>Shebang</strong></td><td>The <code>#!/usr/bin/env bash</code> first line that tells the OS which interpreter runs the script.</td></tr>
+<tr><td><strong>set -euo pipefail</strong></td><td>The safe preamble: exit on error (<code>-e</code>), error on unset variables (<code>-u</code>), and fail a pipeline if any stage fails.</td></tr>
+<tr><td><strong>Command substitution</strong></td><td><code>$(...)</code> — replaces the expression with the captured stdout of the command inside.</td></tr>
+<tr><td><strong>Arithmetic expansion</strong></td><td><code>$(( ))</code> — evaluates an integer expression; Bash has no floating-point math.</td></tr>
+<tr><td><strong>Positional parameters</strong></td><td>A script or function's arguments <code>$1</code>, <code>$2</code>, …; <code>"$@"</code> keeps each as a separate word.</td></tr>
+<tr><td><strong>IFS</strong></td><td>Internal Field Separator — the characters (space, tab, newline by default) on which Bash splits words.</td></tr>
+<tr><td><strong>Word-splitting</strong></td><td>Bash's breaking of an unquoted expansion into multiple words on IFS characters.</td></tr>
+<tr><td><strong>Globbing</strong></td><td>Filename expansion of <code>*</code>, <code>?</code>, and <code>[…]</code> against matching files.</td></tr>
+<tr><td><strong>[[ ]]</strong></td><td>Bash's test keyword — safer than the POSIX <code>[ ]</code> builtin, adding glob (<code>==</code>) and regex (<code>=~</code>) matching.</td></tr>
+<tr><td><strong>local</strong></td><td>Keyword that scopes a variable to its function, avoiding Bash's otherwise-global namespace.</td></tr>
+<tr><td><strong>Exit status</strong></td><td>A command's 0–255 return code; 0 means success/true, non-zero means failure.</td></tr>
+<tr><td><strong>Associative array</strong></td><td>A key→value hash map (bash 4+), declared with <code>declare -A</code>; iteration order is unspecified.</td></tr>
+<tr><td><strong>Parameter expansion</strong></td><td>The <code>${…}</code> syntax for slicing, trimming, defaulting, and substituting strings without extra processes.</td></tr>
+<tr><td><strong>Here-document</strong></td><td><code>&lt;&lt;EOF</code> — a multi-line block fed to a command's stdin; a quoted tag disables expansion.</td></tr>
+<tr><td><strong>Process substitution</strong></td><td><code>&lt;(cmd)</code> — presents a command's output as a readable file, avoiding a temp file.</td></tr>
+<tr><td><strong>Subshell</strong></td><td>A child shell (e.g. each pipeline stage) whose variable changes don't persist in the parent.</td></tr>
+<tr><td><strong>trap</strong></td><td>Registers a handler to run on signals or on <code>EXIT</code> — the idiomatic way to guarantee cleanup.</td></tr>
+<tr><td><strong>mktemp</strong></td><td>Safely creates a unique temp file or directory, avoiding race conditions and symlink attacks.</td></tr>
+<tr><td><strong>shellcheck</strong></td><td>A static analyzer that flags common shell bugs such as unquoted expansions and parsing <code>ls</code>.</td></tr>
+<tr><td><strong>POSIX sh</strong></td><td>The portable shell standard; bash-only features (arrays, <code>[[ ]]</code>, <code>local</code>) are "bashisms" that break under it.</td></tr>
+</table>
+</div>
+
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  evt.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="ai_assisted_engineering_prep.html">‹ AI-Assisted Engineering</a><a class="bkc" href="index.html">📖 Contents</a><a href="rust_refresher.html">Rust Refresher ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

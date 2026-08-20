@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Systems &amp; Cluster SWE — Turning a Rack of Accelerators into a Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --sw: 260px;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+#sb {
+  width: var(--sw);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; bottom: 0;
+  overflow-y: auto; z-index: 100;
+  transition: width .3s ease;
+}
+#sb::-webkit-scrollbar { width: 4px; }
+#sb::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.sbh {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.sbt { font-size: 13px; font-weight: 700; color: var(--blue-d); text-transform: uppercase; letter-spacing: 1px; }
+.sbs { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.ng { padding: 12px 8px 0; }
+.ngl { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 6px; }
+.ni {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: var(--text2);
+  transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+}
+.ni:hover { background: var(--bg3); color: var(--text); }
+.ni.active { background: var(--blue-l); color: var(--blue-d); font-weight: 600; }
+.ni-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.ni-text { flex: 1; font-size: 12px; }
+.badge { margin-left: auto; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+.bh { background: var(--red-l); color: var(--red); }
+.bg { background: var(--green-l); color: var(--green); }
+.bp { background: var(--purple-l); color: var(--purple); }
+.bt { background: var(--teal-l); color: var(--teal); }
+.bo { background: var(--orange-l); color: var(--orange); }
+
+/* MAIN — normal document flow, centered like the rest of the book */
+#main { background: var(--bg); }
+.container { max-width: 1080px; margin: 0 auto; padding: 20px 20px 0; }
+
+/* TOP SECTION NAV (site style, sticky) */
+.nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 14px 0; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; font-family: 'Inter', sans-serif; transition: all .2s; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue-d); border-color: var(--blue); }
+
+/* HEADER */
+.ph {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px;
+  border-radius: var(--r);
+  margin: 8px 0 4px;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #93c5fd; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 650px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+.sec { padding: 28px 4px; display: none; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: #fff; border-radius: var(--r); margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+.note p, .container p, .container li, .container td { overflow-wrap: anywhere; word-break: break-word; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--blue-l); color: var(--blue-d); font-size: 11px; font-weight: 500; margin: 2px; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* INTERVIEW QUOTE */
+.iq {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--text2);
+  font-size: 13px;
+  position: relative;
+}
+.iq::before {
+  content: 'SAY THIS';
+  position: absolute;
+  top: -8px; left: 14px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  background: var(--blue);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+h4.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* SKILL BOX */
+.skill-box {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 18px; margin: 10px 0; box-shadow: var(--shadow-sm);
+}
+.skill-box h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.skill-box ul { padding-left: 18px; font-size: 13px; color: var(--text2); }
+.skill-box li { margin-bottom: 4px; }
+
+/* SVG CONTAINERS */
+.svg-container {
+  margin: 20px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.svg-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* PROGRESS */
+.prog { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.pc { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow-sm); text-align: center; }
+.pc .num { font-size: 28px; font-weight: 800; color: var(--blue-d); }
+.pc .lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg3); padding: 1px 5px; border-radius: 4px; color: var(--blue-d); }
+
+pre, pre.codeblock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+  line-height: 1.6;
+  color: var(--text2);
+  white-space: pre;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: 12px; }
+
+/* LIST STYLING */
+.content-list { padding-left: 20px; margin: 8px 0; }
+.content-list li { margin-bottom: 6px; font-size: 13px; color: var(--text2); }
+.content-list li strong { color: var(--text); }
+
+/* DECISION GRID */
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.decision-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.decision-item .dt {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-d);
+  margin-bottom: 6px;
+}
+.decision-item p {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.decision-item .di-key {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+@media (max-width: 768px) {
+  #sb { width: 0; overflow: hidden; }
+  #main { left: 0; }
+  .sec { padding: 20px 16px; }
+  .ph { padding: 24px 16px; }
+}
+a.lc { color: var(--blue); text-decoration: none; font-weight: 500; }
+a.lc:hover { text-decoration: underline; color: var(--blue-d); }
+</style>
+
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<style id="chapter-extra">
+/* code syntax spans */
+pre .kw{color:#c586c0;font-weight:600}
+pre .cm{color:#6a9955;font-style:italic}
+pre .num{color:#b5cea8}
+pre .str{color:#ce9178}
+pre .fn{color:#4ec9b0}
+/* dark code look for this chapter's pre blocks */
+pre.codeblock{background:#1a1b26;color:#c0caf5;border-color:#2a2b3c}
+/* replayable step players */
+.player{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:16px;margin:16px 0;box-shadow:var(--shadow-sm)}
+.player-stage{background:var(--bg3);border-radius:8px;padding:8px;overflow-x:auto}
+.player-ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.player-ctrls button{padding:7px 14px;border-radius:8px;border:1px solid var(--blue);background:var(--blue);color:#fff;cursor:pointer;font-size:12.5px;font-weight:600;font-family:'Inter',sans-serif;transition:all .15s}
+.player-ctrls button:hover{background:var(--blue-d)}
+.player-ctrls button.ghost{background:#fff;color:var(--blue-d)}
+.player-ctrls button:disabled{opacity:.45;cursor:not-allowed}
+.player-step{font-size:13px;color:var(--text2);margin-left:6px;min-height:1.4em}
+.player-step b{color:var(--text)}
+.pill{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--blue-l);color:var(--blue-d);letter-spacing:.4px}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VI · Chapter 11 — <b>ML Systems &amp; Cluster SWE</b></span><span class="bkspacer"></span></nav>
+
+<div id="main">
+<div class="container">
+
+<div class="ph">
+  <div class="htag">Part VI · Chapter 11 · ML Systems &amp; Cluster Software Engineering</div>
+  <div class="ht">From a Rack of Chips to a <span>Usable AI Supercomputer</span></div>
+  <div class="hd">The software layer that turns thousands of accelerators (GPUs, TPUs, custom ASICs) into one machine that trains and serves giant models. This is the work of Inference-Runtime, ML-Systems / Cluster / Supercomputing, Distributed-Training, Compiler, Kernel, Profiling, and ML-Platform engineers at NVIDIA, Google, and custom-silicon AI startups &mdash; explicitly the <b>software</b> layer, not firmware or silicon.</div>
+  <div class="hm">
+    <div class="chip">Layer <b>ML systems software</b></div>
+    <div class="chip">Not <b>firmware / RTL</b></div>
+    <div class="chip">Animations <b>3 replayable</b></div>
+    <div class="chip">Level <b>Senior / Staff SWE</b></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="go('landscape')">The Landscape</button>
+  <button class="nav-btn" onclick="go('collectives')">Collective Comms</button>
+  <button class="nav-btn" onclick="go('parallelism')">Parallelism &amp; Sharding</button>
+  <button class="nav-btn" onclick="go('inference')">Inference Runtime</button>
+  <button class="nav-btn" onclick="go('scheduling')">Scheduling &amp; Topology</button>
+  <button class="nav-btn" onclick="go('reliability')">Reliability &amp; Observability</button>
+  <button class="nav-btn" onclick="go('profiling')">Performance Profiling</button>
+  <button class="nav-btn" onclick="go('endtoend')">End-to-End</button>
+  <button class="nav-btn" onclick="go('prep')">How to Prep</button>
+</nav>
+
+<!-- ============================ 1. LANDSCAPE ============================ -->
+<div class="sec active" id="tab-landscape">
+<h2 class="stitle">The Landscape — What These SWE Roles Actually Build</h2>
+<div class="sdesc">Software, not firmware. The job is to make a warehouse of accelerators behave like one programmable computer.</div>
+
+<p><strong>The one-sentence analogy:</strong> a single accelerator is like one very fast chef. A modern model is a banquet no single chef can cook &mdash; the ingredients (weights) don't even fit on one counter (one chip's memory). So you hire thousands of chefs, and you need a <em>kitchen operating system</em>: someone to split the recipe, route ingredients between stations, keep everyone in sync, replace a chef who faints mid-service, and tell you which station is the slow one. That kitchen OS is the software these engineers write. The chefs (silicon) and their reflexes (firmware) are someone else's job.</p>
+
+<div class="ins"><div class="insl">THE LINE THIS CHAPTER DRAWS</div><p><strong>Firmware/hardware</strong> = the chip's microcode, the NVLink/ICI PHY, the memory controller, the RTL. <strong>ML-systems software</strong> (this chapter) = everything from the CUDA/XLA kernel up: collective libraries, training frameworks, inference servers, schedulers, IaC control planes, telemetry pipelines, and profilers. If it ships as a container, a binary, a Terraform module, or a PromQL query &mdash; it's this chapter. If it ships as a bitstream or a driver you flash, it's not.</p></div>
+
+<h3 class="sub">Tiny worked example: why you can't just "buy a bigger chip"</h3>
+<p>A 70-billion-parameter model in 16-bit precision needs <code>70e9 &times; 2 bytes = 140 GB</code> just for weights. Training needs far more: optimizer state for Adam is ~<code>12 bytes/param</code> (fp32 momentum + variance + primary copy) &rarr; <code>~840 GB</code>, plus gradients and activations. A top GPU has ~80&ndash;192 GB of memory. So <em>even inference</em> can need multiple chips &mdash; 140 GB of weights already overflows an 80 GB GPU, and the KV cache, activations, and batch headroom push past even a 192 GB one &mdash; and <em>training</em> needs dozens-to-thousands, wired so they can act as one. Every topic in this chapter falls out of that single fact.</p>
+
+<h3 class="sub">The role families, mapped to concrete deliverables</h3>
+<table class="tbl">
+<thead><tr><th>Role family</th><th>What they actually build (software)</th><th>Core skills</th></tr></thead>
+<tbody>
+<tr><td><strong>Inference Runtime / Serving</strong></td><td>The engine that answers requests: continuous batching, KV-cache/paged attention, scheduler, quantized kernels, speculative decoding, streaming transport.</td><td>C++/CUDA, Python, scheduling, memory management, latency SLOs</td></tr>
+<tr><td><strong>ML Systems / Cluster &amp; Supercomputing</strong></td><td>Cluster orchestration &amp; control plane; job launch across thousands of nodes; telemetry from millions of metrics; the "kitchen OS."</td><td>Go/Rust/Python/C++, Kubernetes, SLURM, Terraform/OpenTofu, Prometheus/Grafana/Loki/VictoriaMetrics, Bazel</td></tr>
+<tr><td><strong>Distributed Training</strong></td><td>Parallelism strategies (DP/TP/PP/EP), FSDP/ZeRO sharding, distributed checkpointing, elastic + fault-tolerant training loops.</td><td>PyTorch/JAX internals, NCCL/collectives, numerics, checkpoint formats</td></tr>
+<tr><td><strong>Compiler / Graph Lowering</strong></td><td>Turn a model graph into fast kernels: IR passes, operator fusion, layout &amp; memory planning, auto-sharding, codegen (XLA / MLIR).</td><td>MLIR/LLVM, XLA/HLO, dataflow analysis, cost models</td></tr>
+<tr><td><strong>GPU / Accelerator Kernel</strong></td><td>Hand-tuned GEMM &amp; attention kernels: tiling, tensor-core / systolic-array scheduling, async copies, epilogue fusion.</td><td>CUDA/Triton/ROCm/Pallas, PTX, roofline reasoning</td></tr>
+<tr><td><strong>Performance / Profiling</strong></td><td>A perf-analysis suite from hardware counters + PCIe/host tracing: roofline tooling, bottleneck classifiers, regression gates.</td><td>CUPTI/Nsight, DCGM, trace correlation, statistics</td></tr>
+<tr><td><strong>ML Infrastructure / Platform</strong></td><td>The developer experience: submit-a-job CLI/API, hermetic images, experiment lineage, model-CI, quota/cost, IaC for hybrid HPC+cloud.</td><td>K8s/SLURM, CI/CD, Terraform, gRPC/REST, storage</td></tr>
+</tbody>
+</table>
+
+<div class="note"><div class="notel">REAL POSTINGS (paraphrased)</div><p>A representative custom-AI-chip startup's board lists <em>Inference Software Engineer</em>, <em>Supercomputing Engineer</em>, <em>Infrastructure Software Engineer</em> (hybrid HPC cluster orchestration, control plane, telemetry across millions of metrics; Python/Go/Rust/C++, Kubernetes, SLURM, Terraform/OpenTofu, Prometheus/Grafana/Loki/VictoriaMetrics, Bazel), and <em>Software Engineer &ndash; Performance Profiling</em> (a perf suite from hardware counters plus PCIe/host tracing). NVIDIA and Google carry the same families. Note what's absent from all of them: writing RTL or flashing firmware.</p></div>
+
+<h3 class="sub">How the pieces fit — the platform stack</h3>
+<div class="svg-container">
+<svg viewBox="0 0 820 360" width="100%" role="img" aria-label="ML systems software stack from model down to accelerators">
+  <defs><marker id="ls-ah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#475569"/></marker></defs>
+  <g font-family="Inter" font-size="12" text-anchor="middle">
+    <rect x="250" y="10" width="320" height="40" rx="8" fill="#ede9fe" stroke="#7c3aed"/>
+    <text x="410" y="35" fill="#5b21b6" font-weight="700">Model graph (PyTorch / JAX)</text>
+    <rect x="214" y="66" width="392" height="40" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+    <text x="410" y="91" fill="#1e40af" font-weight="700">Compiler / graph lowering (XLA · MLIR): fusion, layout, sharding</text>
+    <rect x="60" y="122" width="330" height="40" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="225" y="147" fill="#166534" font-weight="700">Distributed training: DP/TP/PP/EP · FSDP/ZeRO · ckpt</text>
+    <rect x="430" y="122" width="330" height="40" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="595" y="147" fill="#166534" font-weight="700">Inference runtime: batching · KV cache · scheduling</text>
+    <rect x="180" y="178" width="460" height="40" rx="8" fill="#ffedd5" stroke="#ea580c"/>
+    <text x="410" y="203" fill="#9a3412" font-weight="700">Collective comms (NCCL / XLA collectives) + kernels (GEMM/attention)</text>
+    <rect x="120" y="234" width="580" height="40" rx="8" fill="#fef3c7" stroke="#d97706"/>
+    <text x="410" y="259" fill="#92400e" font-weight="700">Cluster control plane: scheduler · telemetry · IaC · reliability</text>
+    <rect x="120" y="290" width="580" height="40" rx="8" fill="#e2e8f0" stroke="#475569"/>
+    <text x="410" y="309" fill="#334155" font-weight="700">Interconnect fabric + accelerators  (NVLink/NVSwitch · InfiniBand/RoCE · ICI/OCS)</text>
+    <text x="410" y="324" fill="#475569" font-size="10" font-style="italic">— firmware / hardware boundary: below this line is NOT this chapter —</text>
+    <line x1="410" y1="50" x2="410" y2="64" stroke="#475569" marker-end="url(#ls-ah)"/>
+    <line x1="410" y1="106" x2="410" y2="120" stroke="#475569" marker-end="url(#ls-ah)"/>
+    <line x1="410" y1="218" x2="410" y2="232" stroke="#475569" marker-end="url(#ls-ah)"/>
+    <line x1="410" y1="274" x2="410" y2="288" stroke="#475569" marker-end="url(#ls-ah)"/>
+  </g>
+</svg>
+</div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Interviewers probe whether you know <em>which layer you'd own</em> and how it talks to its neighbors. Crisp answer: "I build the systems software from the kernel up &mdash; runtimes, collectives, schedulers, telemetry &mdash; not the silicon or firmware. My guiding principle is turning FLOPs the hardware <em>can</em> do into FLOPs the model <em>actually</em> uses (MFU), and turning a fleet into one reliable machine." Then name the specific family you fit and one deliverable you'd ship in week one.</p></div>
+</div>
+
+<!-- ============================ 2. COLLECTIVES ============================ -->
+<div class="sec" id="tab-collectives">
+<h2 class="stitle">Collective Communication — How N Chips Agree on One Number</h2>
+<div class="sdesc">All-reduce, all-gather, reduce-scatter. The tax on every parallelism strategy, and the thing that decides whether 1,000 chips act like 1,000 or like 10.</div>
+
+<p><strong>Analogy:</strong> four students each grade a quarter of the same exam pile and must end up knowing the <em>total</em> class average. Naive plan: everyone shouts their sum to everyone (chaos, and the loudest hallway &mdash; the network &mdash; is the bottleneck). Smarter plan: pass partial sums around a circle so each hop adds a little, and by the time the parcel has gone around, everyone holds the full total. That circle is <strong>ring all-reduce</strong>, and it is how gradients get summed across GPUs after every training step.</p>
+
+<h3 class="sub">The four collectives you must name</h3>
+<div class="decision-grid">
+<div class="decision-item"><div class="dt">All-Reduce</div><p>Every device ends with the element-wise <em>sum</em> (or mean/max) of all devices' arrays. Used to average gradients in data parallelism.</p><div class="di-key">Key: reduce-scatter + all-gather</div></div>
+<div class="decision-item"><div class="dt">All-Gather</div><p>Each device holds a shard; afterward every device holds the full concatenation. Used to reassemble sharded weights (FSDP) before a layer.</p><div class="di-key">Key: no math, just collect</div></div>
+<div class="decision-item"><div class="dt">Reduce-Scatter</div><p>Sum across devices, but each keeps only its <em>slice</em> of the result. Used to shard gradients (ZeRO).</p><div class="di-key">Key: reduce, keep 1/N</div></div>
+<div class="decision-item"><div class="dt">All-to-All</div><p>Every device sends a distinct piece to every other. Used to route tokens to experts in MoE.</p><div class="di-key">Key: the MoE / expert-parallel primitive</div></div>
+</div>
+
+<div class="ins"><div class="insl">THE KEY IDENTITY</div><p><strong>All-Reduce = Reduce-Scatter then All-Gather.</strong> That is why the animation below has two phases. It's also why the ring all-reduce moves <code>2&times;(N&minus;1)/N &times; data</code> bytes per device &mdash; roughly twice the data size, independent of N. That N-independence is the whole reason it scales.</p></div>
+
+<h3 class="sub">Watch it happen: ring all-reduce, step by step</h3>
+<p>Four devices (D0&ndash;D3), each starts with an array split into 4 chunks. Phase 1 (<b>reduce-scatter</b>): 3 steps of "send a chunk to your right neighbor, who adds it in" &mdash; after which each device owns one <em>fully-summed</em> chunk. Phase 2 (<b>all-gather</b>): 3 more steps circulate those finished chunks so everyone ends with all four sums. Press <b>Step</b>.</p>
+
+<div class="player" id="ar-player">
+  <div class="player-stage">
+    <svg id="ar-svg" viewBox="0 0 640 300" width="100%" role="img" aria-label="Ring all-reduce animation"></svg>
+  </div>
+  <div class="player-ctrls">
+    <button id="ar-step">Step ▶</button>
+    <button id="ar-reset" class="ghost">Reset ⟲</button>
+    <span class="pill" id="ar-phase">Phase 1 · Reduce-Scatter</span>
+    <span class="player-step" id="ar-msg">Ready. Each device Di holds 4 chunks c0..c3 with its own partial values.</span>
+  </div>
+</div>
+
+<div class="note"><div class="notel">READING THE ANIMATION</div><p>A cell labeled like <code>a0+b0</code> means "chunk 0 now holds the sum of D0's and D1's contributions." When a cell shows all four letters (e.g. <code>a0+b0+c0+d0</code>) it is <em>fully reduced</em>. Phase 1 ends with one fully-reduced chunk per device (on the diagonal); Phase 2 copies those around so every row becomes fully reduced.</p></div>
+
+<h3 class="sub">Senior depth: overlap communication with compute</h3>
+<p>A collective that runs <em>after</em> compute finishes is dead time &mdash; the accelerator's ALUs idle while the network works. The single biggest lever in distributed training is <strong>overlap</strong>: start all-reducing the gradients of layer L while you're still computing the backward pass of layer L&minus;1. Frameworks do this by <em>bucketing</em> gradients (group small tensors into ~25&ndash;50 MB buckets so each collective is big enough to hit peak bandwidth) and launching the collective on a separate CUDA/stream as soon as a bucket is ready.</p>
+
+<pre class="codeblock"><span class="cm"># Overlap: fire the collective as soon as a gradient bucket fills,</span>
+<span class="cm"># so comms of bucket k hides behind compute of bucket k+1.</span>
+<span class="kw">for</span> layer <span class="kw">in</span> reversed(model.layers):      <span class="cm"># backward pass, last layer first</span>
+    grads = layer.backward()
+    bucket.add(grads)
+    <span class="kw">if</span> bucket.full(<span class="num">25</span> * MB):          <span class="cm"># big enough to saturate the link</span>
+        allreduce_async(bucket, stream=comm_stream)   <span class="cm"># non-blocking</span>
+        bucket = Bucket()
+<span class="kw">if</span> <span class="kw">not</span> bucket.empty():                 <span class="cm"># flush the trailing partial bucket</span>
+    allreduce_async(bucket, stream=comm_stream)
+sync(comm_stream)                        <span class="cm"># only wait at the very end</span></pre>
+
+<div class="warn"><div class="warnl">WHERE IT GOES WRONG</div><p><strong>Buckets too small</strong> &rarr; latency-bound, you never reach peak bandwidth, and launch overhead dominates. <strong>Buckets too large</strong> &rarr; less overlap (you wait for a big bucket to fill before comms can start) and a bigger tail. <strong>Collective crosses a slow link</strong> (e.g. a tensor-parallel all-reduce that spills off NVLink onto InfiniBand) &rarr; step time spikes. This is why the topology section exists.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Expect: "Your training doesn't speed up when you add nodes &mdash; why?" Crisp answer: "First suspect is collectives. I'd check (1) are all-reduces overlapped with backward or serialized after it; (2) is the collective staying inside the fast interconnect domain or crossing DCN/IB mid-layer; (3) bucket sizing. I'd confirm with per-rank in-collective time and link counters &mdash; and remember a synchronous all-reduce gates every rank on the slowest, so the symptom looks identical whether the cause is a straggler, a slow link, or load imbalance."</p></div>
+</div>
+
+<!-- ============================ 3. PARALLELISM ============================ -->
+<div class="sec" id="tab-parallelism">
+<h2 class="stitle">Distributed-Training Parallelism &amp; Sharding</h2>
+<div class="sdesc">Data, tensor, pipeline, and expert parallelism; FSDP/ZeRO. Four ways to cut one model across many chips &mdash; usually combined.</div>
+
+<p><strong>Analogy:</strong> printing a giant newspaper. <em>Data parallelism</em> = many identical printing presses, each printing different copies, then you reconcile the run counts (all-reduce). <em>Tensor parallelism</em> = one press so big you split a single page across machines that must hand off within every page. <em>Pipeline parallelism</em> = an assembly line where each station prints certain pages and passes the paper along. <em>Expert parallelism</em> = specialist stations, and each article is routed only to the station that handles its topic (MoE). Real training stacks combine all four.</p>
+
+<h3 class="sub">Worked memory math: why one chip can't hold the model</h3>
+<p>Take a 70B model, mixed-precision Adam training on 80 GB GPUs:</p>
+<table class="tbl">
+<thead><tr><th>Item</th><th>Formula</th><th>Size</th></tr></thead>
+<tbody>
+<tr><td>Weights (bf16)</td><td>70e9 &times; 2</td><td>140 GB</td></tr>
+<tr><td>Gradients (bf16)</td><td>70e9 &times; 2</td><td>140 GB</td></tr>
+<tr><td>Optimizer state (fp32 primary + m + v)</td><td>70e9 &times; 12</td><td>840 GB</td></tr>
+<tr><td><strong>Subtotal (states)</strong></td><td></td><td><strong>~1,120 GB</strong></td></tr>
+<tr><td>Activations (batch/seq-dependent)</td><td>varies</td><td>10s&ndash;100s GB</td></tr>
+</tbody>
+</table>
+<p>~1.1 TB of state on 80 GB chips &rarr; you need <strong>at least 14 chips just to hold it</strong>, before any batch. Replicating (plain data parallelism) is impossible &mdash; the model doesn't fit once. This is what forces sharding.</p>
+
+<div class="ins"><div class="insl">FSDP / ZeRO — shard the state, not just the batch</div><p>Adam's optimizer state (12 B/param) uses by far the most memory. <strong>ZeRO-1</strong> shards optimizer state; <strong>ZeRO-2</strong> adds gradients; <strong>ZeRO-3 / FSDP</strong> adds parameters. Under FSDP each rank stores only <code>1/N</code> of everything; just before a layer runs it <em>all-gathers</em> that layer's full weights, uses them, then frees them &mdash; trading extra communication for a huge memory win. That per-layer all-gather is exactly the collective from the previous tab, and it must overlap with compute or it becomes the bottleneck.</p></div>
+
+<h3 class="sub">How a transformer is split across the four axes</h3>
+<div class="svg-container">
+<svg viewBox="0 0 780 300" width="100%" role="img" aria-label="Four parallelism axes across a transformer">
+  <g font-family="Inter" font-size="11" text-anchor="middle">
+    <text x="390" y="18" font-size="13" font-weight="700" fill="#0f172a">One model, cut four ways (composed as 4-D parallelism)</text>
+    <!-- DP -->
+    <rect x="20" y="40" width="170" height="110" rx="8" fill="#dbeafe" stroke="#2563eb"/>
+    <text x="105" y="60" font-weight="700" fill="#1e40af">Data Parallel</text>
+    <rect x="35" y="72" width="60" height="60" rx="4" fill="#fff" stroke="#2563eb"/><text x="65" y="106" fill="#1e40af">full model</text>
+    <rect x="115" y="72" width="60" height="60" rx="4" fill="#fff" stroke="#2563eb"/><text x="145" y="106" fill="#1e40af">full model</text>
+    <text x="105" y="146" font-size="10" fill="#334155">diff data · all-reduce grads</text>
+    <!-- TP -->
+    <rect x="205" y="40" width="170" height="110" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="290" y="60" font-weight="700" fill="#166534">Tensor Parallel</text>
+    <rect x="220" y="72" width="30" height="60" rx="3" fill="#fff" stroke="#16a34a"/>
+    <rect x="255" y="72" width="30" height="60" rx="3" fill="#fff" stroke="#16a34a"/>
+    <rect x="290" y="72" width="30" height="60" rx="3" fill="#fff" stroke="#16a34a"/>
+    <rect x="325" y="72" width="30" height="60" rx="3" fill="#fff" stroke="#16a34a"/>
+    <text x="290" y="146" font-size="10" fill="#334155">one layer's matmul · all-reduce</text>
+    <!-- PP -->
+    <rect x="390" y="40" width="170" height="110" rx="8" fill="#ffedd5" stroke="#ea580c"/>
+    <text x="475" y="60" font-weight="700" fill="#9a3412">Pipeline Parallel</text>
+    <rect x="405" y="72" width="140" height="16" rx="3" fill="#fff" stroke="#ea580c"/><text x="475" y="84" font-size="9" fill="#9a3412">stage 0 · layers 0-19</text>
+    <rect x="405" y="94" width="140" height="16" rx="3" fill="#fff" stroke="#ea580c"/><text x="475" y="106" font-size="9" fill="#9a3412">stage 1 · layers 20-39</text>
+    <rect x="405" y="116" width="140" height="16" rx="3" fill="#fff" stroke="#ea580c"/><text x="475" y="128" font-size="9" fill="#9a3412">stage 2 · layers 40-59</text>
+    <text x="475" y="146" font-size="10" fill="#334155">layers split · watch the bubble</text>
+    <!-- EP -->
+    <rect x="575" y="40" width="185" height="110" rx="8" fill="#ede9fe" stroke="#7c3aed"/>
+    <text x="667" y="60" font-weight="700" fill="#5b21b6">Expert Parallel (MoE)</text>
+    <circle cx="610" cy="100" r="16" fill="#fff" stroke="#7c3aed"/><text x="610" y="104" font-size="9" fill="#5b21b6">E0</text>
+    <circle cx="650" cy="100" r="16" fill="#fff" stroke="#7c3aed"/><text x="650" y="104" font-size="9" fill="#5b21b6">E1</text>
+    <circle cx="690" cy="100" r="16" fill="#fff" stroke="#7c3aed"/><text x="690" y="104" font-size="9" fill="#5b21b6">E2</text>
+    <text x="667" y="146" font-size="10" fill="#334155">route tokens · all-to-all</text>
+    <!-- bottom rule -->
+    <rect x="20" y="175" width="740" height="105" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+    <text x="390" y="196" font-size="12" font-weight="700" fill="#0f172a">Rule of thumb for placement</text>
+    <text x="390" y="220" font-size="11" fill="#334155">TP is the chattiest (all-reduce every layer) &rarr; keep it inside one NVLink / ICI domain.</text>
+    <text x="390" y="240" font-size="11" fill="#334155">PP communicates only at stage boundaries &rarr; cheap, tolerates slower links, but adds a pipeline bubble.</text>
+    <text x="390" y="260" font-size="11" fill="#334155">DP all-reduce is least frequent (once/step) &rarr; can span the slower data-center network.</text>
+  </g>
+</svg>
+</div>
+
+<h3 class="sub">Sizing rules (say these numbers out loud)</h3>
+<ul class="content-list">
+<li><strong>Tensor parallelism:</strong> sized to the <em>minimum</em> degree that fits weights + working memory, then kept inside one high-bandwidth domain (8 GPUs on NVLink, or one ICI slice). It costs ~2 all-reduces per layer per forward pass (4 counting the backward pass) &mdash; cross a slow link and you're done.</li>
+<li><strong>Pipeline parallelism:</strong> the tool when even TP can't fit the model in one NVLink domain. The cost is the <em>bubble</em> &mdash; stages idle during fill/drain. Bubble fraction &asymp; <code>(P&minus;1)/(m+P&minus;1)</code> for P stages and m micro-batches; more micro-batches shrink it.</li>
+<li><strong>Data parallelism / FSDP:</strong> the outermost axis, for throughput; scale replicas here once the model fits.</li>
+<li><strong>Expert parallelism:</strong> for MoE, spreads experts across devices; the routing all-to-all and load imbalance across experts are the hard parts.</li>
+</ul>
+
+<div class="warn"><div class="warnl">ELASTIC RESHARDING PITFALL</div><p>Resuming a job at a <em>different</em> world size changes the global batch size, which changes convergence &mdash; unless you hold global batch constant via gradient accumulation. "Just reshard to whatever nodes are free" is a correctness hazard, not a free win.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Classic prompt: "This model won't fit &mdash; how do you split it?" Strong answer walks the memory math first (weights + grads + optimizer), then: "FSDP/ZeRO-3 to shard state; TP inside the NVLink domain for the layers that need it; PP across domains if still too big; DP on the outside for throughput. I'd map the chattiest axis (TP) to the fastest fabric and the least-chatty (DP) to the slowest, and overlap every collective with compute." Naming the 4-D composition and the fabric mapping is the staff signal.</p></div>
+</div>
+
+<!-- ============================ 4. INFERENCE ============================ -->
+<div class="sec" id="tab-inference">
+<h2 class="stitle">Inference Runtime &amp; Serving</h2>
+<div class="sdesc">Continuous batching, KV cache &amp; paged attention, latency-vs-throughput scheduling, and quantization. Where throughput becomes dollars.</div>
+
+<p><strong>Analogy:</strong> a restaurant kitchen. <em>Static batching</em> = you wait until 8 tables have ordered, cook all 8 dishes together, and serve them only when the slowest dish is done &mdash; fast eaters wait, the grill idles. <em>Continuous batching</em> = the moment any dish leaves the pass, you pull the next order onto the grill. The grill (the accelerator) never idles, and diners aren't held hostage by the table ordering the 40-course tasting menu.</p>
+
+<h3 class="sub">Prefill vs decode — two different machines</h3>
+<table class="tbl">
+<thead><tr><th>Phase</th><th>Work</th><th>Bound by</th><th>Metric it drives</th></tr></thead>
+<tbody>
+<tr><td><strong>Prefill</strong></td><td>Process the whole prompt at once, build the KV cache</td><td><strong>Compute-bound</strong> (big GEMMs over all prompt tokens)</td><td>TTFT (time to first token)</td></tr>
+<tr><td><strong>Decode</strong></td><td>Generate one token per step, append to KV</td><td><strong>Memory-bandwidth-bound</strong> (re-stream every weight to make one token)</td><td>TPOT (time per output token)</td></tr>
+</tbody>
+</table>
+<div class="ins"><div class="insl">THE SPINE OF SERVING</div><p>Decode is memory-bound because generating one token reads the <em>entire</em> weight set from HBM to do a tiny matrix&ndash;vector product &mdash; arithmetic intensity ~1&ndash;2, far below the ridge point (the FLOP/byte where a chip flips from memory-bound to compute-bound; see the Profiling tab). So decode time per token &asymp; <code>model_bytes_read / HBM_bandwidth</code>, nearly independent of FLOPs. That's why <em>bigger batches are almost free on compute</em> during decode (you amortize the weight read across many sequences) &mdash; until you run out of KV-cache memory. Batching is the throughput/$ lever; HBM is the ceiling.</p></div>
+
+<h3 class="sub">Watch it happen: continuous (in-flight) batching</h3>
+<p>Requests arrive with different output lengths. Each decode step, finished sequences free their slot and waiting requests take it &mdash; so the batch stays full and the accelerator stays busy. Compare the "utilization" bar to what static batching would waste. Press <b>Step</b>.</p>
+
+<div class="player" id="cb-player">
+  <div class="player-stage">
+    <svg id="cb-svg" viewBox="0 0 640 300" width="100%" role="img" aria-label="Continuous batching animation"></svg>
+  </div>
+  <div class="player-ctrls">
+    <button id="cb-step">Step ▶</button>
+    <button id="cb-reset" class="ghost">Reset ⟲</button>
+    <span class="pill" id="cb-clock">step 0</span>
+    <span class="player-step" id="cb-msg">4 slots on the accelerator. Waiting queue: R4, R5, R6. Press Step to run a decode step.</span>
+  </div>
+</div>
+
+<h3 class="sub">KV cache &amp; paged attention</h3>
+<p>Attention needs the Key/Value vectors of every previous token, cached in HBM so each new token isn't recomputed from scratch. Size grows linearly with context: <code>2 &times; layers &times; kv_heads &times; head_dim &times; seq_len &times; batch &times; dtype</code>. For a 70B-class model with grouped-query attention that's roughly <strong>~300 KB per token</strong> &mdash; so a 128K-context request can need ~40 GB of KV, half a big GPU, for a <em>single</em> request.</p>
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">FIX</span><span class="ct">Paged attention — KV cache as OS-style virtual memory</span><span class="db dh">HARD</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Naive engines pre-allocate a contiguous KV buffer per slot sized to the <em>max</em> sequence length. With a 150-token average output you reserve for 128K and use ~0.1% &mdash; catastrophic internal fragmentation that caps concurrency to a handful of slots. <strong>Paged attention</strong> allocates KV in fixed-size blocks (e.g. 16 tokens) via a block table, exactly like virtual-memory paging: KV grows on demand, so you hold only what you use. Two bonuses: (1) far higher concurrency &rarr; bigger batches &rarr; better utilization; (2) <strong>prefix sharing</strong> &mdash; identical system prompts / few-shot / conversation history share physical blocks copy-on-write, saving both HBM and re-prefill compute.</p>
+</div></div>
+
+<h3 class="sub">Scheduling for latency AND throughput</h3>
+<ul class="content-list">
+<li><strong>Chunked prefill:</strong> a 32K prompt is a compute-bound burst; drop it whole into a decode step and every decoder's TPOT spikes (head-of-line blocking). Split the prefill into 512&ndash;2K-token chunks and interleave with decode steps so decoders keep getting ~40 ms tokens.</li>
+<li><strong>Prefill/decode disaggregation:</strong> run prefill on a compute-optimized pool and decode on a bandwidth-optimized pool, handing off the KV cache &mdash; but that hand-off is ~10 GB for a long prompt, so it only pays on a fast fabric.</li>
+<li><strong>Speculative decoding:</strong> a small draft model proposes k tokens; the big model verifies all k in one forward pass and accepts the longest correct prefix &mdash; provably distribution-preserving (token-identical only under greedy decoding), 2&ndash;3&times; fewer big-model steps when acceptance is high. Free because decode has spare compute while waiting on HBM.</li>
+</ul>
+
+<h3 class="sub">Quantization: the precision/quality trade</h3>
+<table class="tbl">
+<thead><tr><th>Format</th><th>Bits</th><th>Use</th><th>Trade-off</th></tr></thead>
+<tbody>
+<tr><td>FP16 / BF16</td><td>16</td><td>Default training &amp; serving. BF16 has wider range, less mantissa.</td><td>Baseline quality; 2 bytes/param.</td></tr>
+<tr><td>FP8 (E4M3 / E5M2)</td><td>8</td><td>Serving weights + activations on modern HW; doubles peak FLOP/s too.</td><td>~2&times; throughput on memory-bound decode; needs per-tensor scales, watch outliers.</td></tr>
+<tr><td>INT8</td><td>8</td><td>Weight (and activation) quantization with floating-point (per-tensor/per-channel) scales.</td><td>Big HBM &amp; bandwidth win; calibration required; accuracy risk on outlier activations.</td></tr>
+<tr><td>INT4 / KV-quant</td><td>4</td><td>Weight-only or KV-cache quant to pack more concurrency.</td><td>Largest capacity win; highest quality risk &mdash; validate with an eval harness per tenant.</td></tr>
+</tbody>
+</table>
+<div class="tip"><div class="tipl">WHY IT'S THE #1 COST LEVER</div><p>Decode is bandwidth-bound, so halving weight bytes (FP16&rarr;FP8) buys close to 2&times; throughput <em>and</em> frees HBM for more KV (more concurrency). Quantizing the KV cache directly multiplies how many sequences fit. Always name quantization when asked to cut $/token.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Probe: "Design an LLM serving system to hit p99 TTFT &lt; 500 ms and TPOT &lt; 40 ms." Crisp: "Two SLOs map to two phases &mdash; prefill (compute-bound) sets TTFT, decode (bandwidth-bound) sets TPOT. Continuous batching + paged attention for utilization; chunked prefill to stop a long prompt from starving decoders; size batch to the largest that holds TPOT; scale on queue-wait and KV occupancy (not GPU-busy %, which lies during decode); and FP8 as the headline cost lever." Reasoning from the roofline instead of quoting a batch size is the depth signal.</p></div>
+</div>
+
+<!-- ============================ 5. SCHEDULING ============================ -->
+<div class="sec" id="tab-scheduling">
+<h2 class="stitle">Cluster Scheduling &amp; Topology-Aware Placement</h2>
+<div class="sdesc">Gang scheduling, SLURM vs Kubernetes, queueing, and mapping collectives onto NVLink / InfiniBand / RoCE / ICI.</div>
+
+<p><strong>Analogy:</strong> seating a rowing team. A synchronized 8-person crew is useless if you seat 7 and leave one on the dock &mdash; the boat can't move and you've wasted 7 seats. You must seat all 8 <em>together</em> (gang scheduling) and seat them <em>in the same boat</em>, not scattered across the lake (topology-aware placement), because they have to stroke in unison every second.</p>
+
+<h3 class="sub">Gang scheduling — all-or-nothing</h3>
+<p>Synchronous training with collectives deadlocks if even one worker is missing: the other N&minus;1 block forever at the first all-reduce, burning reserved accelerators. <strong>Gang scheduling</strong> places every worker of a job together or none at all. Vanilla <code>kube-scheduler</code> doesn't do this &mdash; it will happily place 7 of 8 pods and leave the job hung &mdash; which is why the ecosystem uses gang-aware schedulers (Volcano, Kueue) or SLURM.</p>
+
+<table class="tbl">
+<thead><tr><th></th><th>SLURM</th><th>Kubernetes (+ Volcano/Kueue)</th></tr></thead>
+<tbody>
+<tr><td>Origin</td><td>HPC / supercomputing</td><td>Cloud-native microservices</td></tr>
+<tr><td>Gang scheduling</td><td>Native (a job = N tasks, all-or-nothing)</td><td>Needs Volcano/Kueue; not in default scheduler</td></tr>
+<tr><td>Topology</td><td>First-class (<code>--nodes</code>, switches, blocks)</td><td>Via node labels (NFD), affinity, custom scheduler</td></tr>
+<tr><td>Strengths</td><td>Batch throughput, MPI, mature fair-share &amp; backfill</td><td>Containers, autoscaling, services, huge ecosystem</td></tr>
+<tr><td>Typical use</td><td>Big synchronous training runs</td><td>Inference serving, mixed fleets, hybrid HPC/cloud</td></tr>
+</tbody>
+</table>
+<div class="note"><div class="notel">HYBRID REALITY</div><p>Real "supercomputing software" roles run <em>both</em>: SLURM for the big training campaigns, Kubernetes for serving and services, with a control plane (often Terraform/OpenTofu-provisioned) stitching them over shared storage and a shared identity/quota layer. Knowing when each wins &mdash; and how to give users one submit surface over both &mdash; is the platform job.</p></div>
+
+<h3 class="sub">Queueing: fairness without starvation</h3>
+<ul class="content-list">
+<li><strong>Fair-share + priority tiers:</strong> higher tier can preempt lower, but preemption is <em>checkpoint-aware</em> &mdash; snapshot the victim, then resume it, never restart from zero.</li>
+<li><strong>Backfill:</strong> small 1-GPU debug jobs fill the fragmentation gaps while a 512-GPU gang is still assembling &mdash; utilization without delaying the big job.</li>
+<li><strong>Quota borrowing with reclaim:</strong> idle org-B capacity is borrowable by org-A and reclaimable on demand &mdash; high utilization without starving the owner.</li>
+<li><strong>Legible queue:</strong> show position, ETA, and <em>who is blocking you</em>. Making the queue transparent is itself the anti-revolt feature.</li>
+</ul>
+
+<h3 class="sub">Topology-aware placement — the bandwidth cliff</h3>
+<p>An 8-GPU tensor-parallel job placed on one node talks over NVLink/NVSwitch (hundreds of GB/s to TB/s). The <em>same</em> job scattered across 8 nodes does its all-reduce over InfiniBand &mdash; and if GPUDirect RDMA isn't set up, it even bounces through host memory. Since InfiniBand's tens of GB/s is roughly an order of magnitude below NVLink's hundreds of GB/s to TB/s, that bandwidth-bound all-reduce slows by about that much from placement alone. The scheduler must understand the fabric:</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 760 260" width="100%" role="img" aria-label="Interconnect hierarchy from NVLink to data-center network">
+  <g font-family="Inter" font-size="11" text-anchor="middle">
+    <rect x="30" y="30" width="200" height="90" rx="8" fill="#dcfce7" stroke="#16a34a"/>
+    <text x="130" y="50" font-weight="700" fill="#166534">Intra-node</text>
+    <text x="130" y="70" fill="#166534" font-size="10">NVLink / NVSwitch (GPU)</text>
+    <text x="130" y="86" fill="#166534" font-size="10">ICI (TPU)</text>
+    <text x="130" y="106" fill="#334155" font-size="10">~0.9&ndash;3.6 TB/s · keep TP here</text>
+    <rect x="280" y="30" width="200" height="90" rx="8" fill="#ffedd5" stroke="#ea580c"/>
+    <text x="380" y="50" font-weight="700" fill="#9a3412">Intra-rack / pod</text>
+    <text x="380" y="70" fill="#9a3412" font-size="10">InfiniBand / RoCE</text>
+    <text x="380" y="86" fill="#9a3412" font-size="10">rail-optimized · GPUDirect RDMA</text>
+    <text x="380" y="106" fill="#334155" font-size="10">~100&ndash;400 Gb/s · PP / FSDP here</text>
+    <rect x="530" y="30" width="200" height="90" rx="8" fill="#fef3c7" stroke="#d97706"/>
+    <text x="630" y="50" font-weight="700" fill="#92400e">Inter-pod / DC</text>
+    <text x="630" y="70" fill="#92400e" font-size="10">Data-center network (DCN)</text>
+    <text x="630" y="86" fill="#92400e" font-size="10">Ethernet / IP · OCS on TPU</text>
+    <text x="630" y="106" fill="#334155" font-size="10">slowest · DP all-reduce only</text>
+    <text x="380" y="160" font-size="12" font-weight="700" fill="#0f172a">Design rule: map the chattiest parallelism to the fastest tier.</text>
+    <text x="380" y="184" font-size="11" fill="#334155">TP all-reduce every layer &rarr; NVLink/ICI. PP boundary sends &rarr; IB/RoCE. DP all-reduce once/step &rarr; DCN.</text>
+    <text x="380" y="212" font-size="11" fill="#334155">The scheduler needs NVLink-domain, IB leaf-switch, and NUMA/PCIe affinity as placement constraints —</text>
+    <text x="380" y="230" font-size="11" fill="#334155">a whole 8-GPU NVLink domain, not "8 GPUs anywhere." Refuse to satisfy a gang from scattered singles.</text>
+  </g>
+</svg>
+</div>
+
+<div class="note"><div class="notel">RAIL-OPTIMIZED &amp; SHARP</div><p>Big GPU clusters wire NICs into <em>rails</em> so same-rank GPUs across nodes share a switch, keeping collectives on short paths. Some switches also do <strong>in-network reduction</strong> (NVIDIA SHARP), summing partial gradients inside the switch so data doesn't round-trip to every endpoint &mdash; a hardware assist the software must opt into. On TPUs, an <strong>optical circuit switch (OCS)</strong> physically reconfigures the torus per job to carve contiguous slices and route around failed chips.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Probe: "8-GPU job, but the fleet is fragmented (40 nodes with 1 free GPU each) &mdash; what do you do?" Crisp: "Never bin-pack a gang across singles &mdash; that turns an NVLink all-reduce into an IB one &mdash; roughly an order of magnitude slower for that bandwidth-bound collective. I gang-queue and wait for a full NVLink domain; if SLA is at risk I defrag by preempting low-priority preemptible work to open a whole node, or pull a warm on-demand node. The scheduler must be topology-aware (NVLink domain + IB leaf + NUMA), which vanilla kube-scheduler is not."</p></div>
+</div>
+
+<!-- ============================ 6. RELIABILITY ============================ -->
+<div class="sec" id="tab-reliability">
+<h2 class="stitle">Reliability &amp; Observability at Fleet Scale</h2>
+<div class="sdesc">Failure detection, node draining, straggler mitigation, silent data corruption, and the metrics pipeline that catches it all.</div>
+
+<p><strong>Analogy:</strong> a relay race where all runners must cross the line together to score, run daily for weeks. At thousands of runners, someone <em>will</em> pull a hamstring every day &mdash; so you need instant injury detection, a bench of substitutes, and a rule to restart from the last checkpoint rather than the start. And the scariest failure isn't a runner collapsing (loud) &mdash; it's a runner quietly running the wrong route while looking fine (silent corruption).</p>
+
+<h3 class="sub">The scale-driven fact: failure is constant</h3>
+<p>If one accelerator has a mean time between failures of, say, 50,000 hours, a 10,000-chip job hits a failure roughly every <code>50000/10000 = 5 hours</code>. A synchronous job means <em>one</em> dead rank stalls all 10,000. So fault tolerance isn't a nice-to-have; it's the difference between a run finishing and a run that never completes.</p>
+
+<h3 class="sub">The reliability loop</h3>
+<div class="svg-container">
+<svg viewBox="0 0 780 170" width="100%" role="img" aria-label="Detect, isolate, recover reliability loop">
+  <defs><marker id="rl-ah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#475569"/></marker></defs>
+  <g font-family="Inter" font-size="11" text-anchor="middle">
+    <rect x="20" y="55" width="130" height="60" rx="8" fill="#fee2e2" stroke="#dc2626"/><text x="85" y="80" font-weight="700" fill="#991b1b">Detect</text><text x="85" y="98" font-size="8" fill="#991b1b">Xid/ECC · heartbeat · watchdog</text>
+    <rect x="200" y="55" width="130" height="60" rx="8" fill="#ffedd5" stroke="#ea580c"/><text x="265" y="80" font-weight="700" fill="#9a3412">Isolate</text><text x="265" y="98" font-size="9" fill="#9a3412">cordon · drain · fence</text>
+    <rect x="380" y="55" width="130" height="60" rx="8" fill="#dbeafe" stroke="#2563eb"/><text x="445" y="80" font-weight="700" fill="#1e40af">Recover</text><text x="445" y="98" font-size="9" fill="#1e40af">hot-spare · restart from ckpt</text>
+    <rect x="560" y="55" width="130" height="60" rx="8" fill="#dcfce7" stroke="#16a34a"/><text x="625" y="80" font-weight="700" fill="#166534">Repair</text><text x="625" y="98" font-size="9" fill="#166534">RMA · re-image · rejoin pool</text>
+    <line x1="150" y1="85" x2="198" y2="85" stroke="#475569" marker-end="url(#rl-ah)"/>
+    <line x1="330" y1="85" x2="378" y2="85" stroke="#475569" marker-end="url(#rl-ah)"/>
+    <line x1="510" y1="85" x2="558" y2="85" stroke="#475569" marker-end="url(#rl-ah)"/>
+    <text x="390" y="30" font-size="12" font-weight="700" fill="#0f172a">Detect → Isolate → Recover → Repair, all automated at fleet scale</text>
+    <text x="390" y="148" font-size="10" fill="#334155">Speed matters: detection in seconds is worthless if 9,999 ranks block for the multi-minute default NCCL timeout — wire the health signal to actively abort.</text>
+  </g>
+</svg>
+</div>
+
+<h3 class="sub">Distributed checkpointing &amp; fault tolerance</h3>
+<ul class="content-list">
+<li><strong>Sharded checkpointing:</strong> each rank writes its own shard in parallel to object storage &mdash; no funneling terabytes through one writer.</li>
+<li><strong>Async checkpointing:</strong> snapshot state to pinned host memory, then flush to storage in the background so the accelerators keep stepping &mdash; the copy-out stall, not the disk write, is what you hide.</li>
+<li><strong>Checkpoint interval:</strong> not hand-waved &mdash; the Young/Daly optimum is <code>interval &asymp; &radic;(2 &times; checkpoint_cost &times; MTBF)</code>. Too frequent wastes compute; too rare wastes re-do work on failure.</li>
+<li><strong>Deterministic resume:</strong> must include dataloader position + RNG state, or you silently re-see or skip data.</li>
+<li><strong>Elastic training:</strong> continue at a smaller world size after a failure (hold global batch constant), rather than blocking for a replacement.</li>
+</ul>
+
+<h3 class="sub">Straggler mitigation</h3>
+<p>Because a synchronous all-reduce gates everyone on the slowest rank, one thermally-throttled GPU, a NUMA-misplaced process, or a slow NIC drags the whole job. Detection is a <strong>per-rank step-time histogram</strong>: a single outlier that is slow in <em>compute</em> (while others are slow in <em>collective</em>, i.e. blocked at the barrier) is a straggler host; uniformly elevated collective time points at a slow link; structured spread across many ranks points at load imbalance. Fixes: reschedule off the bad host, rebalance sharding, or in some frameworks let the collective proceed without the laggard.</p>
+
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">SDC</span><span class="ct">Silent data corruption — the failure that doesn't alert you</span><span class="db dh">HARD</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>At fleet scale, a marginal SM or a bad memory cell can compute <em>wrong-but-not-crashing</em> math &mdash; a documented industry problem. Nothing throws an error; your loss curve just quietly diverges or your eval silently degrades. Defenses: record per-host <strong>Xid / ECC / row-remap</strong> events in lineage and drain suspect nodes; run periodic <strong>numerical parity checks</strong> against a golden reference; checksum critical tensors; and treat "which nodes touched this run" as a first-class, queryable fact so you can quarantine a suspect chip across every job it touched.</p>
+</div></div>
+
+<h3 class="sub">The metrics pipeline &amp; auto-remediation</h3>
+<ul class="content-list">
+<li><strong>Collect:</strong> a per-node agent scrapes always-on counters (device-busy %, power, HBM, ECC, step time) cheaply, plus on-demand deep traces. Ship metrics to a TSDB (Prometheus / VictoriaMetrics), logs to Loki, dashboards in Grafana.</li>
+<li><strong>Cardinality guard:</strong> keep <code>op_name</code> / <code>step</code> out of metric tags &mdash; a 4,000-device job at 50k ops/step is 200M series otherwise. Bounded aggregates in the TSDB; per-op detail in columnar blobs bridged by trace-IDs.</li>
+<li><strong>Query &amp; alert:</strong> PromQL over the fleet, e.g. detect a node whose ECC rate exceeds baseline, or a job whose MFU dropped 12% vs last week.</li>
+<li><strong>Auto-remediate:</strong> alert &rarr; cordon node &rarr; drain job to checkpoint &rarr; swap hot spare &rarr; open a repair ticket &mdash; without a human in the loop for the common cases.</li>
+</ul>
+<pre class="codeblock"><span class="cm"># PromQL: nodes whose correctable-ECC rate is 5x their 7-day baseline → drain candidates</span>
+(
+  rate(dcgm_ecc_correctable_total[<span class="num">10</span>m])
+  /
+  avg_over_time(rate(dcgm_ecc_correctable_total[<span class="num">10</span>m])[<span class="num">7</span>d:<span class="num">10</span>m])
+) &gt; <span class="num">5</span>
+
+<span class="cm"># PromQL: training jobs running below 30% MFU for 15m → efficiency alert</span>
+avg_over_time(job_model_flops_utilization[<span class="num">15</span>m]) &lt; <span class="num">0.30</span></pre>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Probe: "A 256-GPU job hits an uncorrectable ECC error on one GPU &mdash; walk me through it." Crisp: "Xid 48 = uncorrectable ECC, that GPU is done for this job. Sync all-reduce means one dead rank stalls all 256, so detection speed is everything: DCGM/node-problem-detector catches it in seconds &rarr; cordon &rarr; actively abort the job (don't wait for the multi-minute NCCL timeout &mdash; wire the cordon event to the elastic agent) &rarr; pull a hot spare &rarr; restart from the last checkpoint. The blast radius is bounded by checkpoint frequency (Young/Daly) and the hot-spare pool sized to the failure rate."</p></div>
+</div>
+
+<!-- ============================ 7. PROFILING ============================ -->
+<div class="sec" id="tab-profiling">
+<h2 class="stitle">Performance Profiling</h2>
+<div class="sdesc">Hardware counters, the roofline, bottleneck classification, and building a profiling pipeline that tells you the fix — not just the symptom.</div>
+
+<p><strong>Analogy:</strong> your car feels slow. Is the engine maxed out (compute-bound), or is it starved for fuel (memory-bound), or stuck in traffic waiting for the car ahead (latency/comms-bound), or is the fuel line the bottleneck (PCIe/input-bound)? "The car is slow" isn't actionable; "the engine is at 90% but fuel flow is at 40% of capacity" tells you exactly what to fix. Profiling turns "it's slow" into "this specific resource is the wall."</p>
+
+<h3 class="sub">The roofline: two numbers classify any kernel</h3>
+<ul class="content-list">
+<li><strong>Arithmetic intensity</strong> = FLOPs &divide; bytes moved to/from HBM (FLOP/byte). Analytic from the op's shape.</li>
+<li><strong>Ridge point</strong> = peak-FLOP/s &divide; peak-HBM-bandwidth for that chip &mdash; order of hundreds of FLOP/byte on a big GPU (a few hundred for BF16, up to ~1,000 at FP8 peak).</li>
+</ul>
+<p>Plot achieved FLOP/s vs intensity. Below the ridge you're on the slanted <em>memory roof</em> (bandwidth-limited); at the flat <em>compute roof</em> you're FLOP-limited.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 620 300" width="100%" role="img" aria-label="Roofline model chart">
+  <g font-family="Inter" font-size="11">
+    <line x1="70" y1="250" x2="580" y2="250" stroke="#334155" stroke-width="1.5"/>
+    <line x1="70" y1="250" x2="70" y2="30" stroke="#334155" stroke-width="1.5"/>
+    <text x="325" y="285" text-anchor="middle" fill="#334155">Arithmetic intensity (FLOP/byte) →</text>
+    <text x="24" y="140" text-anchor="middle" fill="#334155" transform="rotate(-90 24 140)">Achieved FLOP/s →</text>
+    <!-- memory roof (slanted) -->
+    <line x1="70" y1="250" x2="320" y2="60" stroke="#ea580c" stroke-width="2.5"/>
+    <text x="150" y="150" fill="#9a3412" font-size="10" transform="rotate(-37 150 150)">memory roof (BW-limited)</text>
+    <!-- compute roof (flat) -->
+    <line x1="320" y1="60" x2="580" y2="60" stroke="#2563eb" stroke-width="2.5"/>
+    <text x="430" y="52" fill="#1e40af" font-size="10" text-anchor="middle">compute roof (peak FLOP/s)</text>
+    <!-- ridge -->
+    <line x1="320" y1="60" x2="320" y2="250" stroke="#5f6673" stroke-dasharray="4 3"/>
+    <text x="320" y="265" text-anchor="middle" fill="#475569" font-size="10">ridge point</text>
+    <!-- points -->
+    <circle cx="140" cy="205" r="6" fill="#dc2626"/><text x="150" y="200" fill="#991b1b" font-size="10">LLM decode (GEMV): memory-bound</text>
+    <circle cx="460" cy="70" r="6" fill="#16a34a"/><text x="360" y="90" fill="#166534" font-size="10">large-batch GEMM: compute-bound</text>
+    <circle cx="180" cy="150" r="6" fill="#d97706"/><text x="192" y="145" fill="#92400e" font-size="10">fused → moves up-right</text>
+    <text x="325" y="20" text-anchor="middle" font-weight="700" fill="#0f172a" font-size="12">Which roof are you under? That decides the fix.</text>
+  </g>
+</svg>
+</div>
+
+<h3 class="sub">Bottleneck classes and their fixes</h3>
+<table class="tbl">
+<thead><tr><th>Class</th><th>Signature</th><th>Fix (NOT "more machines")</th></tr></thead>
+<tbody>
+<tr><td><strong>Compute-bound</strong></td><td>Achieved FLOP/s near peak; tensor cores busy</td><td>Better kernel/algorithm, lower precision (FP8), more parallelism</td></tr>
+<tr><td><strong>Memory-bound</strong></td><td>HBM bandwidth near peak, FLOP/s far below peak</td><td>Operator <em>fusion</em> (keep intermediates in SRAM), bigger tiles, dtype change</td></tr>
+<tr><td><strong>Latency / launch-bound</strong></td><td>Device idle, host hasn't enqueued next kernel</td><td>CUDA graphs, fewer/bigger kernels, async launch</td></tr>
+<tr><td><strong>Comms-bound</strong></td><td>Time dominated by collectives; poor overlap</td><td>Overlap comms with compute, bucket sizing, topology fix</td></tr>
+<tr><td><strong>PCIe / input-bound</strong></td><td>Device idle waiting on host&rarr;device transfer or dataloader</td><td>Prefetch, parallel data pipeline, pin memory, cache, overlap H2D</td></tr>
+</tbody>
+</table>
+
+<div class="warn"><div class="warnl">THE #1 TRAP: "GPU utilization" lies</div><p><code>nvidia-smi</code> "GPU utilization" only means <em>a kernel was resident</em> during the sample &mdash; a coarse busy flag. One tiny memory-bound kernel keeps the device "90% busy" while the ALUs stall on memory. <strong>SM occupancy is also not "useful work"</strong> &mdash; a kernel can be 100% occupied and fully memory-bound. The real useful-work signal is <strong>achieved-vs-peak FLOP/s (MFU)</strong> and tensor-core-active %. Reach for MFU, not busy %.</p></div>
+
+<h3 class="sub">The counters &amp; the correlation problem</h3>
+<ul class="content-list">
+<li><strong>Hardware counters:</strong> via CUPTI (kernel timing + correlation IDs), DCGM/NVML (power, SM activity, HBM), NCCL profiler plugin (collectives); on TPU, the XLA profiler / libtpu path exposes MXU FLOP utilization. PyTorch's Kineto wraps CUPTI.</li>
+<li><strong>Two collection modes:</strong> always-on counters at &lt;1% overhead for fleet health; on-demand deep traces (up to ~30% overhead, bounded to a few steps) for interactive RCA. Auto-arm the deep trace when always-on step-time regresses.</li>
+<li><strong>Host&harr;device clock correlation:</strong> accelerators run async (host enqueues, returns), so you need <em>correlation IDs</em> to pair a host launch with its device kernel, plus a shared reference clock (with a stated error bound) to put both on one timeline. The ID removes the <em>matching</em> ambiguity; the clock estimate removes the <em>timeline</em> ambiguity &mdash; they're separate problems.</li>
+</ul>
+
+<h3 class="sub">Building the profiling pipeline (the real deliverable)</h3>
+<pre class="codeblock"><span class="cm"># Agent per node: cheap always-on counters + gated deep-trace sessions.</span>
+<span class="kw">class</span> <span class="fn">ProfilerAgent</span>:
+    <span class="kw">def</span> <span class="fn">sample</span>(self):                       <span class="cm"># &lt;1% overhead, every few seconds</span>
+        push(counters=[step_time, sm_active, hbm_bw, ecc, power])
+    <span class="kw">def</span> <span class="fn">on_regression</span>(self, signal):        <span class="cm"># step time up &gt; threshold?</span>
+        <span class="kw">if</span> free_hbm() &gt; SAFETY_MARGIN:        <span class="cm"># never OOM the job we profile</span>
+            arm_deep_trace(steps=<span class="num">10</span>)         <span class="cm"># bounded window, drop-on-full</span>
+        <span class="kw">else</span>:
+            degrade_to_counter_only()         <span class="cm"># fail toward blind, never toward incident</span></pre>
+<p>The analysis layer runs a battery of detectors (input starvation, memory-bound cluster, straggler, slow collective, low batch occupancy) and emits a <strong>ranked, plain-language list with a $ / MFU impact and a suggested fix</strong>, with the roofline and trace one click underneath for experts. Every finding carries a dollar figure via <code>$ &asymp; (&Delta;MFU / MFU) &times; accel-hours &times; $/accel-hr</code>.</p>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Probe: "A 400-GPU job runs at half throughput &mdash; is it their code or our fabric?" Crisp: "MFU first &mdash; the single 'are we using the silicon' number. Then split compute- vs comms-bound from traces; check comms/compute overlap; per-rank step-time histogram for a straggler; NCCL topology + NUMA placement; and input-pipeline starvation (device idle waiting on the dataloader). Lineage + per-rank telemetry let me attribute it to 'your code &mdash; starved input or bad overlap' vs 'our fabric &mdash; slow link or straggler host.' And the profiler must never OOM the job it profiles."</p></div>
+</div>
+
+<!-- ============================ 8. END TO END ============================ -->
+<div class="sec" id="tab-endtoend">
+<h2 class="stitle">End-to-End: How a Model Graph Becomes Scheduled Kernels</h2>
+<div class="sdesc">The whole journey, from a few lines of Python to thousands of kernels running in lockstep across a supercomputer. Every earlier tab is one stop on this road.</div>
+
+<p><strong>Analogy:</strong> a music score becoming a live symphony. The composer writes notes (the model graph). An arranger optimizes it for the specific orchestra &mdash; merging parts, fixing keys (the compiler: fusion, layout). A conductor assigns sections to players and decides who plays when (sharding + scheduling). Then the actual performance happens, with everyone synchronized by the beat (collectives) and a stage manager swapping in a substitute if a violinist's string snaps (reliability). This tab ties the whole chapter together.</p>
+
+<h3 class="sub">Walk the pipeline, stage by stage</h3>
+<p>Press <b>Step</b> to trace a training step from Python down to synchronized kernels across the fleet. Each stage names the tab where it lives.</p>
+
+<div class="player" id="e2e-player">
+  <div class="player-stage">
+    <svg id="e2e-svg" viewBox="0 0 660 300" width="100%" role="img" aria-label="End to end model graph to scheduled kernels"></svg>
+  </div>
+  <div class="player-ctrls">
+    <button id="e2e-step">Step ▶</button>
+    <button id="e2e-reset" class="ghost">Reset ⟲</button>
+    <span class="pill" id="e2e-stage">Stage 1 / 8</span>
+    <span class="player-step" id="e2e-msg">Ready. A user writes a model in PyTorch/JAX and hits &lsquo;train&rsquo;.</span>
+  </div>
+</div>
+
+<h3 class="sub">The stages in words</h3>
+<ol class="content-list">
+<li><strong>Author (graph):</strong> the model is a dataflow graph of ops (matmuls, attention, norms) in PyTorch/JAX.</li>
+<li><strong>Trace &amp; lower to IR:</strong> the compiler (XLA/MLIR) captures the graph into an intermediate representation it can analyze and transform.</li>
+<li><strong>Optimize:</strong> operator <em>fusion</em> (merge memory-bound ops into one kernel to raise arithmetic intensity), layout selection, and memory planning &mdash; the <em>Compiler</em> tab.</li>
+<li><strong>Shard:</strong> auto-sharding (GSPMD-style) or explicit FSDP/TP/PP spec cuts tensors across devices and inserts the right collectives &mdash; the <em>Parallelism</em> tab.</li>
+<li><strong>Place &amp; schedule:</strong> the cluster scheduler gang-schedules the workers onto a topology-aware slice (TP on NVLink, DP on DCN) &mdash; the <em>Scheduling</em> tab.</li>
+<li><strong>Codegen kernels:</strong> ops become tuned GEMM/attention kernels for tensor cores / systolic arrays &mdash; the <em>Kernel</em> layer.</li>
+<li><strong>Execute + synchronize:</strong> forward/backward run; gradients all-reduce, overlapped with compute &mdash; the <em>Collectives</em> tab.</li>
+<li><strong>Observe + survive:</strong> telemetry, profiling, checkpointing, and failure recovery keep the run finishing &mdash; the <em>Reliability</em> &amp; <em>Profiling</em> tabs.</li>
+</ol>
+
+<div class="ins"><div class="insl">THE UNIFYING IDEA</div><p>Every layer exists to close the gap between FLOPs the hardware <em>can</em> do and FLOPs the model <em>actually</em> uses (MFU). The compiler raises intensity; sharding makes the model fit; the scheduler keeps collectives on fast fabric; the runtime keeps batches full; profiling finds the wall; reliability keeps the run alive. Serving is the same pipeline with the batch dimension being live requests instead of training data. This mirrors the TPU and Cloud AI/ML Infra chapters &mdash; same physics (HBM, collectives, roofline), different entry point.</p></div>
+
+<div class="tip"><div class="tipl">INTERVIEW ANGLE</div><p>Probe: "Walk me through what happens between <code>model.train()</code> and gradients being applied across 1,000 chips." A strong answer names the stages above <em>and</em> the failure mode at each (fusion missed &rarr; memory-bound; bad sharding &rarr; collective on slow fabric; no gang &rarr; hung job; no overlap &rarr; comms-bound; no checkpoint &rarr; lost days). Showing you can traverse the whole stack and localize a slowdown to a stage is the staff-level signal.</p></div>
+</div>
+
+<!-- ============================ 9. PREP ============================ -->
+<div class="sec" id="tab-prep">
+<h2 class="stitle">How to Prep for These Interviews</h2>
+<div class="sdesc">A skills checklist mapped to the role families, and an honest read on how web-scale distributed backend transfers — and where it doesn't.</div>
+
+<h3 class="sub">Skills checklist by role family</h3>
+<div class="skill-box"><h4>Inference Runtime / Serving</h4><ul>
+<li>Prefill vs decode; TTFT vs TPOT and which knob moves each.</li>
+<li>Continuous batching, KV cache math, paged attention, chunked prefill, speculative decoding.</li>
+<li>Quantization trade-offs (FP16/BF16/FP8/INT8/INT4, KV-quant) and when each is safe.</li>
+<li>Scheduling on queue-wait + KV occupancy; why GPU-busy % is a bad autoscale signal.</li>
+</ul></div>
+<div class="skill-box"><h4>ML Systems / Cluster &amp; Supercomputing</h4><ul>
+<li>Gang scheduling; SLURM vs K8s (Volcano/Kueue); backfill, fair-share, quota borrowing.</li>
+<li>Topology-aware placement; NVLink vs InfiniBand/RoCE vs DCN; rail-optimized, SHARP, OCS.</li>
+<li>IaC control plane (Terraform/OpenTofu) for hybrid HPC + cloud; one submit surface over both.</li>
+<li>Fleet telemetry: Prometheus/VictoriaMetrics + Loki + Grafana, PromQL, cardinality control.</li>
+</ul></div>
+<div class="skill-box"><h4>Distributed Training</h4><ul>
+<li>DP/TP/PP/EP and 4-D composition; FSDP/ZeRO stages; the memory math cold.</li>
+<li>Collectives (all-reduce/all-gather/reduce-scatter/all-to-all) and comms/compute overlap.</li>
+<li>Distributed + async + sharded checkpointing; Young/Daly interval; deterministic + elastic resume.</li>
+<li>Straggler detection and silent-data-corruption defenses.</li>
+</ul></div>
+<div class="skill-box"><h4>Compiler / Kernel / Profiling</h4><ul>
+<li>IR, fusion, layout, memory planning, auto-sharding, codegen (XLA/HLO, MLIR).</li>
+<li>GEMM/attention kernels: tiling, tensor cores/systolic arrays, async copies (CUDA/Triton/Pallas).</li>
+<li>Roofline reasoning; bottleneck classes; CUPTI/DCGM/Nsight; clock correlation; a profiling pipeline that emits ranked, $-tagged fixes.</li>
+</ul></div>
+
+<h3 class="sub">Honest adjacency: web-scale backend → ML systems</h3>
+<p>A senior web-scale distributed-backend engineer is <em>closer than they think</em> but should not bluff. Here is the honest map:</p>
+<table class="tbl">
+<thead><tr><th>Transfers directly</th><th>Genuine gap to close</th></tr></thead>
+<tbody>
+<tr><td>Bounded-resource discipline (bound in-flight work to what the scarce resource holds) &rarr; <code>max_num_seqs</code> / KV blocks</td><td>Collective communication &amp; the comms/compute overlap that defines training speed</td></tr>
+<tr><td>Queueing, admission control, backpressure, autoscaling on the <em>saturated</em> resource</td><td>Accelerator memory model: HBM bandwidth vs capacity, the roofline, why decode is memory-bound</td></tr>
+<tr><td>Durable, observable stage boundaries (Pub/Sub-style decoupling) &rarr; telemetry &amp; checkpoint plumbing</td><td>Topology: NVLink/IB/ICI hierarchy and mapping parallelism onto it</td></tr>
+<tr><td>RCA discipline: build a model of the system, prove it with metrics, localize the broken stage</td><td>HPC parallelism (TP/PP/FSDP) and the numerics of low-precision / determinism</td></tr>
+<tr><td>Immutable content-addressed artifacts, CI/CD, hermetic builds, IaC</td><td>Accelerator profiling internals (CUPTI/DCGM counters, kernel-level perf)</td></tr>
+</tbody>
+</table>
+
+<div class="ins"><div class="insl">THE POSTURE THAT LANDS THE LEVEL</div><p>Lead with the systems scaffolding you've genuinely shipped &mdash; bounded-resource protection, sync/async path splitting, cardinality/skew analysis, clock-correlated distributed tracing, build-a-model-then-prove-it RCA &mdash; and be explicit that the accelerator interior (collectives tuning, paged-attention internals, roofline-guided kernels) is a layer you reason about with the right vocabulary and would validate against the real fleet, not a scar you already carry. Calibrated honesty reads as senior judgment; a bluffed TPU story is a fast no-hire.</p></div>
+
+<div class="iq">"My edge is the systems seam &mdash; durable, observable boundaries so one failure is contained, and profiling to the real bottleneck instead of guessing. The accelerator-specific layer I know the shape of &mdash; roofline, collectives, KV cache, MFU &mdash; and I'd confirm the exact CUPTI/NCCL surfaces with the runtime team in week one rather than pretend I've tuned them in production."</div>
+
+<h3 class="sub">A two-week study plan</h3>
+<ol class="content-list">
+<li><strong>Week 1 &mdash; physics &amp; vocabulary:</strong> memorize the memory math (weights/grads/optimizer), the roofline and ridge point, prefill/decode, the four collectives, and the parallelism axes. Be able to derive, not recite.</li>
+<li><strong>Week 1 &mdash; runtimes:</strong> read a real inference engine's design (continuous batching + paged attention) and a real training framework's FSDP/overlap path.</li>
+<li><strong>Week 2 &mdash; systems:</strong> gang scheduling, SLURM vs K8s, topology-aware placement, fleet telemetry &amp; PromQL, distributed checkpointing, straggler/SDC handling.</li>
+<li><strong>Week 2 &mdash; drills:</strong> practice the six interview-angle prompts in this chapter out loud, each ending in numbers and a named trade-off.</li>
+</ol>
+
+<div class="tip"><div class="tipl">CLOSING MOVE</div><p>Tie every design decision back to two currencies: <strong>MFU</strong> (are we using the silicon we're paying for) and <strong>$/token or $/training-hour</strong>. Engineers who reason in those units &mdash; and who profile to the real bottleneck instead of adding machines &mdash; are exactly who these teams are hiring.</p></div>
+</div>
+
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Collectives (all-reduce, all-gather, reduce-scatter, all-to-all)</strong></td><td>Group communication primitives; e.g. all-reduce leaves every device holding the element-wise sum of all devices' arrays. All-reduce = reduce-scatter then all-gather.</td></tr>
+<tr><td><strong>CUPTI</strong></td><td>CUDA Profiling Tools Interface &mdash; NVIDIA's API for per-kernel timing and hardware counters; wrapped by PyTorch's Kineto.</td></tr>
+<tr><td><strong>DCGM</strong></td><td>Data Center GPU Manager &mdash; NVIDIA's fleet monitoring stack for GPU health counters (power, ECC, SM activity).</td></tr>
+<tr><td><strong>DCN</strong></td><td>Data-center network &mdash; the slowest interconnect tier (Ethernet/IP); reserve it for once-per-step data-parallel all-reduce.</td></tr>
+<tr><td><strong>DP / TP / PP / EP</strong></td><td>Data, tensor, pipeline, and expert parallelism &mdash; the four axes for splitting a model across chips, usually composed together.</td></tr>
+<tr><td><strong>FSDP</strong></td><td>Fully Sharded Data Parallel &mdash; shards parameters, gradients, and optimizer state across ranks (equivalent to ZeRO-3), all-gathering each layer's weights on demand.</td></tr>
+<tr><td><strong>GEMM</strong></td><td>General matrix multiply &mdash; the dense linear-algebra kernel at the core of transformer compute.</td></tr>
+<tr><td><strong>HBM</strong></td><td>High-bandwidth memory &mdash; the accelerator's on-package DRAM; its bandwidth is the ceiling on memory-bound decode.</td></tr>
+<tr><td><strong>ICI / OCS</strong></td><td>Inter-Chip Interconnect &mdash; Google TPU's high-speed links between chips (the TPU analog of NVLink); an optical circuit switch (OCS) reconfigures the torus topology per job.</td></tr>
+<tr><td><strong>KV cache / paged attention</strong></td><td>Cached key/value vectors of prior tokens in HBM; paged attention allocates them in fixed-size blocks, like OS virtual memory, to cut fragmentation.</td></tr>
+<tr><td><strong>MFU</strong></td><td>Model FLOPs Utilization &mdash; achieved FLOP/s divided by the chip's peak; the guiding metric for how well the silicon is used.</td></tr>
+<tr><td><strong>MoE</strong></td><td>Mixture of Experts &mdash; a model where a router sends each token to a few specialist sub-networks, driving all-to-all communication.</td></tr>
+<tr><td><strong>NCCL</strong></td><td>NVIDIA Collective Communications Library &mdash; the GPU library that implements all-reduce and the other collectives.</td></tr>
+<tr><td><strong>NVLink / NVSwitch</strong></td><td>NVIDIA's high-bandwidth intra-node GPU interconnect and its switch; keep chatty tensor-parallel collectives inside this domain.</td></tr>
+<tr><td><strong>Prefill / decode</strong></td><td>The two inference phases: prefill processes the whole prompt (compute-bound); decode emits one token per step (memory-bandwidth-bound).</td></tr>
+<tr><td><strong>RoCE / InfiniBand</strong></td><td>Rack-level RDMA fabrics; RoCE = RDMA over Converged Ethernet (RDMA = remote direct memory access), enabling GPUDirect transfers between nodes.</td></tr>
+<tr><td><strong>Roofline / arithmetic intensity</strong></td><td>Arithmetic intensity = FLOPs per byte moved from HBM; plotted on the roofline it shows whether a kernel is memory- or compute-bound (split at the ridge point).</td></tr>
+<tr><td><strong>SDC</strong></td><td>Silent data corruption &mdash; hardware computing wrong-but-not-crashing results; caught by parity checks and ECC/Xid lineage, not by an error.</td></tr>
+<tr><td><strong>SHARP</strong></td><td>Scalable Hierarchical Aggregation and Reduction Protocol &mdash; NVIDIA's in-network reduction that sums gradients inside the switch.</td></tr>
+<tr><td><strong>TTFT / TPOT</strong></td><td>Time to first token (set by prefill) and time per output token (set by decode) &mdash; the two serving latency SLOs.</td></tr>
+<tr><td><strong>XLA / MLIR / HLO</strong></td><td>Compiler infrastructures that lower a model graph to optimized kernels: XLA (Accelerated Linear Algebra, via its High Level Operations / HLO IR) and MLIR (Multi-Level Intermediate Representation) do fusion, layout, and sharding.</td></tr>
+<tr><td><strong>ZeRO</strong></td><td>Zero Redundancy Optimizer &mdash; sharding stages (ZeRO-1/2/3) that partition optimizer state, then gradients, then parameters across data-parallel ranks.</td></tr>
+</table>
+</div>
+</div>
+
+<script>
+function go(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  if (typeof event !== 'undefined' && event && event.currentTarget) event.currentTarget.classList.add('active');
+  window.scrollTo(0, 0);
+}
+function toggle(el) {
+  const body = el.nextElementSibling;
+  const chevron = el.querySelector('.chv');
+  body.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open');
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_tpu_infra.html">‹ TPU &amp; AI Supercomputers</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_security_index.html">Google Security Systems — Overview ›</a></nav>
+<script>
+/* ===== Ring all-reduce animation (namespaced IIFE) ===== */
+(function(){
+  var svg=document.getElementById('ar-svg');
+  if(!svg) return;
+  var N=4, L=['a','b','c','d'];
+  var stepBtn=document.getElementById('ar-step'), resetBtn=document.getElementById('ar-reset');
+  var phaseEl=document.getElementById('ar-phase'), msgEl=document.getElementById('ar-msg');
+  var grid, step;
+  function labelSort(s){ return s.split('+').sort().join('+'); }
+  function init(){
+    grid=[]; for(var d=0; d<N; d++){ var row=[]; for(var c=0;c<N;c++){ row.push(L[d]); } grid.push(row); }
+    step=0; phaseEl.textContent='Phase 1 · Reduce-Scatter';
+    msgEl.innerHTML='Ready. Each device D<i>i</i> holds 4 chunks c0..c3 with its own partial values.';
+    stepBtn.disabled=false; render();
+  }
+  function full(lbl){ return lbl.split('+').length===N; }
+  function render(){
+    var x0=180,y0=70,cw=100,ch=44,html='';
+    // headers
+    for(var c=0;c<N;c++){ html+='<text x="'+(x0+c*cw+cw/2)+'" y="60" text-anchor="middle" font-family="Inter" font-size="11" fill="#475569">c'+c+'</text>'; }
+    for(var d=0;d<N;d++){
+      html+='<text x="165" y="'+(y0+d*ch+ch/2+4)+'" text-anchor="end" font-family="Inter" font-size="11" font-weight="700" fill="#334155">D'+d+'</text>';
+      for(var c2=0;c2<N;c2++){
+        var lbl=grid[d][c2], isFull=full(lbl);
+        var fill=isFull?'#dcfce7':'#ffffff', stroke=isFull?'#16a34a':'#cbd5e1';
+        html+='<rect x="'+(x0+c2*cw)+'" y="'+(y0+d*ch)+'" width="'+(cw-6)+'" height="'+(ch-6)+'" rx="5" fill="'+fill+'" stroke="'+stroke+'"/>';
+        html+='<text x="'+(x0+c2*cw+(cw-6)/2)+'" y="'+(y0+d*ch+ch/2+3)+'" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="'+(lbl.length>7?9:11)+'" fill="'+(isFull?'#166534':'#0f172a')+'">'+lbl+'</text>';
+      }
+    }
+    html+='<text x="20" y="20" font-family="Inter" font-size="12" font-weight="700" fill="#0f172a">Ring: each device sends a chunk to its right neighbor (D0→D1→D2→D3→D0)</text>';
+    html+='<text x="20" y="285" font-family="Inter" font-size="10" fill="#475569">Green = fully reduced (holds a+b+c+d). Step '+step+' / 6.</text>';
+    svg.innerHTML=html;
+  }
+  function doStep(){
+    if(step>=6){ return; }
+    if(step<3){ // reduce-scatter
+      var i=step, sends=[], nd=[];
+      for(var d=0; d<N; d++){ nd.push(grid[d].slice()); }
+      for(var d2=0; d2<N; d2++){
+        var chunk=((d2-i)%N+N)%N, recv=(d2+1)%N;
+        var merged=labelSort(grid[recv][chunk]+'+'+grid[d2][chunk]);
+        // dedup letters
+        var set={}; merged.split('+').forEach(function(x){set[x]=1;});
+        nd[recv][chunk]=Object.keys(set).sort().join('+');
+        sends.push('D'+d2+'→D'+recv+' chunk c'+chunk);
+      }
+      grid=nd; step++;
+      phaseEl.textContent='Phase 1 · Reduce-Scatter';
+      msgEl.innerHTML='<b>Reduce-scatter step '+step+'/3.</b> '+sends.join(', ')+'. Each receiver adds the chunk in.'+(step===3?' Now every device owns exactly one fully-reduced chunk (the green diagonal).':'');
+    } else { // all-gather
+      var i2=step-3, nd2=[];
+      for(var d=0; d<N; d++){ nd2.push(grid[d].slice()); }
+      var sends2=[];
+      for(var d3=0; d3<N; d3++){
+        var sc=((d3+1-i2)%N+N)%N, recv2=(d3+1)%N;
+        nd2[recv2][sc]=grid[d3][sc];
+        sends2.push('D'+d3+'→D'+recv2+' chunk c'+sc);
+      }
+      grid=nd2; step++;
+      phaseEl.textContent='Phase 2 · All-Gather';
+      msgEl.innerHTML='<b>All-gather step '+(step-3)+'/3.</b> '+sends2.join(', ')+'. Finished chunks circulate so everyone ends with all four sums.'+(step===6?' <b>Done — every device now holds the full all-reduce result.</b>':'');
+    }
+    render();
+    if(step>=6){ stepBtn.disabled=true; }
+  }
+  stepBtn.addEventListener('click',doStep);
+  resetBtn.addEventListener('click',init);
+  init();
+})();
+
+/* ===== Continuous batching animation (namespaced IIFE) ===== */
+(function(){
+  var svg=document.getElementById('cb-svg');
+  if(!svg) return;
+  var stepBtn=document.getElementById('cb-step'), resetBtn=document.getElementById('cb-reset');
+  var clockEl=document.getElementById('cb-clock'), msgEl=document.getElementById('cb-msg');
+  var slots, queue, clock, tokens, next;
+  function init(){
+    slots=[{id:'R0',rem:2},{id:'R1',rem:4},{id:'R2',rem:1},{id:'R3',rem:3}];
+    queue=[{id:'R4',rem:3},{id:'R5',rem:2},{id:'R6',rem:4}];
+    clock=0; tokens=0; next=7;
+    clockEl.textContent='step 0';
+    msgEl.innerHTML='4 slots on the accelerator. Waiting queue: R4, R5, R6. Press Step to run a decode step.';
+    stepBtn.disabled=false; render();
+  }
+  function render(){
+    var x0=40,y0=50,bw=560,bh=34,gap=12,html='';
+    html+='<text x="20" y="24" font-family="Inter" font-size="12" font-weight="700" fill="#0f172a">Decode step '+clock+' · '+tokens+' tokens produced · '+slots.filter(function(s){return s;}).length+'/4 slots busy</text>';
+    for(var i=0;i<4;i++){
+      var y=y0+i*(bh+gap), s=slots[i];
+      html+='<rect x="'+x0+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>';
+      html+='<text x="'+(x0-6)+'" y="'+(y+bh/2+4)+'" text-anchor="end" font-family="Inter" font-size="11" font-weight="700" fill="#334155">slot '+i+'</text>';
+      if(s){
+        var w=Math.max(40, Math.min(bw, s.rem*90+40));
+        html+='<rect x="'+x0+'" y="'+y+'" width="'+w+'" height="'+bh+'" rx="6" fill="#dbeafe" stroke="#2563eb"/>';
+        html+='<text x="'+(x0+12)+'" y="'+(y+bh/2+4)+'" font-family="JetBrains Mono, monospace" font-size="12" fill="#1e40af">'+s.id+' · '+s.rem+' tok left</text>';
+      } else {
+        html+='<text x="'+(x0+12)+'" y="'+(y+bh/2+4)+'" font-family="Inter" font-size="11" fill="#525a68">(idle — would waste GPU under static batching)</text>';
+      }
+    }
+    var qy=y0+4*(bh+gap)+6;
+    html+='<text x="'+x0+'" y="'+qy+'" font-family="Inter" font-size="11" font-weight="700" fill="#334155">Waiting queue: '+(queue.length?queue.map(function(q){return q.id;}).join(', '):'(empty)')+'</text>';
+    // utilization bar: busy slots / 4 — the fraction of the accelerator kept busy
+    var busy=slots.filter(function(s){return s;}).length, uy=qy+16, ubw=200, ux=x0+96;
+    html+='<text x="'+x0+'" y="'+(uy+11)+'" font-family="Inter" font-size="11" font-weight="700" fill="#334155">utilization</text>';
+    html+='<rect x="'+ux+'" y="'+uy+'" width="'+ubw+'" height="14" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>';
+    html+='<rect x="'+ux+'" y="'+uy+'" width="'+(ubw*busy/4)+'" height="14" rx="4" fill="#16a34a"/>';
+    html+='<text x="'+(ux+ubw+8)+'" y="'+(uy+11)+'" font-family="JetBrains Mono, monospace" font-size="11" fill="#166534">'+Math.round(busy/4*100)+'% ('+busy+'/4 busy)</text>';
+    svg.innerHTML=html;
+  }
+  function doStep(){
+    var active=slots.filter(function(s){return s;}).length;
+    if(active===0 && queue.length===0){ return; }
+    clock++;
+    var finished=[], admitted=[];
+    for(var i=0;i<4;i++){
+      if(slots[i]){ slots[i].rem--; tokens++;
+        if(slots[i].rem<=0){ finished.push(slots[i].id); slots[i]=null; }
+      }
+    }
+    // refill finished slots from queue (continuous batching: same step)
+    for(var j=0;j<4;j++){
+      if(!slots[j] && queue.length){ var r=queue.shift(); slots[j]=r; admitted.push(r.id+'→slot '+j); }
+    }
+    clockEl.textContent='step '+clock;
+    var m='<b>Step '+clock+':</b> each active slot produced 1 token.';
+    if(finished.length) m+=' Finished: '+finished.join(', ')+'.';
+    if(admitted.length) m+=' Admitted immediately: '+admitted.join(', ')+' — the batch stays full.';
+    if(!slots.filter(function(s){return s;}).length && !queue.length){ m+=' <b>All requests done.</b>'; stepBtn.disabled=true; }
+    msgEl.innerHTML=m;
+    render();
+  }
+  stepBtn.addEventListener('click',doStep);
+  resetBtn.addEventListener('click',init);
+  init();
+})();
+
+/* ===== End-to-end graph→kernels step player (namespaced IIFE) ===== */
+(function(){
+  var svg=document.getElementById('e2e-svg');
+  if(!svg) return;
+  var stepBtn=document.getElementById('e2e-step'), resetBtn=document.getElementById('e2e-reset');
+  var stageEl=document.getElementById('e2e-stage'), msgEl=document.getElementById('e2e-msg');
+  var stages=[
+    {t:'Author (graph)', c:'#7c3aed', bg:'#ede9fe', m:'A user writes the model in PyTorch/JAX — a dataflow graph of ops (matmul, attention, norm) — and hits train.'},
+    {t:'Lower to IR', c:'#2563eb', bg:'#dbeafe', m:'The compiler (XLA / MLIR) traces the graph into an intermediate representation it can analyze and rewrite.'},
+    {t:'Optimize', c:'#2563eb', bg:'#dbeafe', m:'Operator fusion merges memory-bound ops into one kernel (raising arithmetic intensity); layout + memory planning run. → Compiler tab.'},
+    {t:'Shard', c:'#16a34a', bg:'#dcfce7', m:'Auto-sharding / FSDP-TP-PP spec cuts tensors across devices and inserts the right collectives. → Parallelism tab.'},
+    {t:'Place & schedule', c:'#d97706', bg:'#fef3c7', m:'The cluster gang-schedules workers onto a topology-aware slice: TP on NVLink, DP on DCN. → Scheduling tab.'},
+    {t:'Codegen kernels', c:'#ea580c', bg:'#ffedd5', m:'Ops become tuned GEMM / attention kernels for tensor cores or systolic arrays. → Kernel layer.'},
+    {t:'Execute & sync', c:'#dc2626', bg:'#fee2e2', m:'Forward/backward run; gradients all-reduce, overlapped with compute. → Collectives tab.'},
+    {t:'Observe & survive', c:'#0d9488', bg:'#ccfbf1', m:'Telemetry, profiling, checkpointing, and failure recovery keep the run finishing. → Reliability & Profiling tabs.'}
+  ];
+  var cur;
+  function render(){
+    var html='',x0=20,y0=40,bw=150,bh=44,perRow=4,gapx=8,gapy=16;
+    html+='<text x="20" y="22" font-family="Inter" font-size="12" font-weight="700" fill="#0f172a">Model graph → scheduled kernels across a supercomputer</text>';
+    for(var i=0;i<stages.length;i++){
+      var col=i%perRow, row=Math.floor(i/perRow);
+      var x=x0+col*(bw+gapx), y=y0+row*(bh+gapy);
+      var on=(i<=cur), fill=on?stages[i].bg:'#ffffff', stroke=on?stages[i].c:'#cbd5e1';
+      var op=on?1:0.55;
+      html+='<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="7" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+((i===cur)?3:1.5)+'" opacity="'+op+'"/>';
+      html+='<text x="'+(x+bw/2)+'" y="'+(y+bh/2-3)+'" text-anchor="middle" font-family="Inter" font-size="10" font-weight="700" fill="'+(on?stages[i].c:'#525a68')+'">'+(i+1)+'. '+stages[i].t+'</text>';
+      if(i<stages.length-1 && col<perRow-1){ html+='<text x="'+(x+bw+1)+'" y="'+(y+bh/2+4)+'" font-family="Inter" font-size="12" fill="#334155">→</text>'; }
+    }
+    svg.innerHTML=html;
+  }
+  function init(){ cur=0; stageEl.textContent='Stage 1 / 8'; msgEl.textContent=stages[0].m; stepBtn.disabled=false; render(); }
+  function doStep(){
+    if(cur>=stages.length-1){ return; }
+    cur++;
+    stageEl.textContent='Stage '+(cur+1)+' / 8';
+    msgEl.textContent=stages[cur].m;
+    render();
+    if(cur>=stages.length-1){ stepBtn.disabled=true; stageEl.textContent='Done · 8 / 8'; }
+  }
+  stepBtn.addEventListener('click',doStep);
+  resetBtn.addEventListener('click',init);
+  init();
+})();
+</script>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

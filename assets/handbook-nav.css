@@ -1,0 +1,1082 @@
+/* ============================================================================
+   The Interview Prep Handbook — GitBook-style navigation
+   Shared component. Left book-tree sidebar + right "On this page" rail.
+   Replaces the legacy per-page #pagetoc-style block (byte-identical everywhere).
+   ============================================================================ */
+
+:root{
+  --hb-w: 300px;          /* left book sidebar width */
+  --hb-toc-w: 240px;      /* right on-this-page rail width */
+  --hb-gap: 40px;         /* breathing room between chrome and content */
+  --hb-top: 44px;         /* booknav-top height, updated by JS */
+  --hb-bg: #ffffff;
+  --hb-bg-soft: #f7f9fc;
+  --hb-border: #e6eaf0;
+  --hb-text: #3d4551;
+  --hb-text-strong: #101828;
+  --hb-muted: #6b7280;
+  --hb-accent: #2563eb;
+  --hb-accent-soft: #eaf1ff;
+  --hb-accent-line: #2563eb;
+  --hb-radius: 8px;
+  --hb-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ============================================================================
+   READING-COMFORT PALETTE + DARK MODE
+   This file is <link>ed AFTER each chapter's own <style>, so these :root rules
+   override the per-file semantic tokens across all 64 chapters. Retunes light
+   mode (subtle warm off-white to reduce glare, WCAG AA >=4.5:1 body text) and
+   adds a toggleable dark mode via html[data-theme="dark"].
+   ============================================================================ */
+
+/* ---- LIGHT (retuned, warm off-white) ---- */
+:root{
+  --bg:#f6f4ef; --bg2:#fffdf8; --bg3:#eeebe3; --bg4:#e3dfd5; --border:#e2ded4;
+  --text:#23262b; --text2:#474b52; --text3:#63676f;   /* muted darkened to clear WCAG AA 4.5:1 on the warm bg */
+  /* Darken accent tokens in LIGHT mode so small bold "kicker" labels colored
+     with an accent, placed on the SAME-hue light callout tint, clear AA 4.5:1
+     (e.g. green label on green tint was 3.00:1). */
+  --green:#0f7434; --blue:#1b62d6; --red:#c02718; --orange:#9a4708;
+  --purple:#6d28d9; --teal:#0f766e; --yellow:#8a5a06; --cyan:#0e7490; --nv:#4d7c0f;
+  /* Round-9: green/orange/yellow darkened a touch more so an accent label placed
+     on its OWN lighter tint clears AA 4.5:1 — green on --green-l #d3f9d8 (was
+     4.43→5.13:1) & on --bg3 #eeebe3 (4.27→4.94:1); yellow on --yellow-l #fff3bf
+     (4.41→5.31:1); orange on --bg3 (4.22→5.38:1) & on #ffedd5 (4.38→5.59:1).
+     Light-mode only — dark mode re-brightens these below. */
+}
+
+/* ---- DARK (warm-neutral) ---- */
+html[data-theme="dark"]{
+  --bg:#15171b; --bg2:#1d2026; --bg3:#252932; --bg4:#30343d; --border:#333a44;
+  --text:#e7e3db; --text2:#bcc0c8; --text3:#8b919b;
+
+  /* light-tint callout backgrounds -> dark tints */
+  --blue-l:#17253f; --green-l:#14301e; --yellow-l:#372c10; --red-l:#3a1c1c;
+  --purple-l:#271f3c; --orange-l:#3a2711; --teal-l:#123230; --nv-l:#26320f;
+
+  /* accent text -> brightened for dark bg */
+  --blue:#6ea8fe; --green:#5fce86; --yellow:#e3b341; --red:#f27a7a;
+  --purple:#b39aff; --orange:#f0965a; --teal:#3fc7bb;
+
+  /* inline <code> accent: --blue-d #1d4ed8 = 2.17:1 on dark -> brighten */
+  --blue-d:#6ea8fe;
+
+  /* sidebar chrome (--hb-*) goes dark with the page */
+  --hb-bg:#1a1d22; --hb-bg-soft:#23272e; --hb-border:#333a44;
+  --hb-text:#c7cbd3; --hb-text-strong:#f0ede6; --hb-muted:#8b919b;
+  --hb-accent:#6ea8fe; --hb-accent-soft:#17253f; --hb-accent-line:#6ea8fe;
+}
+
+/* ---- DARK: neutralize per-page hardcoded light surface fills ----
+   Many chapters hardcode `background:#fff` on panel / card components (their
+   borders already use var(--border), which adapts). Their surfaces stay glaring
+   white in dark mode. Override ONLY the fill colour to the dark surface token,
+   so any gradient-backed variant (background-image) still shows through. */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .skill-box,
+html[data-theme="dark"] .pc,
+html[data-theme="dark"] .decision-item,
+html[data-theme="dark"] .player,
+html[data-theme="dark"] .ghost,
+html[data-theme="dark"] .tab-nav,
+html[data-theme="dark"] .stepper,
+html[data-theme="dark"] .ov-card,
+html[data-theme="dark"] .mini-card,
+html[data-theme="dark"] .challenge,
+html[data-theme="dark"] .guide-collapse,
+html[data-theme="dark"] .filter-btn,
+html[data-theme="dark"] .msd-sec,
+html[data-theme="dark"] .mr-player,
+html[data-theme="dark"] .sbh,
+html[data-theme="dark"] .mr-col.on,
+html[data-theme="dark"] .mr-btn.secd{ background-color: var(--bg2); }
+
+/* SAY-THIS interview-quote callout (.iq): base is a light pink gradient that
+   stays glaring in dark -> retint to the dark red callout tone. */
+html[data-theme="dark"] .iq{
+  background: var(--red-l);
+  border-color: var(--border);
+  border-left-color: var(--red);
+}
+
+/* ---- DARK: callout BODY TEXT legibility ----
+   Chapters hardcode dark text colors on callout paragraphs (.insight/.tip/.iv/
+   .warning/.warn/.old/.have/.gap and their p/li/strong). Dark mode retints the
+   callout BACKGROUNDS (--*-l tokens) but not the text, leaving dark-on-dark
+   (contrast as low as 1.66:1). Force the body text to the light body token so it
+   is legible on the dark tints (var(--text) #e7e3db on --blue-l #17253f ~= 12:1). */
+html[data-theme="dark"] .insight,
+html[data-theme="dark"] .insight p,
+html[data-theme="dark"] .insight li,
+html[data-theme="dark"] .insight strong,
+html[data-theme="dark"] .tip,
+html[data-theme="dark"] .tip p,
+html[data-theme="dark"] .tip li,
+html[data-theme="dark"] .tip strong,
+html[data-theme="dark"] .iv,
+html[data-theme="dark"] .iv p,
+html[data-theme="dark"] .iv li,
+html[data-theme="dark"] .iv strong,
+html[data-theme="dark"] .warning,
+html[data-theme="dark"] .warning p,
+html[data-theme="dark"] .warning li,
+html[data-theme="dark"] .warning strong,
+html[data-theme="dark"] .warn,
+html[data-theme="dark"] .warn p,
+html[data-theme="dark"] .warn li,
+html[data-theme="dark"] .warn strong,
+html[data-theme="dark"] .old,
+html[data-theme="dark"] .old p,
+html[data-theme="dark"] .old li,
+html[data-theme="dark"] .old strong,
+html[data-theme="dark"] .have,
+html[data-theme="dark"] .have p,
+html[data-theme="dark"] .have li,
+html[data-theme="dark"] .have strong,
+html[data-theme="dark"] .gap,
+html[data-theme="dark"] .gap p,
+html[data-theme="dark"] .gap li,
+html[data-theme="dark"] .gap strong{ color: var(--text); }
+
+/* ---- DARK: inline legend spans that hardcode dark accent hexes ----
+   Some chapters set colored legend text inline (style="color:#8a1c1c" etc.).
+   Those dark hexes are illegible on dark backgrounds -> remap each to its
+   brightened accent token. */
+html[data-theme="dark"] [style*="#8a1c1c"]{ color: var(--red) !important; }
+html[data-theme="dark"] [style*="#114f8c"]{ color: var(--blue) !important; }
+html[data-theme="dark"] [style*="#1d6b2e"]{ color: var(--green) !important; }
+html[data-theme="dark"] [style*="#4a2fa8"]{ color: var(--purple) !important; }
+html[data-theme="dark"] [style*="#a85700"]{ color: var(--orange) !important; }
+
+/* smooth transition when toggling themes */
+body{ transition: background-color .2s ease, color .2s ease; }
+
+/* ---- READING-COMFORT TYPOGRAPHY (pages set 15px locally) ---- */
+html body{ font-size: 16px; line-height: 1.65; }
+
+/* ---- LINKS: don't rely on color alone (WCAG). Underline in-content links
+   only; exclude nav / button / sidebar / toc links. ---- */
+.card a, .insight a, p a, li a, .container td a, .content td a{ text-decoration: underline; text-underline-offset: 2px; }
+.bknav a, .hb-sidebar a, .hb-toc a, .nav-btn, a.nav-btn{ text-decoration: none; }
+
+/* ---- THEME TOGGLE BUTTON (lives in the sidebar brand row) ---- */
+.hb-theme-toggle{
+  margin-left: auto; flex: 0 0 auto;
+  width: 40px; height: 40px; border-radius: 8px;
+  border: 1px solid var(--hb-border); background: var(--hb-bg-soft);
+  color: var(--hb-text); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 15px; line-height: 1; padding: 0;
+  transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.hb-theme-toggle:hover{ background: var(--hb-accent-soft); color: var(--hb-accent); border-color: var(--hb-accent); }
+.hb-theme-toggle:focus-visible{ outline: 2px solid var(--hb-accent); outline-offset: 2px; }
+
+/* ---- UNIFIED CHAPTER MASTHEAD (one consistent "publisher" header everywhere) --
+   Built by handbook-nav.js from each chapter's title/subtitle; replaces the
+   bespoke per-chapter <header>/.ph hero so every chapter opens identically.
+   Uses shared tokens, so it adapts to light/dark automatically. */
+.hb-masthead{
+  margin: 4px 0 30px; padding: 24px 30px;
+  border: 1px solid var(--border); border-left: 4px solid var(--hb-accent);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--hb-accent-soft) 0%, transparent 60%), var(--bg2);
+  font-family: var(--hb-font);
+}
+.hb-mh-crumb{
+  font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--hb-accent); margin-bottom: 9px;
+}
+.hb-mh-title{
+  font-size: 30px; font-weight: 800; line-height: 1.15; letter-spacing: -.4px;
+  color: var(--text); margin: 0 0 9px;
+}
+.hb-mh-sub{ font-size: 14.5px; line-height: 1.55; color: var(--text3); max-width: 74ch; }
+@media (max-width: 768px){
+  .hb-masthead{ padding: 18px 18px; margin-bottom: 22px; }
+  .hb-mh-title{ font-size: 23px; }
+}
+
+/* ---- DESIGN LANGUAGE: ONE content column for every chapter ----------------
+   Chapters were authored with different container max-widths (800–1150) and
+   paddings, so the content column jumped position/width when navigating
+   chapter→chapter. Enforce a single geometry on every content wrapper (incl.
+   the runtime .container that handbook-nav.js wraps around no-container pages,
+   and redis-style bare .sec sections) so the column is identical everywhere. */
+body.hb-on .container, body.hb-on .content, body.hb-on #main{
+  max-width: 1060px !important;
+  margin-left: 0 !important; margin-right: auto !important;
+  padding: 40px 40px !important;
+}
+/* .sbh pages ship their own fixed #sb sidebar + a #main that is position:fixed or
+   margin-left:var(--sw) to clear it. #sb is hidden by the book nav's hide-list;
+   neutralize #main's own positioning/offset so it flows as the normal content
+   column (offset only by the shared sidebar), not pushed right or overlapping. */
+body.hb-on #main{
+  position: static !important; left: auto !important; right: auto !important;
+  bottom: auto !important; top: auto !important; width: auto !important; overflow: visible !important;
+}
+/* Some chapters nest wrappers (.container > .content etc.); only the OUTERMOST
+   should define the column, so a NESTED wrapper must not add its own padding/
+   max-width (that double-insets the content to a narrower, shifted column). */
+body.hb-on .container .content, body.hb-on .content .container,
+body.hb-on .container .container, body.hb-on .content .content,
+body.hb-on #main .container, body.hb-on #main .content{
+  max-width: none !important; margin: 0 !important; padding: 0 !important;
+}
+body.hb-on .hb-masthead{ max-width: 1060px; margin-left: 0; margin-right: auto; }
+
+/* ---- EXTERNAL-AUDIT CONSISTENCY FIXES ---------------------------------------
+   Enforce ONE masthead alignment (some chapters ship header{text-align:center},
+   which leaked into the injected <header class="hb-masthead">), ONE section-
+   heading color, wrappable inline code, and dark-mode legibility of inline SVG. */
+.hb-masthead, .hb-mh-crumb, .hb-mh-title, .hb-mh-sub{ text-align: left !important; }
+.hb-mh-title{ overflow-wrap: anywhere; }
+/* One house color for first-level section headings across every chapter.
+   Use --hb-accent (a single shared value), NOT per-chapter --blue (which is
+   #1971c2 on 39 chapters and #2563eb on 26), so every h2 is the SAME blue and
+   matches the masthead accent. */
+body.hb-on h2, body.hb-on .section-title{ color: var(--hb-accent) !important; font-size: 24px !important; font-weight: 800 !important; }
+/* Masthead title must stay the house 30px even where a chapter's own
+   `.container header h1{font-size:28px}` (higher specificity) leaks onto the
+   injected <header class="hb-masthead"> (e.g. cresta). */
+body.hb-on .hb-masthead .hb-mh-title{ font-size: 30px !important; }
+/* Inline <code> must wrap — some chapters force white-space:pre on ALL code,
+   which overflowed the column on mobile. Keep block <pre> code as-is. */
+body.hb-on :not(pre) > code{ white-space: normal !important; overflow-wrap: anywhere; word-break: break-word; }
+/* Dark mode: sidebar filter input kept a white focus background (invisible text). */
+html[data-theme="dark"] .hb-search:focus{ background-color: var(--hb-bg-soft) !important; color: var(--hb-text); }
+/* Dark mode: HTML diagram/figure boxes that hardcode a LIGHT inline background
+   (#e.. / #f.. / #d..) render as bright islands on the dark page. Retint any
+   such inline light background to the dark surface so diagrams stay on-theme. */
+html[data-theme="dark"] [style*="background:#e"], html[data-theme="dark"] [style*="background:#f"], html[data-theme="dark"] [style*="background:#d"],
+html[data-theme="dark"] [style*="background: #e"], html[data-theme="dark"] [style*="background: #f"], html[data-theme="dark"] [style*="background: #d"],
+html[data-theme="dark"] [style*="background-color:#e"], html[data-theme="dark"] [style*="background-color:#f"], html[data-theme="dark"] [style*="background-color:#d"],
+html[data-theme="dark"] [style*="background-color: #e"], html[data-theme="dark"] [style*="background-color: #f"], html[data-theme="dark"] [style*="background-color: #d"]{
+  background-color: var(--bg3) !important; border-color: var(--border) !important;
+}
+/* ...and lift ENUMERATED near-black inline text to the light token (only true
+   grays/near-blacks — never blue/green accents, which we leave colored).
+   Round-9b (D): scoped with :not(button) — a step/play control BUTTON often has a
+   LIGHT accent fill with a dark label, so this blanket lift used to turn that label
+   white-on-light-blue (~2:1). Control buttons get their fill+label from Round-9b (C)
+   instead; the lift now applies only to prose/diagram text, never a button. */
+html[data-theme="dark"] :is(
+  [style*="color:#212529"],[style*="color: #212529"],
+  [style*="color:#1e293b"],[style*="color: #1e293b"],
+  [style*="color:#0f172a"],[style*="color: #0f172a"],
+  [style*="color:#1a1b26"],[style*="color: #1a1b26"],
+  [style*="color:#0b1220"],[style*="color: #0b1220"],
+  [style*="color:#333"],[style*="color: #333"],
+  [style*="color:#222"],[style*="color: #222"],
+  [style*="color:#111"],[style*="color: #111"],
+  [style*="color:#000"],[style*="color: #000"],
+  [style*="color:black"]
+):not(button){ color: var(--text) !important; }
+/* Right-rail "On this page" links: --hb-muted was 4.40:1 on the warm page bg in
+   light mode; use the darker --text3 (~5:1) so rail links clear AA. */
+body.hb-on .hb-toc a{ color: var(--text3); }
+
+/* Code-comment token: #6c7086 / #7f849c / #64748b on the dark #1e1e2e code bg
+   were 3.36–4.44:1 (below AA) in BOTH themes. Force a legible comment color. */
+body.hb-on pre .cm{ color: #9aa0bd !important; }
+/* Same fix for DIV-based code blocks: code_review_training.html renders code in
+   `.code-block{background:#1e293b}` (not <pre>), so the pre .cm rule above never
+   reached it — its comment token `.code-block .cmt{color:#64748b}` was 3.07:1 on
+   #1e293b (fails AA in BOTH themes, and the comments there are load-bearing). Use
+   the same house comment color (#9aa0bd = 5.67:1 on #1e293b). */
+body.hb-on .code-block .cmt{ color: #9aa0bd !important; }
+
+/* DARK-MODE SVG DIAGRAMS: light-figure approach (approved design decision,
+   user 2026-08-16). Rather than repaint diagram internals dark — which left
+   light-on-light labels wherever a fill came from a class/inline/un-listed hex —
+   diagrams are rendered AS AUTHORED (their light-mode look) on a fixed LIGHT
+   figure background, like GitHub/Notion. handbook-nav.js tags every <svg> that
+   contains <text>/<tspan> with .hb-figure; the light backing is defined in the
+   `svg.hb-figure` rule below. Pure-icon svgs (no text) are NOT tagged. */
+html[data-theme="dark"] svg.hb-figure{
+  background:#f4f5f7 !important;   /* neutral light figure backing for transparent areas */
+  border-radius:8px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.10);   /* hairline outline (follows the radius) for definition */
+
+  /* Restore the LIGHT palette WITHIN the figure so diagram fills/labels that are
+     colored through the shared theme tokens (var(--blue), var(--text), the --*-l
+     tints, …) resolve to their LIGHT-mode values on this light backing — i.e. the
+     diagram renders exactly as authored for light mode. Diagrams that use literal
+     hexes are unaffected (already light-appropriate). Without this, a label using
+     var(--blue) would take the dark-mode BRIGHTENED accent (#6ea8fe) and go
+     light-on-light on the figure card. */
+  --bg:#f6f4ef; --bg2:#fffdf8; --bg3:#eeebe3; --bg4:#e3dfd5; --border:#e2ded4;
+  --text:#23262b; --text2:#474b52; --text3:#63676f;
+  --green:#0f7434; --blue:#1b62d6; --red:#c02718; --orange:#9a4708;
+  --purple:#6d28d9; --teal:#0f766e; --yellow:#8a5a06; --cyan:#0e7490; --nv:#4d7c0f;
+  --blue-d:#1d4ed8;
+  --blue-l:#dbeafe; --green-l:#d3f9d8; --yellow-l:#fff3bf; --red-l:#ffe3e3;
+  --purple-l:#ede9fe; --orange-l:#ffedd5; --teal-l:#c3fae8; --nv-l:#ecfccb;
+}
+
+/* .ins/.note callouts: only cresta hardcodes colored body text (#1e40af/#5b21b6)
+   — every other chapter uses var(--text). Normalize to neutral in BOTH themes so
+   cresta matches the house style (and clears AA on the dark tint). */
+body.hb-on .ins p, body.hb-on .ins li, body.hb-on .ins strong,
+body.hb-on .note p, body.hb-on .note li, body.hb-on .note strong{ color: var(--text) !important; }
+
+/* ── Round-6 external-audit fixes (dark-mode contrast a11y) ─────────────── */
+
+/* (Fix 1) In-content prose links had NO color rule → they fell back to the UA
+   default #0000EE (~1.6:1 on dark surfaces, near-invisible). Give them the
+   theme-adaptive accent (light #1b62d6 / dark #6ea8fe). Scoped to prose
+   containers so sidebar/booknav/brand/masthead links are untouched. */
+body.hb-on .container p a, body.hb-on .container li a, body.hb-on .container td a,
+body.hb-on .content p a, body.hb-on .content li a, body.hb-on .content td a,
+body.hb-on .card a, body.hb-on .ins a, body.hb-on .note a{ color: var(--blue); }
+
+/* (Fix 2) Interactive buttons hardcode var(--blue) as fill (with white text) or
+   as text on a white fill. In dark, --blue is the light TEXT accent (#6ea8fe),
+   so white-on-it collapses to ~2.4:1. Dark mode: primary buttons get a darker
+   fill + white text; ghost buttons get a dark surface + the bright accent text. */
+html[data-theme="dark"] body.hb-on .stepper-btn,
+html[data-theme="dark"] body.hb-on .ota-btn,
+html[data-theme="dark"] body.hb-on .btn-primary,
+html[data-theme="dark"] body.hb-on .mr-btn,
+html[data-theme="dark"] body.hb-on .filter-btn.active,
+html[data-theme="dark"] body.hb-on .viz-controls button.primary,
+html[data-theme="dark"] body.hb-on .player-ctrls button,
+html[data-theme="dark"] body.hb-on .player-controls button,
+html[data-theme="dark"] body.hb-on .player-btn,
+html[data-theme="dark"] body.hb-on #msd-stepper button{
+  background:#1b62d6 !important; border-color:#1b62d6 !important; color:#fff !important;
+}
+html[data-theme="dark"] body.hb-on .player-ctrls button.ghost,
+html[data-theme="dark"] body.hb-on .player-controls button.ghost,
+html[data-theme="dark"] body.hb-on .player-btn.ghost,
+html[data-theme="dark"] body.hb-on #msd-stepper button.msd-sec{
+  background:var(--bg2) !important; border-color:var(--border) !important; color:var(--blue) !important;
+}
+
+/* (Fix 3) A few chapters left <pre> on the light page surface, so the shared
+   comment color (.cm #9aa0bd, tuned for the dark editor bg) failed contrast in
+   LIGHT mode. Unify ALL code blocks to the dark editor surface in both themes —
+   one house code-block look, and .cm is always on dark. Inline syntax spans keep
+   their own colors (higher specificity); only the pre's own text is forced light. */
+body.hb-on pre{ background:#1e1e2e !important; color:#cdd6f4 !important; }
+
+/* (Minor) Heading rhythm: normalize section-heading margins + drop the stray
+   underline rule so headings sit identically across card and bare-flow chapters. */
+body.hb-on h2, body.hb-on .stitle, body.hb-on .section-title, body.hb-on .sec-title{
+  margin-top:32px !important; margin-bottom:12px !important; border-bottom:none !important;
+}
+body.hb-on .sec{ max-width: 1060px !important; margin-left: 0 !important; margin-right: auto !important; }
+/* Tabbed app-shell panels (.sec) shipped per-chapter HORIZONTAL padding (0 / 4 / 44px …)
+   that shifted their auto-wrapped section cards off the shared content column — the card's
+   left/right border no longer lined up with the masthead (observability sat ~glued to the
+   edge at 4px; test_automation was inset 44px). The auto-card itself now owns the visual
+   inset, so zero the panel's own left/right padding → every card aligns to the masthead's
+   left+right edges. Vertical padding is kept for inter-panel rhythm. */
+body.hb-on .sec{ padding-left: 0 !important; padding-right: 0 !important; }
+/* Auto-wrapped section cards (hbWrapBareSections). Chapters authored in the tabbed
+   app-shell never wrote a local `.card` rule, so their auto-wrapper rendered with
+   padding:0 (heading/text glued to the border) and no themed surface — both inside the
+   tab panels AND for any trailing section wrapped outside a panel. Give EVERY auto-card
+   the SAME house card as bare-flow chapters' cards (surface / border / radius / inner
+   padding), theme-adaptive via tokens, so content is inset off the border and every
+   section card looks identical book-wide. Bare-flow chapters already render this look via
+   their local `.card`, so these identical values are a no-op there. */
+body.hb-on .hb-autocard{
+  padding: 24px 28px !important;
+  background: var(--bg2) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 14px !important;
+  margin: 0 0 20px !important;
+}
+@media (max-width: 768px){
+  body.hb-on .container, body.hb-on .content{ padding: 20px 16px !important; }
+  body.hb-on .hb-autocard{ padding: 18px 18px !important; }
+}
+
+/* ── Round-7 shared-asset a11y / consistency fixes ─────────────────────────── */
+
+/* (Fix 1) Right-rail "ON THIS PAGE" title used --hb-muted (#6b7280 = 4.40:1 on the
+   warm light page bg, below AA). Use the darker --text3 (light 5.16:1 / dark 5.66:1)
+   to match the rail links, which already use --text3. */
+body.hb-on .hb-toc-title{ color: var(--text3) !important; }
+
+/* (Fix 2) Sidebar filter input had NO ::placeholder rule → the UA default (#757575)
+   failed AA on the input surface in both themes. Use --hb-muted (light 4.58:1 /
+   dark 4.73:1 on --hb-bg-soft) at full opacity so placeholder text clears AA. */
+.hb-search::placeholder{ color: var(--hb-muted); opacity: 1; }
+
+/* (Fix 3) Long unbreakable slash tokens (e.g. in nv_dgx_cloud_prep) overflowed the
+   content column on narrow viewports. Let prose wrap anywhere; scoped to content
+   containers so code/tables are untouched. */
+body.hb-on .card p, body.hb-on .gap p, body.hb-on li{ overflow-wrap: anywhere; }
+
+/* (Fix 4) Ramp-up chapters render section bars as .cat-header (15px dark text on a
+   gray fill), unlike the house first-level section heading. Make .cat-header look
+   like the house h2 so section headings are consistent across every chapter. */
+body.hb-on .cat-header{
+  color: var(--hb-accent) !important; font-size: 24px !important; font-weight: 800 !important;
+  background: transparent !important; padding: 0 !important;
+  margin-top: 32px !important; margin-bottom: 12px !important; border-bottom: none !important;
+}
+
+/* (Fix 5) A few chapters (e.g. google_three_papers) underline their h3 with a 1px
+   border unlike the no-border majority. Drop the underline (font-size intentionally
+   left alone to not clash with the concurrent heading-hierarchy work). */
+body.hb-on h3{ border-bottom: none !important; }
+
+/* ---- LEFT BOOK SIDEBAR ---------------------------------------------------- */
+.hb-sidebar{
+  position: fixed; top: var(--hb-top); left: 0;
+  width: var(--hb-w); height: calc(100vh - var(--hb-top));
+  background: var(--hb-bg);
+  border-right: 1px solid var(--hb-border);
+  z-index: 1000;
+  display: flex; flex-direction: column;
+  font-family: var(--hb-font);
+  transform: translateX(-100%);
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
+  box-shadow: 2px 0 22px rgba(16,24,40,.10);
+}
+.hb-sidebar.open{ transform: translateX(0); }
+
+.hb-brand{
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 9px;
+  padding: 15px 18px 13px;
+  border-bottom: 1px solid var(--hb-border);
+  text-decoration: none;
+}
+.hb-brandlink{ display: flex; align-items: center; gap: 9px; text-decoration: none; flex: 1 1 auto; min-width: 0; }
+.hb-brand .hb-logo{
+  width: 26px; height: 26px; flex: 0 0 auto; border-radius: 7px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 15px; color: #fff;
+  /* light stop darkened #3b82f6 -> #2563eb so white glyph clears AA >=4.5:1
+     at the lightest point of the gradient (5.17:1) in both themes. */
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+}
+.hb-brand .hb-btext{ line-height: 1.15; }
+.hb-brand .hb-t1{ display:block; font-size: 13.5px; font-weight: 800; color: var(--hb-text-strong); letter-spacing:-.2px; }
+.hb-brand .hb-t2{ display:block; font-size: 10.5px; font-weight: 600; color: var(--hb-muted); letter-spacing:.4px; text-transform: uppercase; }
+
+/* search / filter */
+.hb-search-wrap{ flex:0 0 auto; padding: 12px 14px 8px; }
+.hb-search{
+  width: 100%; box-sizing: border-box;
+  border: 1px solid var(--hb-border); border-radius: var(--hb-radius);
+  background: var(--hb-bg-soft);
+  padding: 8px 12px 8px 32px; font-size: 12.5px; color: var(--hb-text);
+  font-family: var(--hb-font);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a93a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 11px center;
+}
+.hb-search:focus{ outline: none; border-color: var(--hb-accent); background-color:#fff; box-shadow: 0 0 0 3px var(--hb-accent-soft); }
+
+.hb-tree{
+  flex: 1 1 auto; overflow-y: auto;
+  padding: 6px 10px 40px; scrollbar-width: thin;
+}
+.hb-tree::-webkit-scrollbar{ width: 8px; }
+.hb-tree::-webkit-scrollbar-thumb{ background: #d7dde6; border-radius: 8px; border: 2px solid #fff; }
+
+.hb-part{ margin: 2px 0; }
+.hb-part-btn{
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  background: none; border: none; cursor: pointer;
+  padding: 8px 8px; border-radius: 6px;
+  font-family: var(--hb-font); text-align: left; color: var(--hb-text-strong);
+}
+.hb-part-btn:hover{ background: var(--hb-bg-soft); }
+.hb-part-btn .hb-caret{
+  flex: 0 0 auto; width: 14px; height: 14px; color: var(--hb-muted);
+  transition: transform .18s ease; font-size: 10px; line-height: 14px; text-align: center;
+}
+.hb-part.collapsed .hb-caret{ transform: rotate(-90deg); }
+.hb-part-btn .hb-roman{
+  flex: 0 0 auto; font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; font-weight: 700; color: #fff;
+  /* light stop darkened #3b82f6 -> #2563eb so the 10px/700 white roman numeral
+     clears AA >=4.5:1 at the lightest point of the gradient (5.17:1) both themes. */
+  background: linear-gradient(135deg,#1e40af,#2563eb);
+  border-radius: 5px; padding: 1px 6px; min-width: 20px; text-align: center;
+}
+.hb-part-btn .hb-pname{ font-size: 12px; font-weight: 700; letter-spacing: .2px; }
+
+.hb-chaps{ overflow: hidden; padding: 2px 0 4px; }
+.hb-part.collapsed .hb-chaps{ display: none; }
+
+.hb-chap{
+  display: block; position: relative;
+  padding: 6px 10px 6px 34px; margin: 1px 0;
+  font-size: 12.5px; line-height: 1.4; color: var(--hb-text);
+  text-decoration: none; border-radius: 6px;
+  border-left: 2px solid transparent;
+}
+.hb-chap:hover{ background: var(--hb-bg-soft); color: var(--hb-text-strong); }
+.hb-chap.active{
+  background: var(--hb-accent-soft); color: var(--hb-accent);
+  font-weight: 700; border-left-color: var(--hb-accent-line);
+}
+.hb-chap .hb-cnum{ color: var(--hb-muted); font-size: 10.5px; font-weight: 600; margin-right: 5px; }
+.hb-chap.active .hb-cnum{ color: var(--hb-accent); }
+
+/* on-page sections nested under the active chapter (medium/drawer widths) */
+.hb-sections{ margin: 2px 0 6px; padding-left: 34px; }
+.hb-sec{
+  display: block; padding: 5px 10px; margin: 1px 0;
+  font-size: 12px; line-height: 1.35; color: var(--hb-muted);
+  text-decoration: none; border-radius: 6px; border-left: 2px solid var(--hb-border);
+}
+.hb-sec:hover{ color: var(--hb-text-strong); background: var(--hb-bg-soft); }
+.hb-sec.lvl-3{ padding-left: 22px; font-size: 11.5px; }
+.hb-sec.active{ color: var(--hb-accent); border-left-color: var(--hb-accent-line); font-weight: 600; background: var(--hb-accent-soft); }
+
+/* ---- RIGHT "ON THIS PAGE" RAIL ------------------------------------------- */
+.hb-toc{
+  position: fixed; top: var(--hb-top); right: 0;
+  width: var(--hb-toc-w); height: calc(100vh - var(--hb-top));
+  overflow-y: auto; padding: 22px 18px 40px;
+  font-family: var(--hb-font); display: none; z-index: 90;
+}
+.hb-toc-title{ font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--hb-muted); margin-bottom: 10px; }
+.hb-toc a{
+  display: block; padding: 4px 0 4px 12px; margin: 1px 0;
+  font-size: 12px; line-height: 1.4; color: var(--hb-muted);
+  text-decoration: none; border-left: 2px solid var(--hb-border);
+}
+.hb-toc a:hover{ color: var(--hb-text-strong); }
+.hb-toc a.lvl-3{ padding-left: 24px; font-size: 11.5px; }
+.hb-toc a.active{ color: var(--hb-accent); border-left-color: var(--hb-accent-line); font-weight: 600; }
+
+/* ---- MOBILE HAMBURGER + OVERLAY ------------------------------------------ */
+.hb-btn{
+  position: fixed; left: 14px; bottom: 14px; z-index: 1100;
+  width: 50px; height: 50px; border-radius: 50%; border: none;
+  background: #1a1b26; color: #fff; font-size: 20px; line-height: 1; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,.30);
+}
+.hb-btn:hover{ background: #2a2b3c; }
+.hb-overlay{
+  position: fixed; inset: 0; background: rgba(16,24,40,.42);
+  z-index: 999; opacity: 0; pointer-events: none; transition: opacity .25s;
+}
+.hb-overlay.open{ opacity: 1; pointer-events: auto; }
+
+.hb-target{ scroll-margin-top: 60px; }
+
+/* reveal all tabbed sections & hide in-page tab bars when the book nav is on */
+body.hb-on .section, body.hb-on .sec, body.hb-on .tab-content, body.hb-on .tab-panel{ display: block !important; }
+body.hb-on .nav, body.hb-on #secnav, body.hb-on #sb, body.hb-on .tab-bar, body.hb-on .tab-nav{ display: none !important; }
+
+/* Keep NATIVE table semantics at ALL widths: Chromium/WebKit strip a table's
+   implicit ARIA table/row/cell/columnheader roles when display is changed off
+   `table` (WCAG 1.3.1 Level A), breaking screen-reader cell navigation on the
+   comparison tables. So scroll wide tables via a wrapper div (.hb-twrap, added by
+   JS), NEVER display:block on the table itself. The !important overrides each
+   page's mobile-rwd `table{display:block !important}` at <=768px too. */
+body.hb-on table{ display: table !important; width: 100%; max-width: 100%; }
+body.hb-on .hb-twrap{ display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* keep wide media from overflowing the narrowed content column */
+@media(min-width:769px){
+  body.hb-on img, body.hb-on svg{ max-width: 100%; height: auto; }
+  body.hb-on pre{ overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* Desktop: the wide-SVG scroll wrapper is INERT — no scrollbar, and the inline
+     min-width the JS set for mobile is neutralized so the SVG scales to the
+     content column exactly as before this feature existed. */
+  body.hb-on .hb-svg-scroll{ overflow: visible; max-width: 100%; }
+  body.hb-on .hb-svg-scroll > svg{ min-width: 0 !important; max-width: 100%; height: auto; }
+}
+
+/* Mobile: let wide diagram SVGs render at native size and scroll horizontally
+   inside their wrapper (like tables/<pre>) instead of shrinking their labels to
+   an illegible ~4-5px. The wrapper scrolls, not the page. */
+@media(max-width:768px){
+  body.hb-on .hb-svg-scroll{ overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  body.hb-on .hb-svg-scroll > svg{ height: auto; }
+}
+
+/* ---- RESPONSIVE BANDS ----------------------------------------------------- */
+/* Off-canvas drawer band: sidebar hidden, opened by hamburger */
+@media(max-width:1199px){
+  .hb-sidebar{ top: 0; height: 100vh; width: 86vw; max-width: 340px; }
+  .hb-chap{ padding-top: 9px; padding-bottom: 9px; }
+  .hb-sec{ padding-top: 8px; padding-bottom: 8px; }
+  /* Larger tap targets in the mobile drawer only (desktop density untouched).
+     44px is the WCAG 2.5.5 / checklist minimum touch-target height. */
+  .hb-sec{ min-height: 44px; box-sizing: border-box; }
+  .hb-part-btn{ min-height: 44px; box-sizing: border-box; }
+  .hb-chap{ min-height: 44px; box-sizing: border-box; display: flex; align-items: center; }
+  /* The theme toggle (40x40 by default) and the filter input (~33px tall) also sit
+     in the drawer band — give both a >=44px tap height here only. */
+  .hb-theme-toggle{ width: 44px; height: 44px; }
+  .hb-search{ min-height: 44px; }
+  /* Bottom padding must clear the FAB's occupied band so the (wrappable, up to
+     ~120px at 390px) #booknav-bottom is never obscured at max scroll: the FAB top
+     sits calc(62px bottom + 50px height) = 112px above the viewport bottom, so the
+     content/bottom-nav needs >=112px of clearance below it. 130px adds margin
+     (incl. the FAB drop shadow). */
+  body.hb-on{ padding-bottom: 130px; }
+  /* Move the hamburger FAB to the RIGHT edge in the drawer band so it no longer
+     coincides with the left-aligned #booknav-bottom prev link (they overlapped,
+     intercepting taps). */
+  .hb-btn{ bottom: calc(44px + 18px); right: 14px; left: auto; }
+  .hb-toc{ display: none !important; }
+}
+
+/* Docked left sidebar — full height (brand pinned at the very top, GitBook-style).
+   The book sidebar owns the left column top-to-bottom; the sticky booknav bars
+   live only over the CONTENT column (pulled back just to the sidebar edge, never
+   over the brand). Content keeps a --hb-gap of breathing room from the sidebar. */
+@media(min-width:1200px){
+  body.hb-on{ padding-left: calc(var(--hb-w) + var(--hb-gap)); }
+  body.hb-on .container, body.hb-on .content{ margin-left: 0 !important; margin-right: auto !important; }
+  .hb-sidebar{ top: 0; height: 100vh; transform: none; z-index: 100; box-shadow: none; }
+  body.hb-on #booknav-top, body.hb-on #booknav-bottom{
+    position: sticky; z-index: 230;
+    margin-left: calc(-1 * var(--hb-gap));      /* reach back to touch the sidebar edge */
+    width: calc(100% + var(--hb-gap));
+  }
+  body.hb-on #booknav-top{ top: 0; box-shadow: 0 6px 16px -8px rgba(16,24,40,.45); }
+  body.hb-on #booknav-bottom{ bottom: 0; box-shadow: 0 -6px 16px -8px rgba(16,24,40,.45); }
+  .hb-btn, .hb-overlay{ display: none !important; }
+}
+
+/* Wide: also show the right "On this page" rail, drop nested sections from the left tree.
+   Content gets the same --hb-gap away from the rail; the top/bottom bars span the
+   whole content+rail band (still starting at the sidebar edge, never over the brand). */
+@media(min-width:1560px){
+  body.hb-on.hb-has-toc{ padding-right: calc(var(--hb-toc-w) + var(--hb-gap)); }
+  body.hb-on.hb-has-toc #booknav-top, body.hb-on.hb-has-toc #booknav-bottom{
+    width: calc(100% + var(--hb-gap) + var(--hb-toc-w) + var(--hb-gap));
+  }
+  body.hb-has-toc .hb-toc{ display: block; }
+  body.hb-has-toc .hb-sections{ display: none; }
+}
+
+/* Respect the OS "reduce motion" setting: the sidebar/overlay slide, caret
+   rotation, theme-toggle fade, and per-page section fadeIn can trigger
+   vestibular discomfort. Disable non-essential motion when asked (WCAG 2.3.3). */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print{
+  .hb-sidebar, .hb-toc, .hb-btn, .hb-overlay{ display: none !important; }
+  body.hb-on{ padding-left: 0 !important; padding-right: 0 !important; }
+}
+
+/* ── Round-8 shared-asset a11y fixes ───────────────────────────────────────── */
+
+/* (Fix) The shared rule forces <pre> onto the dark #1e1e2e editor bg in BOTH
+   themes (line ~353), and only .cm was compensated. A few chapters
+   (google_three_papers, android_engineering, mobile_system_design) authored their
+   syntax-token colors for a LIGHT pre bg (.kw #7c3aed=2.88:1, .fn #2563eb=3.17:1,
+   .str #0d9488=4.38:1), so they render dark-on-dark. Unify ALL code syntax tokens
+   to the bright house (Catppuccin) palette — matching the majority of dark-pre
+   chapters — so highlighting is identical everywhere and every token clears AA
+   (>=4.5:1) on #1e1e2e. (.cm already handled above.) */
+body.hb-on pre .kw{ color:#cba6f7 !important; }   /* keyword  */
+body.hb-on pre .fn{ color:#89b4fa !important; }   /* function */
+body.hb-on pre .str{ color:#a6e3a1 !important; }  /* string   */
+body.hb-on pre .type{ color:#f9e2af !important; } /* type     */
+body.hb-on pre .num{ color:#fab387 !important; }  /* number   */
+
+/* ── Round-9 shared-asset a11y fixes ───────────────────────────────────────── */
+
+/* (Fix 2) Mobile booknav tap targets: #booknav-top / #booknav-bottom links were
+   only ~32px tall at 390px (below the 44px WCAG 2.5.5 minimum). In the mobile band
+   (<1200px) give the Contents toggle + prev/next/Contents links enough vertical
+   padding to reach >=44px, without disturbing the sticky bars' layout. */
+@media(max-width:1199px){
+  body.hb-on #booknav-top a, body.hb-on #booknav-bottom a,
+  body.hb-on #booknav-top button, body.hb-on #booknav-bottom button{
+    min-height: 44px; padding-top: 10px; padding-bottom: 10px;
+    display: inline-flex; align-items: center; box-sizing: border-box;
+  }
+}
+
+/* ── Round-9b dark-mode robustness (CATEGORICAL, not per-case) ─────────────────
+   The earlier dark overrides leaned on ENUMERATED allowlists — a fixed white-card
+   class list, a fixed button-remap selector list, and a fixed color-lift hex list
+   — so any NEW interactive stepper/player widget slipped through and rendered
+   illegibly in dark mode. The rules below replace those allowlists with STRUCTURAL,
+   pattern-based selectors so the regression stops recurring:
+     (B) EVERY stepper/player widget CARD retints off white, matched by id/class.
+     (C) EVERY step/play/reset/back control BUTTON gets an AA-safe dark remap,
+         matched by its id token instead of a hand-maintained selector list.
+     (E) Slate/gray widget caption + counter text is lifted to a light token.
+   (D) is handled above: the near-black color-lift is scoped :not(button) so it
+   can no longer whiten a dark label that sits on a LIGHT control-button fill.
+   NOTE: the former (A) — repainting white SVG diagram SHAPES dark — was REMOVED;
+   dark-mode SVG diagrams now use the light-figure approach (see `svg.hb-figure`).
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* (B) White widget-card backgrounds set by an ID rule (the fixed class-retint list
+   above cannot catch an arbitrary id, e.g. `#msd-stepper{background:#fff}`). Retint
+   any stepper/player widget WRAPPER to the dark surface, matched STRUCTURALLY:
+   `[class~=]` = the class TOKEN is exactly `stepper`/`player`/`mr-player` (the
+   wrapper), and `[id$=]` = the id ENDS in stepper/player (…-stepper, …_player).
+   Deliberately NOT `[class*=]`/`[id*=]` substring — that also matched the wrappers'
+   OWN children (`.stepper-cap`, `.player-caption`, `.player-controls`, the
+   `#goch-stepper-heading` <h3>) which already use adaptive tokens, flattening their
+   intended `--bg3` panel. !important beats a chapter's higher-specificity #id rule
+   and inline background. Buttons/links excluded — buttons are handled by (C). */
+html[data-theme="dark"] :is([class~="stepper"],[class~="player"],[class~="mr-player"],[id$="stepper" i],[id$="player" i]):not(button):not(a){
+  background-color: var(--bg2) !important;
+}
+
+/* (C) Step / play / advance / reset / back CONTROL BUTTONS across every chapter,
+   matched by their id token (…-step, …_step, …Step, …play, …auto, …next / …reset,
+   …back, …prev) instead of a hand-maintained per-chapter selector list. In dark
+   these otherwise keep a LIGHT accent fill (var(--blue)=#6ea8fe, #7aa2f7, #1971c2,
+   #d0ebff…) with a white/blue label that collapses to ~2–2.5:1. Advance controls →
+   dark accent fill (#1b62d6) + white label; reset/back/prev → dark surface +
+   light label. Both clear AA >=4.5:1. High specificity + !important beat the
+   inline styles and the near-black lift above. */
+html[data-theme="dark"] body.hb-on button[id*="step" i],
+html[data-theme="dark"] body.hb-on button[id*="play" i],
+html[data-theme="dark"] body.hb-on button[id*="auto" i],
+html[data-theme="dark"] body.hb-on button[id*="next" i]{
+  background:#1b62d6 !important; border-color:#1b62d6 !important; color:#fff !important;
+}
+html[data-theme="dark"] body.hb-on button[id*="reset" i],
+html[data-theme="dark"] body.hb-on button[id*="back" i],
+html[data-theme="dark"] body.hb-on button[id*="prev" i],
+html[data-theme="dark"] body.hb-on button[id*="pause" i]{
+  background:var(--bg3) !important; border-color:var(--border) !important; color:var(--text) !important;
+}
+
+/* (E) Slate/gray caption & counter text set INLINE on widget labels (NOT buttons —
+   those are (C)). These mid/dark grays were never in the near-black lift list, so
+   they stayed dark-on-dark on a retinted card (e.g. go_refresher #goch-cap #495057
+   = 1.78:1; content_protection reset caption). Darker slates → body token; lighter
+   grays → the secondary token (still AA on a dark surface). Scoped :not(button). */
+html[data-theme="dark"] :is(
+  [style*="color:#495057"],[style*="color: #495057"],
+  [style*="color:#6c757d"],[style*="color: #6c757d"],
+  [style*="color:#5c636a"],[style*="color:#4b5563"],
+  [style*="color:#334155"],[style*="color:#475569"],
+  [style*="color:#52525b"],[style*="color:#3f3f46"]
+):not(button){ color: var(--text) !important; }
+html[data-theme="dark"] :is(
+  [style*="color:#868e96"],[style*="color: #868e96"],
+  [style*="color:#adb5bd"],[style*="color:#94a3b8"],
+  [style*="color:#9ca3af"],[style*="color:#ced4da"]
+):not(button){ color: var(--text2) !important; }
+
+/* ── a11y polish batch 2026-08-17 ──────────────────────────────────────────────
+   In dark mode the accent tokens are BRIGHTENED (--blue #6ea8fe, --green #5fce86,
+   --red #f27a7a). White glyphs/labels on accent-FILLED chips/badges/buttons then
+   fail AA (≈2.0–2.7:1). The earlier dark button remap enumerated player/stepper
+   controls but NOT always-visible accent-fill numbered badges nor the interactive
+   check-icon states. These rules cover those, plus mobile tap-target sizing on
+   in-content diagram controls, and breadcrumb link distinguishability (WCAG 1.4.1).
+   Purely additive; earlier rules untouched. ────────────────────────────────────── */
+
+/* (Fix 1 — MAJOR) Always-visible accent-FILL numbered badges (.gc-num circle in
+   code_review_training, .step .n circle in ai_assisted_engineering_prep) fill with
+   var(--blue), which in dark = #6ea8fe → white digit ≈2.4:1 (fails AA). Give them a
+   DARKER fill + white text. #1b62d6 with #fff = 5.58:1 (clears 4.5:1). */
+html[data-theme="dark"] body.hb-on .gc-num,
+html[data-theme="dark"] body.hb-on .step .n{
+  background:#1b62d6 !important; color:#fff !important;
+}
+
+/* (Fix 2 — MINOR) code_review_training interactive .check-icon states put a white
+   ✓/✗ on var(--blue)/var(--green)/var(--red), which in dark brighten to ≈2.0–2.7:1.
+   Darken each state fill (blue→#1b62d6 5.58:1, green→#1d7a45 5.35:1, red→#c0392b
+   5.44:1 vs #fff) so the glyph clears AA. */
+html[data-theme="dark"] body.hb-on .check-item.selected .check-icon{
+  background:#1b62d6 !important; border-color:#1b62d6 !important; color:#fff !important;
+}
+html[data-theme="dark"] body.hb-on .check-item.correct .check-icon{
+  background:#1d7a45 !important; border-color:#1d7a45 !important; color:#fff !important;
+}
+html[data-theme="dark"] body.hb-on .check-item.wrong .check-icon{
+  background:#c0392b !important; border-color:#c0392b !important; color:#fff !important;
+}
+
+/* (Fix 5 — MINOR, WCAG 1.4.1) Page breadcrumb links (.crumb a on the security/design
+   pages) were color-only (var(--blue), no underline, no hover/focus) → link-vs-text
+   ≈1:1. Underline them so they are distinguishable without relying on color. Scoped
+   to the page .crumb (the masthead crumb is .hb-mh-crumb and is unaffected). */
+body.hb-on .crumb a{ text-decoration: underline; }
+
+/* (Fix 3 — MINOR) In-content diagram Step/Reset/Prev/Next controls were 31–36px tall
+   (below the 44px WCAG 2.5.5 minimum) and were NOT covered by the existing mobile
+   tap-target block. Enlarge ONLY on the drawer/mobile band; desktop density is
+   untouched. Scoped to in-content control buttons: those whose id contains
+   step/reset/prev/next (case-insensitive), plus the .mr-btn/.inv-btn/.ghost/
+   .stepper-btn/.player-btn/.viz-controls button/#msd-stepper button families. */
+@media(max-width:1199px){
+  body.hb-on button[id*="step" i],
+  body.hb-on button[id*="reset" i],
+  body.hb-on button[id*="prev" i],
+  body.hb-on button[id*="next" i],
+  body.hb-on .mr-btn,
+  body.hb-on .inv-btn,
+  body.hb-on .ghost,
+  body.hb-on .stepper-btn,
+  body.hb-on .player-btn,
+  body.hb-on .viz-controls button,
+  body.hb-on #msd-stepper button{
+    min-height: 44px; box-sizing: border-box;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+}
+
+/* ── a11y polish batch 2026-08-17 · BATCH 2 ────────────────────────────────────
+   Two MAJOR fixes. Purely additive; the batch-1 rules and the responsive-band
+   rules above are left intact and are overridden only by source-order where a
+   selector repeats (equal specificity, later wins). ─────────────────────────── */
+
+/* (Batch-2 · Fix 1 — MAJOR, WCAG 1.4.1 Level A) Color-only in-content prose links.
+   Per-chapter prose links use `a.lc{color:var(--blue);text-decoration:none;font-weight:500}`
+   which OUT-specifies the shared `p a{text-decoration:underline}` (a.lc = (0,1,1)
+   beats p a = (0,0,2)), so they render blue-only at rest — link-vs-text contrast
+   2.72:1 (light) / 1.89:1 (dark), BELOW the 3:1 G183 exception that would let color
+   alone carry the link. `a.lc` is confirmed used INLINE inside <p> body copy across
+   14 chapters (google_three_papers, google_tpu_infra, operational_excellence,
+   system_design_tips, the DB/AI/security cross-links, …). Underline it AT REST in
+   BOTH themes so it is distinguishable without relying on color; the per-chapter
+   :hover underline is preserved. `body.hb-on a.lc` = (0,2,2) beats both the chapter
+   `a.lc` rule and `p a`, no !important needed.
+   A full sweep of every chapter + this shared file for the SAME defect class (any
+   in-content/prose link class that sets text-decoration:none) found ONLY `a.lc` as a
+   color-only INLINE prose link. Deliberately NOT underlined (not body-copy prose, or
+   not color-only): .xref (card grid w/ .dot in .xref-grid), .problem-list/.problem
+   .title a (title/list links colored var(--text), not blue; problem-list already has
+   a dashed border-bottom), .doc-card (whole-card block link), .nav a / .modnav a /
+   .footer a (navigation/footer), .tab-btn (button), .bknav a (booknav), and .crumb a
+   (breadcrumb — already underlined by batch-1 Fix 5). Nav/button/chip/booknav
+   (.bkc/.bkl)/masthead crumb (.hb-mh-crumb) links are intentionally left un-underlined. */
+body.hb-on a.lc{ text-decoration: underline; text-underline-offset: 2px; }
+
+/* (Batch-2 · Fix 2 — MAJOR) Mobile hamburger FAB overlapped the STICKY bottom
+   book-nav. #booknav-bottom is `position:sticky; bottom:0`; the fixed FAB (.hb-btn,
+   50x50, shown <1200px) previously sat at `bottom: calc(44px + 18px)` = 62px, which
+   lands ON TOP of the pinned bar and can intercept its taps — worst on the 46/74
+   chapters whose prev/next titles wrap the bar to 2 lines (~117px tall). The old
+   static `padding-bottom:130px` only cleared the bar at MAX scroll. Fix is
+   HEIGHT-AWARE (not tied to the 1200 breakpoint value): handbook-nav.js measures
+   #booknav-bottom's rendered height into --hb-botnav on :root (load + resize),
+   mirroring the existing --hb-top top-bar tracking. The FAB now sits in the 14px gap
+   ABOVE the bar's top edge, so bar (0..botnav from the viewport bottom) and FAB
+   (botnav+14 .. botnav+64) never overlap at any scroll position; and the body's
+   bottom padding clears the real bar height + the FAB band (+shadow). Both use the
+   measured value with a 56px fallback for pages that have no bottom bar (index.html,
+   where the JS clears the property). Scoped to the same <1200 drawer band as the
+   originals; equal-specificity + later source order override them. */
+@media(max-width:1199px){
+  .hb-btn{ bottom: calc(var(--hb-botnav, 56px) + 14px); right: 14px; left: auto; }
+  body.hb-on{ padding-bottom: calc(var(--hb-botnav, 56px) + 74px); }
+}
+
+/* ── a11y polish batch 2026-08-17 · BATCH 3 ────────────────────────────────────
+   Dark-mode contrast for CHAPTER-LOCAL callouts whose backgrounds are HARDCODED
+   light gradients / pale hexes (not inline styles, not in the shared retint list),
+   so they slip past the shared inline-fill retint + the fixed callout allowlist and
+   render light-text-on-light in dark. Also completes the shared dark accent-token
+   remap (--pink/--cyan/--nv accents) so var()-based chapter rules adapt in dark.
+   Purely additive; all earlier rules are left intact (overridden only where a later
+   equal-or-higher-specificity selector repeats). ─────────────────────────────── */
+
+/* (Batch-3 · token completion) The shared dark block (top of file) remaps the
+   tint tokens blue/green/yellow/red/purple/orange/teal/nv-l and the accent-text
+   tokens blue/green/yellow/red/purple/orange/teal, but NOT --pink, --cyan, or the
+   --nv ACCENT (only --nv-l tint was remapped). Chapter rules that color a border/
+   label/tint through those vars therefore keep their dark LIGHT-mode hex in dark
+   (e.g. --nv #4d7c0f olive border on --nv-l #26320f = ~1.2:1 invisible; --cyan
+   #0e7490 border; code_review_training's .exp-issue.sec pink label/tint). Brighten
+   the accents + darken the tints so var()-based chapter rules adapt. Values match
+   the existing brightened palette; --pink/--pink-l reuse code_review_training's own
+   validated dark values (label #f28ab2 on tint #3a1c2a = 6.56:1). */
+html[data-theme="dark"]{
+  --pink:#f28ab2; --pink-l:#3a1c2a;   /* pink label 6.56:1 on its own tint */
+  --cyan:#41c7d4; --cyan-l:#123038;   /* cyan 8.84:1 on page bg (used as border) */
+  --nv:#9bce4f;                        /* olive/lime accent 7.33:1 on --nv-l tint */
+}
+
+/* (Batch-3 · Fix 1 — MAJOR) .say "SAY THIS" callout (ai_assisted_engineering_prep):
+   `background:linear-gradient(135deg,#f0f9ff,#e0f2fe)` (hardcoded light blue) with
+   `color:var(--text2)`. In dark the box STAYS light while --text2 goes light
+   (#bcc0c8) → light-on-light ≈1.59:1. Retint the box to the dark blue tint and
+   force body text to var(--text): #e7e3db on --blue-l #17253f = 11.95:1. Its
+   ::before pill fills var(--blue) (dark #6ea8fe) with white = 2.42:1 → darken the
+   pill fill to #1b62d6 (white = 5.58:1). Border → the neutral --border. */
+html[data-theme="dark"] body.hb-on .say{
+  background: var(--blue-l) !important;
+  border-color: var(--border);
+  border-left-color: var(--blue);
+  color: var(--text);
+}
+html[data-theme="dark"] body.hb-on .say p,
+html[data-theme="dark"] body.hb-on .say li,
+html[data-theme="dark"] body.hb-on .say strong,
+html[data-theme="dark"] body.hb-on .say em{ color: var(--text); }
+html[data-theme="dark"] body.hb-on .say::before{
+  background:#1b62d6 !important; color:#fff !important;
+}
+
+/* (Batch-3 · Fix 2 — MAJOR) .iq interview-quote callout (23 chapters). The shared
+   dark rule retints the .iq BOX to --red-l (red) — a fit for redis_deep_dive's red
+   .iq, but every OTHER chapter (google_three_papers, system_design_tips, the sd_*,
+   android/ios_engineering, …) authors a BLUE .iq (blue gradient + var(--blue)
+   border-left + var(--blue) ::before pill). Result in dark: a blue pill on a red box
+   (mismatch) AND the pill badge is white-on-#6ea8fe ≈2.42:1. Unify .iq to BLUE in
+   dark (matching its light appearance for 22/23 chapters and the identical .say
+   callout): box → --blue-l, border-left → --blue, body text → var(--text)
+   (#e7e3db on #17253f = 11.95:1), and the pill → #1b62d6 fill + white text = 5.58:1.
+   `body.hb-on .iq` = (0,3,2) outspecifies the earlier `.iq` red rule (0,2,1). */
+html[data-theme="dark"] body.hb-on .iq{
+  background: var(--blue-l) !important;
+  border-color: var(--border);
+  border-left-color: var(--blue);
+  color: var(--text);
+}
+html[data-theme="dark"] body.hb-on .iq p,
+html[data-theme="dark"] body.hb-on .iq li,
+html[data-theme="dark"] body.hb-on .iq strong,
+html[data-theme="dark"] body.hb-on .iq em{ color: var(--text); }
+html[data-theme="dark"] body.hb-on .iq::before{
+  background:#1b62d6 !important; color:#fff !important;
+}
+
+/* ── a11y polish batch 4 ───────────────────────────────────────────────────────
+   Two fixes. Purely additive; all earlier rules are left intact (this block only
+   adds new declarations, overriding earlier ones solely by later source order where
+   an equal-specificity selector repeats). ─────────────────────────────────────── */
+
+/* (Batch-4 · Fix 1 — MAJOR, CSS backstop for the off-canvas drawer's focusability)
+   The CLOSED mobile drawer was only slid off-screen with transform:translateX(-100%),
+   so its contents (search input, theme toggle, 11 Part-toggle buttons, ~73 chapter
+   links) stayed keyboard-focusable and SR-reachable off-screen. handbook-nav.js now
+   sets `inert`+aria-hidden on the closed drawer; as a backstop for browsers WITHOUT
+   `inert` support we ALSO drop the closed off-canvas drawer out of the focus /
+   accessibility flow with visibility:hidden. visibility is added to the SAME
+   transition as transform so the slide still animates: visible→hidden it holds
+   visible until the transition ends (slide-out plays), hidden→visible it flips at the
+   start (slide-in plays). Scoped to the <1200px drawer band; the docked >=1200px
+   sidebar is always visible. */
+@media(max-width:1199px){
+  .hb-sidebar{
+    visibility: hidden;
+    transition: transform .25s cubic-bezier(.4,0,.2,1), visibility .25s cubic-bezier(.4,0,.2,1);
+  }
+  .hb-sidebar.open{ visibility: visible; }
+}
+@media(min-width:1200px){
+  .hb-sidebar{ visibility: visible; }
+}
+
+/* (Batch-4 · Fix 2 — MINOR) The 3 Part-III ramp-up chapters (rampup_42/84/192) are
+   the only files that ship body{padding:20px}. The shared column rules override only
+   body.hb-on padding-left (>=1200) and padding-bottom (<1200), leaving padding-top/
+   right at 20px — so the sticky top/bottom book-nav bars were inset ~20px at the top
+   and right edge on those 3 pages. Zero the remaining top/right body padding so their
+   chrome is flush like every other chapter (the other ~61 chapters already have zero
+   body padding, so this is a no-op there; the masthead's own top margin keeps the
+   first-content spacing). */
+body.hb-on{ padding-top: 0 !important; padding-right: 0 !important; }
+
+/* ── a11y polish batch 5 ───────────────────────────────────────────────────────
+   Three fixes. Purely additive; all earlier rules are left intact (this block only
+   adds new declarations). Paired with the keyboard-upgrade initializer in
+   handbook-nav.js that makes the in-content onclick <div> widgets focusable. ──── */
+
+/* (Batch-5 · Fix 1 — BLOCKER + keyboard MAJORs) The in-content interactive widgets
+   (collapsible section headers .ch / .guide-collapse-header, quiz options
+   .check-item, ramp-up progress boxes .check) are now keyboard-focusable via the JS
+   initializer (role + tabindex). Give the keyboard focus a visible affordance so the
+   focused control is identifiable (WCAG 2.4.7). Uses the theme-adaptive --blue. */
+body.hb-on .ch:focus-visible,
+body.hb-on .guide-collapse-header:focus-visible,
+body.hb-on .check-item:focus-visible,
+body.hb-on .check:focus-visible{ outline:2px solid var(--blue); outline-offset:2px; }
+
+/* (Batch-5 · Fix 2 — MAJOR, mobile horizontal overflow) The booknav prev/next
+   neighbour-chapter links inline-set `white-space:nowrap`, so a long neighbour label
+   (e.g. sd_rate_limiter's prev = the 76-char Graphs title) forces the page to
+   overflow horizontally at 390/414px. The .bknav flex container already has
+   flex-wrap:wrap, so once the links may wrap the labels break onto new lines instead.
+   Scoped to the booknav so it wins over the inline rule (0,1,2 with body.hb-on). */
+body.hb-on #booknav-top a, body.hb-on #booknav-bottom a{
+  white-space: normal; min-width: 0; overflow-wrap: anywhere;
+}
+
+/* (Batch-5 · Fix 3 — MINOR, WCAG 1.4.11) The ramp-up unchecked progress box uses
+   `border:2px solid var(--border)`, which is only ~1.2–1.6:1 on its .problem surface
+   in both themes (below the 3:1 non-text-contrast minimum for a UI control boundary).
+   Darken ONLY the unchecked box border to clear >=3:1 on the ramp-up surfaces in both
+   themes (verified on light .problem #fffdf8 / page #f6f4ef and dark .problem #1d2026
+   / page #15171b). The checked/filled .done state keeps its green fill+border. */
+body.hb-on .check{ border-color:#808389; }
+
+/* ── a11y polish batch 6 ───────────────────────────────────────────────────────
+   Two fixes. Purely additive; all earlier rules are left intact (this block only
+   adds new declarations, overriding earlier ones solely by later source order
+   where an equal-specificity selector repeats). ────────────────────────────────── */
+
+/* (Batch-6 · Fix 1 — MINOR, WCAG 1.4.1 Level A) `.problem-list .title a` links
+   (advanced_algorithms_training 4×, greedy_training 5×) that are FOLLOWED by
+   parenthetical non-link text (e.g. "312. Burst Balloons (does NOT satisfy
+   condition)") are color:var(--text) with only a `border-bottom:1px dashed
+   var(--border)` at ~1.1–1.3:1 — effectively invisible, so the link is
+   distinguished from the adjacent plain text by color alone. Give these links an
+   at-rest underline (and pull the dashed border to currentColor so it is visible
+   too) so they are distinguishable without relying on color. Color stays --text
+   (readable body token); the per-chapter :hover (→ --blue) is preserved. Links
+   that ARE the whole title are still fine underlined. `body.hb-on .problem-list
+   .title a` = (0,3,1) outspecifies the chapter `.problem-list .title a` (0,3,0). */
+body.hb-on .problem-list .title a{
+  border-bottom-color: currentColor;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+
+/* (Batch-6 · Fix 2 — MINOR, WCAG 2.5.5) The ramp-up week selector buttons (.week-btn
+   in rampup_42/84/192) are only ~34px tall (8px padding + 13px text + border) on
+   mobile, below the 44px minimum touch-target height. Enlarge them ONLY on the
+   drawer/mobile band; desktop density is untouched. */
+@media(max-width:1199px){
+  body.hb-on .week-btn{ min-height:44px; box-sizing:border-box; }
+}
+
+/* ── a11y polish batch 7 ───────────────────────────────────────────────────────
+   One MAJOR + one shared-minor, book-wide. Purely additive. ───────────────────── */
+
+/* (Batch-7 · Fix 1 — MAJOR) Collapsible section-card headers use a flex row `.ch`
+   containing a title `.ct` (flex:1, default min-width:auto → cannot shrink below
+   its longest word), an optional command pill `.cn` / badge `.db`, and a chevron
+   `.chv` (default flex-shrink:1). Because `.ct` refuses to shrink and `.chv` can be
+   compressed, on a narrow column the trailing badge + chevron get pushed past the
+   `.card{overflow:hidden}` edge and are CLIPPED at 390px — test_automation_design
+   card #1 loses its FOUNDATION badge text and chevron; redis_deep_dive clips the
+   chevrons of the Sorted Set / Bitmap / HyperLogLog data-type cards. This `.ch /
+   .ct / .chv` pattern is shared across many chapters, so fix it once here:
+     • `.ct` gets min-width:0 + overflow-wrap:anywhere so the title can shrink and
+       wrap its own text instead of forcing the row wider than the card;
+     • `.chv` gets flex-shrink:0 so the chevron is never compressed or clipped;
+     • `.ch` gets flex-wrap:wrap as a safety net so an over-long badge wraps the
+       chevron to a second line rather than being cut off by overflow:hidden.
+   On desktop the shrunk-title path means the row still fits on one line (no wrap),
+   so wide-column layout is unchanged. `body.hb-on .ct` (0,2,1) outspecifies the
+   chapter `.ct` (0,1,0); no !important needed. */
+body.hb-on .ch{ flex-wrap: wrap; }
+body.hb-on .ch .ct, body.hb-on .ct{ min-width: 0; overflow-wrap: anywhere; }
+body.hb-on .ch .chv, body.hb-on .chv{ flex-shrink: 0; }
+
+/* (Batch-7 · Fix 2 — MINOR, redis-scoped by class but harmless elsewhere) Handled
+   in redis_deep_dive.html itself (its legacy `.sec{padding:36px 44px}` double-inset
+   inside the shared content column shifted the Redis body to left=424px vs 380px on
+   the sibling DB deep-dives and left a ~68px empty band under the masthead). See the
+   redis file's own `.sec` rule — no shared change is made here because 17+ chapters
+   ship their own `.sec` padding and neutralizing it globally would misalign them. */

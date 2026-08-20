@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Google Security Systems — Deep-Dive &amp; Interview Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #114f8c; --blue-l: #d0ebff; --green: #1d6b2e; --green-l: #d3f9d8;
+  --yellow: #a85700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #4a2fa8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 40px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 34px; font-weight: 800; margin-bottom: 10px; }
+header .sub { color: var(--text3); font-size: 15px; }
+h2 { font-size: 24px; font-weight: 700; margin: 36px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 20px 0 10px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+.doc-card { display:block; text-decoration:none; color:inherit; border:1px solid var(--border); border-left: 5px solid var(--blue); border-radius: var(--r); padding: 20px 24px; margin-bottom: 16px; background: var(--bg2); transition: all .18s; box-shadow: var(--shadow); }
+.doc-card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.10); border-left-color: var(--purple); }
+.doc-card h3 { margin: 0 0 6px; color: var(--text); font-size: 19px; }
+.doc-card .num { color: var(--text3); font-weight: 700; font-size: 13px; letter-spacing: .5px; }
+.doc-card p { margin: 0; color: var(--text2); font-size: 14px; }
+.doc-card.alts { border-left-color: var(--blue); }
+.doc-card.kms { border-left-color: var(--green); }
+.doc-card.bp { border-left-color: var(--yellow); }
+.doc-card.titan { border-left-color: var(--red); }
+.doc-card.zan { border-left-color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.iv { background: var(--purple-l); border-left: 3px solid var(--purple); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.iv p { color: #4a2fa8; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+.svg-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; margin: 20px 0; text-align: center; overflow-x: auto; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius: 20px; background: var(--purple-l); color: var(--purple); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VII · Chapter 1 — <b>Google Security Systems — Overview</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Google Security Systems</h1>
+  <div class="sub">Deep-dive reading guide &amp; interview prep — for Security Backend / Silicon</div>
+</header>
+
+<div class="card">
+<h2>In one picture — the big idea</h2>
+<p>
+Picture a giant, ultra-secure office building where <em>every</em> employee is a program and every room holds someone's data. The old way to stay safe was a strong wall around the whole building: get past the front door (the network) and you're trusted everywhere. That fails the moment one door is forced. Google's answer is the opposite — <strong>trust nothing by location; prove everything on every step.</strong>
+</p>
+<p>Read from the ground up, the five systems are just the parts of that building:</p>
+<ul>
+  <li><strong>Titan</strong> is a tamper-resistant ID chip welded into each machine at the factory, so a computer can <em>prove</em> it's a genuine, un-tampered Google box (not an impostor).</li>
+  <li><strong>ALTS</strong> makes every hallway conversation happen inside a sealed, verified tube: both sides show ID and the talk is encrypted — even though they're inside the "safe" building.</li>
+  <li><strong>BeyondProd</strong> is the guard who checks not just <em>who</em> you are but <em>what job you're running</em> and that your code was approved before letting you in a room.</li>
+  <li><strong>KMS</strong> keeps every document in a locked safe, with the safe's key locked in a bigger vault, and that vault's key locked in an offline master vault.</li>
+  <li><strong>Zanzibar</strong> is the master directory that, in a few milliseconds, answers one question for the whole planet: "Is <em>this</em> person allowed in <em>this</em> specific room?"</li>
+</ul>
+<p><strong>Tiny concrete example:</strong> you click "open" on a shared photo. Behind that one click, the machine proves it's genuine (Titan), the frontend calls the photo service over a sealed, mutually-verified channel (ALTS), the guard confirms the caller is approved code carrying your credential (BeyondProd), Zanzibar confirms <em>you</em> are on that photo's share list — the deciding check — and only then is the stored key unwrapped from its vault chain (KMS) so the bytes can be returned. (These five are a conceptual stack; walking them bottom-to-top explains the layers, but in practice the permission check runs before any data is decrypted.)</p>
+<div class="insight"><p><strong>Jargon, decoded</strong> (you'll meet these below):
+<strong>root of trust</strong> = the one thing you trust absolutely because it's baked into hardware;
+<strong>attestation</strong> = a machine cryptographically proving "here is exactly what I am and what I'm running";
+<strong>RPC</strong> = one program calling another over the network (a "remote procedure call");
+<strong>zero-trust</strong> = verify identity on every call instead of trusting the network;
+<strong>provenance</strong> = proof of where a binary came from and that it was approved;
+<strong>envelope encryption</strong> = encrypt data with a key, then encrypt that key with another key (DEK wrapped by KEK);
+<strong>quorum</strong> = an action needs several trusted people together, never one;
+<strong>ReBAC</strong> = relationship-based access ("Alice is an editor of Doc 7");
+<strong>QPS / p95</strong> = queries per second / the latency 95% of requests beat.</p></div>
+</div>
+
+<div class="card">
+<h2>How to use this guide</h2>
+<p>
+Five of Google's public security systems, each in its own deep-dive: what it is, where it's used, how it's designed, why that way, its hard problems, and how to reason about it in an interview. They're best read as <strong>one coherent story</strong>, not five isolated papers. Start with the one-diagram map below, then read in the suggested order.
+</p>
+<div class="iv"><p>Each doc closes with an <strong>Interview angle</strong> tab — reusable talking points and likely questions, framed as general principles you can reason from.</p></div>
+</div>
+
+<div class="card">
+<h2>The system-of-systems map</h2>
+<p>These aren't five separate things — they stack. Hardware anchors machine identity; identity secures every RPC; a policy layer authorizes services and verifies their code; the data those services touch is encrypted with keys rooted in the same hardware/quorum discipline; and on top, a global service decides — at planet scale — whether a given user is actually allowed to touch a given object.</p>
+<div class="svg-wrap">
+<svg viewBox="0 0 640 410" width="100%" style="max-width:900px" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <!-- layers -->
+  <rect x="120" y="340" width="400" height="52" rx="8" fill="#c92a2a"/>
+  <text x="320" y="362" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">Titan — hardware root of trust</text>
+  <text x="320" y="381" text-anchor="middle" fill="#ffe3e3" font-size="11">machine identity · secure boot · attestation</text>
+
+  <rect x="120" y="270" width="400" height="52" rx="8" fill="#114f8c"/>
+  <text x="320" y="292" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">ALTS — service identity &amp; mutual auth</text>
+  <text x="320" y="311" text-anchor="middle" fill="#d0ebff" font-size="11">encrypts + authenticates every internal RPC</text>
+
+  <rect x="120" y="200" width="400" height="52" rx="8" fill="#a85700"/>
+  <text x="320" y="222" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">BeyondProd — zero-trust for services</text>
+  <text x="320" y="241" text-anchor="middle" fill="#fff3bf" font-size="11">service authZ · code provenance (BAB) · EUC tickets</text>
+
+  <rect x="120" y="130" width="400" height="52" rx="8" fill="#1d6b2e"/>
+  <text x="320" y="152" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">Cloud KMS / Keystore — protect the data</text>
+  <text x="320" y="171" text-anchor="middle" fill="#d3f9d8" font-size="11">envelope encryption · master-key hierarchy</text>
+
+  <rect x="120" y="60" width="400" height="52" rx="8" fill="#4a2fa8"/>
+  <text x="320" y="82" text-anchor="middle" fill="#fff" font-size="15" font-weight="bold">Zanzibar — global authorization</text>
+  <text x="320" y="101" text-anchor="middle" fill="#e5dbff" font-size="11">"is this user allowed?" at &gt;10M QPS, &lt;10ms p95</text>
+
+  <text x="320" y="35" text-anchor="middle" fill="#495057" font-size="13" font-weight="bold">↑ each layer trusts the one below it ↑</text>
+
+  <!-- side labels -->
+  <line x1="60" y1="366" x2="115" y2="366" stroke="#c92a2a" stroke-width="2"/>
+  <line x1="60" y1="60" x2="60" y2="366" stroke="#5c636a" stroke-width="1.5"/>
+  <text x="52" y="215" text-anchor="middle" fill="#5c636a" font-size="11" transform="rotate(-90 52 215)">trust flows upward from silicon</text>
+</svg>
+</div>
+<div class="insight"><p><strong>The common thread:</strong> "don't trust the network — trust hardware-rooted identity + provenance, and encrypt everything." Titan makes machine identity real; ALTS turns it into per-RPC service identity; BeyondProd authorizes services and verifies provenance; KMS keeps the data safe; Zanzibar decides whether the end user is allowed to touch the object — at planet scale. Being able to narrate this stack top-to-bottom is a staff-level signal.</p></div>
+
+<h3>Follow one request up the stack</h3>
+<p>One click ("open this shared file") touches every layer, bottom to top. Step through what each one contributes.</p>
+<div class="svg-wrap" style="text-align:left">
+  <div id="gssflow_root" style="font-family:'Inter',sans-serif">
+    <div id="gssflow_rows"></div>
+    <p id="gssflow_caption" style="margin:14px 2px 12px;min-height:44px;color:var(--text2);font-size:14px;"></p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button id="gssflow_step" type="button" style="cursor:pointer;font:600 13px 'Inter',sans-serif;padding:8px 16px;border-radius:8px;border:1px solid var(--blue);background:var(--blue);color:#fff;">Step ▶</button>
+      <button id="gssflow_back" type="button" style="cursor:pointer;font:600 13px 'Inter',sans-serif;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);">‹ Back</button>
+      <button id="gssflow_reset" type="button" style="cursor:pointer;font:600 13px 'Inter',sans-serif;padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);">Reset ↺</button>
+      <span id="gssflow_progress" style="align-self:center;color:var(--text3);font-size:12px;font-weight:600;"></span>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var steps = [
+    {k:"idle",  c:"#5c636a", t:"A user clicks “open” on a shared file. That single request will travel up the whole stack — press Step to trace it."},
+    {k:"titan", c:"#c92a2a", t:"1 · Titan — the machine first proves it is a genuine, un-tampered box running approved firmware (secure boot + attestation). Trust starts in silicon, not in an IP address."},
+    {k:"alts",  c:"#114f8c", t:"2 · ALTS — the frontend calls the file service over a mutually-authenticated, encrypted channel. Each side shows a verified service identity on every RPC, so a spoofed hostname gets nowhere."},
+    {k:"bp",    c:"#a85700", t:"3 · BeyondProd — the callee checks the caller’s identity AND code provenance (was this binary approved for Borg?) plus the end-user credential (EUC). Zero trust: right code, right identity, not “inside the network.”"},
+    {k:"kms",   c:"#1d6b2e", t:"4 · KMS — to read the stored bytes the service unwraps a per-chunk data key (DEK) with a key-encryption key (KEK) rooted in the offline master hierarchy. Data at rest stays encrypted until this moment. (We climb the stack bottom-to-top here for clarity; in a real system the authorization check below runs <em>before</em> data is decrypted — fail-fast, so no crypto work or plaintext is spent on an unauthorized user.)"},
+    {k:"zan",   c:"#4a2fa8", t:"5 · Zanzibar — the deciding check: “Is THIS user allowed to read THIS object?” answered from relation tuples in <10ms, at planet scale, with just-enough consistency (zookies)."},
+    {k:"done",  c:"#1d6b2e", t:"✓ Allowed — only now are the pixels returned. Every layer had to say yes; any single “no” stops the request. That end-to-end “prove it at each hop” is the whole design."}
+  ];
+  var rowsDef = [
+    {k:"zan",   label:"Zanzibar — is this user allowed?"},
+    {k:"kms",   label:"KMS — unwrap the data key"},
+    {k:"bp",    label:"BeyondProd — verify identity + code"},
+    {k:"alts",  label:"ALTS — sealed, verified RPC channel"},
+    {k:"titan", label:"Titan — prove the machine is genuine"}
+  ];
+  var colors = {zan:"#4a2fa8",kms:"#1d6b2e",bp:"#a85700",alts:"#114f8c",titan:"#c92a2a"};
+  var i = 0;
+  var host = document.getElementById("gssflow_rows");
+  rowsDef.forEach(function(r){
+    var d = document.createElement("div");
+    d.id = "gssflow_row_" + r.k;
+    d.textContent = r.label;
+    d.style.cssText = "border-radius:8px;padding:9px 14px;margin:5px 0;font-size:13.5px;font-weight:600;color:#495057;background:#f1f3f5;border:1px solid #dee2e6;transition:all .18s;";
+    host.appendChild(d);
+  });
+  function render(){
+    var s = steps[i];
+    rowsDef.forEach(function(r){
+      var el = document.getElementById("gssflow_row_" + r.k);
+      var on = (s.k === r.k) || (s.k === "done");
+      el.style.background = on ? colors[r.k] : "#f1f3f5";
+      el.style.color = on ? "#fff" : "#495057";
+      el.style.borderColor = on ? "transparent" : "#dee2e6";
+      el.style.transform = (s.k === r.k) ? "translateX(6px)" : "none";
+    });
+    document.getElementById("gssflow_caption").innerHTML = s.t;
+    document.getElementById("gssflow_progress").textContent = i + " / " + (steps.length - 1);
+    document.getElementById("gssflow_step").disabled = (i === steps.length - 1);
+    document.getElementById("gssflow_step").style.opacity = (i === steps.length - 1) ? "0.5" : "1";
+    document.getElementById("gssflow_back").disabled = (i === 0);
+    document.getElementById("gssflow_back").style.opacity = (i === 0) ? "0.5" : "1";
+  }
+  document.getElementById("gssflow_step").addEventListener("click", function(){ if(i < steps.length-1){ i++; render(); } });
+  document.getElementById("gssflow_back").addEventListener("click", function(){ if(i > 0){ i--; render(); } });
+  document.getElementById("gssflow_reset").addEventListener("click", function(){ i = 0; render(); });
+  render();
+})();
+</script>
+
+<div class="iv"><p><strong>Interview angle:</strong> the highest-signal move here is to narrate the stack as <em>one</em> defense-in-depth story rather than five gadgets. A strong answer names <em>what each layer would still protect if the layer below it were breached</em> — e.g. "even if the network is fully owned, ALTS means the attacker can't impersonate a service; even with a valid service identity, BeyondProd still demands approved code provenance and a real end-user credential; even reading raw disk gives only ciphertext without KMS." That "assume breach, show the next line of defense" framing is exactly the zero-trust mindset interviewers probe for.</p></div>
+</div>
+
+<div class="card">
+<h2>The five deep-dives</h2>
+
+<a class="doc-card titan" href="google_security_titan.html">
+  <div class="num">SYSTEM 01 · start here</div>
+  <h3>Titan — Hardware Root of Trust</h3>
+  <p>Google's custom secure chip. Secure boot via SPI-bus interposition, per-chip key at fabrication, offline quorum CA, remote attestation, firmware-identity-hashed-into-keys. The foundation the other four build on — <strong>read this first.</strong></p>
+</a>
+
+<a class="doc-card alts" href="google_security_alts.html">
+  <div class="num">SYSTEM 02</div>
+  <h3>ALTS — Application Layer Transport Security</h3>
+  <p>Mutual auth + encryption for ~10<sup>10</sup> internal RPCs/sec. Identity over hostname, Protobuf certs, 1-RTT DH handshake, boundary-aware encryption modes, session resumption, CRL revocation. The connective tissue of Google's production security.</p>
+</a>
+
+<a class="doc-card bp" href="google_security_beyondprod.html">
+  <div class="num">SYSTEM 03</div>
+  <h3>BeyondProd — Zero-Trust for Production Services</h3>
+  <p>"BeyondCorp for services." Trust by code provenance + hardware + identity, not network location. Borg, Binary Authorization for Borg (BAB), GFE ingress, EUC tickets, gVisor. Ties ALTS + Titan into a coherent zero-trust model.</p>
+</a>
+
+<a class="doc-card kms" href="google_security_kms.html">
+  <div class="num">SYSTEM 04</div>
+  <h3>Key Management &amp; Encryption at Rest</h3>
+  <p>Cloud KMS + Keystore. Envelope encryption (DEK wrapped by KEK), the master-key wrapping chain to an offline root, software/HSM/external protection levels, rotation without rewriting petabytes. A canonical key-hierarchy design.</p>
+</a>
+
+<a class="doc-card zan" href="google_security_zanzibar.html">
+  <div class="num">SYSTEM 05 · security + backend scale</div>
+  <h3>Zanzibar — Global Authorization at Scale</h3>
+  <p>Google's planet-scale permission system: relation tuples (ReBAC), userset rewrite rules, zookies for consistency (the "new enemy problem"), Spanner, Leopard indexing, hot-spot handling, request hedging. &gt;10M QPS, &lt;10ms p95. <strong>The one doc that is both a security system and a large-scale backend</strong> — highest interview ROI.</p>
+</a>
+
+<a class="doc-card" href="content_protection_broadcast_encryption.html" style="border-left-color:var(--text3)">
+  <div class="num">BRIDGE NOTE · optional</div>
+  <h3>Content Protection &amp; Broadcast Encryption (AACS ↔ Titan)</h3>
+  <p>Beginner primer: symmetric vs asymmetric/ECC, how Blu-ray/AACS lets many device keys open one disc (Media Key Block + subset-difference tree + revocation), and why "shared software key" is fragile vs "per-device hardware key." A career bridge from content-protection key management to hardware roots of trust.</p>
+</a>
+
+<a class="doc-card" href="security_memory_safety.html" style="border-left-color:var(--text3)">
+  <div class="num">TALKING POINT · optional</div>
+  <h3>Memory-Safe Languages (Rust &amp; the ~70% stat)</h3>
+  <p>A "what's your view?" tech-chat card, not a whiteboard question: what memory safety means, the bug classes (buffer overflow, use-after-free), the striking stats (~70% of Microsoft CVEs, ~70% of Android high-severity vulns — peaking ~76% in 2019), why Rust matters (safety without a GC), the pragmatic trade-offs, and an honest interview framing. Covers a preferred-qualification topic.</p>
+</a>
+
+<a class="doc-card" href="secdesign_device_provisioning.html" style="border-left-color:var(--red)">
+  <div class="num">DESIGN · Chapter 9</div>
+  <h3>Device Provisioning &amp; Identity</h3>
+  <p>How a device earns a hardware-rooted identity and keys at the factory before it ever talks to the cloud: per-device PKI, attestation, factory trust models, and revocation. The manufacture-time root of trust that secure OTA later consumes.</p>
+</a>
+
+<a class="doc-card" href="secdesign_secure_ota.html" style="border-left-color:var(--blue)">
+  <div class="num">DESIGN · Chapter 10</div>
+  <h3>Secure OTA Updates</h3>
+  <p>Updating software over-the-air across a whole fleet without bricking devices or letting an attacker push malicious code: signed images + chain of trust, anti-rollback, staged/canary rollouts, A/B atomic apply, and automatic recovery. The natural sequel to device identity.</p>
+</a>
+</div>
+
+<div class="card">
+<h2>Suggested reading order</h2>
+<ol>
+  <li><strong>Titan</strong> — start here; it's the hardware root of trust everything else anchors on.</li>
+  <li><strong>ALTS</strong> — how hardware identity becomes service identity on every RPC.</li>
+  <li><strong>BeyondProd</strong> — how identity + provenance become an authorization model.</li>
+  <li><strong>KMS</strong> — how the data those services touch is protected, via a layered key hierarchy.</li>
+  <li><strong>Zanzibar</strong> — how authorization ("is this user allowed?") is served at planet scale with strong consistency. The security-meets-backend-scale capstone.</li>
+</ol>
+</div>
+
+<div class="card">
+<h2>Cross-cutting themes (interview vocabulary)</h2>
+<table>
+  <tr><th>Theme</th><th>Where it shows up</th><th>The principle</th></tr>
+  <tr><td>Hardware-rooted identity at manufacture</td><td>Titan, KMS (HSM), ALTS (machine cred)</td><td>Mint a key/identity in tamper-resistant hardware at manufacture; attest to it later</td></tr>
+  <tr><td>Don't trust network location / reported state</td><td>BeyondProd, ALTS</td><td>Authenticate identity per-call; verify actual state rather than trusting a reported "healthy" status</td></tr>
+  <tr><td>Bound the blast radius</td><td>KMS (per-chunk DEK), ALTS (rotation), BeyondProd</td><td>Scope each key/credential narrowly and rotate often so one compromise doesn't cascade</td></tr>
+  <tr><td>Provenance / verify what's actually running</td><td>BeyondProd (BAB), Titan (firmware attestation)</td><td>Bind code identity to the trust chain so you know exactly what is executing and where it came from</td></tr>
+  <tr><td>Offline/quorum roots, separate secrets</td><td>Titan CA, KMS root key</td><td>Keep the ultimate signing root offline under quorum control; deliver device and access-secret via separate channels</td></tr>
+  <tr><td>Security that also scales</td><td>Zanzibar, ALTS</td><td>Serve security checks at huge QPS/low tail by caching/local reads, precomputed indexes, single-flight dedup, and request hedging — and by capturing the <em>minimal</em> consistency needed (zookies) instead of "always read latest"</td></tr>
+</table>
+<div class="tip"><p><strong>How to use this table:</strong> each theme is a reusable talking point. When a question touches hardware/identity/attestation, anchor your answer in one of these principles and then reason from first principles about the specific design at hand.</p></div>
+</div>
+
+<div class="card">
+<h2>Primary sources</h2>
+<ul>
+  <li>ALTS whitepaper — Application Layer Transport Security (Google Cloud security docs)</li>
+  <li>Encryption at Rest in Google Cloud / Cloud KMS deep dive (Google Cloud security docs)</li>
+  <li>BeyondProd whitepaper (Google Cloud security docs)</li>
+  <li>Titan in depth — "Security in plaintext" (Google Cloud blog); OpenTitan project (opentitan.org)</li>
+  <li>Zanzibar: Google's Consistent, Global Authorization System (USENIX ATC 2019)</li>
+  <li>Zanzibar beginner explainers — AuthZed "Google Zanzibar" (authzed.com/learn/google-zanzibar), dev.to "Zanzibar Deep Dive" (kanywst), zanzibar.academy</li>
+  <li>Memory safety — memorysafety.org; Microsoft &amp; Google (Android) memory-safety vulnerability statistics; US CISA "memory-safe roadmaps" guidance</li>
+</ul>
+<p style="color:var(--text3);font-size:13px;">Deep-dives synthesized from the public whitepapers above. Technical content is shareable; the per-doc "Interview angle" tabs are private prep and reference personal background.</p>
+</div>
+
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Titan</strong></td><td>Google's custom tamper-resistant security chip that gives each machine a hardware root of trust.</td></tr>
+<tr><td><strong>ALTS (Application Layer Transport Security)</strong></td><td>Google's mutual-authentication and encryption layer for every internal RPC.</td></tr>
+<tr><td><strong>BeyondProd</strong></td><td>Google's zero-trust model for production services — trust by code provenance, identity, and hardware, not network location.</td></tr>
+<tr><td><strong>KMS (Key Management Service)</strong></td><td>Google's system for creating, storing, and rotating encryption keys (Cloud KMS / Keystore).</td></tr>
+<tr><td><strong>Zanzibar</strong></td><td>Google's planet-scale authorization system that answers "is this user allowed?" from relation tuples.</td></tr>
+<tr><td><strong>Root of trust</strong></td><td>The one component trusted absolutely because it is baked into hardware.</td></tr>
+<tr><td><strong>Attestation</strong></td><td>A machine cryptographically proving exactly what it is and what software it is running.</td></tr>
+<tr><td><strong>RPC (Remote Procedure Call)</strong></td><td>One program calling another over the network as if it were a local function.</td></tr>
+<tr><td><strong>Zero-trust</strong></td><td>Verify identity and authorization on every call instead of trusting the network location.</td></tr>
+<tr><td><strong>Provenance</strong></td><td>Cryptographic proof of where a binary came from and that it was approved.</td></tr>
+<tr><td><strong>Envelope encryption</strong></td><td>Encrypting data with a key, then encrypting that key with another key.</td></tr>
+<tr><td><strong>DEK (Data Encryption Key)</strong></td><td>The key that directly encrypts data; itself stored wrapped by a KEK.</td></tr>
+<tr><td><strong>KEK (Key-Encryption Key)</strong></td><td>A key used to encrypt (wrap) data encryption keys rather than data itself.</td></tr>
+<tr><td><strong>Quorum</strong></td><td>A rule requiring several trusted people together to authorize an action, never one alone.</td></tr>
+<tr><td><strong>ReBAC (Relationship-Based Access Control)</strong></td><td>Authorization expressed as relationships, e.g. "Alice is an editor of Doc 7."</td></tr>
+<tr><td><strong>QPS / p95</strong></td><td>Queries per second; and the latency the fastest 95% of requests beat (95th-percentile tail).</td></tr>
+<tr><td><strong>Secure boot</strong></td><td>Verifying each stage of firmware and software is signed and approved before executing it.</td></tr>
+<tr><td><strong>BAB (Binary Authorization for Borg)</strong></td><td>Google's control that only lets approved, provenance-verified binaries run on Borg.</td></tr>
+<tr><td><strong>Borg</strong></td><td>Google's cluster manager that schedules and runs production jobs/containers across machines.</td></tr>
+<tr><td><strong>EUC (End-User Context)</strong></td><td>A short-lived credential (ticket) carrying the end user's identity through service-to-service calls.</td></tr>
+<tr><td><strong>Zookie</strong></td><td>A Zanzibar consistency token capturing the minimal freshness a permission check needs.</td></tr>
+</table>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="ml_systems_swe.html">‹ ML Systems &amp; Cluster SWE</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_security_zanzibar.html">Zanzibar — Global Authorization ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

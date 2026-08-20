@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design a Unique ID Generator — Classic System Design Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+  p code,li code,td code{overflow-wrap:anywhere;word-break:break-word;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XI · Chapter 7 — <b>Design a Unique ID Generator</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Design a Unique ID Generator (at scale)</h1>
+  <div class="sub">A deceptively deep warm-up: hand out billions of globally-unique IDs per day, with no central bottleneck, ideally roughly time-sortable, and compact enough to fit an 8-byte integer. The key part is a bit-packed 64-bit "Snowflake"-style ID — every field width, range, and shift below is arithmetically derived and re-checked so you can quote it in an interview.</div>
+</header>
+
+<div class="ins"><div class="insl">Read this like a story</div><p>Start at the top even if you know the answer. The chapter builds from "why is this hard at all" through why the naive options fail, the estimation that fixes the bit budget, UUIDs, then the 64-bit Snowflake layout (the part interviewers grade), the clock-skew problems that trip people up, the ticket-server / segment / K-sortable alternatives, a trade-offs table, and a probe-by-probe interview script. The bit math is boxed so you can find it fast on a re-read.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. Problem &amp; Requirements</h2>
+
+<p class="lead">A <strong>unique ID generator</strong> hands every new entity — a row, a message, an order, an event — an identifier that is guaranteed distinct across the whole system, forever. It sounds trivial (a database <code>AUTO_INCREMENT</code> column does it), but at scale the naive answer collapses: a single counter becomes a bottleneck and a single point of failure, and once you shard across data centers there is no one place to increment.</p>
+
+<h3>Functional requirements</h3>
+<ul>
+  <li><strong>Globally unique.</strong> No two IDs ever collide, across all nodes and all data centers, for the lifetime of the system.</li>
+  <li><strong>High throughput.</strong> The generator must generate IDs at least as fast as the fleet creates entities — think tens of thousands to millions per second at peak.</li>
+  <li><strong>Roughly time-ordered / sortable (ideally).</strong> Newer IDs should sort after older ones. This is not strictly required for uniqueness, but it makes IDs usable as a rough timeline and — crucially — kind to database indexes (§7, §9).</li>
+  <li><strong>Compact.</strong> Prefer an ID that fits a <strong>64-bit integer</strong> (8 bytes) so it stores as a <code>BIGINT</code>, fits a CPU register, and keeps indexes small — rather than a 128-bit / 36-character UUID.</li>
+</ul>
+
+<h3>Non-functional requirements</h3>
+<ul>
+  <li><strong>No central bottleneck.</strong> ID generation is on the write path of everything; a single shared allocator caps the whole system's write throughput and is a SPOF.</li>
+  <li><strong>Low latency.</strong> Generating an ID should be a local, in-process operation — ideally zero network hops on the hot path.</li>
+  <li><strong>High availability.</strong> If one generator dies, the rest keep generating; there is no single node whose loss stops all writes.</li>
+</ul>
+
+<div class="note"><div class="notel">Clarify before you draw</div><p>Ask up front: <em>must IDs be strictly monotonic or just roughly time-ordered? do they need to be unguessable (security) or is sortability more valuable? single region or multi-datacenter? what peak IDs/sec? must they fit 64 bits?</em> "Sortable" and "unguessable" pull in opposite directions — you usually cannot have both — so pin down which one matters before you commit to a design.</p></div>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. Why Not the Naive Options</h2>
+<p>Two answers spring to mind first. Both are worth stating precisely, because naming exactly why they fail is what motivates everything after.</p>
+
+<h3>Auto-increment on a single database</h3>
+<p>A single relational table with an <code>AUTO_INCREMENT</code> primary key gives perfectly unique, perfectly sortable IDs with zero effort. It is the right answer for a small app — and the wrong answer at scale:</p>
+<div class="trap"><div class="trapl">Single point of failure + bottleneck</div><p>Every insert in the entire system must go through the one node that owns the counter. That node caps total write throughput at what a single database can sustain, and if it goes down, <em>no one</em> can generate an ID — writes stop everywhere. You also cannot generate an ID <em>before</em> the row is written (you need a round-trip to the DB), so it is not usable as a client-side or pre-insert identifier.</p></div>
+
+<h3>Plain UUIDv4 (random 128-bit)</h3>
+<p>A random UUID (version 4) is generated locally with no coordination — great for availability. But it costs on the other axes:</p>
+<div class="miniboxes">
+  <div class="mb con"><div class="mbh">Not sortable</div><ul><li>122 random bits carry no time component, so UUIDv4s sort in essentially random order — useless as a timeline.</li></ul></div>
+  <div class="mb con"><div class="mbh">Index-unfriendly</div><ul><li>Random keys scatter inserts across a B-tree, causing page splits and poor cache locality (§9). 128 bits / 16 bytes also bloats every index.</li></ul></div>
+</div>
+<p>So neither extreme is satisfying: the single counter is coordination-heavy and a SPOF; UUIDv4 is coordination-free but large, random, and index-hostile. The rest of the chapter finds the middle: <strong>coordination-free like a UUID, but compact and time-ordered like a counter.</strong></p>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. Estimation — Sizing the Bit Budget</h2>
+<p>The estimation here is not about servers or storage; it is about <strong>how many bits</strong> the ID needs, which is what tells you a 64-bit integer suffices.</p>
+
+<h3>How many IDs, and therefore how many bits?</h3>
+<p>Suppose peak demand is <strong>1,000,000 IDs/sec</strong> across the whole fleet, and we want the ID space to last <strong>10 years</strong> without exhaustion.</p>
+<div class="formula">
+seconds/day  = 86,400<br>
+IDs over 10 yr = 10<sup>6</sup>/s × 86,400 × 365 × 10 = <b>3.1536 × 10<sup>14</sup></b>  (≈ 315 trillion)<br>
+bits needed  = log<sub>2</sub>(3.1536 × 10<sup>14</sup>) ≈ <b>48.2 bits</b>   <span class="cm"># so &lt; 49 bits carries 10 years of IDs</span>
+</div>
+<p>Fewer than 49 bits would carry the raw <em>count</em>. But we also want each ID to encode <em>when</em> it was made and <em>which</em> node made it (so nodes need not coordinate), which costs more bits. That is exactly what a 64-bit budget buys us with room to spare:</p>
+<div class="formula">
+2<sup>63</sup> − 1 = 9,223,372,036,854,775,807 ≈ <b>9.2 × 10<sup>18</sup></b>   <span class="cm"># max value of a signed 64-bit long (Long.MAX_VALUE)</span><br>
+2<sup>64</sup> = 18,446,744,073,709,551,616 ≈ <b>1.8 × 10<sup>19</sup></b>  <span class="cm"># full unsigned range</span>
+</div>
+
+<h3>Why 64 bits "fits a long"</h3>
+<ul>
+  <li>A <strong>signed 64-bit integer</strong> — Java's <code>long</code>, a SQL <code>BIGINT</code>, a Go <code>int64</code> — is 8 bytes, fits a CPU register, and compares/sorts with a single instruction.</li>
+  <li>It is <strong>half the storage</strong> of a 128-bit UUID (8 B vs. 16 B) in every row and every index entry — a large saving across billions of rows.</li>
+  <li>Keeping the top (sign) bit <strong>0</strong> means the value is always non-negative, so it round-trips cleanly through languages that only have signed integers (a classic source of bugs otherwise).</li>
+</ul>
+<div class="tip"><div class="tipl">Takeaway</div><p>The count needs ~48 bits over a decade; a 64-bit integer gives us those plus enough headroom to also pack a timestamp and a machine id, all while fitting a <code>BIGINT</code>. That headroom is precisely what the Snowflake layout in §5 spends.</p></div>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. UUID / GUID</h2>
+<p>Before the bit-packed design, know the UUID well — it is the coordination-free baseline, and interviewers expect you to say when it is genuinely the right call.</p>
+
+<h3>What a UUID is</h3>
+<p>A <strong>UUID</strong> (Universally Unique IDentifier; Microsoft calls it a <strong>GUID</strong>) is a <strong>128-bit</strong> value, conventionally written as 32 hexadecimal digits in five hyphen-separated groups — <code>xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</code>, <strong>36 characters</strong> including the four hyphens. A few bits are reserved to mark the <em>version</em> (how it was generated) and the <em>variant</em>.</p>
+
+<h4>v4 (random) vs. v1 (time + node)</h4>
+<table class="tbl">
+  <tr><th>Aspect</th><th>UUIDv4 (random)</th><th>UUIDv1 (time-based)</th></tr>
+  <tr><td>Content</td><td>122 random bits (6 bits fixed for version+variant)</td><td>60-bit timestamp + 14-bit clock sequence + 48-bit node (often the MAC address)</td></tr>
+  <tr><td>Uniqueness basis</td><td>Astronomically low collision probability from randomness</td><td>Uniqueness from time + node identity</td></tr>
+  <tr><td>Sortable?</td><td>No — random order</td><td>Roughly, but the timestamp bytes are shuffled, so it is not lexicographically sortable without rearranging</td></tr>
+  <tr><td>Leaks?</td><td>Nothing</td><td>Can leak the MAC address and creation time</td></tr>
+</table>
+<p>The random space is enormous, which is why collisions are ignored in practice:</p>
+<div class="formula">
+UUIDv4 random space = 2<sup>122</sup> ≈ <b>5.3 × 10<sup>36</sup></b>   <span class="cm"># 128 bits minus 6 for version+variant</span>
+</div>
+
+<div class="miniboxes">
+  <div class="mb pro"><div class="mbh">Pros</div><ul><li>Generated locally, offline, zero coordination — perfect availability</li><li>No central service, no SPOF, no network hop</li><li>Trivial to implement in every language/library</li></ul></div>
+  <div class="mb con"><div class="mbh">Cons</div><ul><li>128 bits / 36 chars — 2× the storage of a 64-bit ID</li><li>v4 is not sortable and is index-hostile (random inserts)</li><li>v1 can leak MAC + time</li></ul></div>
+</div>
+<div class="tip"><div class="tipl">When a UUID is genuinely fine</div><p>When you need IDs generated <strong>offline / client-side with no coordination at all</strong>, do not care about sort order, and can pay the 16 bytes — e.g. idempotency keys, request-trace IDs, or client-generated object keys. If you need compactness <em>and</em> time-ordering, reach for the 64-bit design next. (Newer time-ordered UUID formats such as v7 close much of the sortability gap while staying 128-bit — see §7's K-sortable note.)</p></div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. Snowflake-Style 64-Bit IDs — the Key Part</h2>
+<p>The go-to answer, popularized by a well-known social platform's open-source "Snowflake" generator, is to <strong>pack meaning into a 64-bit integer</strong>: a timestamp so IDs are time-sortable, a machine id so nodes never coordinate, and a per-millisecond sequence so one node can generate many IDs in the same millisecond. Uniqueness is structural — two IDs differ because their (time, machine, sequence) triple differs.</p>
+
+<h3>The bit layout: 1 + 41 + 10 + 12 = 64</h3>
+<div class="svg-container">
+<svg viewBox="0 0 760 190" xmlns="http://www.w3.org/2000/svg">
+  <!-- total-width bracket -->
+  <text x="380" y="26" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">one 64-bit integer (bit 63 … bit 0)</text>
+  <!-- sign field -->
+  <rect x="40" y="44" width="44" height="72" rx="4" fill="#e2e8f0" stroke="#64748b" stroke-width="1.5"/>
+  <text x="62" y="74" text-anchor="middle" font-size="10" font-weight="700" fill="#334155">sign</text>
+  <text x="62" y="90" text-anchor="middle" font-size="9" fill="#526176">1 bit</text>
+  <text x="62" y="105" text-anchor="middle" font-size="9" fill="#526176">= 0</text>
+  <!-- timestamp field -->
+  <rect x="84" y="44" width="380" height="72" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="274" y="74" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">timestamp (ms since custom epoch)</text>
+  <text x="274" y="91" text-anchor="middle" font-size="9.5" fill="#526176">41 bits · ≈ 69.7 years of range</text>
+  <text x="274" y="106" text-anchor="middle" font-size="9" fill="#526176">bits 62 … 22</text>
+  <!-- machine field -->
+  <rect x="464" y="44" width="100" height="72" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="514" y="74" text-anchor="middle" font-size="10.5" font-weight="700" fill="#6d28d9">machine id</text>
+  <text x="514" y="91" text-anchor="middle" font-size="9.5" fill="#526176">10 bits · 1024</text>
+  <text x="514" y="106" text-anchor="middle" font-size="9" fill="#526176">bits 21 … 12</text>
+  <!-- sequence field -->
+  <rect x="564" y="44" width="156" height="72" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="642" y="74" text-anchor="middle" font-size="10.5" font-weight="700" fill="#166534">sequence (per ms)</text>
+  <text x="642" y="91" text-anchor="middle" font-size="9.5" fill="#166534">12 bits · 4096</text>
+  <text x="642" y="106" text-anchor="middle" font-size="9" fill="#166534">bits 11 … 0</text>
+  <!-- sum line -->
+  <text x="380" y="150" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">1 + 41 + 10 + 12 = 64 bits</text>
+  <text x="380" y="168" text-anchor="middle" font-size="9" fill="#526176">field widths are schematic, not to exact bit scale</text>
+</svg>
+<div class="svg-cap">The four fields of a Snowflake-style 64-bit ID. The high bit is a fixed 0 so the value is always a non-negative signed long.</div>
+</div>
+
+<h3>Verifying each field's range</h3>
+<div class="formula">
+<span class="cm"># 41-bit timestamp in milliseconds — how many years?</span><br>
+2<sup>41</sup> ms      = 2,199,023,255,552 ms<br>
+ms per year   = 86,400,000 × 365 = 31,536,000,000 ms<br>
+range         = 2,199,023,255,552 / 31,536,000,000 ≈ <b>69.7 years</b>  <span class="cm"># from a CUSTOM epoch, not 1970</span><br>
+<br>
+<span class="cm"># 10-bit machine id</span><br>
+2<sup>10</sup>          = <b>1,024 machines</b>            <span class="cm"># e.g. 32 datacenters × 32 nodes</span><br>
+<br>
+<span class="cm"># 12-bit per-millisecond sequence</span><br>
+2<sup>12</sup>          = <b>4,096 IDs per ms per machine</b>
+</div>
+
+<h4>Throughput this implies</h4>
+<div class="formula">
+per node   = 4,096 IDs/ms × 1,000 ms/s = <b>4,096,000 ≈ 4.096 M IDs/sec/node</b><br>
+whole fleet = 4.096 M × 1,024 nodes    = <b>4,194,304,000 ≈ 4.19 billion IDs/sec</b>   <span class="cm"># = 2²² × 1000</span>
+</div>
+<p>Against the 1 M IDs/sec peak from §3, one node alone (4.096 M/s) already covers the whole fleet's demand four times over — so the machine-id and sequence fields are generously sized.</p>
+
+<div class="note"><div class="notel">Why a custom epoch?</div><p>The 41-bit timestamp counts milliseconds since a <strong>custom epoch</strong> (the day you launched the service), not the Unix 1970 epoch. Starting the clock at launch spends none of the 69.7-year budget on decades that already elapsed — you get the full ~69.7 years <em>from launch</em>. Because the timestamp occupies the high bits, IDs are naturally ordered by creation time.</p></div>
+
+<h3>Packing and unpacking — the bit math</h3>
+<p>To build the ID, shift each field into its position and OR them together. The timestamp goes above the machine and sequence fields, so it shifts left by <code>10 + 12 = 22</code>; the machine id shifts left by <code>12</code>; the sequence occupies the low 12 bits.</p>
+<pre><span class="cm"># build a 64-bit ID (elapsed = now_ms − CUSTOM_EPOCH_ms)</span>
+id = (elapsed <span class="kw">&lt;&lt;</span> <span class="num">22</span>) <span class="kw">|</span> (machine_id <span class="kw">&lt;&lt;</span> <span class="num">12</span>) <span class="kw">|</span> sequence
+<span class="cm">#         ^bits 62..22        ^bits 21..12      ^bits 11..0</span>
+
+<span class="cm"># unpack it back out with shifts + masks</span>
+sequence   = id <span class="kw">&amp;</span> <span class="num">0xFFF</span>            <span class="cm"># low 12 bits  (0xFFF   = 4095 = 2^12 − 1)</span>
+machine_id = (id <span class="kw">&gt;&gt;</span> <span class="num">12</span>) <span class="kw">&amp;</span> <span class="num">0x3FF</span>   <span class="cm"># next 10 bits (0x3FF   = 1023 = 2^10 − 1)</span>
+elapsed    = id <span class="kw">&gt;&gt;</span> <span class="num">22</span>               <span class="cm"># top 41 bits</span>
+timestamp  = elapsed + CUSTOM_EPOCH_ms</pre>
+
+<h4>A worked example, computed by hand</h4>
+<p>Take <code>elapsed = 10,000,000 ms</code> (about 2.8 hours after the epoch), <code>machine_id = 42</code>, <code>sequence = 7</code>:</p>
+<div class="formula">
+elapsed &lt;&lt; 22  = 10,000,000 × 2<sup>22</sup> = 10,000,000 × 4,194,304 = <b>41,943,040,000,000</b><br>
+machine &lt;&lt; 12  = 42 × 2<sup>12</sup>        = 42 × 4,096              = <b>172,032</b><br>
+sequence       =                                                    = <b>7</b><br>
+<span class="cm"># fields occupy disjoint bit ranges, so OR is just addition here</span><br>
+id = 41,943,040,000,000 + 172,032 + 7 = <b>41,943,040,172,039</b><br>
+<br>
+<span class="cm"># unpack check:</span><br>
+41,943,040,172,039 &amp; 0xFFF        = 7           ✓  <span class="cm"># 172,039 − 42×4096 = 7</span><br>
+(41,943,040,172,039 &gt;&gt; 12) &amp; 0x3FF = 42          ✓<br>
+41,943,040,172,039 &gt;&gt; 22           = 10,000,000  ✓<br>
+<br>
+41,943,040,172,039 &lt; 2<sup>63</sup>−1 (9.2×10<sup>18</sup>)  ⇒  fits a signed long ✓
+</div>
+
+<div class="miniboxes">
+  <div class="mb pro"><div class="mbh">Pros</div><ul><li>Coordination-free on the hot path — pure local bit math, no network</li><li>Time-sortable (timestamp is the high bits)</li><li>Compact: fits a 64-bit <code>BIGINT</code> / <code>long</code></li></ul></div>
+  <div class="mb con"><div class="mbh">Cons</div><ul><li>Depends on the wall clock → clock-skew hazards (§6)</li><li>Needs unique machine-id assignment (§6)</li><li>Leaks approximate creation time and node — not unguessable</li></ul></div>
+</div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. Clock Skew &amp; the Hard Problems</h2>
+<p>Because the timestamp drives both ordering and uniqueness, <strong>time</strong> is where a Snowflake design gets subtle. Three problems come up, and all three are common probes.</p>
+
+<h3>The clock moving backwards</h3>
+<p>If a node's wall clock jumps <em>backwards</em> — an NTP correction, an unsmeared leap second, a VM migration — then <code>elapsed</code> can be smaller than a timestamp already used, and the generator could re-issue an ID it has handed out. That breaks uniqueness. The generator must track the <strong>last timestamp it emitted</strong> and react when <code>now &lt; last_timestamp</code>:</p>
+<pre><span class="cm"># guard against a backward clock</span>
+<span class="kw">if</span> now &lt; last_ts:
+    drift = last_ts - now
+    <span class="kw">if</span> drift &lt;= MAX_TOLERABLE:
+        <span class="fn">wait_until</span>(last_ts)      <span class="cm"># small skew: block until the clock catches up</span>
+    <span class="kw">else</span>:
+        <span class="kw">raise</span> ClockMovedBackwards   <span class="cm"># large skew: refuse rather than risk a dup</span></pre>
+<div class="warn"><div class="warnl">Refuse, wait, or borrow</div><p>Three standard responses to a backward clock: (1) <strong>wait</strong> — block until the clock reaches <code>last_ts</code> again (fine for a few ms of skew); (2) <strong>refuse</strong> — throw an error and let the caller retry or route to another node (safe for large jumps); (3) <strong>borrow bits</strong> — some designs reserve extra sequence/"generation" bits so a small backward step can advance a counter instead of the clock. Keep clocks tight with <strong>NTP</strong>, and use a <strong>monotonic clock</strong> for elapsed-time math so it never runs backwards in the first place.</p></div>
+
+<h3>Sequence overflow within a millisecond</h3>
+<p>If one node is asked for more than <strong>4,096</strong> IDs in the <em>same</em> millisecond, the 12-bit sequence overflows. The fix is to <strong>spin to the next millisecond</strong>: block until the clock ticks over, then reset the sequence to 0.</p>
+<pre><span class="cm"># same millisecond: bump sequence; on overflow, wait for the next ms</span>
+<span class="kw">if</span> now == last_ts:
+    sequence = (sequence + <span class="num">1</span>) <span class="kw">&amp;</span> <span class="num">0xFFF</span>   <span class="cm"># wrap within 0..4095</span>
+    <span class="kw">if</span> sequence == <span class="num">0</span>:                <span class="cm"># overflowed 4096 → this ms is full</span>
+        now = <span class="fn">wait_next_ms</span>(last_ts)     <span class="cm"># busy-wait until now &gt; last_ts</span>
+<span class="kw">else</span>:
+    sequence = <span class="num">0</span>                     <span class="cm"># new millisecond → fresh sequence</span>
+last_ts = now</pre>
+<p>Since 4,096 IDs/ms is 4.096 M/s, overflow only happens under extreme single-node load — and even then it costs at most a sub-millisecond wait, not a collision.</p>
+
+<h3>Assigning unique machine ids</h3>
+<p>Every generator needs a <strong>distinct</strong> 10-bit machine id (0–1023); two nodes sharing one could produce identical IDs in the same millisecond. Options:</p>
+<ul>
+  <li><strong>Static config:</strong> bake the id into each node's deployment config. Simple, but error-prone to keep unique as the fleet changes.</li>
+  <li><strong>Coordination service:</strong> a strongly-consistent store such as <strong>ZooKeeper</strong> or <strong>etcd</strong> leases a unique id to each node on startup (e.g. an ephemeral sequential znode), reclaiming it when the node leaves. This is the common robust choice.</li>
+  <li><strong>Derived:</strong> map from something already unique (host ordinal in an orchestrator, or a slice of the IP) — cheap, as long as it stays within 1024 and never repeats.</li>
+</ul>
+
+<div class="svg-container">
+<svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+  <!-- coordinator -->
+  <rect x="300" y="24" width="220" height="56" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="410" y="48" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6d28d9">Coordinator (ZooKeeper / etcd)</text>
+  <text x="410" y="65" text-anchor="middle" font-size="9.5" fill="#526176">leases a unique machine id</text>
+  <!-- app nodes -->
+  <rect x="40" y="150" width="200" height="76" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="140" y="174" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">App node 1</text>
+  <text x="140" y="191" text-anchor="middle" font-size="9.5" fill="#526176">local generator</text>
+  <text x="140" y="206" text-anchor="middle" font-size="9.5" fill="#526176">machine id = 0</text>
+  <rect x="310" y="150" width="200" height="76" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="410" y="174" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">App node 2</text>
+  <text x="410" y="191" text-anchor="middle" font-size="9.5" fill="#526176">local generator</text>
+  <text x="410" y="206" text-anchor="middle" font-size="9.5" fill="#526176">machine id = 1</text>
+  <rect x="580" y="150" width="200" height="76" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="680" y="174" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">App node 3</text>
+  <text x="680" y="191" text-anchor="middle" font-size="9.5" fill="#526176">local generator</text>
+  <text x="680" y="206" text-anchor="middle" font-size="9.5" fill="#526176">machine id = 2</text>
+  <!-- coordinator fans machine-id to ALL nodes -->
+  <line x1="360" y1="80" x2="150" y2="146" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="410" y1="80" x2="410" y2="146" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="460" y1="80" x2="670" y2="146" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="235" y="118" text-anchor="middle" font-size="8.5" fill="#6d28d9">lease id (startup only)</text>
+  <!-- each node emits IDs locally down to consumers -->
+  <line x1="140" y1="226" x2="140" y2="258" stroke="#16a34a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <line x1="410" y1="226" x2="410" y2="258" stroke="#16a34a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <line x1="680" y1="226" x2="680" y2="258" stroke="#16a34a" stroke-width="1.6" marker-end="url(#ah)"/>
+  <rect x="150" y="262" width="520" height="30" rx="7" fill="#dcfce7" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="410" y="281" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">64-bit IDs generated locally — no coordination on the hot path</text>
+</svg>
+<div class="svg-cap">The coordinator hands each node a distinct machine id once, at startup (purple, fanning to all three). After that, every node generates IDs from its own clock + machine id + sequence with zero coordination (green) — so there is no central bottleneck or SPOF on the write path.</div>
+</div>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Alternatives</h2>
+<p>Snowflake is the default, but three families of alternatives come up — know when each wins.</p>
+
+<h3>Ticket server (DB-backed, HA by odd/even)</h3>
+<p>A <strong>ticket server</strong> is a tiny dedicated database whose only job is to hand out increasing integers via an atomic operation (e.g. <code>REPLACE INTO ... ; SELECT LAST_INSERT_ID()</code>). It gives clean, compact, sortable IDs — but a single ticket DB is a SPOF. The classic HA trick (from a well-known photo-sharing site's design) runs <strong>two</strong> ticket servers with staggered auto-increment so they never collide:</p>
+<div class="formula">
+<span class="cm"># two servers, stepped so their outputs never overlap</span><br>
+server A:  auto_increment_offset = 1,  auto_increment_increment = 2  →  1, 3, 5, 7, …  <span class="cm"># odd</span><br>
+server B:  auto_increment_offset = 2,  auto_increment_increment = 2  →  2, 4, 6, 8, …  <span class="cm"># even</span>
+</div>
+<p>Either server can die and the other keeps issuing IDs; the odd/even split guarantees no duplicate. It scales to two (or, with a larger step, N) servers, not to hundreds — so it fits moderate scale where a compact monotonic id is wanted without full Snowflake machinery.</p>
+
+<h3>Database segment / range allocation</h3>
+<p>Instead of one round-trip to the DB per ID (a ticket per ID), hand out a whole <strong>block</strong> at a time. Each app server asks the DB for a segment — say IDs <code>[1..1000]</code> — increments locally with no coordination, and only returns to the DB when its block is nearly exhausted to grab the next one.</p>
+<div class="formula">
+DB coordination rate = 1 round-trip per <b>block</b>, not per ID<br>
+with block = 1,000  ⇒  <b>1000×</b> fewer DB writes than a per-ID ticket
+</div>
+<p>This keeps the compactness of a counter while slashing coordination — the trade-off is that IDs are only <em>roughly</em> ordered across servers (each burns through its own block), and a crashing server loses the rest of its unused block (a harmless gap).</p>
+
+<h3>K-sortable IDs — ULID / KSUID (and UUIDv7)</h3>
+<p>If you want UUID-style local generation <em>and</em> sortability, use a <strong>K-sortable</strong> ID: put a time prefix in the high bits so the value sorts (roughly) by creation time, then fill the rest with randomness for uniqueness. <strong>ULID</strong> is the common example:</p>
+<div class="formula">
+ULID = 128 bits = <b>48-bit timestamp (ms)</b> + <b>80-bit randomness</b><br>
+48-bit ms range = 2<sup>48</sup> / 31,536,000,000 ≈ <b>8,900 years</b>  <span class="cm"># timestamp won't overflow for millennia</span><br>
+<span class="cm"># encoded as 26 Crockford-base32 chars; KSUID and UUIDv7 use the same time-prefix idea</span>
+</div>
+
+<h4>Why a time prefix helps a B-tree index</h4>
+<p>This is the practical payoff and a key interview point. A B-tree index keeps keys sorted, so <strong>monotonically increasing</strong> keys always insert at the <em>right edge</em> of the tree — the current rightmost leaf stays hot in cache, pages fill sequentially, and there are few page splits. A <strong>random</strong> key (UUIDv4) inserts all over the tree: every insert may touch a cold page, causing random I/O, page splits, and fragmentation. So a time-prefixed ID gives you the write-locality of an auto-increment key without a central counter.</p>
+<div class="ins"><div class="insl">The core idea</div><p>Sortable = time in the high bits. That single property gives you both a usable rough timeline <em>and</em> friendly, append-mostly index inserts. It is exactly why Snowflake, ULID, KSUID, and UUIDv7 all lead with a timestamp.</p></div>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Trade-offs</h2>
+<table class="tbl">
+  <tr><th>Scheme</th><th>Size</th><th>Sortable?</th><th>Coordination</th><th>Best for</th></tr>
+  <tr><td><strong>DB auto-increment</strong></td><td>64-bit</td><td>Yes (strict)</td><td>Central counter (SPOF + bottleneck)</td><td>Small / single-node apps</td></tr>
+  <tr><td><strong>UUIDv4</strong></td><td>128-bit</td><td>No</td><td>None (offline)</td><td>Offline / client-side keys, no ordering</td></tr>
+  <tr><td><strong>Snowflake 64-bit</strong></td><td>64-bit</td><td>Yes (roughly)</td><td>None on hot path (id assignment only)</td><td>High-throughput distributed IDs — the default</td></tr>
+  <tr><td><strong>Ticket server (odd/even)</strong></td><td>64-bit</td><td>Yes</td><td>DB per ID (HA pair)</td><td>Moderate scale, compact monotonic id</td></tr>
+  <tr><td><strong>Segment allocation</strong></td><td>64-bit</td><td>Roughly</td><td>DB per block (rare)</td><td>Cut coordination while staying compact</td></tr>
+  <tr><td><strong>ULID / KSUID / UUIDv7</strong></td><td>128-bit (KSUID 160-bit)</td><td>Yes (K-sortable)</td><td>None (offline)</td><td>Offline generation that must still sort</td></tr>
+</table>
+
+<h3>The tensions to name out loud</h3>
+<ul>
+  <li><strong>Sortable vs. unguessable.</strong> A time-prefixed ID reveals roughly <em>when</em> it was made and lets an attacker estimate volume or enumerate neighbors; a random ID hides that but cannot sort. You usually pick one. If you need both, keep an internal sortable ID and expose a separate opaque/encrypted one.</li>
+  <li><strong>64-bit Snowflake vs. 128-bit UUID.</strong> Snowflake is half the size and sortable but depends on a clock and a machine id; UUIDv4 is bigger and unsortable but utterly coordination-free. Choose by whether compactness+ordering or pure offline simplicity matters more.</li>
+  <li><strong>Coordination-free vs. central.</strong> Central allocators (auto-increment, ticket server) give strict ordering but bottleneck and can SPOF; coordination-free schemes (Snowflake, UUID) scale out but give only rough ordering.</li>
+  <li><strong>Leaking machine / time info.</strong> Snowflake and v1 UUIDs embed node and time — convenient for debugging, a mild information leak for security.</li>
+</ul>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Interview Framing</h2>
+<h3>How to drive the conversation</h3>
+<ol>
+  <li><strong>Clarify (1–2 min):</strong> strictly monotonic or roughly ordered? sortable or unguessable? single region or multi-DC? peak IDs/sec? must fit 64 bits? (§1)</li>
+  <li><strong>Reject the naïve options</strong> and say <em>why</em>: single counter = SPOF+bottleneck; UUIDv4 = big, random, index-hostile (§2).</li>
+  <li><strong>Size the bit budget</strong> — count of IDs over the lifetime → ~48 bits, so 64 bits fits with room for time+machine fields (§3).</li>
+  <li><strong>Present the Snowflake layout</strong> (1+41+10+12), verify each field's range, show the pack/unpack shifts (§5).</li>
+  <li><strong>Cover the hard parts:</strong> backward clock, sequence overflow, machine-id assignment (§6); then trade-offs and alternatives (§7–§8).</li>
+</ol>
+
+<h3>What interviewers probe (with one-liners)</h3>
+<div class="card">
+<p><strong>Q: Why a 64-bit ID rather than a 128-bit UUID?</strong><br>64 bits fits a <code>BIGINT</code>/<code>long</code> — 8 bytes, register-native, half the storage and index size of a 128-bit UUID — and a Snowflake layout still packs a timestamp (sortable) plus a machine id (coordination-free). The bit budget is ample: ~48 bits carries a decade of IDs, leaving room for the time and machine fields. Use 128-bit only when you truly need offline generation with no coordination and don't care about size.</p>
+<p><strong>Q: How do you handle the clock moving backwards?</strong><br>Track the last emitted timestamp. If <code>now &lt; last_ts</code> by a small amount, block until the clock catches up; if the jump is large, refuse and let the caller retry elsewhere. Keep clocks tight with NTP and use a monotonic clock for elapsed math so it can't run backwards. Never emit an ID for a time you've already used — that's the only way to break uniqueness.</p>
+<p><strong>Q: How are machine ids assigned?</strong><br>Each node needs a distinct 10-bit id (0–1023). Lease them from a strongly-consistent coordinator like ZooKeeper or etcd on startup (ephemeral sequential nodes), or derive from a stable host ordinal / IP, or in the simplest case bake it into config. The cap is 1024 nodes — plenty, and expandable by rebalancing bits if needed.</p>
+<p><strong>Q: Why does a time-ordered ID help a B-tree index?</strong><br>Monotonic keys always insert at the rightmost leaf, so pages fill sequentially, the hot page stays cached, and page splits are rare. A random key (UUIDv4) scatters inserts across the whole tree — cold-page I/O, splits, fragmentation. Time-in-the-high-bits gives auto-increment-like write locality without a central counter.</p>
+<p><strong>Q: UUIDv4 or Snowflake — how do you choose?</strong><br>UUIDv4 if IDs must be generated offline/client-side with zero coordination and ordering doesn't matter (e.g. idempotency keys). Snowflake if you want compact, sortable, high-throughput IDs across a fleet and can run a clock + machine-id assignment. If you need offline generation <em>and</em> sortability, a K-sortable 128–160-bit ID (ULID/KSUID/UUIDv7) splits the difference.</p>
+<p><strong>Q: Where's the single point of failure?</strong><br>On the hot path, nowhere — each node generates locally from its own clock, machine id, and sequence, so losing a node loses only that node's throughput, and there's no central allocator capping writes. The only shared dependency is the machine-id coordinator, and it's touched once at startup (not per ID), so it can be briefly unavailable without stopping generation.</p>
+</div>
+
+<div class="note"><div class="notel">One-line summary</div><p>A scalable unique ID generator packs a custom-epoch millisecond timestamp, a machine id, and a per-ms sequence into a 64-bit integer (1+41+10+12): unique by construction, roughly time-sortable, compact as a <code>BIGINT</code>, and coordination-free on the hot path — with clock-skew guards, sequence-overflow spin, and coordinator-assigned machine ids as the details that separate a senior answer from a naïve one.</p></div>
+
+<!-- ══════════════ GLOSSARY ══════════════ -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>SPOF</strong></td><td>Single point of failure — one component whose loss stops the whole system.</td></tr>
+<tr><td><strong>AUTO_INCREMENT</strong></td><td>Database column that auto-assigns the next increasing integer to each new row.</td></tr>
+<tr><td><strong>BIGINT</strong></td><td>SQL 64-bit signed integer type; stores an 8-byte ID.</td></tr>
+<tr><td><strong>UUID</strong></td><td>Universally Unique IDentifier — a 128-bit value written as 32 hex digits in five hyphen-separated groups (36 characters total); also called a GUID.</td></tr>
+<tr><td><strong>UUIDv4</strong></td><td>Random UUID — 122 random bits; coordination-free but not sortable.</td></tr>
+<tr><td><strong>UUIDv1</strong></td><td>Time-based UUID combining a timestamp, clock sequence, and node id (often the MAC address).</td></tr>
+<tr><td><strong>Snowflake</strong></td><td>Bit-packed 64-bit ID scheme: sign + timestamp + machine id + sequence.</td></tr>
+<tr><td><strong>Custom epoch</strong></td><td>Service-launch reference time the timestamp counts from, instead of the 1970 Unix epoch.</td></tr>
+<tr><td><strong>Machine id</strong></td><td>10-bit field (0–1023) identifying which node generated an ID.</td></tr>
+<tr><td><strong>Sequence</strong></td><td>12-bit per-millisecond counter (0–4095) distinguishing IDs from one node in the same millisecond.</td></tr>
+<tr><td><strong>Clock skew</strong></td><td>Divergence or backward jump of a node's wall clock, which can threaten ID uniqueness.</td></tr>
+<tr><td><strong>NTP</strong></td><td>Network Time Protocol — keeps machine clocks synchronized.</td></tr>
+<tr><td><strong>Monotonic clock</strong></td><td>A never-decreasing clock used for elapsed-time math so it can't run backwards.</td></tr>
+<tr><td><strong>ZooKeeper / etcd</strong></td><td>Strongly-consistent coordination services that lease a unique machine id to each node.</td></tr>
+<tr><td><strong>Ticket server</strong></td><td>Tiny dedicated database whose only job is to hand out increasing integers.</td></tr>
+<tr><td><strong>Segment allocation</strong></td><td>Handing out a whole block of IDs per DB round-trip instead of one per ID.</td></tr>
+<tr><td><strong>K-sortable</strong></td><td>Property of IDs that sort roughly by creation time by putting a timestamp in the high bits.</td></tr>
+<tr><td><strong>ULID</strong></td><td>Universally Unique Lexicographically Sortable Identifier — 48-bit timestamp + 80-bit randomness.</td></tr>
+<tr><td><strong>UUIDv7</strong></td><td>Time-ordered 128-bit UUID with a millisecond-timestamp prefix.</td></tr>
+<tr><td><strong>B-tree</strong></td><td>Sorted index structure; favors monotonic keys that append at the rightmost leaf.</td></tr>
+</table>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="sd_url_shortener.html">&lsaquo; Design a URL Shortener</a><a class="bkc" href="index.html">📖 Contents</a><a href="sd_video_platform.html">Design a Video Platform &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

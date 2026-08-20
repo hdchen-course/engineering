@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study: Why Uber Migrated from Postgres to MySQL — Real-World Engineering Case Studies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XII · Chapter 2 — <b>Case Study: Uber Postgres to MySQL</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Case Study: Why Uber Migrated from Postgres to MySQL</h1>
+  <div class="sub">A close reading of Uber's widely-cited 2016 engineering post, rewritten in our own words. The post argues that specific Postgres storage-engine internals hurt Uber's write-heavy, high-index workload — and that MySQL/InnoDB fit them better. Every fact below is drawn from that post and cited in §8. It is an opinionated, Postgres-critical piece from one team and one era; we present its claims as "Uber reported / argued" and keep a balanced note that Postgres has since evolved and the trade-offs are workload-specific.</div>
+</header>
+
+<div class="ins"><div class="insl">Why this case study is worth memorizing</div><p>It is the canonical "how do storage-engine internals decide your database choice" story. It forces you past the marketing-tier "SQL vs. NoSQL" framing and down to the level that actually matters under load: how rows are laid out on disk, how a secondary index points at them, what a single <code>UPDATE</code> costs, and how those costs multiply across replication. Read it as a worked example of matching an engine's physical design to your write and index pattern — not as proof that one database beats another.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. The Problem — Context and Scale</h2>
+
+<p class="lead">Uber began, in their telling, as a <strong>monolithic Python backend that used Postgres for persistence</strong>. As the business grew, that early choice ran into limits the team traced to how Postgres stores and replicates data. In July 2016 Uber engineer Evan Klitzke published a post explaining why they had moved much of that data onto MySQL — usually behind their own sharding layer.</p>
+
+<h3>The deployment they were running</h3>
+<ul>
+  <li><strong>A Postgres primary with streaming replicas.</strong> Uber described a primary plus replicas in a West Coast colocation, with disaster-recovery replicas on the East Coast, wired together using <strong>cascading replication</strong>.</li>
+  <li><strong>Large, memory-rich hosts.</strong> Their largest Postgres replicas had <strong>768 GB of memory</strong>, of which only about <strong>25 GB was resident (RSS) memory</strong> — leaving 700+ GB to the Linux page cache. That detail matters later: most reads were served from cache, so write and replication costs dominated the pain.</li>
+  <li><strong>An analysis pinned to Postgres 9.2.</strong> Uber noted their analysis was based on <strong>Postgres 9.2</strong>; some legacy instances still ran 9.2 while the then-current GA release was 9.5. This is the single most important caveat in the whole piece — remember it for §6.</li>
+</ul>
+
+<h3>The workload shape that made it hurt</h3>
+<p>The defining characteristic was a <strong>write-heavy workload against tables carrying many indexes</strong>. Uber's example table has a primary key plus several secondary indexes (they use a <code>users</code> table with a primary key, a <code>(first, last)</code> name index, and a <code>birth_year</code> index). When most of your cost is updating rows that participate in many indexes — and streaming every one of those changes across the country to replicas — the way the engine represents rows and propagates changes stops being an implementation detail and becomes the decisive factor.</p>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. The Postgres Internals Uber Said Hurt Them</h2>
+
+<p>The heart of the post is a mechanism-by-mechanism argument. Each item below is a claim Uber made about how Postgres 9.2 worked and why it was costly for their workload.</p>
+
+<h3>Immutable tuples and the <code>ctid</code></h3>
+<p>Postgres stores each row version as an <strong>immutable "tuple."</strong> Under MVCC, an update does not overwrite a row in place — it writes a <strong>new tuple</strong> and leaves the old one until vacuum reclaims it. Every tuple has a <strong><code>ctid</code></strong>, which Uber describes as identifying its <strong>physical location on disk</strong> (its page and offset). Because a row can have several live tuple versions over time, <strong>multiple <code>ctid</code>s can refer to what is logically the same row</strong>.</p>
+
+<h3>Secondary indexes point at the physical tuple</h3>
+<p>This is the key point. In Postgres, <strong>every index — primary and secondary alike — stores the <code>ctid</code> (the on-disk location) of the tuple it points to.</strong> Uber's phrasing: <em>"When a tuple location changes, all indexes must be updated."</em> Because the index entry references a physical position rather than a logical key, moving or re-versioning a row means every index that points at it has to be repointed.</p>
+
+<div class="trap"><div class="trapl">Write amplification, quantified by Uber's example</div><p>Uber walks through updating a single indexed field — a user's <code>birth_year</code>. Because the update creates a <strong>new tuple</strong>, and every index must now point at that new tuple, the operation required <strong>at least four physical writes</strong>: the new tuple written to the table, plus updates to the <strong>primary-key index</strong>, the <strong>(first, last) index</strong>, and the <strong>birth_year index</strong> — even though only <code>birth_year</code> actually changed. And each of those writes is <strong>also written to the WAL</strong>. Their generalization: on a table with a dozen indexes, an update to <em>one</em> indexed field must propagate to <strong>all twelve indexes</strong>, because they all reference the tuple's physical location.</p></div>
+
+<h3>MVCC bloat and vacuum</h3>
+<p>Because old tuples linger until reclaimed, an update-heavy table accumulates dead row versions — <strong>bloat</strong>. Postgres relies on <strong>autovacuum</strong> to reclaim them, and Uber notes vacuuming entails <strong>scanning tables</strong> to find and free dead tuples, which is expensive work competing with live traffic.</p>
+
+<h3>Replication amplification over the WAL</h3>
+<p>Postgres replication is <strong>physical</strong>: the primary ships its <strong>write-ahead log (WAL)</strong> — a stream of on-disk byte-level changes — and replicas apply it so they match the primary <strong>byte for byte</strong>. Uber's key argument: because a single logical update already fanned out into many physical writes (§ above), <strong>write amplification becomes replication amplification</strong>. The WAL stream turns <strong>"extremely verbose,"</strong> and Uber reported that over their cross-country links, WAL archival to a storage service <strong>couldn't keep pace at peak</strong>.</p>
+
+<div class="warn"><div class="warnl">Two further replication pains Uber cited</div><p><strong>No true replica-side MVCC.</strong> A long-running read transaction on a replica can block WAL application; to avoid the replica falling arbitrarily behind, Postgres <strong>cancels the transaction after a timeout</strong>. Uber found this hostile to ORMs that hold a transaction open across blocking I/O. <strong>Cross-version upgrades are hard.</strong> Because replication is physical, you generally cannot stream the WAL between different GA versions, so a major upgrade meant taking the primary down, running <code>pg_upgrade</code> in place (hours of work), then rebuilding each replica from a snapshot.</p></div>
+
+<div class="note"><div class="notel">A concrete corruption incident (as reported)</div><p>Uber also described a <strong>Postgres 9.2 replication bug</strong>: after a timeline switch, some replicas misapplied WAL records, failing to mark certain old tuples inactive — so a query could return <strong>duplicate rows with different <code>ctid</code>s</strong>. Their fix was to resync the affected replicas from a fresh primary snapshot. We flag this as a version-specific bug, not an inherent property of Postgres.</p></div>
+
+<h3>Connection cost: process per connection</h3>
+<p>Finally, Postgres uses a <strong>process-per-connection</strong> model: each connection is a forked backend process. Uber argued this costs more memory than a thread-per-connection design, makes inter-process communication more expensive, and — on 9.2, using System V shared memory — struggled <strong>past a few hundred active connections</strong>. They ran <strong>pgbouncer</strong> for connection pooling to cope.</p>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. Why MySQL/InnoDB Fit Uber Better</h2>
+
+<p>Uber's argument for MySQL is essentially the mirror image of §2: InnoDB's physical design happened to line up with their write-heavy, many-index pattern.</p>
+
+<h3>Clustered index + logical secondary indexes</h3>
+<p>InnoDB stores the table itself as a <strong>clustered index on the primary key</strong>: the row data lives in the leaf of the PK index, sorted by PK. Crucially, <strong>secondary indexes store the primary-key value</strong> of the row they point to, <em>not</em> a physical on-disk pointer. Uber's summary of the payoff: <em>"if a row offset changes, only the primary index needs to be updated"</em> — secondary indexes are undisturbed by a row physically moving, because they reference the logical PK.</p>
+
+<div class="tip"><div class="tipl">The consequence for updates</div><p>Because secondary indexes key on the PK, <strong>an update only touches the indexes whose columns actually changed</strong>. Updating <code>birth_year</code> updates the <code>birth_year</code> index and nothing else — the <code>(first, last)</code> index is untouched. Contrast Postgres, where the same update repointed <em>every</em> index at the new tuple. This is the single mechanism that most directly answered Uber's write-amplification problem.</p></div>
+
+<div class="warn"><div class="warnl">Uber was honest about the trade-off</div><p>The logical-PK design is not free: a secondary-index lookup now takes <strong>two steps</strong> — search the secondary index to get the PK, then search the clustered index to reach the row — whereas a Postgres index points straight at the tuple. Uber explicitly called this a <strong>slight disadvantage for reads</strong>, accepted because their pain was on the write and replication side.</p></div>
+
+<h3>In-place updates and cheaper MVCC cleanup</h3>
+<p>InnoDB updates rows <strong>in place</strong> and keeps old versions in a <strong>rollback (undo) segment</strong> for MVCC, rather than leaving dead tuples scattered through the table. Uber argued this makes reclaiming old versions more efficient than Postgres autovacuum's table scans.</p>
+
+<h3>Logical replication over the binlog</h3>
+<p>MySQL replication is <strong>logical</strong>: it ships the <strong>binary log (binlog)</strong>, which supports <strong>statement-based, row-based, and mixed</strong> formats. Because replicas receive logical changes and re-derive their own index updates, Uber argued the binlog is <strong>significantly more compact</strong> than a physical WAL stream. Logical replication also gave them <strong>true replica-side MVCC</strong> (reads don't block replication), more resilience to the kind of catastrophic corruption they hit, and <strong>easier cross-version upgrades</strong> — upgrade replicas one at a time, then promote one to primary.</p>
+
+<h3>Buffer pool and connection model</h3>
+<ul>
+  <li><strong>InnoDB buffer pool.</strong> InnoDB manages its own <strong>userspace LRU buffer pool</strong>, giving it control over cache eviction and avoiding some of the <code>lseek</code>/<code>read</code> syscall overhead Uber attributed to Postgres's reliance on the OS page cache.</li>
+  <li><strong>Thread per connection.</strong> MySQL uses a thread-per-connection model, which Uber said scaled to roughly <strong>10,000 concurrent connections</strong> — versus the few-hundred ceiling they felt with Postgres 9.2 processes.</li>
+</ul>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. Schemaless — Uber's Sharding Layer on MySQL</h2>
+
+<p>Uber did not simply point their monolith at raw MySQL. They described <strong>Schemaless</strong> — in their words, <em>"a novel database sharding layer built on top of MySQL"</em> — as the target for most data that had lived in Postgres. Conceptually it is an <strong>append-only, sharded</strong> key-value/columnar store that uses MySQL instances as the underlying storage engine, so applications get horizontal sharding and an append-friendly write model while MySQL/InnoDB handles durability and replication underneath.</p>
+<div class="note"><div class="notel">Scope note</div><p>The 2016 post introduces Schemaless only briefly, as the destination for the migration; the deep design of Schemaless is covered in Uber's separate posts and is out of scope here. We mention it because it is why "Uber moved to MySQL" is more precisely "Uber moved to <em>Schemaless-on-MySQL</em>" for most of their data — with some specialized cases going to other stores such as Cassandra.</p></div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. The Core Mechanism — Physical vs. Logical Index Pointers</h2>
+
+<p>If you remember one diagram from this chapter, make it this one. It is the single difference that drives most of Uber's argument: <strong>what a secondary index actually stores.</strong> In Postgres it stores the tuple's physical location; in InnoDB it stores the primary key. Follow the arrows to see why an indexed-column update touches every index in one engine and only the changed index in the other.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 430" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="uah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+
+  <!-- POSTGRES side -->
+  <text x="215" y="26" text-anchor="middle" font-size="12.5" font-weight="800" fill="#991b1b">POSTGRES — indexes point at the physical tuple (ctid)</text>
+
+  <rect x="30" y="42" width="160" height="40" rx="7" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="110" y="60" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">PK index</text>
+  <text x="110" y="74" text-anchor="middle" font-size="8.5" fill="#526176">entry → ctid</text>
+
+  <rect x="30" y="92" width="160" height="40" rx="7" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="110" y="110" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">(first, last) index</text>
+  <text x="110" y="124" text-anchor="middle" font-size="8.5" fill="#526176">entry → ctid</text>
+
+  <rect x="30" y="142" width="160" height="40" rx="7" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="110" y="160" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">birth_year index</text>
+  <text x="110" y="174" text-anchor="middle" font-size="8.5" fill="#526176">entry → ctid</text>
+
+  <!-- physical tuple -->
+  <rect x="300" y="86" width="140" height="52" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.6"/>
+  <text x="370" y="106" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b">tuple @ ctid(1,3)</text>
+  <text x="370" y="121" text-anchor="middle" font-size="8.5" fill="#991b1b">physical page/offset</text>
+
+  <!-- all three arrows to physical tuple -->
+  <line x1="190" y1="62" x2="298" y2="98" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#uah)"/>
+  <line x1="190" y1="112" x2="298" y2="112" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#uah)"/>
+  <line x1="190" y1="162" x2="298" y2="126" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#uah)"/>
+
+  <!-- new tuple after update -->
+  <rect x="300" y="176" width="140" height="52" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.6"/>
+  <text x="370" y="196" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">NEW tuple @ ctid(1,7)</text>
+  <text x="370" y="211" text-anchor="middle" font-size="8.5" fill="#92400e">after birth_year UPDATE</text>
+  <line x1="370" y1="138" x2="370" y2="174" stroke="#d97706" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#uah)"/>
+
+  <text x="215" y="258" text-anchor="middle" font-size="9.5" fill="#526176">New tuple → all 3 indexes must be repointed to ctid(1,7). One update touches every index.</text>
+
+  <!-- divider -->
+  <line x1="446" y1="40" x2="446" y2="270" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- INNODB side -->
+  <text x="655" y="26" text-anchor="middle" font-size="12.5" font-weight="800" fill="#166534">MySQL / InnoDB — secondary indexes point at the PK</text>
+
+  <rect x="470" y="92" width="160" height="40" rx="7" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="550" y="110" text-anchor="middle" font-size="10" font-weight="700" fill="#0d7a6f">(first, last) index</text>
+  <text x="550" y="124" text-anchor="middle" font-size="8.5" fill="#526176">entry → PK=42</text>
+
+  <rect x="470" y="142" width="160" height="40" rx="7" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="550" y="160" text-anchor="middle" font-size="10" font-weight="700" fill="#0d7a6f">birth_year index</text>
+  <text x="550" y="174" text-anchor="middle" font-size="8.5" fill="#526176">entry → PK=42</text>
+
+  <!-- clustered index (PK) holding the row -->
+  <rect x="700" y="92" width="140" height="90" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="770" y="114" text-anchor="middle" font-size="10" font-weight="700" fill="#5b21b6">clustered index</text>
+  <text x="770" y="130" text-anchor="middle" font-size="8.5" fill="#6d28d9">PK=42 → row data</text>
+  <text x="770" y="150" text-anchor="middle" font-size="8.5" fill="#6d28d9">updated IN PLACE</text>
+  <text x="770" y="168" text-anchor="middle" font-size="8.5" fill="#6d28d9">old version → undo</text>
+
+  <line x1="630" y1="112" x2="698" y2="124" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#uah)"/>
+  <line x1="630" y1="162" x2="698" y2="150" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#uah)"/>
+
+  <text x="620" y="258" text-anchor="middle" font-size="9.5" fill="#526176">birth_year UPDATE touches only the birth_year index + the clustered row. (first,last) index is untouched.</text>
+
+  <!-- bottom summary band -->
+  <rect x="30" y="300" width="800" height="108" rx="9" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.3"/>
+  <text x="430" y="324" text-anchor="middle" font-size="11" font-weight="800" fill="#334155">Same UPDATE (birth_year only), two engines</text>
+  <text x="245" y="352" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b">Postgres: new tuple + repoint PK, (first,last), birth_year</text>
+  <text x="245" y="370" text-anchor="middle" font-size="9" fill="#526176">≥ 4 writes, all streamed to the WAL</text>
+  <text x="245" y="388" text-anchor="middle" font-size="9" fill="#526176">write amplification → replication amplification</text>
+  <text x="630" y="352" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">InnoDB: update row in place + birth_year index only</text>
+  <text x="630" y="370" text-anchor="middle" font-size="9" fill="#526176">fewer index writes; compact logical binlog</text>
+  <text x="630" y="388" text-anchor="middle" font-size="9" fill="#526176">read cost: secondary lookup takes 2 hops (index → PK → row)</text>
+</svg>
+<div class="svg-cap">The core mechanism: Postgres indexes reference the physical tuple (<code>ctid</code>), so a new tuple version forces every index to be repointed; InnoDB secondary indexes reference the primary key, so an indexed-column update touches only the changed index plus the in-place clustered row — at the cost of an extra hop on secondary reads.</div>
+</div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. Trade-offs and Balance — Read This Before You Quote the Post</h2>
+
+<p>This post is <strong>opinionated and Postgres-critical</strong>, written by one team for one workload at one moment in time. It is a superb teaching artifact and a genuine account of real pain — but it is <strong>not</strong> a timeless verdict that "MySQL beats Postgres." Several things must be said alongside its claims:</p>
+
+<ul>
+  <li><strong>It is anchored to Postgres 9.2 (analysis published July 2016).</strong> Uber said so themselves. Postgres has evolved substantially since; a critique of a specific old version is not a critique of the database in 2026.</li>
+  <li><strong>Postgres already had, and has improved, mitigations.</strong> Postgres's <strong>HOT (Heap-Only Tuple)</strong> updates can avoid touching indexes entirely when the changed column is not indexed and the new tuple fits on the same page — directly softening the write-amplification example. Later releases brought major work on vacuum, replication, and more; the community published detailed responses at the time arguing the post overstated inherent weaknesses.</li>
+  <li><strong>Postgres runs at enormous scale elsewhere.</strong> Plenty of large organizations run write-heavy Postgres successfully. Uber's experience does not generalize to "Postgres can't scale."</li>
+  <li><strong>The trade-off is real and cuts both ways.</strong> InnoDB's logical secondary indexes cost an extra lookup hop on reads; Postgres's physical pointers make secondary reads a single hop. Which side you want depends on your read/write mix and index count.</li>
+</ul>
+
+<div class="tip"><div class="tipl">The actual lesson</div><p>The transferable insight is <strong>not</strong> "pick MySQL." It is: <strong>a database's storage-engine internals — on-disk row representation, what indexes point at, update-in-place vs. new-version, physical vs. logical replication — directly determine its cost on your specific write and index pattern.</strong> Uber's pattern (write-heavy, many indexes, cross-country physical replication) happened to be a bad fit for Postgres 9.2's physical-tuple/WAL design and a good fit for InnoDB's clustered-index/binlog design. Match the engine to the workload; don't rank engines in the abstract.</p></div>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Interview Angle — How to Use This</h2>
+
+<p>This case study is fuel for any <strong>"pick a database" / "SQL vs. NoSQL" / "why would you choose engine X"</strong> question. Cite it correctly and it sends a strong signal; cite it as absolute truth and a good interviewer may (rightly) push back.</p>
+
+<h3>What signal it sends</h3>
+<ul>
+  <li>You reason about databases at the level of <strong>storage-engine internals</strong>, not brand names — you can name what a secondary index physically stores and why that matters.</li>
+  <li>You connect a low-level mechanism (physical vs. logical index pointers) to a <strong>system-level consequence</strong> (write amplification → replication amplification across a WAN).</li>
+  <li>You show <strong>intellectual honesty</strong>: you present the post's era, its known trade-offs, and Postgres's counter-mechanisms (HOT), instead of repeating a one-sided conclusion. That balance is itself a senior signal.</li>
+</ul>
+
+<div class="iq">"Uber reported that on Postgres 9.2, secondary indexes pointed at the physical tuple location, so a single indexed-column update created a new tuple and had to repoint every index — and because replication shipped the physical WAL, that write amplification became replication amplification across their cross-country replicas. InnoDB's secondary indexes reference the primary key instead, so the same update touched fewer indexes. That said, it's a 9.2-era, workload-specific argument — Postgres has HOT updates and has evolved a lot since — so the real lesson is matching engine internals to your write/index pattern."</div>
+
+<h3>Probe questions and crisp answers</h3>
+<div class="card">
+<p><strong>Q: What is write amplification in a database, and how can index design cause it?</strong><br>Write amplification is when one logical write turns into many physical writes. In Postgres 9.2, an <code>UPDATE</code> writes a new immutable tuple, and because every index stores the tuple's physical location (<code>ctid</code>), every index must be repointed at the new tuple — so updating one indexed field could mean four-plus writes (new tuple + each index), all also written to the WAL. On a table with a dozen indexes, that's twelve index updates for one field change.</p>
+<p><strong>Q: Contrast a clustered-index (InnoDB) table with a heap (Postgres) table.</strong><br>InnoDB stores the row inside the primary-key index (clustered), sorted by PK, and secondary indexes store the PK value. Postgres uses a heap: rows sit in heap pages and every index — including the PK — points at the physical tuple. Consequence: in InnoDB a row moving or re-versioning only disturbs the clustered/PK structure, so an indexed-column update touches only changed indexes; in Postgres it repoints all indexes. The InnoDB trade-off is that secondary reads take two hops (secondary index → PK → clustered row) instead of one.</p>
+<p><strong>Q: How do physical (WAL) and logical (binlog) replication differ, and why did it matter to Uber?</strong><br>Physical replication ships byte-level on-disk changes so replicas are byte-for-byte copies; logical replication ships statement/row changes and lets replicas re-derive their own index updates. Uber's write amplification inflated the physical WAL stream ("extremely verbose") and their cross-country WAL archival couldn't keep up at peak; a logical binlog is more compact, allows replica-side MVCC without cancelling long reads, and makes cross-version upgrades easier. The cost of logical replication is more work re-applying changes on replicas and format/consistency subtleties.</p>
+<p><strong>Q: Does this post mean MySQL is better than Postgres?</strong><br>No — and saying so is the trap. It's a Postgres-9.2-era, workload-specific account (write-heavy, many indexes, WAN replication). Postgres has HOT updates that avoid index writes when the changed column isn't indexed, and has improved vacuum/replication since. Many teams run Postgres at large scale. The real takeaway is to match storage-engine internals to your write/index/replication pattern rather than ranking databases in the abstract.</p>
+</div>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Sources</h2>
+<p>This chapter is a <strong>summary rewritten in our own words</strong> from Uber's public engineering blog post. All facts, mechanisms, and figures above are drawn from that post and reflect the systems and versions <strong>as described on its publication date (July 2016)</strong>; the live architecture and both databases have changed since. Where a detail wasn't stated, we omitted it rather than infer it. The post is <strong>opinionated and Postgres-critical</strong>; we present its claims as Uber's arguments, not as settled fact, and add the balancing context in §6.</p>
+<ul>
+  <li><strong>"Why Uber Engineering Switched from Postgres to MySQL"</strong> — Uber engineering blog (Evan Klitzke, July 26, 2016). The Postgres 9.2 deployment and scale, the immutable-tuple/<code>ctid</code> on-disk model, secondary indexes pointing at physical tuples, the write-amplification example, MVCC/vacuum bloat, physical WAL replication amplification, the replica-MVCC and upgrade pains, the process-per-connection limits, and the InnoDB clustered-index / logical-binlog / buffer-pool arguments, plus Schemaless as the migration target. <br><code>https://www.uber.com/blog/postgres-to-mysql-migration/</code></li>
+</ul>
+<div class="note"><div class="notel">Attribution and balance note</div><p>Uber is named here because this is <strong>public, published</strong> engineering information with the primary source cited above — no confidential or internal material is used. The post is a single team's opinionated account from 2016; Postgres has since evolved (e.g. HOT updates, vacuum and replication improvements) and runs at scale at many organizations. Treat the piece as a lesson in matching storage-engine internals to a workload, not as a ranking of databases.</p></div>
+
+<!-- ══════════════ TERMINOLOGY ══════════════ -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>RSS (resident set size)</strong></td><td>The portion of a process's memory actually held in physical RAM, versus what the OS page cache holds.</td></tr>
+<tr><td><strong>MVCC (Multi-Version Concurrency Control)</strong></td><td>Keeping multiple versions of a row so readers never block writers and vice versa.</td></tr>
+<tr><td><strong>Tuple</strong></td><td>Postgres's term for a single on-disk row version; an update writes a new tuple rather than editing in place.</td></tr>
+<tr><td><strong><code>ctid</code></strong></td><td>Postgres identifier for a tuple's physical location on disk — its heap page and offset.</td></tr>
+<tr><td><strong>Secondary index</strong></td><td>Any non-primary-key index used to find rows by other columns (here, the name and <code>birth_year</code> indexes).</td></tr>
+<tr><td><strong>Write amplification</strong></td><td>When one logical write expands into many physical writes on disk.</td></tr>
+<tr><td><strong>WAL (write-ahead log)</strong></td><td>Postgres's byte-level log of on-disk changes, written before pages and shipped for physical replication.</td></tr>
+<tr><td><strong>Bloat</strong></td><td>Accumulation of dead row versions in a table that must later be reclaimed.</td></tr>
+<tr><td><strong>Autovacuum</strong></td><td>Postgres background process that scans tables to find and free dead tuples.</td></tr>
+<tr><td><strong>Physical replication</strong></td><td>Shipping byte-level on-disk changes (the WAL) so replicas are byte-for-byte copies of the primary.</td></tr>
+<tr><td><strong>ORM (object-relational mapping)</strong></td><td>A library that maps database rows to application objects.</td></tr>
+<tr><td><strong><code>pg_upgrade</code></strong></td><td>Postgres tool that upgrades a cluster's data files in place across major versions.</td></tr>
+<tr><td><strong>pgbouncer</strong></td><td>Lightweight connection pooler for Postgres, used to cope with the process-per-connection limit.</td></tr>
+<tr><td><strong>InnoDB</strong></td><td>MySQL's default transactional storage engine, built on a clustered-index row layout.</td></tr>
+<tr><td><strong>Clustered index</strong></td><td>An index whose leaves hold the row data itself, sorted by primary key; InnoDB stores tables this way.</td></tr>
+<tr><td><strong>Logical replication</strong></td><td>Shipping statement- or row-level changes so replicas re-derive their own index updates.</td></tr>
+<tr><td><strong>Binlog (binary log)</strong></td><td>MySQL's logical change log, supporting statement-based, row-based, and mixed formats.</td></tr>
+<tr><td><strong>Buffer pool</strong></td><td>InnoDB's userspace LRU (least-recently-used) cache of table and index pages.</td></tr>
+<tr><td><strong>HOT (heap-only tuple)</strong></td><td>Postgres optimization that avoids index writes when the changed column isn't indexed and the new tuple fits the same page.</td></tr>
+<tr><td><strong>Schemaless</strong></td><td>Uber's append-only, sharded datastore layer built on top of MySQL, the target of the migration.</td></tr>
+</table>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="cs_discord_messages.html">&lsaquo; Case Study: How Discord Stores Billions (then Trillions) of Messages</a><a class="bkc" href="index.html">📖 Contents</a><a href="cs_twitter_manhattan.html">Case Study: Twitter's Manhattan — a Real-Time Multi-Tenant Distributed Database &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

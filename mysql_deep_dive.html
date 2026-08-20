@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MySQL/InnoDB Deep Dive — System Design Interview Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* HEADER */
+.page-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px 20px;
+}
+.header-tag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.header-title { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.header-title span { color: #93c5fd; }
+.header-desc { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 700px; }
+
+/* TABS */
+.tab-bar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 44px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.tab-btn {
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text3);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 3px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.tab-btn:hover { color: var(--blue); background: var(--blue-l); }
+.tab-btn.active { color: var(--blue-d); border-bottom-color: var(--blue); }
+
+/* CONTENT */
+.content { padding: 32px 44px 60px; max-width: 1100px; margin: 0 auto; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* SECTION */
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--blue-l);
+}
+.subsection-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text2);
+  margin: 20px 0 10px;
+}
+
+/* CARD */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .icon { font-size: 18px; }
+
+/* COLLAPSIBLE */
+.collapsible {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.collapsible-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  transition: background .15s;
+  user-select: none;
+}
+.collapsible-header:hover { background: var(--bg3); }
+.collapsible-header .arrow {
+  transition: transform .2s;
+  font-size: 12px;
+  color: var(--text3);
+}
+.collapsible.open .collapsible-header .arrow { transform: rotate(90deg); }
+.collapsible-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease;
+}
+.collapsible.open .collapsible-body { max-height: 5000px; }
+.collapsible-content {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* CODE */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--blue-d);
+}
+pre {
+  font-family: 'JetBrains Mono', monospace;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 16px 20px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+pre code { background: none; color: inherit; padding: 0; }
+
+/* TABLE */
+.table-wrapper { overflow-x: auto; margin: 12px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th { background: var(--bg3); font-weight: 600; color: var(--text2); }
+tr:hover td { background: var(--bg3); }
+
+/* BADGE */
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 8px; }
+.badge-blue { background: var(--blue-l); color: var(--blue-d); }
+.badge-green { background: var(--green-l); color: var(--green); }
+.badge-yellow { background: var(--yellow-l); color: var(--yellow); }
+.badge-red { background: var(--red-l); color: var(--red); }
+.badge-purple { background: var(--purple-l); color: var(--purple); }
+
+/* KEY POINT */
+.key-point {
+  background: var(--yellow-l);
+  border-left: 4px solid var(--yellow);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.key-point strong { color: var(--yellow); }
+
+/* INFO BOX */
+.info-box {
+  background: var(--blue-l);
+  border-left: 4px solid var(--blue);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.warning-box {
+  background: var(--red-l);
+  border-left: 4px solid var(--red);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+
+/* SVG DIAGRAM */
+.diagram-container {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  margin: 16px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.diagram-caption {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* LIST */
+ul, ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 6px; font-size: 14px; }
+
+/* COMPARISON */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+@media (max-width: 768px) {
+  .comparison-grid { grid-template-columns: 1fr; }
+  .content { padding: 20px; }
+  .page-header { padding: 24px 20px 16px; }
+  .tab-bar { padding: 0 20px; }
+}
+
+.highlight { background: var(--yellow-l); padding: 1px 4px; border-radius: 3px; }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part V · Chapter 2 — <b>MySQL / InnoDB Deep Dive</b></span><span class="bkspacer"></span></nav>
+
+<div class="page-header">
+  <div class="header-tag">System Design Interview Prep</div>
+  <h1 class="ht header-title">MySQL / InnoDB <span>Deep Dive</span></h1>
+  <div class="header-desc">Comprehensive guide covering internals, indexing strategies, transactions, replication, and interview patterns. Designed for system design interviews at staff-level.</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="storage">Storage Engine</button>
+  <button class="tab-btn" data-tab="indexing">Indexing</button>
+  <button class="tab-btn" data-tab="transactions">Transactions</button>
+  <button class="tab-btn" data-tab="replication">Replication</button>
+  <button class="tab-btn" data-tab="interview">Interview</button>
+</div>
+
+<!-- ==================== OVERVIEW TAB ==================== -->
+<div class="content">
+<div id="tab-overview" class="tab-panel active">
+  <div class="section">
+    <h2 class="section-title">MySQL Architecture Overview</h2>
+    <p>MySQL uses a layered architecture that separates concerns between client connections, query processing, and data storage. Understanding these layers is essential for diagnosing performance issues.</p>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 800 520" width="750" xmlns="http://www.w3.org/2000/svg">
+        <!-- Connection Layer -->
+        <rect x="50" y="20" width="700" height="90" rx="12" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+        <text x="400" y="48" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#1d4ed8">Connection Layer</text>
+        <rect x="80" y="58" width="120" height="40" rx="6" fill="#fff" stroke="#2188fb" stroke-width="1.5"/>
+        <text x="140" y="83" text-anchor="middle" font-family="Inter" font-size="11" fill="#334155">Connection Pool</text>
+        <rect x="220" y="58" width="120" height="40" rx="6" fill="#fff" stroke="#2188fb" stroke-width="1.5"/>
+        <text x="280" y="83" text-anchor="middle" font-family="Inter" font-size="11" fill="#334155">Authentication</text>
+        <rect x="360" y="58" width="120" height="40" rx="6" fill="#fff" stroke="#2188fb" stroke-width="1.5"/>
+        <text x="420" y="83" text-anchor="middle" font-family="Inter" font-size="11" fill="#334155">Thread Handling</text>
+        <rect x="500" y="58" width="120" height="40" rx="6" fill="#fff" stroke="#2188fb" stroke-width="1.5"/>
+        <text x="560" y="83" text-anchor="middle" font-family="Inter" font-size="11" fill="#334155">SSL / Security</text>
+
+        <!-- Arrow -->
+        <path d="M400 110 L400 140" stroke="#59677c" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+        <!-- Server Layer -->
+        <rect x="50" y="140" width="700" height="180" rx="12" fill="#dcfce7" stroke="#117e39" stroke-width="2"/>
+        <text x="400" y="168" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#166534">Server Layer (SQL Layer)</text>
+        <rect x="80" y="180" width="140" height="50" rx="6" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+        <text x="150" y="200" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#334155">Parser</text>
+        <text x="150" y="218" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">SQL → AST</text>
+        <rect x="240" y="180" width="140" height="50" rx="6" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+        <text x="310" y="200" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#334155">Optimizer</text>
+        <text x="310" y="218" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Cost-based planning</text>
+        <rect x="400" y="180" width="140" height="50" rx="6" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+        <text x="470" y="200" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#334155">Executor</text>
+        <text x="470" y="218" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Plan execution</text>
+        <rect x="560" y="180" width="160" height="50" rx="6" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+        <text x="640" y="200" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#334155">Query Cache</text>
+        <text x="640" y="218" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Removed in 8.0</text>
+
+        <!-- Arrows between components -->
+        <path d="M220 205 L240 205" stroke="#59677c" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M380 205 L400 205" stroke="#59677c" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+        <!-- Sub-components -->
+        <rect x="80" y="250" width="200" height="50" rx="6" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+        <text x="180" y="270" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#334155">Binary Log (binlog)</text>
+        <text x="180" y="288" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Replication + Point-in-time recovery</text>
+        <rect x="300" y="250" width="200" height="50" rx="6" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+        <text x="400" y="270" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#334155">Metadata / Data Dictionary</text>
+        <text x="400" y="288" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Table definitions, stats</text>
+        <rect x="520" y="250" width="200" height="50" rx="6" fill="#fff" stroke="#86efac" stroke-width="1.5"/>
+        <text x="620" y="270" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#334155">Stored Procedures</text>
+        <text x="620" y="288" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Views, Triggers, Functions</text>
+
+        <!-- Arrow -->
+        <path d="M400 320 L400 350" stroke="#59677c" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+        <!-- Storage Engine Layer -->
+        <rect x="50" y="350" width="700" height="150" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+        <text x="400" y="378" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#5b21b6">Storage Engine Layer (Pluggable)</text>
+        <rect x="80" y="395" width="180" height="80" rx="8" fill="#fff" stroke="#906df9" stroke-width="2"/>
+        <text x="170" y="420" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#7c3aed">InnoDB</text>
+        <text x="170" y="438" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">ACID, MVCC, Row Locks</text>
+        <text x="170" y="453" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Crash Recovery, FK</text>
+        <text x="170" y="468" text-anchor="middle" font-family="Inter" font-size="9" fill="#117e39" font-weight="600">DEFAULT</text>
+
+        <rect x="280" y="395" width="150" height="80" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+        <text x="355" y="420" text-anchor="middle" font-family="Inter" font-size="13" font-weight="600" fill="#59677c">MyISAM</text>
+        <text x="355" y="438" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Table Locks, No TX</text>
+        <text x="355" y="453" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Full-text (legacy)</text>
+        <text x="355" y="468" text-anchor="middle" font-family="Inter" font-size="9" fill="#c62020" font-weight="600">LEGACY</text>
+
+        <rect x="450" y="395" width="140" height="80" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+        <text x="520" y="420" text-anchor="middle" font-family="Inter" font-size="13" font-weight="600" fill="#59677c">Memory</text>
+        <text x="520" y="438" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Hash indexes</text>
+        <text x="520" y="453" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Temp tables only</text>
+
+        <rect x="610" y="395" width="120" height="80" rx="8" fill="#fff" stroke="#e2e8f0" stroke-width="1.5"/>
+        <text x="670" y="420" text-anchor="middle" font-family="Inter" font-size="13" font-weight="600" fill="#59677c">NDB</text>
+        <text x="670" y="438" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Cluster engine</text>
+        <text x="670" y="453" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Distributed</text>
+
+        <!-- Arrow marker -->
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#59677c"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="diagram-caption">Fig 1: MySQL Three-Layer Architecture</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Query Execution Path</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#9654;</span> SQL Query Lifecycle</div>
+      <ol>
+        <li><strong>Client sends SQL</strong> over TCP (port 3306) or Unix socket</li>
+        <li><strong>Parser</strong> — Lexical analysis + syntax validation, produces AST (Abstract Syntax Tree)</li>
+        <li><strong>Preprocessor</strong> — Validates table/column existence, permission checks, resolves aliases</li>
+        <li><strong>Optimizer</strong> — Cost-based optimizer (CBO) evaluates access paths, join orders, index selection. Produces execution plan.</li>
+        <li><strong>Executor</strong> — Calls storage engine API (handler interface) to fetch/modify rows</li>
+        <li><strong>Storage Engine</strong> — InnoDB reads from buffer pool or disk, applies locks, returns results</li>
+      </ol>
+    </div>
+
+    <div class="key-point">
+      <strong>Interview Insight:</strong> The optimizer is key. It decides whether to use an index, which join algorithm (nested loop, hash join in 8.0.18+), and in what order to join tables. Understanding <code>EXPLAIN</code> output is critical.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">InnoDB vs MyISAM</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr><th>Feature</th><th>InnoDB</th><th>MyISAM</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Transactions</td><td><span class="badge badge-green">Full ACID</span></td><td><span class="badge badge-red">No</span></td></tr>
+          <tr><td>Locking</td><td>Row-level locks</td><td>Table-level locks</td></tr>
+          <tr><td>Crash Recovery</td><td><span class="badge badge-green">Redo log (WAL)</span></td><td><span class="badge badge-red">Manual repair</span></td></tr>
+          <tr><td>Foreign Keys</td><td>Yes</td><td>No</td></tr>
+          <tr><td>MVCC</td><td>Yes (consistent reads)</td><td>No</td></tr>
+          <tr><td>Clustered Index</td><td>Yes (PK = data)</td><td>No (heap file)</td></tr>
+          <tr><td>Buffer Pool</td><td>Data + Index caching</td><td>Key cache only</td></tr>
+          <tr><td>Full-text Search</td><td>Yes (since 5.6)</td><td>Yes</td></tr>
+          <tr><td>Compression</td><td>Page-level, transparent</td><td>Table-level only</td></tr>
+          <tr><td>Default Since</td><td>MySQL 5.5 (2010)</td><td>Before 5.5</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box">
+      <strong>Why InnoDB won:</strong> MyISAM's table-level locking means any write blocks all reads on that table — unacceptable for concurrent web workloads. InnoDB's row-level locking + MVCC allows readers and writers to coexist without blocking each other.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== STORAGE ENGINE TAB ==================== -->
+<div id="tab-storage" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">InnoDB Internals</h2>
+    <p>InnoDB is a high-performance, transactional storage engine. Its design is heavily influenced by IBM DB2 and Oracle. Understanding its internals helps diagnose performance issues and design better schemas.</p>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Page Structure</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>16KB Pages — The Fundamental Unit of I/O</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li>Every read/write to disk happens in <strong>16KB page</strong> units (configurable: 4KB, 8KB, 16KB, 32KB, 64KB)</li>
+            <li>Pages are organized as B+ tree nodes: leaf pages contain actual row data, internal pages contain keys + page pointers</li>
+            <li>Page structure: <code>File Header (38B)</code> + <code>Page Header (56B)</code> + <code>Infimum/Supremum</code> + <code>User Records</code> + <code>Free Space</code> + <code>Page Directory</code> + <code>File Trailer (8B)</code></li>
+            <li>The page directory provides binary search within a page using slot pointers</li>
+            <li>Fill factor: InnoDB leaves 1/16 of each page free for future updates to avoid page splits</li>
+          </ul>
+          <div class="key-point">
+            <strong>Interview Insight:</strong> Page size affects B+ tree fan-out. With 16KB pages and 8-byte keys + 6-byte pointers, an internal node can hold ~1170 entries, and a leaf page holds ~100 full rows (assuming rows of roughly 160 bytes). A 3-level B+ tree can index ~1170 x 1170 x ~100 = ~137 million rows with just 3 I/O operations.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Buffer Pool</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Buffer Pool — The Heart of InnoDB Performance</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <p>The buffer pool is an in-memory cache for both data pages and index pages. Typically set to 70-80% of available RAM on dedicated database servers.</p>
+          <h3 style="margin-top:12px; font-size:14px;">LRU with Young/Old Sublists</h3>
+          <ul>
+            <li><strong>Young sublist</strong> (5/8 of buffer pool) — Hot pages, recently accessed</li>
+            <li><strong>Old sublist</strong> (3/8 of buffer pool) — Pages that might be evicted</li>
+            <li>New pages are inserted at the <strong>midpoint</strong> (head of old sublist), not the head of the full list</li>
+            <li>If a page in the old sublist is accessed again after <code>innodb_old_blocks_time</code> (default 1000ms), it moves to the young sublist</li>
+            <li>This prevents full-table scans from flushing the entire buffer pool (scan resistance)</li>
+          </ul>
+          <h3 style="margin-top:12px; font-size:14px;">Dirty Page Flushing</h3>
+          <ul>
+            <li>Modified pages are marked "dirty" — they differ from their on-disk version</li>
+            <li>Flushing strategies: <code>innodb_io_capacity</code> controls background flush rate</li>
+            <li>Adaptive flushing adjusts rate based on redo log generation speed</li>
+            <li>Checkpoint: the LSN up to which all dirty pages have been flushed to disk</li>
+          </ul>
+          <pre><code>-- Key buffer pool metrics
+SHOW ENGINE INNODB STATUS;
+-- or
+SELECT * FROM information_schema.INNODB_BUFFER_POOL_STATS;</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Redo Log (WAL)</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Write-Ahead Logging — Durability Guarantee</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li><strong>WAL principle:</strong> Write the log record BEFORE the dirty page is flushed. This ensures crash recovery can replay committed transactions.</li>
+            <li>Redo log is a <strong>circular buffer</strong> of fixed-size files (default: 2 files x 48MB in 5.7, dynamically sized in 8.0.30+)</li>
+            <li>Each log record has an LSN (Log Sequence Number) — monotonically increasing</li>
+            <li><code>innodb_flush_log_at_trx_commit</code>:
+              <ul>
+                <li><code>= 1</code> (default): Flush to disk on every commit. Full durability. <span class="badge badge-green">ACID compliant</span></li>
+                <li><code>= 2</code>: Write to OS buffer on commit, flush every second. Lose ~1s on OS crash.</li>
+                <li><code>= 0</code>: Write + flush every second. Lose ~1s on any crash. <span class="badge badge-red">Unsafe</span></li>
+              </ul>
+            </li>
+            <li>Group commit: multiple transactions flush their redo in a single fsync call for throughput</li>
+          </ul>
+          <h3 style="margin-top:12px; font-size:14px;">Crash Recovery Process</h3>
+          <ol>
+            <li>Read last checkpoint LSN from redo log header</li>
+            <li>Scan redo log forward from checkpoint, redo all changes (even uncommitted ones)</li>
+            <li>Apply undo log to rollback uncommitted transactions</li>
+            <li>Result: database is consistent without manual intervention</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Undo Log</h2>
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>Undo Log — MVCC + Rollback</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li>Stored in the <strong>undo tablespace</strong> (separate from data tablespace since 5.6+)</li>
+            <li>Each row modification creates an undo record with the previous version of the row</li>
+            <li>Undo records form a <strong>version chain</strong> — linked list of previous versions for MVCC reads</li>
+            <li>Two types: <strong>INSERT undo</strong> (only needed for rollback, discarded after commit) and <strong>UPDATE undo</strong> (needed for MVCC, kept until no active read view needs it)</li>
+            <li>Purge thread: background cleanup of undo records no longer needed by any active transaction</li>
+          </ul>
+          <div class="warning-box">
+            <strong>Long-running transactions</strong> prevent purge of undo records, causing undo tablespace bloat and degraded MVCC read performance (longer version chain traversal).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Doublewrite Buffer</h2>
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>Doublewrite Buffer — Torn Page Protection</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li><strong>Problem:</strong> OS writes in 4KB blocks, InnoDB pages are 16KB. A crash mid-write produces a "torn page" — partially written, partially old data.</li>
+            <li><strong>Solution:</strong> Before writing dirty pages to their final location, InnoDB writes them sequentially to a shared doublewrite buffer (2MB area in system tablespace or dedicated files in 8.0.20+).</li>
+            <li><strong>Recovery:</strong> If a torn page is detected (via page checksum), InnoDB reads the intact copy from the doublewrite buffer.</li>
+            <li>Performance impact: ~5-10% write overhead, but sequential writes are cheap</li>
+            <li>Can be disabled on filesystems with atomic writes (e.g., ZFS, FusionIO)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Change Buffer</h2>
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>Change Buffer — Optimizing Secondary Index Updates</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li>When a secondary index page is not in the buffer pool, the modification is buffered in the <strong>change buffer</strong> instead of reading the page from disk</li>
+            <li>Works for: INSERT, UPDATE (non-unique indexes), DELETE-mark operations</li>
+            <li>Does NOT work for: unique indexes (must read page to check uniqueness)</li>
+            <li>Merge happens when: the page is eventually read into buffer pool, or background merge thread runs</li>
+            <li>Defaults to 25% of the buffer pool, configurable up to 50% via <code>innodb_change_buffer_max_size</code></li>
+          </ul>
+          <div class="key-point">
+            <strong>Design implication:</strong> If your workload is write-heavy with many secondary indexes, change buffering reduces random I/O significantly. However, for read-heavy workloads where pages are always in memory, it provides less benefit. <em>Note: change buffering is OFF by default since MySQL 8.4.0 (<code>innodb_change_buffering=none</code>) — see the Modern InnoDB section below; this classic benefit applies only where it is explicitly enabled or on older versions.</em>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Architecture Diagram: Buffer Pool + Redo Log + Disk</h2>
+    <div class="diagram-container">
+      <svg viewBox="0 0 850 480" width="800" xmlns="http://www.w3.org/2000/svg">
+        <!-- Buffer Pool -->
+        <rect x="30" y="20" width="350" height="200" rx="12" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+        <text x="205" y="48" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#1d4ed8">Buffer Pool (RAM)</text>
+        <!-- Young sublist -->
+        <rect x="50" y="60" width="150" height="70" rx="6" fill="#bbf7d0" stroke="#117e39" stroke-width="1.5"/>
+        <text x="125" y="82" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#166534">Young Sublist</text>
+        <text x="125" y="100" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">Hot pages (5/8)</text>
+        <rect x="60" y="108" width="30" height="16" rx="3" fill="#fff" stroke="#86efac"/>
+        <rect x="95" y="108" width="30" height="16" rx="3" fill="#fef08a" stroke="#a35905"/>
+        <rect x="130" y="108" width="30" height="16" rx="3" fill="#fff" stroke="#86efac"/>
+        <!-- Old sublist -->
+        <rect x="210" y="60" width="150" height="70" rx="6" fill="#fef3c7" stroke="#a35905" stroke-width="1.5"/>
+        <text x="285" y="82" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#92400e">Old Sublist</text>
+        <text x="285" y="100" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">Eviction zone (3/8)</text>
+        <rect x="220" y="108" width="30" height="16" rx="3" fill="#fff" stroke="#fbbf24"/>
+        <rect x="255" y="108" width="30" height="16" rx="3" fill="#fff" stroke="#fbbf24"/>
+        <rect x="290" y="108" width="30" height="16" rx="3" fill="#e5e7eb" stroke="#9ca3af"/>
+
+        <!-- Dirty pages indicator -->
+        <rect x="50" y="145" width="310" height="60" rx="6" fill="#fff" stroke="#cbd5e1" stroke-width="1"/>
+        <text x="205" y="165" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">Flush List (dirty pages ordered by LSN)</text>
+        <rect x="65" y="175" width="40" height="18" rx="3" fill="#fef08a" stroke="#a35905"/>
+        <text x="85" y="188" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#92400e">D</text>
+        <rect x="115" y="175" width="40" height="18" rx="3" fill="#fef08a" stroke="#a35905"/>
+        <text x="135" y="188" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#92400e">D</text>
+        <rect x="165" y="175" width="40" height="18" rx="3" fill="#fef08a" stroke="#a35905"/>
+        <text x="185" y="188" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#92400e">D</text>
+        <path d="M215 184 L240 184" stroke="#59677c" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="248" y="188" font-family="Inter" font-size="8" fill="#59677c">oldest_modification LSN</text>
+
+        <!-- Redo Log -->
+        <rect x="450" y="20" width="370" height="140" rx="12" fill="#dcfce7" stroke="#117e39" stroke-width="2"/>
+        <text x="635" y="48" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#166534">Redo Log (WAL)</text>
+        <!-- Circular buffer visualization -->
+        <circle cx="560" cy="100" r="40" fill="none" stroke="#86efac" stroke-width="8"/>
+        <path d="M560 60 A40 40 0 1 1 525 120" fill="none" stroke="#117e39" stroke-width="8" stroke-linecap="round"/>
+        <text x="560" y="95" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#166534">write</text>
+        <text x="560" y="108" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#166534">pos</text>
+        <circle cx="560" cy="60" r="5" fill="#c62020"/>
+        <text x="580" y="58" font-family="Inter" font-size="9" fill="#c62020">write ptr</text>
+        <circle cx="525" cy="120" r="5" fill="#1658ea"/>
+        <text x="500" y="135" font-family="Inter" font-size="9" fill="#1658ea">checkpoint</text>
+
+        <rect x="640" y="65" width="160" height="80" rx="6" fill="#fff" stroke="#86efac" stroke-width="1"/>
+        <text x="720" y="85" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">Log Records</text>
+        <text x="720" y="102" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#59677c">LSN: 10045</text>
+        <text x="720" y="115" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#59677c">LSN: 10046</text>
+        <text x="720" y="128" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#59677c">LSN: 10047</text>
+        <text x="720" y="141" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#59677c">...</text>
+
+        <!-- Transaction modifies buffer pool -> writes redo log -->
+        <path d="M380 80 L450 80" stroke="#117e39" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrowGreen)"/>
+        <text x="415" y="72" text-anchor="middle" font-family="Inter" font-size="9" fill="#117e39" font-weight="600">WAL write</text>
+
+        <!-- Doublewrite Buffer -->
+        <rect x="450" y="190" width="370" height="70" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+        <text x="635" y="218" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#5b21b6">Doublewrite Buffer</text>
+        <text x="635" y="240" text-anchor="middle" font-family="Inter" font-size="10" fill="#59677c">Sequential write of dirty pages before random write</text>
+
+        <!-- Data Files -->
+        <rect x="150" y="320" width="550" height="130" rx="12" fill="#f1f5f9" stroke="#59677c" stroke-width="2"/>
+        <text x="425" y="350" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#334155">Disk (Data Files — .ibd tablespace)</text>
+        <rect x="180" y="365" width="100" height="60" rx="6" fill="#fff" stroke="#cbd5e1"/>
+        <text x="230" y="390" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">Page 1</text>
+        <text x="230" y="408" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#59677c">16KB</text>
+        <rect x="300" y="365" width="100" height="60" rx="6" fill="#fff" stroke="#cbd5e1"/>
+        <text x="350" y="390" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">Page 2</text>
+        <text x="350" y="408" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#59677c">16KB</text>
+        <rect x="420" y="365" width="100" height="60" rx="6" fill="#fff" stroke="#cbd5e1"/>
+        <text x="470" y="390" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#334155">Page 3</text>
+        <text x="470" y="408" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#59677c">16KB</text>
+        <rect x="540" y="365" width="60" height="60" rx="6" fill="#fff" stroke="#cbd5e1"/>
+        <text x="570" y="398" text-anchor="middle" font-family="Inter" font-size="14" fill="#59677c">...</text>
+
+        <!-- Arrows: Buffer Pool -> Doublewrite -> Disk -->
+        <path d="M205 220 L205 280 L520 280 L520 260" stroke="#7c3aed" stroke-width="1.5" fill="none" marker-end="url(#arrowPurple)"/>
+        <text x="350" y="275" text-anchor="middle" font-family="Inter" font-size="9" fill="#7c3aed">1. Write to doublewrite</text>
+        <path d="M635 260 L635 320" stroke="#59677c" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="680" y="295" font-family="Inter" font-size="9" fill="#59677c">2. Write to final location</text>
+
+        <!-- Flush from buffer pool to disk -->
+        <path d="M205 220 L205 320" stroke="#a35905" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowOrange)"/>
+        <text x="130" y="275" font-family="Inter" font-size="9" fill="#a35905">Flush dirty</text>
+
+        <!-- Markers -->
+        <defs>
+          <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#117e39"/>
+          </marker>
+          <marker id="arrowPurple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#7c3aed"/>
+          </marker>
+          <marker id="arrowOrange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#a35905"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="diagram-caption">Fig 2: InnoDB Buffer Pool, Redo Log, Doublewrite, and Data File Relationships</div>
+    </div>
+  </div>
+
+<div class="collapsible">
+<div class="collapsible-header">
+<span>Modern InnoDB: Instant DDL, Change-Buffer Deprecation, Redo Capacity</span>
+<span class="arrow">&#9654;</span>
+</div>
+<div class="collapsible-body">
+<div class="collapsible-content">
+
+<div class="info-box">
+<strong>Why this matters in 2026:</strong> A lot of pre-8.0 MySQL "folk wisdom" is now stale. Three pillars have shifted: (1) most schema changes are <em>metadata-only</em> thanks to <span class="badge badge-green">ALGORITHM=INSTANT</span>, (2) the <strong>change buffer</strong> — long taught as the reason non-unique secondary index writes are cheap — is now <em>off by default</em> since MySQL 8.4.0 (the feature and its variable still exist), and (3) redo log sizing is now a single dynamic knob, <code>innodb_redo_log_capacity</code>. Know the version each landed in &mdash; version specifics are a common probe area.
+</div>
+
+<h3>Online DDL algorithms</h3>
+
+<p>Every <code>ALTER TABLE</code> resolves to one of three algorithms. You can force one with <code>ALGORITHM=INSTANT|INPLACE|COPY</code>; if the requested algorithm can't satisfy the operation, MySQL errors out instead of silently downgrading — which is exactly why you specify it explicitly in production.</p>
+
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Algorithm</th><th>What it does</th><th>Concurrent DML</th><th>Cost</th></tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="badge badge-green">INSTANT</span></td>
+<td>Data-dictionary metadata change only; no table rebuild, no data-file touch.</td>
+<td><strong>Fully allowed</strong> — brief metadata-lock only.</td>
+<td>O(1), milliseconds regardless of table size.</td>
+</tr>
+<tr>
+<td><span class="badge badge-blue">INPLACE</span></td>
+<td>Rebuilds or reorganizes within the existing tablespace (e.g. add secondary index).</td>
+<td><strong>Mostly allowed</strong> — short exclusive MDL at start/end, DML runs during the bulk phase.</td>
+<td>O(n) work, but no full external copy; changes buffered in an online log and reapplied.</td>
+</tr>
+<tr>
+<td><span class="badge badge-red">COPY</span></td>
+<td>Builds a brand-new table and copies every row over.</td>
+<td><strong>Blocks writes</strong> (reads permitted); table is effectively read-only for the duration.</td>
+<td>O(n) plus full disk space for a second copy; slowest, most disruptive.</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Best algorithm</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>Add column</td><td><span class="badge badge-green">INSTANT</span></td><td>Metadata-only since <strong>8.0.12</strong>; can be placed in <em>any position</em> (not just last) since <strong>8.0.29</strong>.</td></tr>
+<tr><td>Drop column</td><td><span class="badge badge-green">INSTANT</span></td><td>Supported instantly since <strong>8.0.29</strong>.</td></tr>
+<tr><td>Rename column / set-or-drop DEFAULT / rename table</td><td><span class="badge badge-green">INSTANT</span></td><td>Pure dictionary edits.</td></tr>
+<tr><td>Add secondary index</td><td><span class="badge badge-blue">INPLACE</span></td><td>Rebuild-free but scans/sorts the table; DML stays online.</td></tr>
+<tr><td>Add PRIMARY KEY</td><td><span class="badge badge-blue">INPLACE</span></td><td>Rebuilds/reorganizes the table but supports <code>ALGORITHM=INPLACE</code> with concurrent DML — <em>not</em> COPY-only.</td></tr>
+<tr><td>Extend <code>VARCHAR</code> length</td><td><span class="badge badge-blue">INPLACE</span></td><td>Done in place when the length-byte requirement is unchanged (staying within the 0–255 or the 256+ boundary); crossing that boundary forces COPY.</td></tr>
+<tr><td>Change column data type, change charset</td><td><span class="badge badge-red">COPY</span></td><td>Requires a full rebuild; writes blocked. Prime candidate for an external tool.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="warning-box">
+<strong>INSTANT is bounded — don't over-trust it.</strong> Instant column add/drop mutates rows lazily, and a table can only accumulate so many instant changes before you hit the row-version limit and the next such <code>ALTER</code> is rejected until you rebuild (<code>ALGORITHM=INPLACE/COPY</code> or <code>OPTIMIZE TABLE</code>). Instant column ops are also restricted to <code>ROW_FORMAT</code> ≠ COMPRESSED, tables without a full-text index, and not the sole/primary-key operations. Verify what actually happened via <code>SHOW WARNINGS</code> or the <code>information_schema.INNODB_TABLES.TOTAL_ROW_VERSIONS</code> counter.
+</div>
+
+<h3>When INSTANT can't help: external OSC tools</h3>
+
+<p>For operations that force <code>COPY</code> (data-type changes, big charset migrations) on a large, write-heavy table, native DDL would block writes for too long — especially on a replication topology where the ALTER also serializes down the replicas. Two proven-in-production tools sidestep this by building a shadow table and cutting over atomically:</p>
+
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Tool</th><th>Origin / License</th><th>Mechanism</th></tr>
+</thead>
+<tbody>
+<tr><td><code>pt-online-schema-change</code> (pt-osc)</td><td>Percona Toolkit, <strong>GPL v2</strong></td><td>Trigger-based: triggers on the original table mirror live changes into a copy, then an atomic rename swaps them.</td></tr>
+<tr><td><code>gh-ost</code></td><td>GitHub, <strong>MIT license</strong></td><td>Triggerless: tails the binary log to replay changes onto the ghost table, so it adds no trigger overhead to the primary write path.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Change buffer: off by default since 8.4.0</h3>
+
+<div class="warning-box">
+<strong>Still present — but disabled by default.</strong> The change buffer merges writes to <em>non-unique secondary indexes</em> so that dirtying random secondary-index leaf pages doesn't require an immediate random read from disk. In <strong>MySQL 8.4.0</strong> the default of the controlling variable <code>innodb_change_buffering</code> changed from <code>all</code> to <code>none</code> — i.e. <strong>change buffering is off by default</strong>. The feature and the variable (valid values <code>none, inserts, deletes, changes, purges, all</code>) <strong>still exist in 8.4 and are not removed or formally deprecated</strong>. Treat the old advice "change buffering speeds up non-unique secondary index inserts/deletes/updates" as a <em>historical default</em>: on modern instances with large buffer pools and fast NVMe/SSD storage it gave little benefit and complicated crash recovery, so it was turned off by default.
+</div>
+
+<h3>Redo log configuration</h3>
+
+<div class="info-box">
+Since <strong>MySQL 8.0.30</strong> the redo log is sized with a single dynamic variable, <code>innodb_redo_log_capacity</code>, defaulting to <strong>104857600 bytes (100 MiB)</strong>. It <strong>supersedes the old pair</strong> <code>innodb_log_file_size</code> × <code>innodb_log_files_in_group</code>, both of which are deprecated. InnoDB now manages a pool of 32 redo files internally, and you can resize capacity <em>online</em> with <code>SET GLOBAL innodb_redo_log_capacity = &lt;bytes&gt;;</code> without a restart. If you set both the new and old variables, the new one wins.
+</div>
+
+<pre>-- Modern (8.0.30+): one knob, changeable at runtime, no restart
+SET GLOBAL innodb_redo_log_capacity = 2147483648;  -- 2 GiB
+
+-- Force-and-verify an online, metadata-only column add
+ALTER TABLE orders
+  ADD COLUMN promo_code VARCHAR(16) AFTER status,
+  ALGORITHM=INSTANT, LOCK=NONE;
+SHOW WARNINGS;</pre>
+
+<div class="key-point">
+<strong>Interview one-liners:</strong>
+<ul>
+<li><strong>INSTANT</strong> = metadata-only, O(1); add-column anywhere since 8.0.29, drop-column since 8.0.29, first shipped 8.0.12. Bounded by a per-table row-version limit.</li>
+<li><strong>INPLACE</strong> rebuilds but keeps DML online (add secondary index, add PRIMARY KEY, extend VARCHAR within its length-byte boundary); <strong>COPY</strong> blocks writes (data-type / charset changes) — reach for <strong>gh-ost (MIT)</strong> or <strong>pt-osc (GPLv2)</strong> when a COPY-only change hits a big hot table.</li>
+<li><strong>Change buffer</strong> is <em>off by default</em> since 8.4.0 (default <code>innodb_change_buffering=none</code>) but still exists and is not removed — the "cheap non-unique secondary index writes" story is now a legacy default.</li>
+<li><strong>Redo</strong> = <code>innodb_redo_log_capacity</code> (default 100 MiB, 8.0.30+, online-resizable), replacing <code>innodb_log_file_size</code> / <code>innodb_log_files_in_group</code>.</li>
+</ul>
+</div>
+
+</div>
+</div>
+</div>
+</div>
+
+<!-- ==================== INDEXING TAB ==================== -->
+<div id="tab-indexing" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">B+ Tree Fundamentals</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Why B+ Tree? (Not B-Tree, Not Hash)</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <div class="comparison-grid">
+            <div class="card" style="margin:0">
+              <div class="card-title" style="color:var(--green)">B+ Tree Advantages</div>
+              <ul>
+                <li>All data in leaf nodes only — internal nodes store only keys, maximizing fan-out</li>
+                <li>Leaf nodes form a doubly-linked list — efficient range scans</li>
+                <li>Consistent I/O: O(log N) for point lookups regardless of data position</li>
+                <li>High fan-out reduces tree height (3-4 levels handles billions of rows)</li>
+              </ul>
+            </div>
+            <div class="card" style="margin:0">
+              <div class="card-title" style="color:var(--red)">Why Not Others?</div>
+              <ul>
+                <li><strong>B-Tree:</strong> Data in ALL nodes reduces fan-out, deeper tree, more I/O</li>
+                <li><strong>Hash Index:</strong> O(1) lookups but NO range queries, no ordering, not persistent in InnoDB</li>
+                <li><strong>LSM-Tree:</strong> Better write throughput (sequential writes) but worse read amplification; compaction adds write amplification (used in RocksDB/LevelDB)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Clustered vs Secondary Index</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Clustered Index — Primary Key IS the Data</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li>In InnoDB, every table MUST have a clustered index. The table data IS the clustered index's leaf nodes.</li>
+            <li>Priority: explicit PRIMARY KEY → first UNIQUE NOT NULL index → hidden 6-byte <code>GEN_CLUST_INDEX</code></li>
+            <li>Leaf nodes contain the <strong>full row data</strong></li>
+            <li>Rows are physically stored in PK order (sorted insert with AUTO_INCREMENT is optimal)</li>
+          </ul>
+          <div class="key-point">
+            <strong>Design Rule:</strong> Always define an explicit PRIMARY KEY. Use AUTO_INCREMENT integer (or ordered UUID v7) to avoid random page splits from UUID v4 inserts.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Secondary Index — Stores PK, Requires Bookmark Lookup</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li>Leaf nodes store: <code>indexed columns + PRIMARY KEY value</code></li>
+            <li>To get non-indexed columns: secondary index lookup → get PK → <strong>bookmark lookup</strong> into clustered index</li>
+            <li>This double-lookup is why covering indexes are so powerful</li>
+            <li>Wider PKs = wider secondary indexes = more space, more I/O</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 900 500" width="860" xmlns="http://www.w3.org/2000/svg">
+        <!-- Title -->
+        <text x="450" y="25" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#0f172a">Clustered Index vs Secondary Index Lookup Path</text>
+
+        <!-- Clustered Index (left side) -->
+        <text x="240" y="55" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#1d4ed8">Clustered Index (PRIMARY KEY)</text>
+
+        <!-- Root node -->
+        <rect x="160" y="65" width="160" height="35" rx="6" fill="#dbeafe" stroke="#1658ea" stroke-width="1.5"/>
+        <text x="240" y="87" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#1d4ed8">[10 | 20 | 30]</text>
+
+        <!-- Internal nodes -->
+        <rect x="60" y="125" width="100" height="30" rx="5" fill="#dbeafe" stroke="#2188fb" stroke-width="1"/>
+        <text x="110" y="145" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">[1|5|8]</text>
+        <rect x="190" y="125" width="100" height="30" rx="5" fill="#dbeafe" stroke="#2188fb" stroke-width="1"/>
+        <text x="240" y="145" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">[12|15|18]</text>
+        <rect x="320" y="125" width="100" height="30" rx="5" fill="#dbeafe" stroke="#2188fb" stroke-width="1"/>
+        <text x="370" y="145" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">[22|25|28]</text>
+
+        <!-- Lines from root to internal -->
+        <line x1="200" y1="100" x2="110" y2="125" stroke="#2188fb" stroke-width="1.5"/>
+        <line x1="240" y1="100" x2="240" y2="125" stroke="#2188fb" stroke-width="1.5"/>
+        <line x1="280" y1="100" x2="370" y2="125" stroke="#2188fb" stroke-width="1.5"/>
+
+        <!-- Leaf nodes (contain FULL row data) -->
+        <rect x="30" y="185" width="170" height="70" rx="6" fill="#bbf7d0" stroke="#117e39" stroke-width="1.5"/>
+        <text x="115" y="203" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="#166534">Leaf Page (Full Rows)</text>
+        <text x="115" y="220" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">PK=1: {name:"Alice", age:30}</text>
+        <text x="115" y="233" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">PK=5: {name:"Bob", age:25}</text>
+        <text x="115" y="246" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">PK=8: {name:"Carol", age:28}</text>
+
+        <rect x="220" y="185" width="170" height="70" rx="6" fill="#bbf7d0" stroke="#117e39" stroke-width="1.5"/>
+        <text x="305" y="203" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="#166534">Leaf Page (Full Rows)</text>
+        <text x="305" y="220" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">PK=12: {name:"Dave", age:32}</text>
+        <text x="305" y="233" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">PK=15: {name:"Eve", age:22}</text>
+        <text x="305" y="246" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">PK=18: {name:"Frank", age:35}</text>
+
+        <!-- Linked list arrows between leaves -->
+        <path d="M200 230 L220 230" stroke="#117e39" stroke-width="1" marker-end="url(#arrowGreen2)"/>
+
+        <!-- Lines from internal to leaves -->
+        <line x1="80" y1="155" x2="80" y2="185" stroke="#2188fb" stroke-width="1"/>
+        <line x1="140" y1="155" x2="140" y2="185" stroke="#2188fb" stroke-width="1"/>
+        <line x1="240" y1="155" x2="270" y2="185" stroke="#2188fb" stroke-width="1"/>
+
+        <!-- Secondary Index (right side) -->
+        <text x="680" y="55" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#7c3aed">Secondary Index (idx_name)</text>
+
+        <!-- Root -->
+        <rect x="600" y="65" width="160" height="35" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="680" y="87" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#7c3aed">[Dave | Frank]</text>
+
+        <!-- Internal -->
+        <rect x="560" y="125" width="110" height="30" rx="5" fill="#ede9fe" stroke="#906df9" stroke-width="1"/>
+        <text x="615" y="145" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">[Alice|Bob|Carol]</text>
+        <rect x="690" y="125" width="110" height="30" rx="5" fill="#ede9fe" stroke="#906df9" stroke-width="1"/>
+        <text x="745" y="145" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">[Dave|Eve|Frank]</text>
+
+        <line x1="650" y1="100" x2="615" y2="125" stroke="#906df9" stroke-width="1.5"/>
+        <line x1="710" y1="100" x2="745" y2="125" stroke="#906df9" stroke-width="1.5"/>
+
+        <!-- Leaf nodes (contain indexed col + PK) -->
+        <rect x="540" y="185" width="150" height="70" rx="6" fill="#fef3c7" stroke="#a35905" stroke-width="1.5"/>
+        <text x="615" y="203" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="#92400e">Leaf (name + PK)</text>
+        <text x="615" y="220" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">"Alice" → PK=1</text>
+        <text x="615" y="233" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">"Bob" → PK=5</text>
+        <text x="615" y="246" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">"Carol" → PK=8</text>
+
+        <rect x="710" y="185" width="150" height="70" rx="6" fill="#fef3c7" stroke="#a35905" stroke-width="1.5"/>
+        <text x="785" y="203" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="#92400e">Leaf (name + PK)</text>
+        <text x="785" y="220" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">"Dave" → PK=12</text>
+        <text x="785" y="233" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">"Eve" → PK=15</text>
+        <text x="785" y="246" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">"Frank" → PK=18</text>
+
+        <line x1="590" y1="155" x2="590" y2="185" stroke="#906df9" stroke-width="1"/>
+        <line x1="745" y1="155" x2="745" y2="185" stroke="#906df9" stroke-width="1"/>
+
+        <!-- Bookmark Lookup Arrow -->
+        <path d="M615 255 Q615 320 400 350 Q185 380 115 390" stroke="#c62020" stroke-width="2" fill="none" stroke-dasharray="6,3" marker-end="url(#arrowRed)"/>
+        <rect x="280" y="300" width="180" height="24" rx="4" fill="#fee2e2" stroke="#c62020" stroke-width="1"/>
+        <text x="370" y="316" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#c62020">Bookmark Lookup (PK→Row)</text>
+
+        <!-- Query example -->
+        <rect x="200" y="420" width="500" height="60" rx="8" fill="#1e293b"/>
+        <text x="450" y="445" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#93c5fd">SELECT age FROM users WHERE name = 'Bob';</text>
+        <text x="450" y="465" text-anchor="middle" font-family="Inter" font-size="9" fill="#94a3b8">1) Search idx_name → find PK=5  2) Lookup clustered index PK=5 → get age=25</text>
+
+        <defs>
+          <marker id="arrowGreen2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#117e39"/>
+          </marker>
+          <marker id="arrowRed" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#c62020"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="diagram-caption">Fig 3: Secondary Index lookup requires a bookmark lookup back to the Clustered Index</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Covering Index</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Covering Index — Eliminate Bookmark Lookups</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <p>When all columns needed by a query exist in the secondary index itself, no bookmark lookup is needed. EXPLAIN shows <code>"Using index"</code> in the Extra column.</p>
+          <pre><code>-- Query: SELECT name, age FROM users WHERE name = 'Bob'
+-- Covering index:
+CREATE INDEX idx_name_age ON users(name, age);
+-- Now both 'name' (search key) and 'age' (output) are in the index
+-- No need to read the clustered index!</code></pre>
+          <div class="key-point">
+            <strong>Trade-off:</strong> Covering indexes add write overhead (maintaining wider indexes) but can dramatically speed up reads by eliminating random I/O from bookmark lookups.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Composite Index & Leftmost Prefix Rule</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Composite Index — Column Order Matters</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <p>A composite index <code>(a, b, c)</code> sorts data by <code>a</code>, then by <code>b</code> within same <code>a</code>, then by <code>c</code> within same <code>(a, b)</code>.</p>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Query WHERE clause</th><th>Uses Index?</th><th>Explanation</th></tr></thead>
+              <tbody>
+                <tr><td><code>WHERE a = 1</code></td><td><span class="badge badge-green">Yes</span></td><td>Leftmost prefix</td></tr>
+                <tr><td><code>WHERE a = 1 AND b = 2</code></td><td><span class="badge badge-green">Yes</span></td><td>Leftmost 2 columns</td></tr>
+                <tr><td><code>WHERE a = 1 AND b = 2 AND c = 3</code></td><td><span class="badge badge-green">Yes (full)</span></td><td>All 3 columns</td></tr>
+                <tr><td><code>WHERE b = 2</code></td><td><span class="badge badge-red">No</span></td><td>Skips leftmost column</td></tr>
+                <tr><td><code>WHERE a = 1 AND c = 3</code></td><td><span class="badge badge-yellow">Partial (a only)</span></td><td>Gap in middle (b skipped)</td></tr>
+                <tr><td><code>WHERE a > 1 AND b = 2</code></td><td><span class="badge badge-yellow">Partial (a range)</span></td><td>Range on a stops index usage for b</td></tr>
+                <tr><td><code>WHERE a = 1 ORDER BY b</code></td><td><span class="badge badge-green">Yes + sort</span></td><td>Index provides sort order</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3 style="margin-top:12px; font-size:14px;">Index Skip Scan (MySQL 8.0.13+)</h3>
+          <p>If the leading column has low cardinality, the optimizer can "skip scan" — internally treating it as multiple range scans for each distinct value of the leading column.</p>
+          <pre><code>-- Index: (gender, age)
+-- Query: WHERE age > 25
+-- Skip scan internally does:
+--   WHERE gender='M' AND age > 25
+--   UNION
+--   WHERE gender='F' AND age > 25</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Index Condition Pushdown (ICP)</h2>
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>ICP — Filter at Storage Engine Level</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li>Without ICP: Storage engine returns ALL rows matching the index range to the server layer, which then filters</li>
+            <li>With ICP: The storage engine evaluates WHERE conditions that can be checked using index columns before returning rows</li>
+            <li>Reduces the number of full-row reads from the clustered index</li>
+            <li>EXPLAIN shows <code>"Using index condition"</code></li>
+          </ul>
+          <pre><code>-- Index: (last_name, first_name)
+-- Query: WHERE last_name LIKE 'Smith%' AND first_name LIKE 'J%'
+-- Without ICP: Read all 'Smith%' rows, filter 'J%' at server
+-- With ICP: Check 'J%' using index before fetching full row</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">EXPLAIN Output Guide</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Reading EXPLAIN — Essential Columns</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Column</th><th>Key Values</th><th>What to Look For</th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td>system &gt; const &gt; eq_ref &gt; ref &gt; range &gt; index &gt; ALL</td><td>Anything below <code>range</code> is concerning for large tables</td></tr>
+                <tr><td><code>key</code></td><td>Index name or NULL</td><td>NULL means full table scan</td></tr>
+                <tr><td><code>key_len</code></td><td>Bytes used from index</td><td>Shows how many columns of composite index are used</td></tr>
+                <tr><td><code>rows</code></td><td>Estimated rows to examine</td><td>Large number + type=ALL = slow query</td></tr>
+                <tr><td><code>filtered</code></td><td>% of rows that pass WHERE after index</td><td>Low % with high rows = inefficient index</td></tr>
+                <tr><td><code>Extra</code></td><td>Various flags</td><td>See below</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3 style="margin-top:12px; font-size:14px;">Important Extra Values</h3>
+          <ul>
+            <li><code>Using index</code> — <span class="badge badge-green">Good!</span> Covering index, no table access</li>
+            <li><code>Using where</code> — Post-index filtering at server layer (might be ok)</li>
+            <li><code>Using index condition</code> — <span class="badge badge-green">ICP active</span></li>
+            <li><code>Using temporary</code> — <span class="badge badge-yellow">Temp table created</span> (GROUP BY / DISTINCT)</li>
+            <li><code>Using filesort</code> — <span class="badge badge-yellow">Extra sort pass</span> (ORDER BY not satisfied by index)</li>
+            <li><code>Using join buffer</code> — No index for join, using Block Nested Loop</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Common Index Anti-Patterns</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#9888;</span> Anti-Patterns That Prevent Index Usage</div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Anti-Pattern</th><th>Example</th><th>Why It Fails</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Leading wildcard LIKE</strong></td>
+              <td><code>WHERE name LIKE '%foo'</code></td>
+              <td>B+ tree is sorted left-to-right; cannot seek to '%foo'</td>
+              <td>Use full-text index, reverse index, or application-level search (Elasticsearch)</td>
+            </tr>
+            <tr>
+              <td><strong>Function on column</strong></td>
+              <td><code>WHERE YEAR(created_at) = 2024</code></td>
+              <td>Function transforms value before comparison; index stores raw values</td>
+              <td><code>WHERE created_at >= '2024-01-01' AND created_at < '2025-01-01'</code></td>
+            </tr>
+            <tr>
+              <td><strong>Implicit type conversion</strong></td>
+              <td><code>WHERE varchar_col = 123</code></td>
+              <td>MySQL applies CAST() to column (not literal), preventing index usage</td>
+              <td><code>WHERE varchar_col = '123'</code></td>
+            </tr>
+            <tr>
+              <td><strong>OR on different columns</strong></td>
+              <td><code>WHERE a = 1 OR b = 2</code></td>
+              <td>Single index cannot satisfy both conditions</td>
+              <td>Use index merge (automatic), or <code>UNION ALL</code> with separate indexed queries</td>
+            </tr>
+            <tr>
+              <td><strong>NOT / != / &lt;&gt;</strong></td>
+              <td><code>WHERE status != 'deleted'</code></td>
+              <td>Negation often scans most of the index anyway</td>
+              <td>Add positive condition or use partial index (not in MySQL, use filtered design)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<div class="collapsible">
+  <div class="collapsible-header">
+    <span>MySQL 8.0 Index Features (often missed)</span>
+    <span class="arrow">&#9654;</span>
+  </div>
+  <div class="collapsible-body">
+    <div class="collapsible-content">
+
+      <div class="info-box">
+        <strong>Why this matters in interviews:</strong> most candidates stop at B+Tree and composite indexes. MySQL <strong>8.0</strong> shipped <strong>three</strong> new index capabilities that directly solve classic anti-patterns — <em>functional</em>, <em>invisible</em>, and <em>descending</em> indexes. Knowing them signals you actually track engine evolution rather than reciting MySQL 5.x lore. The fourth item below, the <strong>Adaptive Hash Index</strong>, is <em>not</em> an 8.0 feature — it is a long-standing InnoDB internal optimization (present well before 8.0), covered here because it is a common tuning pitfall.
+        <span class="badge badge-blue">8.0 GA: 2018-04-19</span>
+      </div>
+
+      <h3>1. Functional / Expression Indexes <span class="badge badge-green">8.0.13+</span></h3>
+      <p>The classic <em>function-on-column</em> anti-pattern — <code>WHERE YEAR(created_at) = 2024</code> — is non-sargable: the index on <code>created_at</code> cannot be used because the column is wrapped in a function, forcing a full scan. Pre-8.0.13 the only fix was an explicitly declared (engine-maintained) generated column plus an index on it — you had to add the column to the schema by hand, though its values are computed automatically by the engine. Since <strong>8.0.13</strong> you can index the expression directly (internally implemented as a hidden virtual generated column). Note the <strong>double parentheses</strong> — they are what distinguishes a functional key part from an ordinary column key part.</p>
+
+      <pre>-- Anti-pattern: index on created_at is IGNORED
+SELECT * FROM orders WHERE YEAR(created_at) = 2024;   -- full scan
+
+-- Fix (MySQL 8.0.13+): functional index. Note the (( )).
+CREATE INDEX idx_order_year ON orders ((YEAR(created_at)));
+
+-- Now the optimizer can use idx_order_year for:
+SELECT * FROM orders WHERE YEAR(created_at) = 2024;
+
+-- Expression in the query must MATCH the indexed expression to be used.
+-- So range-friendly rewrites are still usually preferable:
+--   WHERE created_at >= '2024-01-01' AND created_at < '2025-01-01'</pre>
+
+      <div class="warning-box">
+        <strong>Watch out:</strong> the query's expression must match the indexed expression for the optimizer to use it. A functional index does <em>not</em> help a range predicate on the raw column, and vice versa. Prefer a sargable range rewrite when possible; reach for functional indexes when the transformation is unavoidable (e.g. <code>LOWER(email)</code>, JSON extraction).
+      </div>
+
+      <h3>2. Invisible Indexes <span class="badge badge-green">8.0.0+</span></h3>
+      <p>An invisible index is fully maintained by the engine but ignored by the optimizer. This lets you <strong>safe-test a drop</strong> on a busy production table: flip it invisible, watch query plans and latency, and instantly flip it back if something regresses — no expensive rebuild if you were wrong.</p>
+
+      <pre>ALTER TABLE orders ALTER INDEX idx_customer INVISIBLE;   -- soft-disable
+-- observe: EXPLAIN, slow log, p99 latency ...
+ALTER TABLE orders ALTER INDEX idx_customer VISIBLE;     -- instant revert
+
+-- Session-scoped override to actually test WITH the invisible index:
+SET SESSION optimizer_switch = 'use_invisible_indexes=on';</pre>
+      <div class="key-point">
+        A brand-new index can even be created <code>INVISIBLE</code> to stage a rollout. Note: a table's <strong>primary key cannot be made invisible</strong>.
+      </div>
+
+      <h3>3. Descending Indexes <span class="badge badge-green">8.0.0+</span></h3>
+      <p>Before 8.0, <code>DESC</code> in an index definition was parsed but silently ignored — the index was stored ascending, and a mixed-direction <code>ORDER BY</code> forced a filesort. In 8.0 descending indexes are stored <strong>physically in reverse order</strong>, so a composite index whose key-part directions match the sort can be scanned forward with no sort step.</p>
+      <pre>-- Serves: ORDER BY a ASC, b DESC  without a filesort
+CREATE INDEX idx_ab ON t (a ASC, b DESC);</pre>
+
+      <h3>4. Adaptive Hash Index (AHI) <span class="badge badge-purple">InnoDB, pre-8.0</span></h3>
+      <p>Not an 8.0 feature and not something you create — it is a <strong>long-standing InnoDB</strong> optimization that has existed since the MySQL 5.x era and earlier. InnoDB watches access patterns on hot buffer-pool pages and automatically builds an in-memory hash index for frequently searched key prefixes, turning B+Tree traversals into O(1) point lookups. It is an internal mechanism, not a schema or query technique you apply. Controlled by <code>innodb_adaptive_hash_index</code> (<strong>default ON</strong>).</p>
+      <div class="warning-box">
+        <strong>Double-edged:</strong> under highly concurrent workloads with many secondary-index lookups the AHI's internal latch (partitioned via <code>innodb_adaptive_hash_index_parts</code>, default 8) can itself become a <strong>contention bottleneck</strong>. A common tuning move for such workloads is <code>SET GLOBAL innodb_adaptive_hash_index = OFF;</code> and measuring throughput both ways.
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>Feature</th><th>Introduced</th><th>Key syntax / knob</th><th>Solves</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Functional index</td><td><span class="badge badge-green">8.0.13</span></td><td><code>CREATE INDEX i ON t ((expr))</code></td><td>Function-on-column non-sargable scans</td></tr>
+            <tr><td>Invisible index</td><td><span class="badge badge-green">8.0.0</span></td><td><code>ALTER INDEX i INVISIBLE</code></td><td>Safe drop-testing without rebuild</td></tr>
+            <tr><td>Descending index</td><td><span class="badge badge-green">8.0.0</span></td><td><code>INDEX (a ASC, b DESC)</code></td><td>Mixed-direction ORDER BY filesort</td></tr>
+            <tr><td>Adaptive Hash Index</td><td><span class="badge badge-purple">InnoDB, pre-8.0</span></td><td><code>innodb_adaptive_hash_index</code> (ON)</td><td>Auto hot point lookups / can cause latch contention</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== TRANSACTIONS TAB ==================== -->
+<div id="tab-transactions" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">ACID Properties</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#128274;</span> ACID in Practice</div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Property</th><th>Meaning</th><th>InnoDB Implementation</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Atomicity</strong></td><td>All or nothing — partial failures are rolled back</td><td>Undo log records reverse operations</td></tr>
+            <tr><td><strong>Consistency</strong></td><td>Transaction takes DB from one valid state to another</td><td>Constraints, foreign keys, and triggers enforced at statement-execution time (immediate; MySQL has no deferred constraint checking)</td></tr>
+            <tr><td><strong>Isolation</strong></td><td>Concurrent transactions don't interfere</td><td>MVCC + locking (configurable level)</td></tr>
+            <tr><td><strong>Durability</strong></td><td>Committed data survives crashes</td><td>Redo log (WAL) + doublewrite buffer</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Isolation Levels</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Four Isolation Levels — Anomalies and Trade-offs</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>Level</th><th>Dirty Read</th><th>Non-Repeatable Read</th><th>Phantom Read</th><th>Performance</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>READ UNCOMMITTED</strong></td><td><span class="badge badge-red">Possible</span></td><td><span class="badge badge-red">Possible</span></td><td><span class="badge badge-red">Possible</span></td><td>Fastest (no MVCC overhead)</td></tr>
+                <tr><td><strong>READ COMMITTED</strong></td><td><span class="badge badge-green">Prevented</span></td><td><span class="badge badge-red">Possible</span></td><td><span class="badge badge-red">Possible</span></td><td>Good (new read view per statement)</td></tr>
+                <tr><td><strong>REPEATABLE READ</strong> <span class="badge badge-blue">InnoDB Default</span></td><td><span class="badge badge-green">Prevented</span></td><td><span class="badge badge-green">Prevented</span></td><td><span class="badge badge-yellow">Prevented*</span></td><td>Good (single read view per TX)</td></tr>
+                <tr><td><strong>SERIALIZABLE</strong></td><td><span class="badge badge-green">Prevented</span></td><td><span class="badge badge-green">Prevented</span></td><td><span class="badge badge-green">Prevented</span></td><td>Slowest (all reads become locking)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="info-box">
+            <strong>*InnoDB's REPEATABLE READ:</strong> Uses next-key locking to prevent phantom reads for locking reads (<code>SELECT ... FOR UPDATE</code>). For non-locking reads (plain SELECT), MVCC's consistent read view naturally prevents phantoms. This is stronger than SQL standard requires!
+          </div>
+          <h3 style="margin-top:16px; font-size:14px;">Anomaly Definitions</h3>
+          <ul>
+            <li><strong>Dirty Read:</strong> Reading uncommitted data from another transaction (data might be rolled back)</li>
+            <li><strong>Non-Repeatable Read:</strong> Same SELECT returns different VALUES because another TX committed an UPDATE between our reads</li>
+            <li><strong>Phantom Read:</strong> Same range query returns different ROWS because another TX committed INSERT/DELETE</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">MVCC Implementation</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Read View + Undo Log Chain = Consistent Reads Without Locks</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <h3 style="font-size:14px;">How MVCC Works</h3>
+          <ol>
+            <li>Every row has hidden columns: <code>DB_TRX_ID</code> (last TX that modified it), <code>DB_ROLL_PTR</code> (pointer to undo log for previous version)</li>
+            <li>When a transaction starts a consistent read, it creates a <strong>Read View</strong> containing:
+              <ul>
+                <li><code>m_ids</code>: list of active (uncommitted) transaction IDs at that moment</li>
+                <li><code>m_low_limit_id</code>: next TX ID to be assigned (anything >= this is invisible)</li>
+                <li><code>m_up_limit_id</code>: smallest active TX ID (anything < this is visible)</li>
+                <li><code>m_creator_trx_id</code>: the TX creating this read view (own changes are visible)</li>
+              </ul>
+            </li>
+            <li>For each row, check <code>DB_TRX_ID</code> against the read view rules:
+              <ul>
+                <li>If <code>trx_id < m_up_limit_id</code>: visible (committed before read view)</li>
+                <li>If <code>trx_id >= m_low_limit_id</code>: invisible (started after read view)</li>
+                <li>If <code>trx_id in m_ids</code>: invisible (was active when read view created)</li>
+                <li>Otherwise: visible</li>
+              </ul>
+            </li>
+            <li>If current version is invisible, follow <code>DB_ROLL_PTR</code> to previous version in undo log, repeat check</li>
+          </ol>
+
+          <div class="diagram-container">
+            <svg viewBox="0 0 800 380" width="760" xmlns="http://www.w3.org/2000/svg">
+              <text x="400" y="22" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#0f172a">MVCC Read View Example</text>
+
+              <!-- Timeline -->
+              <line x1="50" y1="60" x2="750" y2="60" stroke="#cbd5e1" stroke-width="2"/>
+              <text x="400" y="52" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Time →</text>
+
+              <!-- TX markers -->
+              <circle cx="100" cy="60" r="5" fill="#117e39"/>
+              <text x="100" y="80" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#117e39">TX100</text>
+              <text x="100" y="92" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">committed</text>
+
+              <circle cx="250" cy="60" r="5" fill="#a35905"/>
+              <text x="250" y="80" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#a35905">TX200</text>
+              <text x="250" y="92" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">active</text>
+
+              <circle cx="400" cy="60" r="5" fill="#1658ea"/>
+              <text x="400" y="80" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#1658ea">TX300</text>
+              <text x="400" y="92" text-anchor="middle" font-family="Inter" font-size="8" fill="#1658ea">OUR READ VIEW</text>
+
+              <circle cx="550" cy="60" r="5" fill="#c62020"/>
+              <text x="550" y="80" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#c62020">TX400</text>
+              <text x="550" y="92" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">started after</text>
+
+              <!-- Read View Box -->
+              <rect x="300" y="110" width="200" height="70" rx="8" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+              <text x="400" y="130" text-anchor="middle" font-family="Inter" font-size="10" font-weight="700" fill="#1d4ed8">Read View (TX300)</text>
+              <text x="400" y="147" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">m_ids: [200]</text>
+              <text x="400" y="161" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">m_up_limit: 200</text>
+              <text x="400" y="175" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">m_low_limit: 400</text>
+
+              <!-- Row version chain -->
+              <text x="400" y="215" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#334155">Row Version Chain for row id=5:</text>
+
+              <!-- Current version -->
+              <rect x="550" y="230" width="180" height="55" rx="6" fill="#fee2e2" stroke="#c62020" stroke-width="1.5"/>
+              <text x="640" y="250" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="#c62020">Current (DB_TRX_ID=400)</text>
+              <text x="640" y="265" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">name = "David"</text>
+              <text x="640" y="278" text-anchor="middle" font-family="Inter" font-size="8" fill="#c62020">INVISIBLE (>= m_low_limit)</text>
+
+              <!-- Previous version -->
+              <rect x="300" y="230" width="180" height="55" rx="6" fill="#fef3c7" stroke="#a35905" stroke-width="1.5"/>
+              <text x="390" y="250" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="#a35905">Prev (DB_TRX_ID=200)</text>
+              <text x="390" y="265" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">name = "Dave"</text>
+              <text x="390" y="278" text-anchor="middle" font-family="Inter" font-size="8" fill="#a35905">INVISIBLE (in m_ids)</text>
+
+              <!-- Oldest version -->
+              <rect x="60" y="230" width="180" height="55" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="2"/>
+              <text x="150" y="250" text-anchor="middle" font-family="Inter" font-size="9" font-weight="600" fill="#117e39">Oldest (DB_TRX_ID=100)</text>
+              <text x="150" y="265" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">name = "D"</text>
+              <text x="150" y="278" text-anchor="middle" font-family="Inter" font-size="8" fill="#117e39">VISIBLE! (< m_up_limit)</text>
+
+              <!-- Chain arrows -->
+              <path d="M550 258 L480 258" stroke="#59677c" stroke-width="1.5" marker-end="url(#arrowhead)" stroke-dasharray="4,2"/>
+              <text x="515" y="245" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">ROLL_PTR</text>
+              <path d="M300 258 L240 258" stroke="#59677c" stroke-width="1.5" marker-end="url(#arrowhead)" stroke-dasharray="4,2"/>
+              <text x="270" y="245" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">ROLL_PTR</text>
+
+              <!-- Result -->
+              <rect x="60" y="310" width="680" height="45" rx="8" fill="#f0fdf4" stroke="#117e39" stroke-width="1.5"/>
+              <text x="400" y="332" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#166534">Result: TX300 reads name = "D" (the version committed by TX100)</text>
+              <text x="400" y="348" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Non-blocking consistent read — no locks needed!</text>
+            </svg>
+            <div class="diagram-caption">Fig 4: MVCC visibility rules — traversing the undo log version chain</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Locking</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Record Lock, Gap Lock, Next-Key Lock</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Lock Type</th><th>What It Locks</th><th>Purpose</th><th>Example</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>Record Lock</strong></td>
+                  <td>Single index record</td>
+                  <td>Prevent concurrent modification of same row</td>
+                  <td><code>SELECT * FROM t WHERE id=5 FOR UPDATE</code> locks record id=5</td>
+                </tr>
+                <tr>
+                  <td><strong>Gap Lock</strong></td>
+                  <td>Gap BETWEEN index records (exclusive of endpoints)</td>
+                  <td>Prevent INSERT into the gap — prevents phantom reads</td>
+                  <td>If records exist for id=3,7: gap lock on (3,7) prevents INSERT id=5</td>
+                </tr>
+                <tr>
+                  <td><strong>Next-Key Lock</strong></td>
+                  <td>Record lock + gap lock on the gap BEFORE the record</td>
+                  <td>Default lock in REPEATABLE READ — prevents phantoms</td>
+                  <td>Lock on record 7 = gap (3,7) + record 7 = (3, 7]</td>
+                </tr>
+                <tr>
+                  <td><strong>Insert Intention Lock</strong></td>
+                  <td>Special gap lock for INSERT</td>
+                  <td>Signals intent to insert, doesn't block other insert intentions at different positions</td>
+                  <td>Two inserts at id=4 and id=6 don't block each other in gap (3,7)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 style="margin-top:16px; font-size:14px;">Why Gap Locks Exist</h3>
+          <p>Without gap locks, another transaction could INSERT a row into a range you just scanned, causing a phantom read in REPEATABLE READ. Gap locks prevent this by "sealing" the gaps between existing records.</p>
+
+          <h3 style="margin-top:16px; font-size:14px;">Deadlock Detection</h3>
+          <ul>
+            <li>InnoDB maintains a <strong>wait-for graph</strong> of lock dependencies</li>
+            <li>When a cycle is detected, InnoDB picks the transaction with the least undo log (smallest cost to rollback) as the <strong>victim</strong></li>
+            <li>The victim's transaction is rolled back and an error (1213) is returned to the client</li>
+            <li>Application must retry the failed transaction</li>
+          </ul>
+          <div class="warning-box">
+            <strong>Common deadlock causes:</strong> Accessing rows in different order across transactions, gap lock conflicts with INSERT, secondary index + clustered index lock ordering mismatch.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div class="collapsible">
+  <div class="collapsible-header">
+    <span>Internal 2-Phase Commit: Redo Log &lt;-&gt; Binlog</span>
+    <span class="arrow">&#9654;</span>
+  </div>
+  <div class="collapsible-body">
+    <div class="collapsible-content">
+
+      <h3>Why two logs must agree <span class="badge badge-blue">InnoDB</span> <span class="badge badge-purple">Server layer</span></h3>
+
+      <div class="info-box">
+        A single transaction touches <strong>two independent, layered logs</strong>:
+        <ul>
+          <li><strong>Redo log</strong> &mdash; owned by the <strong>InnoDB storage engine</strong>. It makes the change <em>crash-durable on the local instance</em> (physical/physiological WAL). Since <strong>MySQL 8.0.30 (2022)</strong> redo files live in the <code>#innodb_redo/</code> subdirectory of the data dir as <code>#ib_redo0 … #ib_redoN</code> (32 files by default), sized by the single dynamic knob <code>innodb_redo_log_capacity</code> (default <strong>100 MiB</strong>); the older <code>innodb_log_file_size</code> / <code>innodb_log_files_in_group</code> are deprecated and the pre-8.0.30 <code>ib_logfile0</code>/<code>ib_logfile1</code> layout is legacy.</li>
+          <li><strong>Binary log (binlog)</strong> &mdash; owned by the <strong>MySQL server layer</strong>, above the engine. It is the logical record of changes used for <strong>replication</strong> and <strong>point-in-time recovery (PITR)</strong>.</li>
+        </ul>
+        These are written by different code layers, so a naive "write redo, then write binlog" would leave a window where a crash makes them <strong>disagree</strong>: the row change is durable locally but missing from the binlog (replicas/PITR lose it), or present in the binlog but not applied locally (replicas run a transaction the primary never committed). Either way the primary and its replicas diverge. MySQL closes this window with an <strong>internal XA two-phase commit (2PC)</strong> that keeps redo and binlog atomically consistent.
+      </div>
+
+      <div class="key-point">
+        <strong>The contract that makes it work:</strong> the <strong>binlog is the coordinator / source of truth</strong>. On crash recovery, a transaction that InnoDB left in the <code>PREPARE</code> state is <strong>committed if and only if its complete event group exists in the binlog</strong>; otherwise it is rolled back. This single rule guarantees "durable locally" and "present in binlog" are the same event.
+      </div>
+
+      <h3>The internal XA 2PC sequence</h3>
+
+      <div class="info-box">
+        Every committing transaction that writes to both logs goes through three ordered steps:
+        <ul>
+          <li><strong>1. InnoDB PREPARE</strong> &mdash; write the redo log <em>prepare</em> record (tagged with the transaction's XID) and <strong>fsync the redo log</strong>. Durability of this fsync is governed by <code>innodb_flush_log_at_trx_commit</code>. After this the change is recoverable but marked "prepared, not committed."</li>
+          <li><strong>2. Write + fsync BINLOG</strong> &mdash; the server writes the transaction's events to the binlog and <strong>fsyncs the binlog</strong>. Durability of this fsync is governed by <code>sync_binlog</code>. <em>This is the commit point:</em> once the binlog is safely on disk, the transaction is logically decided as committed.</li>
+          <li><strong>3. InnoDB COMMIT</strong> &mdash; write the redo log <em>commit</em> record and mark the transaction committed in InnoDB, release locks. This redo commit record does <strong>not</strong> need its own synchronous fsync for correctness, because recovery can re-derive the decision from the binlog (step 2).</li>
+        </ul>
+      </div>
+
+      <h3>Binlog group commit</h3>
+
+      <div class="info-box">
+        Fsyncing the binlog on <em>every</em> transaction is expensive, so MySQL (since <strong>5.6</strong>) batches concurrent committers into a <strong>group commit</strong> pipeline with three ordered stages. One thread acts as the <strong>leader</strong> for each stage and does the work on behalf of the whole queued group:
+        <ul>
+          <li><strong>FLUSH</strong> &mdash; each session's binlog cache is written into the binlog file (still just page cache).</li>
+          <li><strong>SYNC</strong> &mdash; a single <code>fsync()</code> flushes the whole group's binlog data to disk at once (amortizing the fsync cost across many transactions).</li>
+          <li><strong>COMMIT</strong> &mdash; InnoDB commits the group in order (step 3 above); commit ordering is preserved so the binlog order matches the InnoDB commit order.</li>
+        </ul>
+        Tunables <code>binlog_group_commit_sync_delay</code> (microseconds to wait, gathering a bigger group) and <code>binlog_group_commit_sync_no_delay_count</code> (max transactions before firing early) trade a little latency for far higher throughput. Group commit does <strong>not</strong> weaken durability &mdash; with the settings below, no transaction returns success to the client until its binlog is fsynced.
+      </div>
+
+      <h3>Crash recovery (binlog as coordinator)</h3>
+
+      <div class="key-point">
+        On restart InnoDB replays redo, then reconciles <code>PREPARE</code>d transactions against the binlog:
+        <ul>
+          <li>XID present as a <strong>complete</strong> event group in the binlog &rarr; <strong>commit</strong> the prepared transaction (finish step 3).</li>
+          <li>XID <strong>absent</strong> (crash happened before/while writing the binlog) &rarr; <strong>roll back</strong> the prepared transaction.</li>
+          <li>A partially-written trailing binlog event is <strong>truncated</strong> during recovery, so it counts as "absent" and is rolled back.</li>
+        </ul>
+        Result: what the primary keeps is exactly what the binlog contains, so replicas and PITR stay consistent with the primary.
+      </div>
+
+      <h3>Durability knobs &mdash; both must be crash-safe</h3>
+
+      <div class="warning-box">
+        <strong>For crash-safe replication you MUST set BOTH</strong> <code>innodb_flush_log_at_trx_commit = 1</code> <strong>AND</strong> <code>sync_binlog = 1</code> (the "double 1" configuration). If either is relaxed, a well-timed OS/power crash can drop the redo <em>or</em> the binlog for an acknowledged transaction, breaking the 2PC guarantee and letting the primary and its replicas silently diverge.
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Setting</th>
+              <th>Value</th>
+              <th>Durability guarantee</th>
+              <th>Performance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td rowspan="3"><code>innodb_flush_log_at_trx_commit</code><br><span class="badge badge-green">default = 1</span></td>
+              <td><span class="badge badge-green">1</span></td>
+              <td>Write + fsync redo at every commit. Fully ACID &mdash; survives OS/power crash. <strong>Required for the PREPARE fsync.</strong></td>
+              <td>Slowest (one redo fsync per commit, mitigated by group commit)</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-yellow">2</span></td>
+              <td>Write redo to OS page cache each commit, fsync ~once/sec. Survives a <em>mysqld</em> crash, but an <em>OS/power</em> crash can lose ~1s of commits.</td>
+              <td>Faster</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-red">0</span></td>
+              <td>Write + fsync redo only ~once/sec (not at commit). A crash can lose ~1s of committed transactions, even a mysqld crash.</td>
+              <td>Fastest</td>
+            </tr>
+            <tr>
+              <td rowspan="3"><code>sync_binlog</code><br><span class="badge badge-green">default = 1</span> <span class="badge badge-blue">since 5.7.7</span></td>
+              <td><span class="badge badge-green">1</span></td>
+              <td>fsync binlog at every commit (every group in group commit). No committed transaction is ever missing from the binlog after a crash. <strong>Required for crash-safe replication.</strong></td>
+              <td>Slowest (one binlog fsync per group, amortized by group commit)</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-yellow">N &gt; 1</span></td>
+              <td>fsync binlog once every N commit groups. A crash can lose up to N groups of binlog events.</td>
+              <td>Faster</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-red">0</span></td>
+              <td>MySQL never fsyncs the binlog; relies on the OS to flush eventually. A crash can lose recent binlog events.</td>
+              <td>Fastest</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <strong>Version notes:</strong> <code>innodb_flush_log_at_trx_commit</code> has defaulted to <code>1</code> for a long time (5.5/5.6 onward). <code>sync_binlog</code> defaulted to <code>0</code> through MySQL 5.7.6 and was changed to a default of <code>1</code> in <strong>MySQL 5.7.7</strong> (and remains <code>1</code> in 8.0/8.4). Binlog group commit landed in <strong>MySQL 5.6</strong>. Binary logging is <strong>enabled by default since MySQL 8.0</strong> (<code>log_bin</code> was OFF by default pre-8.0; it can still be turned off with <code>--skip-log-bin</code>), and GTIDs are commonly used, but the redo&harr;binlog 2PC contract is unchanged.
+      </div>
+
+      <h3>Ordering timeline</h3>
+
+      <pre>
+Client: COMMIT
+        │
+        ▼
+┌───────────────────────── PHASE 1: PREPARE (InnoDB) ─────────────────────────┐
+│  write redo "PREPARE" record (with XID)                                      │
+│  fsync redo log            ⟵ innodb_flush_log_at_trx_commit = 1              │
+│  state: PREPARED (durable locally, not yet decided)                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+        │
+        ▼
+┌────────────────── PHASE 2: WRITE BINLOG  (server layer) ─────────────────────┐
+│  [group commit]                                                              │
+│    FLUSH : copy each session's binlog cache into the binlog file             │
+│    SYNC  : one fsync() for the whole group ⟵ sync_binlog = 1   ★ COMMIT POINT│
+│    COMMIT: hand ordered group to InnoDB                                       │
+│  ── binlog now durably contains the event group (XID) ──                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+        │
+        ▼
+┌───────────────────────── PHASE 3: COMMIT (InnoDB) ──────────────────────────┐
+│  write redo "COMMIT" record, mark committed, release locks                   │
+│  (no separate synchronous fsync required — binlog is the source of truth)    │
+└──────────────────────────────────────────────────────────────────────────────┘
+        │
+        ▼
+Client: OK
+
+
+CRASH RECOVERY  (binlog = coordinator)
+   for each InnoDB transaction left in PREPARE:
+       XID present + complete in binlog   → COMMIT   (redo the decision)
+       XID absent / binlog tail truncated → ROLLBACK
+      </pre>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ==================== REPLICATION TAB ==================== -->
+<div id="tab-replication" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Binary Log (Binlog)</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Binlog Formats — Statement vs Row vs Mixed</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Format</th><th>Records</th><th>Pros</th><th>Cons</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><strong>STATEMENT</strong></td>
+                  <td>SQL statements</td>
+                  <td>Compact, readable, less bandwidth</td>
+                  <td>Non-deterministic functions (NOW(), RAND()) break consistency; trigger issues</td>
+                </tr>
+                <tr>
+                  <td><strong>ROW</strong> <span class="badge badge-blue">Recommended</span></td>
+                  <td>Before/after images of modified rows</td>
+                  <td>Deterministic, safe for all SQL; required for some features</td>
+                  <td>Larger log size, especially for bulk updates; harder to read</td>
+                </tr>
+                <tr>
+                  <td><strong>MIXED</strong></td>
+                  <td>Statement by default, switches to row when unsafe</td>
+                  <td>Balance of both</td>
+                  <td>Harder to reason about; still has edge cases</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="key-point">
+            <strong>Modern best practice:</strong> Use ROW format with <code>binlog_row_image=MINIMAL</code> (only log changed columns) to reduce log size while maintaining safety.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Replication Topologies</h2>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 850 420" width="820" xmlns="http://www.w3.org/2000/svg">
+        <text x="425" y="22" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#0f172a">MySQL Replication Topologies</text>
+
+        <!-- Async Replication -->
+        <text x="200" y="55" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#1d4ed8">Async Replication</text>
+        <rect x="130" y="65" width="140" height="50" rx="8" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+        <text x="200" y="87" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#1d4ed8">Primary</text>
+        <text x="200" y="103" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Writes + Reads</text>
+
+        <rect x="70" y="155" width="110" height="40" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+        <text x="125" y="178" text-anchor="middle" font-family="Inter" font-size="10" fill="#166534">Replica 1</text>
+        <rect x="200" y="155" width="110" height="40" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+        <text x="255" y="178" text-anchor="middle" font-family="Inter" font-size="10" fill="#166534">Replica 2</text>
+
+        <path d="M170 115 L125 155" stroke="#59677c" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path d="M230 115 L255 155" stroke="#59677c" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="102" y="140" font-family="Inter" font-size="8" fill="#3f4a5c">binlog</text>
+        <text x="260" y="140" font-family="Inter" font-size="8" fill="#3f4a5c">binlog</text>
+
+        <!-- Semi-sync -->
+        <text x="500" y="55" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#7c3aed">Semi-Sync Replication</text>
+        <rect x="430" y="65" width="140" height="50" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+        <text x="500" y="87" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#7c3aed">Primary</text>
+        <text x="500" y="103" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Waits for ACK</text>
+
+        <rect x="380" y="155" width="110" height="40" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+        <text x="435" y="173" text-anchor="middle" font-family="Inter" font-size="10" fill="#166534">Replica 1</text>
+        <text x="435" y="186" text-anchor="middle" font-family="Inter" font-size="8" fill="#117e39">ACK ✓</text>
+        <rect x="510" y="155" width="110" height="40" rx="6" fill="#fef3c7" stroke="#a35905" stroke-width="1.5"/>
+        <text x="565" y="173" text-anchor="middle" font-family="Inter" font-size="10" fill="#92400e">Replica 2</text>
+        <text x="565" y="186" text-anchor="middle" font-family="Inter" font-size="8" fill="#a35905">async</text>
+
+        <path d="M470 115 L435 155" stroke="#117e39" stroke-width="2" marker-end="url(#arrowGreen2)"/>
+        <path d="M530 115 L565 155" stroke="#a35905" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrowOrange)"/>
+
+        <!-- Group Replication -->
+        <text x="425" y="250" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#c62020">Group Replication (Paxos-based)</text>
+        <rect x="200" y="265" width="130" height="50" rx="8" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+        <text x="265" y="287" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#1d4ed8">Node 1</text>
+        <text x="265" y="303" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">Primary/Writer</text>
+
+        <rect x="370" y="265" width="130" height="50" rx="8" fill="#dcfce7" stroke="#117e39" stroke-width="2"/>
+        <text x="435" y="287" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#166534">Node 2</text>
+        <text x="435" y="303" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">Secondary</text>
+
+        <rect x="540" y="265" width="130" height="50" rx="8" fill="#dcfce7" stroke="#117e39" stroke-width="2"/>
+        <text x="605" y="287" text-anchor="middle" font-family="Inter" font-size="10" font-weight="600" fill="#166534">Node 3</text>
+        <text x="605" y="303" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">Secondary</text>
+
+        <!-- Paxos communication -->
+        <path d="M330 290 L370 290" stroke="#c62020" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+        <path d="M370 290 L330 290" stroke="#c62020" stroke-width="1.5"/>
+        <path d="M500 290 L540 290" stroke="#c62020" stroke-width="1.5" marker-end="url(#arrowRed)"/>
+        <path d="M540 290 L500 290" stroke="#c62020" stroke-width="1.5"/>
+
+        <!-- Curved line connecting all three -->
+        <path d="M265 315 Q435 370 605 315" stroke="#c62020" stroke-width="1" stroke-dasharray="3,2" fill="none"/>
+        <text x="435" y="355" text-anchor="middle" font-family="Inter" font-size="9" fill="#c62020">Consensus (majority must agree)</text>
+
+        <!-- Legend -->
+        <rect x="150" y="380" width="550" height="30" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="200" y="399" font-family="Inter" font-size="9" fill="#334155">Async: fire-and-forget</text>
+        <text x="350" y="399" font-family="Inter" font-size="9" fill="#334155">Semi-sync: ≥1 ACK before commit</text>
+        <text x="550" y="399" font-family="Inter" font-size="9" fill="#334155">Group: Paxos consensus</text>
+      </svg>
+      <div class="diagram-caption">Fig 5: Three replication modes — increasing durability guarantees</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Replication Mechanisms</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Async Replication (Traditional)</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ol>
+            <li><strong>Primary</strong> writes changes to binary log (binlog)</li>
+            <li><strong>Replica I/O thread</strong> connects to primary, reads binlog events, writes them to local <strong>relay log</strong></li>
+            <li><strong>Replica SQL thread</strong> reads relay log and replays events on replica data</li>
+          </ol>
+          <ul>
+            <li>Primary does NOT wait for replica — zero impact on write latency</li>
+            <li>Risk: if primary crashes before replica catches up, data is lost</li>
+            <li>GTID (Global Transaction Identifier): unique ID per transaction, simplifies failover</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>Semi-Synchronous Replication</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li>Primary waits for <strong>at least one replica</strong> to acknowledge receiving the binlog event before committing</li>
+            <li>Default <code>AFTER_SYNC</code>: primary waits for a replica to ACK receipt into its relay log <em>after the primary flushes its binlog but before the commit is returned to the client</em> (not necessarily applied). <code>AFTER_COMMIT</code> waits after the primary commits. The wait-point name refers to the <em>primary's</em> stage, set by <code>rpl_semi_sync_source_wait_point</code> (the legacy alias <code>rpl_semi_sync_master_wait_point</code> was deprecated in 8.0.26).</li>
+            <li>Guarantees: committed TX exists on at least 2 nodes</li>
+            <li>Trade-off: ~1 network RTT added to every commit (negligible within same DC)</li>
+            <li>Fallback: if no replica ACKs within timeout, degrades to async to avoid blocking</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>Group Replication (MySQL InnoDB Cluster)</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li>Built on Paxos-based Group Communication System (GCS)</li>
+            <li><strong>Single-primary mode:</strong> One writer, automatic failover</li>
+            <li><strong>Multi-primary mode:</strong> All nodes accept writes, conflict detection at commit time</li>
+            <li>Certification-based conflict resolution: if two nodes modify same row, first to be ordered wins; others are rolled back</li>
+            <li>Recommended 3+ (odd number) for fault tolerance; max 9 members, InnoDB tables with PK, GTID enabled</li>
+            <li>Used with MySQL Router for transparent failover to applications</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Replication Lag</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Causes and Mitigations</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Cause</th><th>Why</th><th>Mitigation</th></tr></thead>
+              <tbody>
+                <tr><td>Single-threaded SQL thread</td><td>Legacy: one thread replays all events sequentially</td><td>Multi-threaded replica (MTS): <code>replica_parallel_workers</code>, LOGICAL_CLOCK parallelism</td></tr>
+                <tr><td>Large transactions</td><td>DDL or huge batch UPDATE blocks replay</td><td>Break into smaller chunks, use pt-online-schema-change / gh-ost for DDL</td></tr>
+                <tr><td>Network latency</td><td>Cross-region replication</td><td>Compressed binlog transfer, dedicated network link</td></tr>
+                <tr><td>Replica under-provisioned</td><td>Slower CPU/IO than primary</td><td>Match or exceed primary hardware for replicas</td></tr>
+                <tr><td>Lock contention on replica</td><td>Long-running reads on replica block SQL thread</td><td>Use MVCC (non-locking reads), or dedicated analytics replica</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="key-point">
+            <strong>Monitoring:</strong> <code>SHOW REPLICA STATUS\G</code> — check <code>Seconds_Behind_Source</code> and <code>Relay_Log_Space</code>. For GTID: compare <code>Executed_Gtid_Set</code> between primary and replica.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Failover Strategies</h2>
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>Failover — Promoting a Replica</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <h3 style="font-size:14px;">Manual Failover</h3>
+          <ol>
+            <li>Ensure target replica has applied all relay log events (<code>STOP REPLICA; START REPLICA UNTIL...</code>)</li>
+            <li>Set <code>read_only=OFF</code> on promoted replica</li>
+            <li>Point other replicas to new primary (change replication source)</li>
+            <li>Update application connection strings / VIP / DNS</li>
+          </ol>
+          <h3 style="margin-top:12px; font-size:14px;">Automated Failover Options</h3>
+          <ul>
+            <li><strong>MySQL InnoDB Cluster + Router:</strong> Built-in automatic failover with Group Replication</li>
+            <li><strong>Orchestrator (open source):</strong> Topology-aware failover, handles complex chains</li>
+            <li><strong>MHA (Master High Availability):</strong> Classic tool, applies differential relay logs to pick most up-to-date replica</li>
+            <li><strong>ProxySQL + Orchestrator:</strong> Transparent failover without app-level changes</li>
+          </ul>
+          <div class="warning-box">
+            <strong>Data loss risk:</strong> In async replication, a promoted replica may be missing transactions that were committed on the failed primary but not yet replicated. Semi-sync or Group Replication minimizes this gap.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== INTERVIEW TAB ==================== -->
+<div id="tab-interview" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">"Why Is This Query Slow?" — Systematic Approach</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#128269;</span> Step-by-Step Diagnosis</div>
+      <ol>
+        <li><strong>EXPLAIN the query</strong> — Look at type (ALL=bad), rows estimate, Extra column</li>
+        <li><strong>Check indexes</strong> — Is the right index being used? Is it a covering index?</li>
+        <li><strong>Check data volume</strong> — How many rows does the table have? What's the selectivity?</li>
+        <li><strong>Check for locks</strong> — <code>SHOW ENGINE INNODB STATUS</code>, <code>performance_schema.data_locks</code></li>
+        <li><strong>Check buffer pool hit rate</strong> — Low hit rate means excessive disk I/O</li>
+        <li><strong>Check query plan changes</strong> — Statistics stale? Run <code>ANALYZE TABLE</code></li>
+        <li><strong>Profile the query</strong> — <code>SET profiling=1; ... SHOW PROFILE;</code> or <code>performance_schema</code></li>
+      </ol>
+      <pre><code>-- Quick diagnosis commands
+EXPLAIN ANALYZE SELECT ...;        -- MySQL 8.0.18+ (actual execution stats)
+SHOW STATUS LIKE 'Handler_%';      -- Rows examined vs returned
+SELECT * FROM sys.statements_with_full_table_scans;  -- sys schema</code></pre>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Index Design Methodology</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>From Queries to Indexes — A Framework</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ol>
+            <li><strong>List all critical queries</strong> (top N by frequency or latency)</li>
+            <li><strong>For each query, identify:</strong>
+              <ul>
+                <li>Equality predicates (WHERE col = value) — these go FIRST in composite index</li>
+                <li>Range predicates (WHERE col > value) — at MOST ONE range column can use the index</li>
+                <li>ORDER BY / GROUP BY columns — put AFTER equality, BEFORE range for sort elimination</li>
+                <li>SELECT columns — include for covering index if feasible</li>
+              </ul>
+            </li>
+            <li><strong>Apply ESR rule:</strong> Equality → Sort → Range</li>
+            <li><strong>Consolidate:</strong> Can one composite index serve multiple queries?</li>
+            <li><strong>Validate:</strong> EXPLAIN each query, confirm index usage</li>
+          </ol>
+          <pre><code>-- Example: Designing index for
+-- SELECT * FROM orders WHERE user_id = ? AND status = 'shipped'
+--   ORDER BY created_at DESC LIMIT 20;
+
+-- Equality: user_id, status
+-- Sort: created_at DESC
+-- Range: none
+-- Index: (user_id, status, created_at)
+-- This gives: eq lookup + sorted output, no filesort needed!</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Sharding Strategies</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Range vs Hash Sharding</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <div class="comparison-grid">
+            <div class="card" style="margin:0">
+              <div class="card-title">Range Sharding</div>
+              <ul>
+                <li>Split by value range (e.g., user_id 1-1M, 1M-2M, ...)</li>
+                <li><strong>Pro:</strong> Range queries stay on one shard</li>
+                <li><strong>Con:</strong> Hot spots (newest data = most active shard)</li>
+                <li><strong>Con:</strong> Uneven distribution over time</li>
+                <li>Good for: time-series, archival patterns</li>
+              </ul>
+            </div>
+            <div class="card" style="margin:0">
+              <div class="card-title">Hash Sharding</div>
+              <ul>
+                <li>shard = hash(key) % num_shards</li>
+                <li><strong>Pro:</strong> Even distribution</li>
+                <li><strong>Con:</strong> Range queries must scatter to ALL shards</li>
+                <li><strong>Con:</strong> Resharding requires data movement (use consistent hashing)</li>
+                <li>Good for: key-value lookups, user data by user_id</li>
+              </ul>
+            </div>
+          </div>
+          <h3 style="margin-top:16px; font-size:14px;">Resharding Challenges</h3>
+          <ul>
+            <li>Data migration while serving traffic (online resharding)</li>
+            <li>Cross-shard transactions become much harder</li>
+            <li>Consistent hashing (virtual nodes) minimizes data movement</li>
+            <li>Vitess, ProxySQL, or application-level routing layer</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Connection Pooling</h2>
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>Why and How Many Connections?</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li><strong>Why:</strong> Each MySQL connection = 1 thread + memory (~1-10MB per connection for sort buffers, join buffers, etc.). Too many = OOM or context switch overhead.</li>
+            <li><strong>Connection pool libraries:</strong> HikariCP (Java), pgbouncer-style proxies, ProxySQL</li>
+            <li><strong>Sizing formula (rule of thumb):</strong> <code>connections = (cores * 2) + effective_spindle_count</code></li>
+            <li>For SSD: ~(cores * 2) to (cores * 4) is the typical best balance</li>
+            <li>Example: 8-core server → 16-32 connections in the pool</li>
+            <li>More connections ≠ more throughput. Past that best balance, contention and context switches REDUCE performance.</li>
+          </ul>
+          <div class="key-point">
+            <strong>Interview Insight:</strong> If asked "the database is slow," first check if there are too many connections (hundreds) with most in SLEEP state. This usually means the application is not using connection pooling properly.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Common Interview Questions</h2>
+
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>"Design the Schema for X" — Patterns</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li><strong>User/Post/Comment:</strong> Classic normalized schema. user_id FK in posts, post_id FK in comments. Index on (post_id, created_at) for comment feeds.</li>
+            <li><strong>Social graph:</strong> Adjacency list table: <code>follows(follower_id, followee_id)</code>. Composite PK, reverse index for "who follows me?"</li>
+            <li><strong>E-commerce orders:</strong> orders + order_items (1-to-many). Denormalize total into orders for fast listing. Index on (user_id, status, created_at).</li>
+            <li><strong>Chat messages:</strong> Partition by conversation_id or time. Index on (conversation_id, sent_at). Consider TTL archival.</li>
+            <li><strong>Inventory/counters:</strong> Use <code>UPDATE inventory SET qty = qty - 1 WHERE id = ? AND qty > 0</code> for atomic decrement with optimistic check.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>"How Would You Handle 10x Traffic Growth?"</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ol>
+            <li><strong>Read replicas</strong> — Route reads to replicas (most workloads are read-heavy)</li>
+            <li><strong>Caching layer</strong> — Redis/Memcached for hot data, cache-aside pattern</li>
+            <li><strong>Connection pooling</strong> — ProxySQL or HikariCP to limit connection count</li>
+            <li><strong>Query optimization</strong> — Add covering indexes, eliminate N+1 queries</li>
+            <li><strong>Vertical scaling</strong> — More RAM (bigger buffer pool), faster SSDs</li>
+            <li><strong>Horizontal sharding</strong> — Split by user_id/tenant_id if above isn't enough</li>
+            <li><strong>Async processing</strong> — Move non-critical writes to message queue</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>When to Denormalize</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <ul>
+            <li><strong>Read-heavy with expensive JOINs:</strong> Pre-compute and store aggregates (e.g., post_count in users table)</li>
+            <li><strong>Hot path needs single-table lookup:</strong> Duplicate data to avoid JOIN in latency-critical path</li>
+            <li><strong>Reporting/Analytics:</strong> Star schema with denormalized dimensions</li>
+            <li><strong>Cross-shard queries:</strong> After sharding, denormalize to keep related data on same shard</li>
+          </ul>
+          <div class="warning-box">
+            <strong>Cost of denormalization:</strong> Write complexity increases (maintain consistency in multiple places), risk of stale data, larger storage. Always start normalized, denormalize only when you have measured evidence of a bottleneck.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header">
+        <span>Partitioning vs Sharding</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Aspect</th><th>Partitioning</th><th>Sharding</th></tr></thead>
+              <tbody>
+                <tr><td>Scope</td><td>Single server, single table split into partitions</td><td>Multiple servers, each holding a subset of data</td></tr>
+                <tr><td>Transparency</td><td>Transparent to application (MySQL handles routing)</td><td>Application or proxy must route queries</td></tr>
+                <tr><td>Scalability</td><td>Limited by single server resources</td><td>Horizontally scalable across machines</td></tr>
+                <tr><td>Transactions</td><td>Normal ACID within same server</td><td>Cross-shard transactions are very expensive (2PC)</td></tr>
+                <tr><td>Use case</td><td>Large tables with time-based pruning (DROP PARTITION for archival)</td><td>When single server can't handle the load</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">MySQL vs PostgreSQL</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header">
+        <span>Key Differences (Common Comparisons)</span>
+        <span class="arrow">&#9654;</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="collapsible-content">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Aspect</th><th>MySQL/InnoDB</th><th>PostgreSQL</th></tr></thead>
+              <tbody>
+                <tr><td>MVCC approach</td><td>Undo log (in-place update + version chain)</td><td>Tuple versioning (new version written inline, VACUUM needed)</td></tr>
+                <tr><td>Replication</td><td>Binlog-based (logical), built-in Group Replication</td><td>WAL-based streaming, logical decoding</td></tr>
+                <tr><td>JSON support</td><td>JSON type (stored as binary since 5.7)</td><td>JSONB with rich indexing (GIN), more powerful</td></tr>
+                <tr><td>Extensibility</td><td>Storage engine plugins</td><td>Custom types, operators, index methods, procedural languages</td></tr>
+                <tr><td>Partitioning</td><td>Native (RANGE, LIST, HASH, KEY)</td><td>Declarative (10+), more flexible</td></tr>
+                <tr><td>Full-text search</td><td>Built-in (basic)</td><td>Built-in with tsvector/tsquery (more powerful)</td></tr>
+                <tr><td>Window functions</td><td>Since 8.0 (2018)</td><td>Since 8.4 (2009) — ~9 years earlier</td></tr>
+                <tr><td>Connection model</td><td>Thread per connection</td><td>Process per connection (higher overhead)</td></tr>
+                <tr><td>Ecosystem</td><td>Dominant in web (LAMP stack), managed (RDS, PlanetScale, Vitess)</td><td>Growing fast, strong in analytics, geospatial (PostGIS)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">When NOT to Use MySQL</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#9888;</span> Wrong Tool for These Jobs</div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Data Type / Workload</th><th>Better Alternative</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Document data (schema-less, nested)</td><td>MongoDB, DynamoDB</td><td>MySQL's JSON support works but indexing and querying nested structures is clunky compared to native document DBs</td></tr>
+            <tr><td>Graph data (social networks, recommendations)</td><td>Neo4j, Neptune</td><td>Traversing relationships in relational DB requires recursive CTEs or multiple JOINs — graph DBs do O(1) traversal</td></tr>
+            <tr><td>Time-series (metrics, IoT)</td><td>InfluxDB, TimescaleDB, ClickHouse</td><td>Specialized compression, retention policies, and downsampling. MySQL partitioning is a poor substitute.</td></tr>
+            <tr><td>Full-text search (relevance ranking)</td><td>Elasticsearch, OpenSearch</td><td>Inverted indexes with BM25 ranking, facets, fuzzy matching far exceed MySQL's built-in FTS</td></tr>
+            <tr><td>OLAP / Analytics (large aggregations)</td><td>ClickHouse, BigQuery, Redshift</td><td>Columnar storage + vectorized execution is 10-100x faster for analytical queries on large datasets</td></tr>
+            <tr><td>Cache / session store</td><td>Redis, Memcached</td><td>In-memory with sub-ms latency, TTL support, pub/sub — MySQL disk-based is too slow for this</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2 class="section-title">Terminology &amp; Acronyms</h2>
+  <p>Quick reference for the key terms in this chapter.</p>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Term</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>InnoDB</strong></td><td>MySQL's default storage engine — ACID transactions, row-level locking, MVCC, and automatic crash recovery.</td></tr>
+        <tr><td><strong>ACID</strong></td><td>Atomicity, Consistency, Isolation, Durability — the four guarantees of a reliable transaction.</td></tr>
+        <tr><td><strong>MVCC</strong></td><td>Multi-Version Concurrency Control — readers see a consistent snapshot without blocking writers.</td></tr>
+        <tr><td><strong>Buffer Pool</strong></td><td>InnoDB's in-memory cache of data and index pages; the primary performance lever.</td></tr>
+        <tr><td><strong>WAL</strong></td><td>Write-Ahead Logging — the log record is durably written before its data page is flushed.</td></tr>
+        <tr><td><strong>LSN</strong></td><td>Log Sequence Number — a monotonically increasing offset marking a position in the redo log.</td></tr>
+        <tr><td><strong>Undo Log</strong></td><td>Stores prior row versions, enabling transaction rollback and MVCC consistent reads.</td></tr>
+        <tr><td><strong>Doublewrite Buffer</strong></td><td>A staging area that protects against torn (partially written) pages after a crash.</td></tr>
+        <tr><td><strong>Change Buffer</strong></td><td>Buffers writes to non-unique secondary indexes; disabled by default since MySQL 8.4.</td></tr>
+        <tr><td><strong>Online DDL</strong></td><td>Schema changes run via the INSTANT, INPLACE, or COPY algorithms, which differ in locking cost.</td></tr>
+        <tr><td><strong>Clustered Index</strong></td><td>The primary-key index whose leaf pages store full rows — effectively the table itself.</td></tr>
+        <tr><td><strong>Secondary Index</strong></td><td>A non-primary index storing indexed columns plus the PK; often needs a bookmark lookup.</td></tr>
+        <tr><td><strong>Covering Index</strong></td><td>An index holding every column a query needs, eliminating the bookmark lookup.</td></tr>
+        <tr><td><strong>ICP</strong></td><td>Index Condition Pushdown — the storage engine filters using index columns before fetching full rows.</td></tr>
+        <tr><td><strong>AHI</strong></td><td>Adaptive Hash Index — InnoDB auto-builds in-memory hashes for hot lookups; on by default.</td></tr>
+        <tr><td><strong>Next-Key Lock</strong></td><td>A record lock plus a gap lock; prevents phantom reads under REPEATABLE READ.</td></tr>
+        <tr><td><strong>2PC</strong></td><td>Two-Phase Commit — InnoDB's internal XA protocol keeping the redo log and binlog consistent.</td></tr>
+        <tr><td><strong>Binlog</strong></td><td>Binary Log — the server-layer logical change record used for replication and PITR.</td></tr>
+        <tr><td><strong>PITR</strong></td><td>Point-in-Time Recovery — restoring a backup, then replaying the binlog to a chosen moment.</td></tr>
+        <tr><td><strong>GTID</strong></td><td>Global Transaction Identifier — a unique per-transaction ID that simplifies replica failover.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div> <!-- end .content -->
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Collapsible cards
+document.querySelectorAll('.collapsible-header').forEach(header => {
+  header.addEventListener('click', () => {
+    header.parentElement.classList.toggle('open');
+  });
+});
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="database_selection_guide.html">‹ Choosing the Right Database</a><a class="bkc" href="index.html">📖 Contents</a><a href="redis_deep_dive.html">Redis Deep Dive ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

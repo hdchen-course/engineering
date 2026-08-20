@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C Refresher — The Machine-Close Language</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1050px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.nav { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin: 18px 0 32px; position: sticky; top: 0; background: var(--bg); padding: 14px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 23px; font-weight: 700; margin: 28px 0 14px; color: var(--blue); }
+h3 { font-size: 17px; font-weight: 600; margin: 22px 0 10px; }
+h4 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 14px 18px; overflow-x: auto; margin: 10px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #cdd6f4; white-space: pre; }
+pre .kw { color: #c084fc; }
+pre .cm { color: #7f849c; font-style: italic; }
+pre .num { color: #fbbf24; }
+pre .str { color: #86efac; }
+pre .pp { color: #89b4fa; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.warn p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.old { background: var(--red-l); border-left: 3px solid var(--red); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.old p { color: #8a1c1c; margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 18px; padding: 22px 26px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th, td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 16px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--purple-l); color:var(--purple); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VIII · Chapter 2 — <b>C Refresher</b></span><span class="bkspacer"></span></nav>
+<!-- Shared, always-present arrowhead marker so every SVG's url(#cbAr) resolves regardless of which tab is visible. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <marker id="cbAr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#868e96"/></marker>
+  </defs>
+</svg>
+<div class="container">
+<header>
+  <h1>C Refresher</h1>
+  <div class="sub">The machine-close language — how your code becomes bytes, where variables live, and why pointers and manual memory are both C's superpower and its biggest hazard</div>
+</header>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'orient')">Orientation</button>
+  <button class="nav-btn" onclick="showSection(event,'build')">Build &amp; Link</button>
+  <button class="nav-btn" onclick="showSection(event,'memory')">Memory Model</button>
+  <button class="nav-btn" onclick="showSection(event,'pointers')">Pointers</button>
+  <button class="nav-btn" onclick="showSection(event,'arrays')">Arrays &amp; Strings</button>
+  <button class="nav-btn" onclick="showSection(event,'structs')">Structs &amp; Unions</button>
+  <button class="nav-btn" onclick="showSection(event,'heap')">Manual Memory</button>
+  <button class="nav-btn" onclick="showSection(event,'lang')">Language Details</button>
+  <button class="nav-btn" onclick="showSection(event,'interview')">Where C Rules &amp; Q&amp;A</button>
+</div>
+
+<!-- ORIENTATION -->
+<div class="section active" id="orient">
+<div class="card">
+<h2>What C really is</h2>
+<p>Think of C as a <strong>thin, honest layer over the hardware</strong>. If a higher-level language is a self-driving car — it parks, brakes, and refuels for you — C is a manual transmission with the hood open. Nothing happens that you didn't ask for: no garbage collector sweeping up behind you, no bounds-checking guardrail, no hidden allocations. That's exactly why C is fast and predictable, and exactly why it will let you drive off a cliff.</p>
+<p>Here is the whole language in one runnable program:</p>
+<pre><span class="cm">/* hello.c — compile: cc hello.c -o hello   run: ./hello */</span>
+<span class="pp">#include</span> <span class="str">&lt;stdio.h&gt;</span>
+
+<span class="kw">int</span> main(<span class="kw">void</span>) {
+    <span class="kw">int</span> answer = <span class="num">42</span>;
+    printf(<span class="str">"the answer is %d\n"</span>, answer);
+    <span class="kw">return</span> <span class="num">0</span>;   <span class="cm">// 0 = success, by convention</span>
+}</pre>
+<p>No classes, no exceptions, no strings-as-objects. A handful of types (<code>int</code>, <code>char</code>, <code>double</code>, pointers), functions, structs, and a preprocessor. The whole ISO C standard fits in a book you can read on a flight. The <em>difficulty</em> isn't the surface area — it's that C trusts you completely.</p>
+</div>
+
+<div class="card">
+<h3>Note for readers coming from higher-level languages</h3>
+<p>If your instincts come from Python, Java, JavaScript, Go, or C#, retrain these reflexes:</p>
+<table>
+<tr><th>You're used to…</th><th>In C…</th></tr>
+<tr><td>Garbage collection</td><td>You <code>free()</code> every heap allocation yourself, or it leaks.</td></tr>
+<tr><td>Arrays that know their length &amp; bounds-check</td><td>An array is just a base address. Reading past the end is <em>undefined behavior</em>, not an exception.</td></tr>
+<tr><td>Strings as first-class objects</td><td>A "string" is a <code>char</code> array ending in a <code>'\0'</code> byte. Length is computed by scanning.</td></tr>
+<tr><td>Pass-by-reference / everything's an object</td><td>Everything is pass-by-<em>value</em>. To mutate a caller's variable you pass a <em>pointer</em> to it.</td></tr>
+<tr><td>Rich standard library</td><td>Tiny stdlib. You often write your own data structures.</td></tr>
+<tr><td>Runtime that catches errors</td><td>No runtime. A bad pointer corrupts memory silently and crashes (or worse, doesn't) later.</td></tr>
+</table>
+<div class="insight"><p><strong>The mental shift:</strong> in higher-level languages a variable <em>is</em> its value. In C, a variable is a <strong>named box at an address</strong>, and much of the language is about those addresses. Once "everything is bytes at an address" clicks, the rest of C follows.</p></div>
+</div>
+
+<div class="card">
+<h3>Interview angle</h3>
+<p>Interviewers use C to probe whether you understand what's <em>actually happening</em> under any language. Expect: "what does this pointer expression do," "walk me through the memory," "why is this undefined behavior," "where's the leak." You rarely need obscure syntax — you need a crisp mental model of the stack, the heap, and pointers. The rest of this chapter builds exactly that model.</p>
+</div>
+</div>
+
+<!-- BUILD & LINK -->
+<div class="section" id="build">
+<div class="card">
+<h2>Compilation &amp; linking — from text to a running program</h2>
+<p>Analogy: publishing a book from many chapters. Each chapter (<code>.c</code> file) is written and typeset independently (<strong>compiled</strong> to an object file). A shared style guide (<strong>header</strong>) tells every chapter what the others' functions look like without reprinting them. Finally a binder (<strong>linker</strong>) stitches all chapters plus the pre-printed appendix (libraries) into one book (the executable).</p>
+
+<h3>The four stages</h3>
+<pre><span class="cm"># See each stage explicitly:</span>
+cc -E main.c        <span class="cm"># 1. Preprocess: expand #include / #define, output pure C</span>
+cc -S main.c        <span class="cm"># 2. Compile:    C -&gt; assembly (main.s)</span>
+cc -c main.c        <span class="cm"># 3. Assemble:   assembly -&gt; object file (main.o)</span>
+cc main.o util.o -o app   <span class="cm"># 4. Link: combine objects + libs -&gt; executable</span></pre>
+<ol>
+  <li><strong>Preprocess</strong> — a text step. <code>#include</code> literally pastes the header in; <code>#define</code> macros are substituted. The compiler proper never sees a <code>#</code>.</li>
+  <li><strong>Compile</strong> — each translation unit (one <code>.c</code> plus its included headers) becomes assembly, then</li>
+  <li><strong>Assemble</strong> — an <strong>object file</strong> (<code>.o</code>): machine code with a symbol table and unresolved references.</li>
+  <li><strong>Link</strong> — the linker resolves every symbol (matches each <code>call foo</code> to the one definition of <code>foo</code>) and produces the final binary.</li>
+</ol>
+
+<h3>Declaration vs definition — why headers exist</h3>
+<p>A <strong>declaration</strong> promises a function/variable exists somewhere ("here's its shape"). A <strong>definition</strong> actually creates it. Each <code>.c</code> is compiled alone, so it needs declarations of anything defined elsewhere — that's what a header provides.</p>
+<pre><span class="cm">/* math_util.h — the shared "style guide" (declarations only) */</span>
+<span class="pp">#ifndef MATH_UTIL_H</span>       <span class="cm">// include guard: prevents double-inclusion</span>
+<span class="pp">#define MATH_UTIL_H</span>
+<span class="kw">int</span> add(<span class="kw">int</span> a, <span class="kw">int</span> b);    <span class="cm">// declaration (a promise)</span>
+<span class="pp">#endif</span>
+
+<span class="cm">/* math_util.c — the definition (the real thing) */</span>
+<span class="pp">#include</span> <span class="str">"math_util.h"</span>
+<span class="kw">int</span> add(<span class="kw">int</span> a, <span class="kw">int</span> b) { <span class="kw">return</span> a + b; }
+
+<span class="cm">/* main.c — a user of it */</span>
+<span class="pp">#include</span> <span class="str">"math_util.h"</span>       <span class="cm">// gets the declaration only</span>
+<span class="kw">int</span> main(<span class="kw">void</span>) { <span class="kw">return</span> add(<span class="num">2</span>, <span class="num">3</span>) == <span class="num">5</span> ? <span class="num">0</span> : <span class="num">1</span>; }</pre>
+<div class="warn"><p>The two <strong>classic linker errors</strong>: <code>undefined reference to 'add'</code> means a declaration was used but no definition was linked (forgot to compile <code>math_util.c</code>). <code>multiple definition of 'add'</code> means a function/global was <em>defined</em> in a header and included by several files. Definitions go in <code>.c</code>; headers hold declarations.</p></div>
+
+<h3>Static vs dynamic linking</h3>
+<pre>cc main.o -o app -lm           <span class="cm"># link the math library (libm)</span>
+cc main.o -static -o app -lm   <span class="cm"># bake the lib INTO the binary</span></pre>
+<ul>
+  <li><strong>Static</strong> (<code>.a</code>): library code is copied into your executable. Bigger binary, no runtime dependency, self-contained.</li>
+  <li><strong>Dynamic</strong> (<code>.so</code> / <code>.dll</code>): the binary references a shared library loaded at run time. Smaller binaries, shared across processes, but the library must be present and compatible.</li>
+</ul>
+
+<svg viewBox="0 0 640 210" style="max-width:100%;height:auto" role="img" aria-label="Pipeline: two source files preprocessed, compiled, and assembled into object files, then linked with a library into one executable.">
+  <g font-family="'JetBrains Mono',monospace" font-size="12">
+    <!-- main.c row -->
+    <rect x="10" y="20" width="86" height="34" rx="6" fill="#d0ebff" stroke="#1971c2"/><text x="53" y="41" text-anchor="middle" fill="#114f8c">main.c</text>
+    <rect x="10" y="120" width="86" height="34" rx="6" fill="#d0ebff" stroke="#1971c2"/><text x="53" y="141" text-anchor="middle" fill="#114f8c">util.c</text>
+    <!-- compile boxes -->
+    <rect x="150" y="20" width="120" height="34" rx="6" fill="#fff3bf" stroke="#e67700"/><text x="210" y="41" text-anchor="middle" fill="#a85700">cc -c</text>
+    <rect x="150" y="120" width="120" height="34" rx="6" fill="#fff3bf" stroke="#e67700"/><text x="210" y="141" text-anchor="middle" fill="#a85700">cc -c</text>
+    <!-- object files -->
+    <rect x="320" y="20" width="86" height="34" rx="6" fill="#e5dbff" stroke="#7048e8"/><text x="363" y="41" text-anchor="middle" fill="#5a32c4">main.o</text>
+    <rect x="320" y="120" width="86" height="34" rx="6" fill="#e5dbff" stroke="#7048e8"/><text x="363" y="141" text-anchor="middle" fill="#5a32c4">util.o</text>
+    <!-- library -->
+    <rect x="320" y="70" width="86" height="34" rx="6" fill="#f1f3f5" stroke="#868e96"/><text x="363" y="91" text-anchor="middle" fill="#495057">libc / libm</text>
+    <!-- linker -->
+    <rect x="450" y="70" width="86" height="34" rx="6" fill="#d3f9d8" stroke="#2f9e44"/><text x="493" y="91" text-anchor="middle" fill="#1d6b2e">ld (link)</text>
+    <!-- exe -->
+    <rect x="560" y="70" width="70" height="34" rx="6" fill="#1d6b2e"/><text x="595" y="91" text-anchor="middle" fill="#fff">app</text>
+    <!-- arrows -->
+    <g stroke="#868e96" stroke-width="1.5" marker-end="url(#cbAr)" fill="none">
+      <line x1="96" y1="37" x2="146" y2="37"/><line x1="96" y1="137" x2="146" y2="137"/>
+      <line x1="270" y1="37" x2="316" y2="37"/><line x1="270" y1="137" x2="316" y2="137"/>
+      <line x1="406" y1="37" x2="470" y2="76"/><line x1="406" y1="137" x2="470" y2="98"/>
+      <line x1="406" y1="87" x2="446" y2="87"/>
+      <line x1="536" y1="87" x2="556" y2="87"/>
+    </g>
+  </g>
+</svg>
+
+<div class="insight"><p><strong>Interview angle:</strong> "Explain what happens between saving <code>main.c</code> and running <code>./app</code>." A strong answer names the four stages, distinguishes declaration from definition, explains why an <code>undefined reference</code> is a <em>link-time</em> (not compile-time) error, and contrasts static vs dynamic linking. Bonus: mention that each <code>.c</code> is compiled independently, which is why headers and the linker exist at all.</p></div>
+</div>
+</div>
+
+<!-- MEMORY MODEL -->
+<div class="section" id="memory">
+<div class="card">
+<h2>The memory model — where variables actually live</h2>
+<p>A running C program's address space is divided into regions. Analogy: an office building. The <strong>code/text</strong> is the fixed blueprint. <strong>Globals</strong> are permanent fixtures bolted to the floor. The <strong>heap</strong> is a big warehouse you rent lockers from and must return. The <strong>stack</strong> is a stack of scratch desks — each function call grabs the top desk and returns it the instant it finishes.</p>
+
+<svg viewBox="0 0 560 300" style="max-width:100%;height:auto" role="img" aria-label="Process address space from high to low addresses: stack growing down, free space, heap growing up, BSS, data, and text segments.">
+  <g font-family="'JetBrains Mono',monospace" font-size="12.5">
+    <text x="20" y="20" font-family="'Inter',sans-serif" font-size="12" fill="#63676f">high address</text>
+    <text x="20" y="292" font-family="'Inter',sans-serif" font-size="12" fill="#63676f">low address</text>
+    <!-- stack -->
+    <rect x="150" y="30" width="260" height="52" fill="#d0ebff" stroke="#1971c2"/><text x="280" y="53" text-anchor="middle" fill="#114f8c">stack — locals, call frames</text><text x="280" y="70" text-anchor="middle" fill="#114f8c" font-size="11">grows downward ↓</text>
+    <!-- free -->
+    <rect x="150" y="90" width="260" height="46" fill="#f8f9fa" stroke="#dee2e6" stroke-dasharray="4 3"/><text x="280" y="117" text-anchor="middle" fill="#63676f">free space</text>
+    <!-- heap -->
+    <rect x="150" y="144" width="260" height="52" fill="#e5dbff" stroke="#7048e8"/><text x="280" y="167" text-anchor="middle" fill="#5a32c4">heap — malloc/free</text><text x="280" y="184" text-anchor="middle" fill="#5a32c4" font-size="11">grows upward ↑</text>
+    <!-- bss -->
+    <rect x="150" y="204" width="260" height="28" fill="#fff3bf" stroke="#e67700"/><text x="280" y="223" text-anchor="middle" fill="#a85700">BSS — zero-init globals</text>
+    <!-- data -->
+    <rect x="150" y="234" width="260" height="28" fill="#ffe3e3" stroke="#c92a2a"/><text x="280" y="253" text-anchor="middle" fill="#8a1c1c">data — init globals</text>
+    <!-- text -->
+    <rect x="150" y="264" width="260" height="28" fill="#d3f9d8" stroke="#2f9e44"/><text x="280" y="283" text-anchor="middle" fill="#1d6b2e">text — code (read-only)</text>
+    <!-- arrows -->
+    <g stroke="#495057" stroke-width="1.4" fill="none">
+      <line x1="430" y1="40" x2="430" y2="80" marker-end="url(#cbAr)"/>
+      <line x1="430" y1="186" x2="430" y2="146" marker-end="url(#cbAr)"/>
+    </g>
+  </g>
+</svg>
+
+<h3>Stack vs heap — the distinction that matters most</h3>
+<table>
+<tr><th></th><th>Stack</th><th>Heap</th></tr>
+<tr><td>Lifetime</td><td>Automatic — freed when the function returns</td><td>Manual — lives until you <code>free()</code> it</td></tr>
+<tr><td>Speed</td><td>Instant (just move a pointer)</td><td>Slower (allocator bookkeeping)</td></tr>
+<tr><td>Size</td><td>Small &amp; fixed (often ~1–8 MB)</td><td>Large (limited by RAM)</td></tr>
+<tr><td>You manage it?</td><td>No — the compiler does</td><td>Yes — <code>malloc</code>/<code>free</code></td></tr>
+<tr><td>Typical bug</td><td>Returning a pointer to a local; overflow</td><td>Leaks, use-after-free, double free</td></tr>
+</table>
+
+<h3>How variables live — a walk-through</h3>
+<pre><span class="kw">int</span> g = <span class="num">10</span>;            <span class="cm">// global -&gt; data segment, lives whole program</span>
+<span class="kw">static int</span> s;          <span class="cm">// zero-initialized global -&gt; BSS</span>
+
+<span class="kw">void</span> f(<span class="kw">void</span>) {
+    <span class="kw">int</span> local = <span class="num">5</span>;       <span class="cm">// stack: born here, dies when f returns</span>
+    <span class="kw">int</span> *p = malloc(<span class="kw">sizeof</span> *p);  <span class="cm">// p is on the stack; *p is on the heap</span>
+    *p = <span class="num">7</span>;
+    free(p);            <span class="cm">// heap block returned; p itself dies at return</span>
+}</pre>
+<div class="warn"><p><strong>The #1 stack bug — dangling stack pointer.</strong> Never return the address of a local: its desk is reclaimed the moment the function returns.</p></div>
+<pre><span class="kw">int</span> *broken(<span class="kw">void</span>) {
+    <span class="kw">int</span> x = <span class="num">42</span>;
+    <span class="kw">return</span> &amp;x;   <span class="cm">// BUG: x dies at return; caller holds a dangling pointer (UB)</span>
+}
+<span class="cm">// Fix: return by value, or malloc the storage, or take a caller-provided buffer.</span></pre>
+
+<div class="insight"><p><strong>Interview angle:</strong> "Where does this variable live, and when does it die?" is the memory question in disguise. Be able to point at any variable and say <em>stack / heap / data / BSS / text</em> and give its lifetime. The killer follow-up — "what's wrong with returning <code>&amp;x</code>?" — is really "do you understand stack frames?"</p></div>
+</div>
+</div>
+
+<!-- POINTERS -->
+<div class="section" id="pointers">
+<div class="card">
+<h2>Pointers &amp; pointer arithmetic</h2>
+<p>A pointer is just a variable whose value is an <strong>address</strong>. Analogy: a house has contents (the value) and a street address. A pointer holds the address on a slip of paper. <code>&amp;x</code> = "the address of x." <code>*p</code> = "go to that address and look inside" (dereference).</p>
+<pre><span class="kw">int</span>  x = <span class="num">42</span>;
+<span class="kw">int</span> *p = &amp;x;     <span class="cm">// p holds the address of x</span>
+printf(<span class="str">"%d\n"</span>, *p);   <span class="cm">// 42  — dereference: read through p</span>
+*p = <span class="num">99</span>;          <span class="cm">// writes THROUGH p into x; now x == 99</span></pre>
+
+<h3>Why pointers exist: mutating a caller's variable</h3>
+<p>Because C is pass-by-value, a function gets a <em>copy</em> of its arguments. To change the caller's variable, pass its address:</p>
+<pre><span class="kw">void</span> swap(<span class="kw">int</span> *a, <span class="kw">int</span> *b) {   <span class="cm">// receive addresses</span>
+    <span class="kw">int</span> t = *a; *a = *b; *b = t;   <span class="cm">// operate through them</span>
+}
+<span class="kw">int</span> main(<span class="kw">void</span>) {
+    <span class="kw">int</span> x = <span class="num">1</span>, y = <span class="num">2</span>;
+    swap(&amp;x, &amp;y);   <span class="cm">// pass addresses; now x==2, y==1</span>
+}</pre>
+
+<h3>Pointer arithmetic — it's typed, and it scales</h3>
+<p>Adding <code>1</code> to a pointer advances it by <code>sizeof(*p)</code> bytes, not one byte. <code>p + i</code> means "the i-th element after p." In fact <code>arr[i]</code> is <em>defined</em> as <code>*(arr + i)</code>.</p>
+<pre><span class="kw">int</span> a[] = {<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>};
+<span class="kw">int</span> *p = a;         <span class="cm">// points at a[0]; array name decays to &amp;a[0]</span>
+printf(<span class="str">"%d\n"</span>, *(p + <span class="num">2</span>));   <span class="cm">// 30  — advanced by 2*sizeof(int) bytes</span>
+p++;                <span class="cm">// now points at a[1]</span>
+printf(<span class="str">"%d\n"</span>, p[<span class="num">1</span>]);      <span class="cm">// 30  — p[1] == *(p+1)</span></pre>
+<div class="tip"><p>The types <code>int *</code> vs <code>char *</code> matter precisely because arithmetic scales by element size. That's why <code>void *</code> (untyped) can't be dereferenced or incremented — the compiler doesn't know the step size.</p></div>
+
+<h3>Visualizing memory cells</h3>
+<p>Below, <code>a</code> is a 3-element <code>int</code> array at address <code>0x100</code> (4 bytes each), and <code>p = a</code> points at the first cell. Watch how <code>p + 1</code> lands on the next <em>int</em>, four bytes along.</p>
+<svg viewBox="0 0 640 150" style="max-width:100%;height:auto" role="img" aria-label="Three integer cells at addresses 0x100, 0x104, 0x108 holding 10, 20, 30. Pointer p points at 0x100; p plus 1 points at 0x104.">
+  <g font-family="'JetBrains Mono',monospace" font-size="13">
+    <!-- cells -->
+    <rect x="120" y="60" width="120" height="46" fill="#d0ebff" stroke="#1971c2"/><text x="180" y="88" text-anchor="middle" fill="#114f8c">10</text>
+    <rect x="240" y="60" width="120" height="46" fill="#d0ebff" stroke="#1971c2"/><text x="300" y="88" text-anchor="middle" fill="#114f8c">20</text>
+    <rect x="360" y="60" width="120" height="46" fill="#d0ebff" stroke="#1971c2"/><text x="420" y="88" text-anchor="middle" fill="#114f8c">30</text>
+    <!-- addresses -->
+    <text x="180" y="124" text-anchor="middle" fill="#63676f" font-size="11">0x100</text>
+    <text x="300" y="124" text-anchor="middle" fill="#63676f" font-size="11">0x104</text>
+    <text x="420" y="124" text-anchor="middle" fill="#63676f" font-size="11">0x108</text>
+    <text x="60" y="88" text-anchor="middle" fill="#495057" font-size="11">a[0..2]</text>
+    <!-- pointer labels -->
+    <text x="180" y="34" text-anchor="middle" fill="#7048e8" font-weight="bold">p</text>
+    <text x="300" y="34" text-anchor="middle" fill="#1d6b2e" font-weight="bold">p + 1</text>
+    <g stroke-width="1.6" fill="none">
+      <line x1="180" y1="40" x2="180" y2="56" stroke="#7048e8" marker-end="url(#cbAr)"/>
+      <line x1="300" y1="40" x2="300" y2="56" stroke="#2f9e44" marker-end="url(#cbAr)"/>
+    </g>
+  </g>
+</svg>
+
+<h3>The lifecycle of a heap pointer — step through it</h3>
+<p>This is the single most important animation in the chapter. Press <strong>Step</strong> to walk a pointer through <code>malloc → write → read → free</code>, then watch the classic <strong>use-after-free</strong> bug — and the one-line fix. <strong>Reset</strong> replays it.</p>
+
+<div id="cptr_player" style="border:1px solid var(--border);border-radius:12px;padding:16px;background:var(--bg2);">
+  <svg id="cptr_svg" viewBox="0 0 620 160" style="max-width:100%;height:auto" role="img" aria-label="Animated pointer p and a heap block, changing state as you step.">
+    <g font-family="'JetBrains Mono',monospace" font-size="13">
+      <!-- pointer box -->
+      <text x="90" y="34" text-anchor="middle" fill="#495057" font-size="11">stack</text>
+      <rect x="30" y="46" width="120" height="46" rx="4" fill="#f1f3f5" stroke="#868e96"/>
+      <text x="90" y="63" text-anchor="middle" fill="#495057" font-size="11">int *p</text>
+      <text id="cptr_pval" x="90" y="82" text-anchor="middle" fill="#7048e8" font-weight="bold">?</text>
+      <!-- arrow from p to heap -->
+      <line id="cptr_arrow" x1="150" y1="69" x2="360" y2="69" stroke="#7048e8" stroke-width="1.8" marker-end="url(#cbAr)" style="display:none"/>
+      <!-- heap block -->
+      <text x="440" y="34" text-anchor="middle" fill="#495057" font-size="11">heap</text>
+      <rect id="cptr_block" x="370" y="46" width="140" height="46" rx="4" fill="#f8f9fa" stroke="#dee2e6" stroke-dasharray="4 3"/>
+      <text id="cptr_addr" x="440" y="63" text-anchor="middle" fill="#63676f" font-size="11">0x1000</text>
+      <text id="cptr_bval" x="440" y="82" text-anchor="middle" fill="#114f8c" font-weight="bold"></text>
+    </g>
+  </svg>
+  <div id="cptr_code" style="font-family:'JetBrains Mono',monospace;font-size:12.5px;background:#1e1e2e;color:#cdd6f4;border-radius:8px;padding:10px 14px;margin:6px 0;white-space:pre;overflow-x:auto;">int *p;</div>
+  <div id="cptr_desc" style="min-height:44px;color:var(--text2);font-size:13.5px;">Uninitialized pointer <code>p</code> holds a garbage address — dereferencing it now is undefined behavior.</div>
+  <div style="margin-top:8px;">
+    <button id="cptr_step" style="padding:8px 18px;border-radius:8px;border:1px solid var(--blue);background:var(--blue-l);color:var(--blue);font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">Step ▶</button>
+    <button id="cptr_reset" style="padding:8px 18px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">Reset ↺</button>
+    <span id="cptr_stepno" style="margin-left:10px;color:var(--text3);font-size:12px;">step 0 / 6</span>
+  </div>
+</div>
+<script>
+(function(){
+  var svg = document.getElementById('cptr_svg');
+  if(!svg) return;
+  var pval  = document.getElementById('cptr_pval');
+  var arrow = document.getElementById('cptr_arrow');
+  var block = document.getElementById('cptr_block');
+  var bval  = document.getElementById('cptr_bval');
+  var addr  = document.getElementById('cptr_addr');
+  var code  = document.getElementById('cptr_code');
+  var desc  = document.getElementById('cptr_desc');
+  var stepNo= document.getElementById('cptr_stepno');
+  var steps = [
+    { code:'int *p;',
+      p:'?', arrow:false, block:'empty', bval:'',
+      d:'Uninitialized pointer <code>p</code> holds a garbage address — dereferencing it now is undefined behavior.' },
+    { code:'p = malloc(sizeof(int));',
+      p:'0x1000', arrow:true, block:'alloc', bval:'—',
+      d:'<code>malloc</code> reserves one <code>int</code> on the heap and returns its address. <code>p</code> now points at a valid but <em>uninitialized</em> block. Always check <code>p != NULL</code> in real code.' },
+    { code:'*p = 42;',
+      p:'0x1000', arrow:true, block:'alloc', bval:'42',
+      d:'Dereference and write: we store 42 into the heap block through <code>p</code>.' },
+    { code:'printf("%d", *p);  // 42',
+      p:'0x1000', arrow:true, block:'read', bval:'42',
+      d:'Read back through <code>p</code> — prints 42. Everything is valid here.' },
+    { code:'free(p);',
+      p:'0x1000', arrow:true, block:'freed', bval:'✗',
+      d:'<code>free</code> returns the block to the allocator. But <code>p</code> <strong>still holds 0x1000</strong> — it is now a <em>dangling pointer</em> to memory you no longer own.' },
+    { code:'*p = 7;   // USE-AFTER-FREE (undefined behavior!)',
+      p:'0x1000', arrow:true, block:'uaf', bval:'?!',
+      d:'Writing through the dangling <code>p</code> is <strong>use-after-free</strong>: it may corrupt the allocator, hand another allocation your write, or crash — classic exploitable bug.' },
+    { code:'p = NULL;   // the fix: null out after free',
+      p:'NULL', arrow:false, block:'freed', bval:'✗',
+      d:'The habit that prevents it: set <code>p = NULL</code> right after <code>free</code>. A later <code>*p</code> then crashes deterministically instead of silently corrupting memory.' }
+  ];
+  var i = 0;
+  function paint(){
+    var s = steps[i];
+    pval.textContent = s.p;
+    code.textContent = s.code;
+    desc.innerHTML = s.d;
+    stepNo.textContent = 'step ' + i + ' / ' + (steps.length - 1);
+    arrow.style.display = s.arrow ? 'block' : 'none';
+    bval.textContent = s.bval;
+    var map = {
+      empty: { fill:'#f8f9fa', stroke:'#dee2e6', dash:'4 3', addr:'#63676f', bv:'#114f8c' },
+      alloc: { fill:'#d3f9d8', stroke:'#2f9e44', dash:'0',   addr:'#1d6b2e', bv:'#1d6b2e' },
+      read:  { fill:'#d0ebff', stroke:'#1971c2', dash:'0',   addr:'#114f8c', bv:'#114f8c' },
+      freed: { fill:'#f1f3f5', stroke:'#868e96', dash:'4 3', addr:'#63676f', bv:'#63676f' },
+      uaf:   { fill:'#ffe3e3', stroke:'#c92a2a', dash:'0',   addr:'#8a1c1c', bv:'#c92a2a' }
+    };
+    var m = map[s.block];
+    block.setAttribute('fill', m.fill);
+    block.setAttribute('stroke', m.stroke);
+    block.setAttribute('stroke-dasharray', m.dash);
+    addr.setAttribute('fill', m.addr);
+    bval.setAttribute('fill', m.bv);
+    arrow.setAttribute('stroke', s.block === 'uaf' ? '#c92a2a' : '#7048e8');
+    arrow.setAttribute('marker-end', 'url(#cbAr)');
+  }
+  document.getElementById('cptr_step').addEventListener('click', function(){
+    if(i < steps.length - 1){ i++; paint(); }
+  });
+  document.getElementById('cptr_reset').addEventListener('click', function(){
+    i = 0; paint();
+  });
+  paint();
+})();
+</script>
+
+<div class="insight"><p><strong>Interview angle:</strong> Expect to trace pointer expressions live and explain <code>arr[i] == *(arr+i)</code>. The dangling-pointer walk-through above is the exact story interviewers want: "after <code>free(p)</code>, is <code>p</code> safe to use?" (No — it's dangling; null it out.) Being able to say <em>why</em> use-after-free is dangerous — the freed block gets reused, so your write lands on someone else's data — separates people who've used C from people who've only read about it.</p></div>
+</div>
+</div>
+
+<!-- ARRAYS & STRINGS -->
+<div class="section" id="arrays">
+<div class="card">
+<h2>Arrays &amp; C-strings</h2>
+<p>An array in C is <strong>not</strong> a smart object — it's a contiguous block of elements, and its name decays to a pointer to the first element in almost every expression. There is no stored length and no bounds checking.</p>
+<pre><span class="kw">int</span> a[<span class="num">5</span>] = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>};   <span class="cm">// a[3], a[4] auto-zeroed -&gt; 0, 0</span>
+<span class="kw">size_t</span> n = <span class="kw">sizeof</span> a / <span class="kw">sizeof</span> a[<span class="num">0</span>];  <span class="cm">// 5 — works ONLY where a is a real array</span>
+a[<span class="num">7</span>] = <span class="num">99</span>;   <span class="cm">// out of bounds: no error, silently corrupts adjacent memory (UB)</span></pre>
+<div class="warn"><p>When you pass an array to a function it <strong>decays to a pointer</strong> — the length is lost. Inside <code>void f(int a[])</code>, <code>sizeof a</code> is the size of a <em>pointer</em>, not the array. Always pass the length alongside: <code>void f(int *a, size_t n)</code>.</p></div>
+
+<h3>C-strings: a char array ending in <code>'\0'</code></h3>
+<p>C has no string type. A string is a <code>char</code> array whose end is marked by a <strong>null terminator</strong> byte <code>'\0'</code> (value 0). Every string function relies on that byte being present.</p>
+<pre><span class="kw">char</span> s[] = <span class="str">"hi"</span>;   <span class="cm">// actually 3 bytes: 'h','i','\0'</span></pre>
+<svg viewBox="0 0 520 110" style="max-width:100%;height:auto" role="img" aria-label="The string hi stored as three bytes: h, i, and the null terminator backslash-zero.">
+  <g font-family="'JetBrains Mono',monospace" font-size="14">
+    <rect x="40"  y="30" width="70" height="46" fill="#d0ebff" stroke="#1971c2"/><text x="75"  y="59" text-anchor="middle" fill="#114f8c">'h'</text>
+    <rect x="110" y="30" width="70" height="46" fill="#d0ebff" stroke="#1971c2"/><text x="145" y="59" text-anchor="middle" fill="#114f8c">'i'</text>
+    <rect x="180" y="30" width="70" height="46" fill="#ffe3e3" stroke="#c92a2a"/><text x="215" y="59" text-anchor="middle" fill="#8a1c1c">'\0'</text>
+    <text x="75"  y="94" text-anchor="middle" fill="#63676f" font-size="11">s[0]</text>
+    <text x="145" y="94" text-anchor="middle" fill="#63676f" font-size="11">s[1]</text>
+    <text x="215" y="94" text-anchor="middle" fill="#63676f" font-size="11">s[2] terminator</text>
+    <text x="262" y="59" fill="#495057" font-size="12">strlen(s) == 2, but 3 bytes stored</text>
+  </g>
+</svg>
+<pre><span class="kw">size_t</span> len = strlen(s);   <span class="cm">// 2 — scans until it hits '\0' (O(n), not O(1)!)</span>
+
+<span class="kw">char</span> dst[<span class="num">4</span>];
+strcpy(dst, <span class="str">"abc"</span>);       <span class="cm">// copies 'a','b','c','\0' — exactly fits</span>
+<span class="cm">// strcpy(dst, "abcd");    // BUFFER OVERFLOW: 5 bytes into a 4-byte buffer (UB)</span></pre>
+<div class="warn"><p><strong>The null terminator is load-bearing.</strong> Lose it and <code>strlen</code>/<code>printf("%s")</code> run off the end of the buffer scanning for a zero that isn't there. <code>strncpy</code> notoriously may <em>not</em> null-terminate if the source fills the buffer — always ensure termination yourself.</p></div>
+
+<h3>Safer copying</h3>
+<pre><span class="kw">char</span> dst[<span class="num">8</span>];
+snprintf(dst, <span class="kw">sizeof</span> dst, <span class="str">"%s"</span>, src);  <span class="cm">// bounded; always null-terminates</span></pre>
+<div class="tip"><p>Prefer bounded functions (<code>snprintf</code>) and always pass buffer sizes. The unbounded classics — <code>gets</code> (removed from the standard), <code>strcpy</code>, <code>sprintf</code>, <code>strcat</code> — are the source of countless buffer-overflow vulnerabilities.</p></div>
+
+<div class="insight"><p><strong>Interview angle:</strong> "Implement <code>strlen</code>" / "reverse a C-string in place" / "why is <code>strlen</code> O(n)?" all test whether you truly get the null-terminator model. Mention that <code>char *s = "literal"</code> points at <em>read-only</em> memory (writing to it is UB), whereas <code>char s[] = "literal"</code> is a writable copy on the stack — a classic trap.</p></div>
+</div>
+</div>
+
+<!-- STRUCTS & UNIONS -->
+<div class="section" id="structs">
+<div class="card">
+<h2>Structs &amp; unions</h2>
+<p>A <strong>struct</strong> groups related fields into one type — like a small record. Fields are laid out in memory in order (with padding for alignment).</p>
+<pre><span class="kw">struct</span> Point { <span class="kw">int</span> x; <span class="kw">int</span> y; };
+
+<span class="kw">struct</span> Point a = { <span class="num">3</span>, <span class="num">4</span> };   <span class="cm">// aggregate init</span>
+<span class="kw">struct</span> Point b = { .x = <span class="num">3</span>, .y = <span class="num">4</span> };  <span class="cm">// designated init (C99+)</span>
+printf(<span class="str">"%d\n"</span>, a.x);              <span class="cm">// dot: access on a value</span>
+
+<span class="kw">struct</span> Point *p = &amp;a;
+printf(<span class="str">"%d\n"</span>, p-&gt;y);              <span class="cm">// arrow: access through a pointer  (p-&gt;y == (*p).y)</span></pre>
+<div class="tip"><p><code>obj.field</code> when you hold the value; <code>ptr-&gt;field</code> when you hold a pointer. <code>p-&gt;y</code> is pure sugar for <code>(*p).y</code>.</p></div>
+
+<h3>typedef — dropping the <code>struct</code> keyword</h3>
+<pre><span class="kw">typedef struct</span> { <span class="kw">int</span> x, y; } Point;   <span class="cm">// now just "Point", no "struct"</span>
+Point c = { <span class="num">1</span>, <span class="num">2</span> };</pre>
+
+<h3>Alignment &amp; padding</h3>
+<p>The compiler inserts padding so each field sits on its natural alignment boundary. Field order affects <code>sizeof</code>:</p>
+<pre><span class="kw">struct</span> Bad  { <span class="kw">char</span> c; <span class="kw">int</span> i; <span class="kw">char</span> d; };  <span class="cm">// often 12 bytes (padding around c, d)</span>
+<span class="kw">struct</span> Good { <span class="kw">int</span> i; <span class="kw">char</span> c; <span class="kw">char</span> d; };  <span class="cm">// often 8 bytes (fields packed better)</span></pre>
+
+<h3>Unions — one storage, many interpretations</h3>
+<p>A <strong>union</strong> overlays all its members in the <em>same</em> memory. Its size is the largest member. You store one member at a time; reading a different one reinterprets the bytes.</p>
+<pre><span class="kw">union</span> Value {
+    <span class="kw">int</span>   i;
+    <span class="kw">float</span> f;
+    <span class="kw">char</span>  bytes[<span class="num">4</span>];
+};                       <span class="cm">// sizeof == 4 (all share the same 4 bytes)</span>
+
+<span class="kw">union</span> Value v;
+v.i = <span class="num">1</span>;                  <span class="cm">// store as int</span>
+<span class="cm">// reading v.f now reinterprets those bytes as a float — you must track which is active</span></pre>
+<p>The idiomatic use is a <strong>tagged union</strong> — a struct pairing a union with an enum saying which member is live:</p>
+<pre><span class="kw">struct</span> Var {
+    <span class="kw">enum</span> { INT, FLT } tag;   <span class="cm">// which member is valid</span>
+    <span class="kw">union</span> { <span class="kw">int</span> i; <span class="kw">float</span> f; } as;
+};
+<span class="cm">// This is how interpreters/JSON parsers store "a value of one of N types".</span></pre>
+<div class="warn"><p>Reading a union member other than the one last written is only well-defined for the "type punning" cases the standard blesses; in general it's a portability trap. The <code>tag</code> field exists precisely so you never do it by accident.</p></div>
+
+<div class="insight"><p><strong>Interview angle:</strong> "Difference between a struct and a union?" — struct = sum of sizes (fields coexist); union = max of sizes (fields overlap). Follow-ups: "why does struct field order change <code>sizeof</code>?" (alignment/padding) and "how would you represent a value that's one of several types?" (tagged union). Being able to draw the byte layout wins the question.</p></div>
+</div>
+</div>
+
+<!-- MANUAL MEMORY -->
+<div class="section" id="heap">
+<div class="card">
+<h2>Manual memory management</h2>
+<p>The heap is yours to manage. Four functions from <code>&lt;stdlib.h&gt;</code> do it all:</p>
+<table>
+<tr><th>Function</th><th>What it does</th></tr>
+<tr><td><code>malloc(n)</code></td><td>Allocate <code>n</code> bytes, <em>uninitialized</em> (contains garbage). Returns <code>NULL</code> on failure.</td></tr>
+<tr><td><code>calloc(count, size)</code></td><td>Allocate <code>count*size</code> bytes, <strong>zeroed</strong>. Also checks the multiplication for overflow.</td></tr>
+<tr><td><code>realloc(p, n)</code></td><td>Resize a block to <code>n</code> bytes, preserving contents; may move it (returns the new address).</td></tr>
+<tr><td><code>free(p)</code></td><td>Return a block to the allocator. Every <code>malloc</code> needs exactly one <code>free</code>.</td></tr>
+</table>
+<pre><span class="kw">int</span> *a = malloc(<span class="num">10</span> * <span class="kw">sizeof</span> *a);   <span class="cm">// 10 ints; sizeof *a adapts if type changes</span>
+<span class="kw">if</span> (!a) { <span class="cm">/* handle allocation failure */</span> <span class="kw">return</span> <span class="num">1</span>; }
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; <span class="num">10</span>; i++) a[i] = i;
+
+<span class="kw">int</span> *bigger = realloc(a, <span class="num">20</span> * <span class="kw">sizeof</span> *a);
+<span class="kw">if</span> (!bigger) { free(a); <span class="kw">return</span> <span class="num">1</span>; }   <span class="cm">// realloc failed: original 'a' still valid</span>
+a = bigger;                              <span class="cm">// commit only on success</span>
+
+free(a);      <span class="cm">// done</span>
+a = NULL;     <span class="cm">// prevent accidental reuse</span></pre>
+<div class="warn"><p><strong>The <code>realloc</code> trap:</strong> never write <code>a = realloc(a, n);</code>. If it fails it returns <code>NULL</code> but the original block is <em>not</em> freed — you've just leaked it and lost the only pointer. Assign to a temporary first.</p></div>
+
+<h3>The four classic heap bugs</h3>
+<pre><span class="cm">// 1. LEAK — allocation with no matching free</span>
+<span class="kw">void</span> leak(<span class="kw">void</span>) { <span class="kw">int</span> *p = malloc(<span class="num">100</span>); }  <span class="cm">// p dies, block stays allocated forever</span>
+
+<span class="cm">// 2. USE-AFTER-FREE — touch memory after freeing it</span>
+free(p); *p = <span class="num">5</span>;                          <span class="cm">// UB: block may be reused</span>
+
+<span class="cm">// 3. DOUBLE FREE — free the same block twice</span>
+free(p); free(p);                          <span class="cm">// UB: corrupts allocator bookkeeping</span>
+
+<span class="cm">// 4. BUFFER OVERFLOW — write past the allocated size</span>
+<span class="kw">char</span> *buf = malloc(<span class="num">8</span>);
+strcpy(buf, <span class="str">"this is way too long"</span>);       <span class="cm">// UB: heap corruption</span></pre>
+<div class="tip"><p><strong>Discipline that eliminates most of these:</strong> (1) pair every <code>malloc</code> with a <code>free</code> at the same "ownership level"; (2) set pointers to <code>NULL</code> after freeing — <code>free(NULL)</code> is a safe no-op, so this also neutralizes double frees; (3) never let two pointers think they own the same block; (4) always allocate/copy with an explicit size. Tools like Valgrind and AddressSanitizer (<code>cc -fsanitize=address</code>) catch these at run time.</p></div>
+
+<h3>Ownership — the concept C forces you to design</h3>
+<p>For every allocation, answer: <em>who is responsible for freeing it, and when?</em> C won't track this for you. Document it (e.g. "caller owns the returned buffer"). This is the same ownership discipline that later languages formalize with RAII or borrow checkers — in C it lives in your head and your comments.</p>
+
+<div class="insight"><p><strong>Interview angle:</strong> Given a snippet, "find the memory bug" is a staple. Scan for: allocation paths with no <code>free</code> (leak), any use after <code>free</code>, <code>free</code> called twice, writes without a size check (overflow), and the <code>a = realloc(a, …)</code> anti-pattern. State the <em>ownership contract</em> of any function that returns a pointer — that's the senior signal.</p></div>
+</div>
+</div>
+
+<!-- LANGUAGE DETAILS -->
+<div class="section" id="lang">
+<div class="card">
+<h2>Undefined behavior</h2>
+<p>The C standard defines behavior only for correct programs. Cross certain lines and the standard imposes <strong>no requirements at all</strong> — the compiler may do anything: crash, produce garbage, or (worst) appear to work until it doesn't. This is <strong>undefined behavior (UB)</strong>, and it's the root of most C security bugs.</p>
+<p>Common UB: reading uninitialized memory, out-of-bounds access, dereferencing <code>NULL</code> or a dangling pointer, signed integer overflow, dividing by zero, data races.</p>
+<pre><span class="kw">int</span> x;               <span class="cm">// uninitialized</span>
+<span class="kw">if</span> (x == <span class="num">0</span>) ...      <span class="cm">// UB: reading indeterminate value</span>
+
+<span class="kw">int</span> i = INT_MAX;
+i = i + <span class="num">1</span>;           <span class="cm">// UB: signed overflow (NOT guaranteed to wrap)</span></pre>
+<div class="warn"><p>Modern compilers <em>optimize assuming UB never happens</em>. Because signed overflow is UB, a compiler may delete an overflow check entirely, or assume a loop terminates. "It worked on my machine" is meaningless with UB — a new compiler version can silently change the result. Treat UB as a bug even when it seems to work.</p></div>
+</div>
+
+<div class="card">
+<h2>The preprocessor</h2>
+<p>A pure <strong>text-substitution</strong> pass that runs before compilation. It doesn't understand C — it just manipulates text.</p>
+<pre><span class="pp">#define PI 3.14159</span>            <span class="cm">// object-like macro</span>
+<span class="pp">#define SQUARE(x) ((x) * (x))</span>   <span class="cm">// function-like macro — parenthesize everything!</span>
+<span class="pp">#include</span> <span class="str">&lt;stdio.h&gt;</span>              <span class="cm">// paste a header</span>
+
+<span class="pp">#ifdef DEBUG</span>                    <span class="cm">// conditional compilation</span>
+    printf(<span class="str">"debug: %d\n"</span>, x);
+<span class="pp">#endif</span></pre>
+<div class="warn"><p><strong>Macro pitfalls (why they're text, not functions):</strong> <code>#define SQUARE(x) x*x</code> makes <code>SQUARE(a+b)</code> expand to <code>a+b*a+b</code> — wrong. And <code>SQUARE(i++)</code> increments twice. Parenthesize every argument and the whole body, and avoid side effects in macro arguments. In modern C, prefer <code>const</code>/<code>enum</code> for constants and <code>static inline</code> functions over function-like macros.</p></div>
+<div class="tip"><p>Include guards (<code>#ifndef X / #define X / #endif</code>) stop a header being pasted twice into one translation unit — which would cause redefinition errors.</p></div>
+</div>
+
+<div class="card">
+<h2><code>const</code>, <code>static</code>, <code>volatile</code></h2>
+<h3>const — "this won't change through this name"</h3>
+<pre><span class="kw">const int</span> MAX = <span class="num">100</span>;               <span class="cm">// read-only value</span>
+<span class="kw">void</span> print(<span class="kw">const char</span> *s);          <span class="cm">// promise: won't modify *s (documents intent)</span>
+
+<span class="cm">// Pointer const-ness — read right to left:</span>
+<span class="kw">const int</span> *p;        <span class="cm">// pointer to const int   (can't change *p, can change p)</span>
+<span class="kw">int</span> *<span class="kw">const</span> q = &amp;x;    <span class="cm">// const pointer to int   (can change *q, can't change q)</span></pre>
+
+<h3>static — two very different meanings</h3>
+<pre><span class="cm">// 1. At file scope: internal linkage — symbol is private to this .c file</span>
+<span class="kw">static int</span> counter = <span class="num">0</span>;     <span class="cm">// not visible to the linker in other files</span>
+<span class="kw">static void</span> helper(<span class="kw">void</span>);      <span class="cm">// file-private function</span>
+
+<span class="cm">// 2. Inside a function: persistent local — one instance, retains value across calls</span>
+<span class="kw">int</span> next_id(<span class="kw">void</span>) {
+    <span class="kw">static int</span> id = <span class="num">0</span>;      <span class="cm">// initialized once; lives in static storage (BSS), not the stack</span>
+    <span class="kw">return</span> ++id;             <span class="cm">// 1, 2, 3, ... across calls</span>
+}</pre>
+
+<h3>volatile — "the compiler must not assume"</h3>
+<p>Tells the compiler this variable can change outside the visible program flow (hardware register, memory-mapped I/O, a variable touched by a signal handler). The compiler must re-read it from memory every time and never optimize accesses away.</p>
+<pre><span class="kw">volatile int</span> *reg = (<span class="kw">volatile int</span> *)<span class="num">0x40021000</span>;   <span class="cm">// a hardware register</span>
+<span class="kw">while</span> (*reg == <span class="num">0</span>) { }   <span class="cm">// re-reads *reg each iteration; without volatile, may loop forever</span></pre>
+<div class="warn"><p><code>volatile</code> is <em>not</em> for thread safety — it gives no atomicity and no ordering guarantees. For concurrency use <code>_Atomic</code> / <code>&lt;stdatomic.h&gt;</code> or a mutex. Its real domains are memory-mapped hardware and <code>sig_atomic_t</code> flags.</p></div>
+</div>
+
+<div class="card">
+<h2>Function pointers</h2>
+<p>Functions have addresses too, so you can store one in a variable and call through it — C's mechanism for callbacks, plugin tables, and dispatch.</p>
+<pre><span class="kw">int</span> add(<span class="kw">int</span> a, <span class="kw">int</span> b) { <span class="kw">return</span> a + b; }
+<span class="kw">int</span> sub(<span class="kw">int</span> a, <span class="kw">int</span> b) { <span class="kw">return</span> a - b; }
+
+<span class="kw">int</span> (*op)(<span class="kw">int</span>, <span class="kw">int</span>);   <span class="cm">// op: pointer to "function taking (int,int) returning int"</span>
+op = add;                 <span class="cm">// function name decays to its address</span>
+printf(<span class="str">"%d\n"</span>, op(<span class="num">2</span>, <span class="num">3</span>));   <span class="cm">// 5 — call through the pointer</span>
+
+<span class="cm">// Callback: qsort takes a comparator function pointer</span>
+<span class="kw">int</span> cmp(<span class="kw">const void</span> *a, <span class="kw">const void</span> *b) {
+    <span class="kw">int</span> x = *(<span class="kw">const int</span> *)a, y = *(<span class="kw">const int</span> *)b;
+    <span class="kw">return</span> (x &gt; y) - (x &lt; y);   <span class="cm">// overflow-safe: subtraction could overflow (UB)</span>
+}
+<span class="kw">int</span> arr[] = {<span class="num">3</span>, <span class="num">1</span>, <span class="num">2</span>};
+qsort(arr, <span class="num">3</span>, <span class="kw">sizeof arr</span>[<span class="num">0</span>], cmp);   <span class="cm">// generic sort via callback</span></pre>
+<div class="tip"><p>An array of function pointers is a <strong>dispatch table</strong> — how you replace a big <code>switch</code>, and conceptually how C++ virtual dispatch (the vtable) works under the hood: an object carries a pointer to a table of function pointers.</p></div>
+
+<div class="insight"><p><strong>Interview angle:</strong> Reading a tricky declaration like <code>int (*(*f)(int))[3]</code> tests your grasp of C's declarator syntax (use the right-left rule, or <code>cdecl</code>). More practically: "how does <code>qsort</code> stay generic?" (a <code>void*</code> comparator function pointer) and "how would you implement runtime dispatch in C?" (a struct of function pointers — a hand-rolled vtable).</p></div>
+</div>
+</div>
+
+<!-- INTERVIEW -->
+<div class="section" id="interview">
+<div class="card">
+<h2>Where C still rules</h2>
+<p>Decades on, C remains the default where you must be <strong>close to the metal, dependency-free, and predictable</strong>:</p>
+<ul>
+  <li><strong>Operating-system kernels</strong> — Linux, the BSDs, and most RTOSes are C. Kernels can't assume a runtime, a garbage collector, or even a heap; C's "nothing hidden" model fits.</li>
+  <li><strong>Embedded-adjacent &amp; firmware</strong> — microcontrollers, device drivers, bootloaders. Tiny RAM, direct hardware registers (that's where <code>volatile</code> proves its worth), sometimes no OS at all.</li>
+  <li><strong>Language runtimes &amp; interpreters</strong> — the reference implementations of Python (CPython), Ruby (MRI), Lua, and many VMs are C. Tagged unions and function-pointer dispatch (both above) are exactly how a bytecode interpreter is built.</li>
+  <li><strong>Systems software &amp; infrastructure</strong> — databases, network stacks, codecs, compilers, and the C standard library itself. Anywhere a few percent of performance or a stable ABI matters.</li>
+  <li><strong>The universal ABI</strong> — nearly every language can call C ("FFI"). C is the common language that lets ecosystems interoperate.</li>
+</ul>
+<p>Where C is <em>not</em> the right reach today: application logic, web services, and most business software — the manual-memory cost isn't worth it when a higher-level language (or C++/Rust for systems work) buys you safety.</p>
+</div>
+
+<div class="card">
+<h2>Interview Q&amp;A — likely C questions</h2>
+
+<div class="qa"><div class="q">"What's the difference between the stack and the heap?"</div>
+<p>Stack: automatic lifetime tied to function calls, fast (bump a pointer), small, freed on return — the compiler manages it. Heap: manual lifetime via <code>malloc</code>/<code>free</code>, larger, slower to allocate, lives until you free it. Prefer the stack; use the heap when size is dynamic or the object must outlive the current frame.</p></div>
+
+<div class="qa"><div class="q">"What does <code>*(p + 2)</code> do, and why isn't it <code>p + 2 bytes</code>?"</div>
+<p>Pointer arithmetic is scaled by <code>sizeof(*p)</code>. <code>p + 2</code> advances by two <em>elements</em>, then <code>*</code> reads that element. It's identical to <code>p[2]</code>, because <code>p[i]</code> is defined as <code>*(p + i)</code>.</p></div>
+
+<div class="qa"><div class="q">"Find the memory bug in this function."</div>
+<p>Scan for: allocations with no matching <code>free</code> (leak), use of a pointer after <code>free</code> (use-after-free), freeing the same pointer twice (double free), writes without a bounds/size check (buffer overflow), returning the address of a local (dangling stack pointer), and <code>a = realloc(a, n)</code> (leak on failure). State the ownership contract too.</p></div>
+
+<div class="qa"><div class="q">"Why is a C-string O(n) to get the length?"</div>
+<p>There's no stored length — a string is a <code>char</code> array ending in <code>'\0'</code>. <code>strlen</code> scans byte by byte until it finds the terminator. Lose the terminator and it reads off the end of the buffer (UB / overflow).</p></div>
+
+<div class="qa"><div class="q">"struct vs union?"</div>
+<p>A struct's size is (roughly) the sum of its fields — they coexist. A union's size is its largest member — all members share the same storage, so only one is valid at a time. The idiomatic safe use is a tagged union (a struct with an enum tag plus a union).</p></div>
+
+<div class="qa"><div class="q">"What is undefined behavior, and why care if it 'works'?"</div>
+<p>UB means the standard imposes no requirements — the compiler may do anything. Optimizers assume UB never occurs, so they can delete your checks or change behavior between versions. Code that relies on UB is a latent bug even when it currently produces the right answer.</p></div>
+
+<div class="qa"><div class="q">"When would you use <code>volatile</code>?"</div>
+<p>When a value can change outside the normal program flow: memory-mapped hardware registers, a variable modified in a signal handler, or a spin on a flag another context updates. It forces the compiler to re-read from memory and not optimize accesses away. It is <em>not</em> a concurrency primitive — use atomics or locks for threads.</p></div>
+
+<div class="qa"><div class="q">"What's the difference between <code>malloc</code> and <code>calloc</code>?"</div>
+<p><code>malloc(n)</code> returns <code>n</code> uninitialized bytes (garbage). <code>calloc(count, size)</code> returns zeroed memory and checks <code>count*size</code> for multiplication overflow. Use <code>calloc</code> when you need zeroed memory or are allocating an array by count.</p></div>
+
+<div class="qa"><div class="q">"How do you do a callback / runtime dispatch in C?"</div>
+<p>Function pointers. Store a function's address in a variable typed <code>ret (*)(args)</code> and call through it — that's how <code>qsort</code> takes a comparator. A struct or array of function pointers is a dispatch table, the same idea as a C++ vtable.</p></div>
+
+<div class="tip"><p><strong>Positioning for coming-from-higher-level candidates:</strong> lead with the mental model — "in C, a variable is a named box at an address; the language is mostly about the stack, the heap, and pointers between them." Show you can name where any variable lives and when it dies, state ownership for any pointer you return, and spot the classic UB. That model, not syntax trivia, is what a C interview is really checking.</p></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Undefined behavior (UB)</strong></td><td>Code the standard places no requirements on; the compiler may do anything, including silently misoptimize.</td></tr>
+<tr><td><strong>Translation unit</strong></td><td>One <code>.c</code> file plus all headers it includes, compiled independently as a single unit.</td></tr>
+<tr><td><strong>Object file (<code>.o</code>)</strong></td><td>Machine code with a symbol table and unresolved references, output by the assembler.</td></tr>
+<tr><td><strong>Linker</strong></td><td>Tool that resolves symbols across object files and libraries into one executable.</td></tr>
+<tr><td><strong>Declaration vs. definition</strong></td><td>A declaration promises something exists somewhere; a definition actually creates it.</td></tr>
+<tr><td><strong>Static vs. dynamic linking</strong></td><td>Static copies library code into the binary; dynamic references a shared library loaded at run time.</td></tr>
+<tr><td><strong>Stack</strong></td><td>Memory region for locals and call frames; automatically freed when a function returns.</td></tr>
+<tr><td><strong>Heap</strong></td><td>Memory region you allocate and free manually with <code>malloc</code>/<code>free</code>; lives until freed.</td></tr>
+<tr><td><strong>Text / data / BSS segments</strong></td><td>Regions for code, initialized globals, and zero-initialized globals, respectively (BSS = Block Started by Symbol).</td></tr>
+<tr><td><strong>Dereference (<code>*p</code>)</strong></td><td>Follow a pointer to read or write the value at the address it holds.</td></tr>
+<tr><td><strong>Array decay</strong></td><td>An array name automatically converts to a pointer to its first element, losing its length.</td></tr>
+<tr><td><strong>Dangling pointer</strong></td><td>A pointer to memory that has been freed or whose variable has gone out of scope.</td></tr>
+<tr><td><strong>Use-after-free</strong></td><td>Reading or writing through a pointer after its memory was freed — undefined behavior.</td></tr>
+<tr><td><strong>Null terminator (<code>'\0'</code>)</strong></td><td>The zero byte marking the end of a C-string; string functions scan for it.</td></tr>
+<tr><td><strong>Buffer overflow</strong></td><td>Writing past the end of an array or allocation, corrupting adjacent memory.</td></tr>
+<tr><td><strong>Tagged union</strong></td><td>A struct pairing a union with an enum tag that records which member is currently valid.</td></tr>
+<tr><td><strong>Function pointer</strong></td><td>A variable holding a function's address, enabling callbacks and runtime dispatch.</td></tr>
+<tr><td><strong>vtable (virtual method table)</strong></td><td>A table of function pointers used for dynamic dispatch; a polymorphic C++ object (one with virtual functions) carries a hidden pointer (vptr) to one.</td></tr>
+<tr><td><strong>ABI (Application Binary Interface)</strong></td><td>The binary contract — calling conventions and layout — that lets compiled code interoperate.</td></tr>
+<tr><td><strong>FFI (Foreign Function Interface)</strong></td><td>Mechanism letting one language call functions written in another, typically C.</td></tr>
+</table>
+</div>
+
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  evt.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="code_review_training.html">‹ Code Review Practice</a><a class="bkc" href="index.html">📖 Contents</a><a href="cpp_refresher.html">C++ Refresher ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

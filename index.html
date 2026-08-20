@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="A comprehensive, free interview-prep handbook: data structures & algorithms, curated coding problems, system design, databases, AI/ML systems, security, mobile, and language refreshers — with worked, execution-tested solutions.">
+<title>The Interview Prep Handbook — Coding &amp; System Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --nv: #76b900;
+  --nv-l: #e8f5cc;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* COVER HEADER */
+.cover {
+  background:
+    radial-gradient(1200px 500px at 15% -10%, rgba(118,185,0,0.18), transparent 60%),
+    linear-gradient(135deg, #0b1220 0%, #14264a 42%, #1e40af 100%);
+  padding: 64px 44px 56px;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid #0b1220;
+}
+.cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(700px 400px at 80% 20%, #000, transparent 75%);
+  pointer-events: none;
+}
+.cover-inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; }
+.cover-tag {
+  font-size: 11px; font-weight: 600; color: #93c5fd;
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px;
+}
+.cover-tag .dot { color: #8ac53e; }
+.cover h1 {
+  font-size: 46px; font-weight: 800; color: #fff; line-height: 1.1;
+  letter-spacing: -0.5px; margin-bottom: 14px; max-width: 900px;
+}
+.cover h1 span { color: #93c5fd; }
+.cover .sub {
+  color: rgba(255,255,255,0.82); font-size: 17px; font-weight: 400;
+  max-width: 760px; margin-bottom: 26px;
+}
+.cover-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+.stat {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px; padding: 10px 16px; backdrop-filter: blur(4px);
+}
+.stat b { display: block; font-size: 20px; font-weight: 800; color: #fff; line-height: 1.1; }
+.stat span { font-size: 11.5px; color: rgba(255,255,255,0.7); letter-spacing: .3px; }
+
+/* CONTENT */
+.content { padding: 40px 44px 40px; max-width: 1100px; margin: 0 auto; }
+
+.section { margin-bottom: 38px; }
+.section-title {
+  font-size: 22px; font-weight: 800; color: var(--text);
+  margin-bottom: 6px; letter-spacing: -0.3px;
+}
+.section-sub { color: var(--text3); font-size: 14px; margin-bottom: 18px; }
+
+/* CARD */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 22px 26px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-size: 16px; font-weight: 700; color: var(--text);
+  margin-bottom: 10px; display: flex; align-items: center; gap: 9px;
+}
+.card-title .icon { font-size: 19px; }
+.card p { color: var(--text2); margin-bottom: 10px; }
+.card p:last-child { margin-bottom: 0; }
+.card ul { padding-left: 20px; margin: 8px 0 4px; }
+.card li { margin-bottom: 6px; color: var(--text2); }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* TRACKS */
+.tracks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.track {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--blue);
+  border-radius: var(--r);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-sm);
+}
+.track.coding { border-top-color: var(--blue); }
+.track.design { border-top-color: var(--purple); }
+.track.craft { border-top-color: var(--nv); }
+.track h3 { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+.track .who { font-size: 12.5px; color: var(--text3); margin-bottom: 12px; }
+.track ol { padding-left: 18px; margin: 0; }
+.track li { font-size: 13px; margin-bottom: 8px; color: var(--text2); }
+.track li b { color: var(--text); }
+
+/* TOC */
+.part { margin-bottom: 26px; }
+.part-head {
+  display: flex; align-items: baseline; gap: 12px;
+  padding-bottom: 8px; margin-bottom: 12px;
+  border-bottom: 2px solid var(--blue-l);
+}
+.part-roman {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, #1e40af, #2563eb);
+  border-radius: 8px; padding: 3px 11px; letter-spacing: 1px;
+  flex: 0 0 auto;
+}
+.part-name { font-size: 18px; font-weight: 800; color: var(--text); }
+.part-count { font-size: 12px; color: var(--text3); margin-left: auto; }
+
+.chapters { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.chapter {
+  display: block;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--bg4);
+  border-radius: 10px;
+  padding: 12px 16px;
+  text-decoration: none;
+  transition: all .16s ease;
+}
+.chapter:hover {
+  border-left-color: var(--blue);
+  background: var(--bg3);
+  transform: translateX(2px);
+  box-shadow: var(--shadow-sm);
+}
+.chapter .ch-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 600; color: var(--blue-d);
+  text-transform: uppercase; letter-spacing: .5px;
+}
+.chapter .ch-title { font-size: 14.5px; font-weight: 700; color: var(--text); margin: 1px 0 3px; }
+.chapter .ch-desc { font-size: 12.5px; color: var(--text3); line-height: 1.5; }
+
+/* FOOTER */
+.footer {
+  background: #0b1220;
+  color: #94a3b8;
+  text-align: center;
+  padding: 28px 20px;
+  font-size: 13px;
+}
+.footer a { color: #7aa2f7; text-decoration: none; font-weight: 600; }
+.footer a:hover { text-decoration: underline; }
+.footer .fnote { margin-top: 8px; font-size: 11.5px; color: #94a3b8; }
+
+@media (max-width: 860px) {
+  .cover { padding: 44px 20px 40px; }
+  .cover h1 { font-size: 32px; }
+  .content { padding: 28px 20px; }
+  .two-col, .tracks, .chapters { grid-template-columns: 1fr; }
+}
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* A grid item defaults to min-width:auto (min-content), so a long chapter
+     title/desc can force the card wider than its 1fr track and spill past the
+     viewport (~8px h-scroll at 390px). Let it shrink to the track and wrap. */
+  .chapter{min-width:0 !important;}
+  .chapter .ch-title,.chapter .ch-desc{overflow-wrap:anywhere;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+  <noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-inner">
+    <div class="cover-tag">Coding Tests <span class="dot">·</span> System Design <span class="dot">·</span> Engineering Craft</div>
+    <h1>The Interview Prep <span>Handbook</span></h1>
+    <div class="sub">A self-contained field guide for engineers preparing for senior-level (L5/L6) technical interviews — from algorithmic problem-solving to large-scale system design and the craft of modern engineering.</div>
+    <div class="cover-stats">
+      <div class="stat"><b>15</b><span>PARTS</span></div>
+      <div class="stat"><b>105</b><span>CHAPTERS</span></div>
+      <div class="stat"><b>3</b><span>LEARNING TRACKS</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- PREFACE + HOW TO USE -->
+  <div class="section">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title"><span class="icon">&#128214;</span> Preface</div>
+        <p>This handbook collects the material you need to walk into a senior-level technical loop with confidence. It spans the two pillars every FAANG-style interview tests — <strong>coding under time pressure</strong> and <strong>designing systems that scale</strong> — plus the day-to-day craft that separates strong engineers from great ones.</p>
+        <p><strong>Who it's for:</strong> software engineers preparing for coding tests and system-design rounds at large technology companies, and anyone who wants a structured, concise refresher on the fundamentals. Each chapter is written to stand alone, so you can read cover-to-cover or jump straight to a gap.</p>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">&#129517;</span> How to use this book</div>
+        <ul>
+          <li><strong>Diagnose first.</strong> Skim the Table of Contents and mark the topics you can't explain out loud. Those are your starting points.</li>
+          <li><strong>Follow a track.</strong> Pick the Learning Track that matches your interview (coding, system design, or craft) and read its parts in order.</li>
+          <li><strong>Practice actively.</strong> The coding chapters pair with the ramp-up plans in Part III — read a pattern, then drill it against a timed problem set.</li>
+          <li><strong>Rehearse aloud.</strong> For design and craft chapters, close the page and re-derive the key trade-offs from memory. If you can teach it, you know it.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEARNING TRACKS -->
+  <div class="section">
+    <h2 class="section-title">Learning Tracks</h2>
+    <div class="section-sub">Three curated reading paths. Follow the parts in the order shown.</div>
+    <div class="tracks">
+      <div class="track coding">
+        <h3>Coding-Test Track</h3>
+        <div class="who">Parts I–III, X · for algorithm &amp; data-structure rounds</div>
+        <ol>
+          <li><b>Part I</b> — Build the toolkit: complexity, patterns, recursion, and interview math (Ch. 1–5).</li>
+          <li><b>Part II</b> — Work the data structures &amp; algorithms in order, arrays through advanced topics (Ch. 1–11).</li>
+          <li><b>Part III</b> — Lock it in with a timed ramp-up plan: 1, 2, or 4 weeks (Ch. 1–3).</li>
+          <li><b>Part X</b> — Drill curated Google-style problems with worked, execution-tested solutions and interviewer probes (Ch. 1–12).</li>
+        </ol>
+      </div>
+      <div class="track design">
+        <h3>System-Design Track</h3>
+        <div class="who">Parts IV–VII, XI–XV · for architecture &amp; design rounds</div>
+        <ol>
+          <li><b>Part IV</b> — Fundamentals &amp; the interview playbook, plus observability, operational excellence, worked designs, and the Google papers (Ch. 1–7).</li>
+          <li><b>Part V</b> — Data infrastructure: how to choose a datastore and the internals of six of them (Ch. 1–7).</li>
+          <li><b>Part VI</b> — AI/ML systems: RAG, real-time assist, GPU clouds, TPU supercomputers, and ML cluster SWE (Ch. 1–11). Chapters 2–8 form a focused contact-center/agent-assist track.</li>
+          <li><b>Part VII</b> — Security systems design, from authorization and transport security to memory safety, device provisioning, and secure OTA (Ch. 1–10).</li>
+          <li><b>Part XI</b> — Practice bank: classic system-design problems worked end-to-end — rate limiter, feed, notifications, payments, code judge, URL shortener, unique ID, video platform (Ch. 1–8).</li>
+          <li><b>Part XII</b> — Real-world engineering case studies drawn from public engineering blogs and postmortems (Ch. 1–4).</li>
+          <li><b>Part XIII</b> — Systems, networking &amp; performance deep-dives: Kubernetes, TCP/IP, low-latency C++, WiFi, and cloud &amp; data-center networking (Ch. 1–5).</li>
+          <li><b>Part XIV</b> — Applied &amp; emerging system design: device lab, agent workflows, mobile telemetry (Ch. 1–3).</li>
+          <li><b>Part XV</b> — Server systems software &amp; firmware: the boot chain &amp; root of trust, the Linux kernel/hardware boundary, low-level observability, and node-level orchestration &amp; fleet bring-up (Ch. 1–4).</li>
+        </ol>
+      </div>
+      <div class="track craft">
+        <h3>Craft Track</h3>
+        <div class="who">Parts VIII–IX · for the whole-engineer signal</div>
+        <ol>
+          <li><b>Part VIII</b> — Sharpen the craft: code review, language refreshers (C, C++, Go, Rust, Kotlin, Objective-C, Swift, Java, Python, Shell), and working effectively with AI-assisted tooling (Ch. 1–12).</li>
+          <li><b>Part IX</b> — Mobile engineering: Android, iOS, and mobile system design for platform-specific rounds (Ch. 1–3).</li>
+          <li>Read alongside either track — these skills surface in behavioral, code-review, and hands-on rounds.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE OF CONTENTS -->
+  <div class="section">
+    <h2 class="section-title">Table of Contents</h2>
+    <div class="section-sub">105 chapters across 15 parts. Click any chapter to open it.</div>
+
+    <!-- PART I -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">I</span>
+        <span class="part-name">Foundations &amp; Problem-Solving Toolkit</span>
+        <span class="part-count">5 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="complexity_analysis.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Complexity Analysis</div>
+          <div class="ch-desc">Big-O, time and space trade-offs, amortized cost, and how to reason about the complexity of a solution before you write it.</div>
+        </a>
+        <a class="chapter" href="algo_toolbox_cheatsheet.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">Algorithm Toolbox Cheat Sheet</div>
+          <div class="ch-desc">A fast-reference map of the core techniques — two pointers, sliding window, binary search, BFS/DFS — and when to reach for each.</div>
+        </a>
+        <a class="chapter" href="pattern_finding_training.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Pattern Finding &amp; Induction</div>
+          <div class="ch-desc">Spotting the recurring structure in a novel problem, forming a hypothesis, and proving it by induction to design a correct algorithm.</div>
+        </a>
+        <a class="chapter" href="recursive_iterative_conversion.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">Recursive &#8596; Iterative Conversion</div>
+          <div class="ch-desc">Turning recursion into explicit-stack iteration (and back) and taming deep or memory-heavy call trees.</div>
+        </a>
+        <a class="chapter" href="math_training.html">
+          <div class="ch-label">Chapter 5</div>
+          <div class="ch-title">Math for Coding Interviews</div>
+          <div class="ch-desc">The number theory, combinatorics, modular arithmetic, and probability that show up in coding rounds — with just enough proof to trust it.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART II -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">II</span>
+        <span class="part-name">Data Structures &amp; Algorithms</span>
+        <span class="part-count">11 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="array_string_training.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Arrays &amp; Strings</div>
+          <div class="ch-desc">The workhorse structures: in-place manipulation, prefix sums, two-pointer and sliding-window patterns, and common string techniques.</div>
+        </a>
+        <a class="chapter" href="linked_list_training.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">Linked Lists</div>
+          <div class="ch-desc">Pointer manipulation, fast/slow runners, cycle detection, in-place reversal, and merging — the classic linked-list interview repertoire.</div>
+        </a>
+        <a class="chapter" href="stack_queue_training.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Stacks &amp; Queues</div>
+          <div class="ch-desc">Monotonic stacks, deques, and the LIFO/FIFO patterns behind expression parsing, next-greater-element, and sliding-window maxima.</div>
+        </a>
+        <a class="chapter" href="binary_tree_training.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">Binary Trees</div>
+          <div class="ch-desc">Traversals, recursion on trees, path and ancestor problems, and the divide-and-conquer shape common to most tree questions.</div>
+        </a>
+        <a class="chapter" href="tree_ds_training.html">
+          <div class="ch-label">Chapter 5</div>
+          <div class="ch-title">Tree Data Structures</div>
+          <div class="ch-desc">Beyond binary trees: BSTs, heaps, tries, segment trees, and Fenwick trees — the specialized structures that unlock hard problems.</div>
+        </a>
+        <a class="chapter" href="graph_topo_training.html">
+          <div class="ch-label">Chapter 6</div>
+          <div class="ch-title">Graphs &amp; Topological Sort</div>
+          <div class="ch-desc">Graph representations, BFS/DFS, shortest paths, connected components, cycle detection, and ordering dependencies with topological sort.</div>
+        </a>
+        <a class="chapter" href="sorting_training.html">
+          <div class="ch-label">Chapter 7</div>
+          <div class="ch-title">Sorting-Based Problem Solving</div>
+          <div class="ch-desc">The major sorting algorithms and, more importantly, how sorting a problem's input first often collapses it into something easy.</div>
+        </a>
+        <a class="chapter" href="backtracking_training.html">
+          <div class="ch-label">Chapter 8</div>
+          <div class="ch-title">Backtracking &amp; Recursion</div>
+          <div class="ch-desc">Systematic search over permutations, combinations, and subsets — with pruning strategies to keep the exponential space in check.</div>
+        </a>
+        <a class="chapter" href="greedy_training.html">
+          <div class="ch-label">Chapter 9</div>
+          <div class="ch-title">Greedy Algorithms</div>
+          <div class="ch-desc">Recognizing when a locally optimal choice is globally optimal, plus exchange-argument proofs to defend a greedy solution.</div>
+        </a>
+        <a class="chapter" href="dp_training.html">
+          <div class="ch-label">Chapter 10</div>
+          <div class="ch-title">Dynamic Programming</div>
+          <div class="ch-desc">Defining state, writing recurrences, memoization vs. tabulation, and the classic families — knapsack, intervals, and grid DP.</div>
+        </a>
+        <a class="chapter" href="advanced_algorithms_training.html">
+          <div class="ch-label">Chapter 11</div>
+          <div class="ch-title">Advanced Algorithms</div>
+          <div class="ch-desc">The heaviest toolkit: network flow &amp; min-cut, bipartite matching, the Hungarian algorithm, Knuth's DP optimization, and MCMF — for the hardest questions.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART III -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">III</span>
+        <span class="part-name">Coding Interview Ramp-Up Plans</span>
+        <span class="part-count">3 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="rampup_42.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">1-Week Ramp-Up (39 Problems)</div>
+          <div class="ch-desc">A crash plan for a near-term interview: 39 hand-picked problems covering the highest-yield patterns in seven days.</div>
+        </a>
+        <a class="chapter" href="rampup_84.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">2-Week Ramp-Up (78 Problems)</div>
+          <div class="ch-desc">A balanced two-week schedule of 78 problems that broadens coverage while reinforcing the core techniques daily.</div>
+        </a>
+        <a class="chapter" href="rampup_192.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">4-Week Ramp-Up (192 Problems)</div>
+          <div class="ch-desc">The comprehensive month-long track: 192 problems building from fundamentals to advanced topics with spaced repetition.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART IV -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">IV</span>
+        <span class="part-name">System Design Fundamentals</span>
+        <span class="part-count">7 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="system_design_tips.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">System Design Interview Playbook</div>
+          <div class="ch-desc">A repeatable framework for the design round: clarify requirements, estimate scale, sketch the architecture, and defend trade-offs.</div>
+        </a>
+        <a class="chapter" href="observability_dashboard.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">Observability &amp; Dashboards</div>
+          <div class="ch-desc">Metrics, logs, and traces; SLIs/SLOs; and how to design dashboards and alerting that surface problems before users do.</div>
+        </a>
+        <a class="chapter" href="operational_excellence.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Operational Excellence &amp; SRE</div>
+          <div class="ch-desc">Keeping systems healthy in production: SLIs/SLOs and error budgets, incident response, on-call, blameless postmortems, deploys (canary/blue-green/rollback), DR, and chaos engineering.</div>
+        </a>
+        <a class="chapter" href="map_system_design.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">Map &amp; Geospatial System Design</div>
+          <div class="ch-desc">Spatial indexing (geohash, quadtrees, S2), nearest-neighbor queries, and the architecture behind maps and location services.</div>
+        </a>
+        <a class="chapter" href="engprod_system_design.html">
+          <div class="ch-label">Chapter 5</div>
+          <div class="ch-title">Engineering Productivity Systems</div>
+          <div class="ch-desc">Designing build systems, CI/CD, and developer platforms — the internal infrastructure that keeps large engineering orgs shipping.</div>
+        </a>
+        <a class="chapter" href="test_automation_design.html">
+          <div class="ch-label">Chapter 6</div>
+          <div class="ch-title">Test Automation at Scale</div>
+          <div class="ch-desc">Architecting test infrastructure: test selection, flakiness control, parallel execution, and gating releases on signal.</div>
+        </a>
+        <a class="chapter" href="google_three_papers.html">
+          <div class="ch-label">Chapter 7</div>
+          <div class="ch-title">The Google Papers: GFS, MapReduce &amp; Bigtable</div>
+          <div class="ch-desc">The three foundational Google papers — GFS, MapReduce, and Bigtable — rewritten from first principles: what each solved, how it worked, and what it inspired.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART V -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">V</span>
+        <span class="part-name">Databases &amp; Data Infrastructure</span>
+        <span class="part-count">7 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="database_selection_guide.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Choosing the Right Database</div>
+          <div class="ch-desc">A decision framework across SQL, key-value, document, wide-column, and analytics stores — matching data model and access pattern to engine.</div>
+        </a>
+        <a class="chapter" href="mysql_deep_dive.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">MySQL / InnoDB Deep Dive</div>
+          <div class="ch-desc">InnoDB internals: B+ tree indexing, the buffer pool, redo/undo logs, MVCC, isolation levels, locking, and replication.</div>
+        </a>
+        <a class="chapter" href="redis_deep_dive.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Redis Deep Dive</div>
+          <div class="ch-desc">Data structures, persistence (RDB/AOF), eviction, single-threaded model, replication, and cluster mode for caching and beyond.</div>
+        </a>
+        <a class="chapter" href="mongodb_deep_dive.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">MongoDB Deep Dive</div>
+          <div class="ch-desc">The document model, indexing, the aggregation pipeline, replica sets, and sharding — plus when a document store is the right call.</div>
+        </a>
+        <a class="chapter" href="cassandra_deep_dive.html">
+          <div class="ch-label">Chapter 5</div>
+          <div class="ch-title">Cassandra Deep Dive</div>
+          <div class="ch-desc">Wide-column storage, the LSM-tree write path, consistent hashing, tunable consistency, and partition-key data modeling.</div>
+        </a>
+        <a class="chapter" href="dynamodb_deep_dive.html">
+          <div class="ch-label">Chapter 6</div>
+          <div class="ch-title">DynamoDB Deep Dive</div>
+          <div class="ch-desc">AWS's managed key-value store: partitioning, single-table design, GSIs/LSIs, capacity modes, and streams.</div>
+        </a>
+        <a class="chapter" href="bigquery_deep_dive.html">
+          <div class="ch-label">Chapter 7</div>
+          <div class="ch-title">BigQuery Deep Dive</div>
+          <div class="ch-desc">Columnar analytics at scale: the Dremel execution model, partitioning and clustering, slots, and cost-aware query design.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART VI -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">VI</span>
+        <span class="part-name">AI / ML Systems Design</span>
+        <span class="part-count">11 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="cloud_ai_ml_infra.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Cloud AI/ML Infrastructure</div>
+          <div class="ch-desc">The platform beneath ML: training vs. serving, feature stores, model registries, GPUs/accelerators, and pipeline orchestration.</div>
+        </a>
+        <a class="chapter" href="knowledge_retrieval_rag_design.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">Knowledge Retrieval (RAG)</div>
+          <div class="ch-desc">Retrieval-augmented generation end to end: chunking, embeddings, vector search, reranking, and grounding LLM responses.</div>
+        </a>
+        <a class="chapter" href="realtime_agent_assist_design.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Real-time Agent Assist</div>
+          <div class="ch-desc">Designing low-latency systems that listen to a live conversation and surface suggestions to a human agent in real time.</div>
+        </a>
+        <a class="chapter" href="ai_human_handoff_design.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">AI-to-Human Handoff</div>
+          <div class="ch-desc">Orchestrating graceful escalation between automated agents and humans — context transfer, confidence thresholds, and state.</div>
+        </a>
+        <a class="chapter" href="conversation_analytics_design.html">
+          <div class="ch-label">Chapter 5</div>
+          <div class="ch-title">Conversation Analytics Pipeline</div>
+          <div class="ch-desc">Ingesting and processing conversation data at scale for transcription, intent, sentiment, and downstream analytics.</div>
+        </a>
+        <a class="chapter" href="automated_qa_scoring_design.html">
+          <div class="ch-label">Chapter 6</div>
+          <div class="ch-title">Automated QA Scoring</div>
+          <div class="ch-desc">A system that scores interactions against a quality rubric automatically, with calibration, human review, and feedback loops.</div>
+        </a>
+        <a class="chapter" href="ai_contact_center_platform.html">
+          <div class="ch-label">Chapter 7</div>
+          <div class="ch-title">AI Contact Center Platform</div>
+          <div class="ch-desc">An end-to-end system-design walkthrough of an AI-powered contact center, tying together the preceding AI/ML building blocks.</div>
+        </a>
+        <a class="chapter" href="ai_contact_center_knowledge.html">
+          <div class="ch-label">Chapter 8</div>
+          <div class="ch-title">AI Contact Center — Domain Primer</div>
+          <div class="ch-desc">Background knowledge for the domain: contact-center terminology, workflows, metrics, and where AI fits into each.</div>
+        </a>
+        <a class="chapter" href="nv_dgx_cloud_prep.html">
+          <div class="ch-label">Chapter 9</div>
+          <div class="ch-title">GPU Cloud Automation (DGX)</div>
+          <div class="ch-desc">Platform engineering for GPU clouds: Kubernetes, IaC, CI/CD, and virtualization in the context of NVIDIA DGX-style infrastructure.</div>
+        </a>
+        <a class="chapter" href="google_tpu_infra.html">
+          <div class="ch-label">Chapter 10</div>
+          <div class="ch-title">TPU &amp; AI Supercomputers</div>
+          <div class="ch-desc">How Google builds AI supercomputers around a matrix-multiply chip: the systolic array, TPU vs GPU, precision, and scaling across pods over a 3D-torus with optical switches.</div>
+        </a>
+        <a class="chapter" href="ml_systems_swe.html">
+          <div class="ch-label">Chapter 11</div>
+          <div class="ch-title">ML Systems &amp; Cluster SWE</div>
+          <div class="ch-desc">The software layer (not firmware) that turns racks of accelerators into one machine: collective communication, distributed-training parallelism, inference runtimes, cluster scheduling, and fleet reliability — grounded in real NVIDIA, Google, and custom-AI-chip-startup SWE roles.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART VII -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">VII</span>
+        <span class="part-name">Security Systems Design</span>
+        <span class="part-count">10 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="google_security_index.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Google Security Systems — Overview</div>
+          <div class="ch-desc">A guided tour of Google's publicly documented security stack and how its pieces fit together — the map for this part.</div>
+        </a>
+        <a class="chapter" href="google_security_zanzibar.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">Zanzibar — Global Authorization</div>
+          <div class="ch-desc">Google's planet-scale authorization system: the relationship-tuple model, consistency via zookies, and how permissions are checked.</div>
+        </a>
+        <a class="chapter" href="google_security_titan.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Titan — Hardware Root of Trust</div>
+          <div class="ch-desc">Secure boot and hardware roots of trust: how a dedicated security chip verifies firmware and establishes machine identity.</div>
+        </a>
+        <a class="chapter" href="google_security_kms.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">Key Management &amp; Encryption at Rest</div>
+          <div class="ch-desc">Envelope encryption, key hierarchies, rotation, and how large-scale key management protects data at rest.</div>
+        </a>
+        <a class="chapter" href="google_security_beyondprod.html">
+          <div class="ch-label">Chapter 5</div>
+          <div class="ch-title">BeyondProd — Zero-Trust Production</div>
+          <div class="ch-desc">Applying zero-trust principles to production workloads: service identity, mutual authentication, and workload isolation.</div>
+        </a>
+        <a class="chapter" href="google_security_alts.html">
+          <div class="ch-label">Chapter 6</div>
+          <div class="ch-title">ALTS — Transport Security</div>
+          <div class="ch-desc">Application Layer Transport Security: mutual authentication and encryption between services, and how it compares to TLS.</div>
+        </a>
+        <a class="chapter" href="content_protection_broadcast_encryption.html">
+          <div class="ch-label">Chapter 7</div>
+          <div class="ch-title">Content Protection &amp; Broadcast Encryption</div>
+          <div class="ch-desc">DRM and broadcast-encryption schemes: key distribution to many receivers, revocation, and protecting premium content.</div>
+        </a>
+        <a class="chapter" href="security_memory_safety.html">
+          <div class="ch-label">Chapter 8</div>
+          <div class="ch-title">Memory-Safe Languages</div>
+          <div class="ch-desc">Why memory safety matters for security, the classes of bugs it eliminates, and the trade-offs of Rust and other safe languages.</div>
+        </a>
+        <a class="chapter" href="secdesign_device_provisioning.html">
+          <div class="ch-label">Chapter 9</div>
+          <div class="ch-title">Device Provisioning &amp; Identity</div>
+          <div class="ch-desc">How a device earns a hardware-rooted identity and keys at the factory: per-device PKI, attestation, factory models, and revocation.</div>
+        </a>
+        <a class="chapter" href="secdesign_secure_ota.html">
+          <div class="ch-label">Chapter 10</div>
+          <div class="ch-title">Secure OTA Updates</div>
+          <div class="ch-desc">Updating software over-the-air across a fleet safely: signed images, rollback protection, staged rollouts, and recovery from bad updates.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART VIII -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">VIII</span>
+        <span class="part-name">Engineering Craft &amp; Modern Tooling</span>
+        <span class="part-count">12 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="code_review_training.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Code Review Practice</div>
+          <div class="ch-desc">What great reviewers look for — correctness, design, readability, and tests — and how to give and receive feedback well.</div>
+        </a>
+        <a class="chapter" href="c_refresher.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">C Refresher</div>
+          <div class="ch-desc">The machine-close language: the memory model, pointers, manual allocation and its classic bugs, undefined behavior, and where C still rules.</div>
+        </a>
+        <a class="chapter" href="cpp_refresher.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">C++ Refresher</div>
+          <div class="ch-desc">Modern C++ back to fluency: RAII, move semantics, smart pointers, templates, and the STL for interviews and daily work.</div>
+        </a>
+        <a class="chapter" href="go_refresher.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">Go Refresher</div>
+          <div class="ch-desc">Go's simplicity and built-in concurrency: slices/maps, interfaces, goroutines and channels, the scheduler and GC, and idiomatic patterns.</div>
+        </a>
+        <a class="chapter" href="java_refresher.html">
+          <div class="ch-label">Chapter 5</div>
+          <div class="ch-title">Java Refresher</div>
+          <div class="ch-desc">Java and the JVM: bytecode/JIT, the Collections framework, generics, generational GC, and java.util.concurrent.</div>
+        </a>
+        <a class="chapter" href="python_refresher.html">
+          <div class="ch-label">Chapter 6</div>
+          <div class="ch-title">Python Refresher</div>
+          <div class="ch-desc">Python for interviews and real work: the object model, core data structures, comprehensions/generators, decorators, the GIL, and common gotchas.</div>
+        </a>
+        <a class="chapter" href="ai_assisted_engineering_prep.html">
+          <div class="ch-label">Chapter 7</div>
+          <div class="ch-title">AI-Assisted Engineering</div>
+          <div class="ch-desc">How to talk about using AI in your work — framing, a repeatable method, and ready answers for "how do you use AI?" interview rounds.</div>
+        </a>
+        <a class="chapter" href="shell_refresher.html">
+          <div class="ch-label">Chapter 8</div>
+          <div class="ch-title">Shell / Bash Scripting Refresher</div>
+          <div class="ch-desc">Safe, portable Bash: the <code>set -euo pipefail</code> preamble, quoting and word-splitting, tests and loops, arrays, parameter expansion, redirection, traps, and shellcheck.</div>
+        </a>
+        <a class="chapter" href="rust_refresher.html">
+          <div class="ch-label">Chapter 9</div>
+          <div class="ch-title">Rust Refresher</div>
+          <div class="ch-desc">Rust's ownership model back to fluency: moves and borrows, lifetimes, enums and pattern matching, <code>Option</code>/<code>Result</code> and <code>?</code>, traits and generics, iterators, and fearless concurrency with <code>Arc&lt;Mutex&lt;T&gt;&gt;</code>.</div>
+        </a>
+        <a class="chapter" href="kotlin_refresher.html">
+          <div class="ch-label">Chapter 10</div>
+          <div class="ch-title">Kotlin Refresher</div>
+          <div class="ch-desc">Kotlin for JVM developers: null safety (<code>?.</code>, <code>?:</code>, smart casts), <code>val</code>/<code>var</code> and expressions, data and sealed classes with exhaustive <code>when</code>, extension functions, the functional collection ops and sequences, scope functions, coroutines, and seamless Java interop.</div>
+        </a>
+        <a class="chapter" href="objc_refresher.html">
+          <div class="ch-label">Chapter 11</div>
+          <div class="ch-title">Objective-C Refresher</div>
+          <div class="ch-desc">Objective-C for reading legacy iOS/macOS code: Smalltalk-style message passing and dynamic dispatch, <code>@interface</code>/<code>@implementation</code> and designated initializers, properties and ARC memory management, <code>strong</code>/<code>weak</code> and retain cycles, blocks and the <code>weakSelf</code> pattern, protocols and delegation, categories, Foundation types and literals, and Swift interop.</div>
+        </a>
+        <a class="chapter" href="swift_refresher.html">
+          <div class="ch-label">Chapter 12</div>
+          <div class="ch-title">Swift Refresher</div>
+          <div class="ch-desc">Swift for modern iOS and server-side work: value types (<code>struct</code> vs <code>class</code>) with copy semantics, optionals instead of <code>null</code>, exhaustive enums and pattern matching, protocol-oriented design with default implementations, generics with <code>some</code>/<code>any</code>, closures and <code>[weak self]</code> capture lists, <code>throws</code>-based error handling, ARC and retain cycles, and modern <code>async</code>/<code>await</code> with actors.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART IX -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">IX</span>
+        <span class="part-name">Mobile Engineering</span>
+        <span class="part-count">3 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="android_engineering.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Android Engineering</div>
+          <div class="ch-desc">The Android app model, Activity lifecycle, and the modern Kotlin stack — Compose, ViewModel, Flow, Room, and Retrofit — up to the frame budget.</div>
+        </a>
+        <a class="chapter" href="ios_engineering.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">iOS Engineering</div>
+          <div class="ch-desc">Swift and SwiftUI, the view-controller and app lifecycles, ARC and retain cycles, async/await and actors, and the main-thread UI rule.</div>
+        </a>
+        <a class="chapter" href="mobile_system_design.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Mobile System Design</div>
+          <div class="ch-desc">Designing mobile-backed systems for the flaky-network reality: offline-first storage, sync, and conflict resolution.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART X -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">X</span>
+        <span class="part-name">Curated Interview Problems (Google-style)</span>
+        <span class="part-count">12 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="google_problems_arrays_strings.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Arrays &amp; Strings — Google-style Problems</div>
+          <div class="ch-desc">Twelve classic big-tech array &amp; string problems — Plus One, Valid Parentheses, Container With Most Water, Trapping Rain Water, 3Sum, and more — with execution-tested solutions and interviewer probes.</div>
+        </a>
+        <a class="chapter" href="google_problems_string_simulation.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">String Simulation &amp; Scanning — Google-style Problems</div>
+          <div class="ch-desc">Six Google-style string-simulation &amp; scanning problems — Expressive Words, Find And Replace in String, Missing Ranges, Maximize Distance to Closest Person, Next Closest Time, and Read4 II — with execution-tested solutions and interviewer probes.</div>
+        </a>
+        <a class="chapter" href="google_problems_heaps_topk.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Heaps, Top-K &amp; Greedy — Google-style Problems</div>
+          <div class="ch-desc">Six Google-style heap, top-K &amp; greedy problems — Jump Game, Meeting Rooms II, K Closest Points to Origin, Kth Largest Element in an Array, Minimum Cost to Hire K Workers, and Merge k Sorted Lists — with execution-tested solutions and interviewer probes.</div>
+        </a>
+        <a class="chapter" href="google_problems_graphs.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">Graphs — BFS / DFS / Union-Find / Topological Sort — Google-style Problems</div>
+          <div class="ch-desc">Seven Google-style graph problems — Number of Islands, Course Schedule II, Word Ladder, Evaluate Division, Most Stones Removed, Longest Increasing Path in a Matrix, and Robot Room Cleaner — with execution-tested solutions and interviewer probes.</div>
+        </a>
+        <a class="chapter" href="google_problems_trees.html">
+          <div class="ch-label">Chapter 5</div>
+          <div class="ch-title">Trees — Recursion, DFS &amp; Tree DP — Google-style Problems</div>
+          <div class="ch-desc">Six Google-style tree &amp; recursion problems — Binary Tree Maximum Path Sum, Count Complete Tree Nodes, Diameter of Binary Tree, Flip Equivalent Binary Trees, Decode String, and Cracking the Safe — with execution-tested solutions and interviewer probes.</div>
+        </a>
+        <a class="chapter" href="google_problems_dp.html">
+          <div class="ch-label">Chapter 6</div>
+          <div class="ch-title">Dynamic Programming — Google-style Problems</div>
+          <div class="ch-desc">Six Google-style dynamic-programming problems — Maximum Subarray, Maximum Product Subarray, Best Time to Buy and Sell Stock, Coin Change, Longest Palindromic Substring, and Split Array Largest Sum — with execution-tested solutions and interviewer probes.</div>
+        </a>
+        <a class="chapter" href="google_problems_sorting.html">
+          <div class="ch-label">Chapter 7</div>
+          <div class="ch-title">Sorting &amp; Searching — Google-style Problems</div>
+          <div class="ch-desc">Seven Google-style sorting &amp; searching problems — Valid Anagram, Peak Index in a Mountain Array, Find First and Last Position of Element in Sorted Array, Merge Intervals, Insert Interval, Median of Two Sorted Arrays, and Count of Smaller Numbers After Self — with execution-tested solutions and interviewer probes.</div>
+        </a>
+        <a class="chapter" href="google_problems_recursion.html">
+          <div class="ch-label">Chapter 8</div>
+          <div class="ch-title">Recursion &amp; Backtracking — Google-style Problems</div>
+          <div class="ch-desc">Six Google-style recursion &amp; backtracking problems — Generate Parentheses, Letter Combinations of a Phone Number, Strobogrammatic Number II, Android Unlock Patterns, Word Search II, and Word Squares — with execution-tested solutions and interviewer probes.</div>
+        </a>
+        <a class="chapter" href="google_problems_linkedlists.html">
+          <div class="ch-label">Chapter 9</div>
+          <div class="ch-title">Linked Lists — Google-style Problems</div>
+          <div class="ch-desc">Four Google-style linked-list problems — Merge Two Sorted Lists, Add Two Numbers, Remove Nth Node From End of List, and Copy List with Random Pointer — with execution-tested solutions and interviewer probes.</div>
+        </a>
+        <a class="chapter" href="google_problems_design.html">
+          <div class="ch-label">Chapter 10</div>
+          <div class="ch-title">Design &amp; Object-Oriented (Data-Structure Design) — Google-style Problems</div>
+          <div class="ch-desc">Six Google-style data-structure-design problems — Min Stack, LRU Cache, Insert Delete GetRandom O(1), Logger Rate Limiter, Serialize and Deserialize Binary Tree, and Design Search Autocomplete System — with execution-tested classes and interviewer probes.</div>
+        </a>
+        <a class="chapter" href="google_problems_others1.html">
+          <div class="ch-label">Chapter 11</div>
+          <div class="ch-title">Assorted Problems I — Strings &amp; Math — Google-style Problems</div>
+          <div class="ch-desc">Eight Google-style string- &amp; math-manipulation problems — Reverse Integer, Isomorphic Strings, Jewels and Stones, Unique Email Address, License Key Formatting, Bulls and Cows, Strobogrammatic Number, and Swap Adjacent in LR String — with execution-tested solutions and interviewer probes.</div>
+        </a>
+        <a class="chapter" href="google_problems_others2.html">
+          <div class="ch-label">Chapter 12</div>
+          <div class="ch-title">Assorted Problems II — Arrays, Intervals &amp; Greedy — Google-style Problems</div>
+          <div class="ch-desc">Seven Google-style array, interval &amp; greedy problems — Candy, Fruit Into Baskets, Minimum Area Rectangle, My Calendar II, Range Sum Query 2D Mutable, Odd Even Jump, and Guess the Word — with execution-tested solutions and interviewer probes.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART XI -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">XI</span>
+        <span class="part-name">Classic System Design Problems</span>
+        <span class="part-count">8 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="sd_rate_limiter.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Design a Rate Limiter</div>
+          <div class="ch-desc">The classic limiter problem end-to-end: token bucket, leaky bucket, fixed window, sliding-window log and counter — each with exact math and diagrams — plus distributed counting, Redis atomicity (INCR/EXPIRE, Lua), 429 responses, and interview framing.</div>
+        </a>
+        <a class="chapter" href="sd_social_feed.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">Design a Social Feed (News Feed)</div>
+          <div class="ch-desc">Design a news feed end-to-end: the pull vs. push vs. hybrid fan-out crux (with the celebrity threshold), timeline cache, ranked vs. chronological ordering, and scaling — with a trade-offs table and interview framing.</div>
+        </a>
+        <a class="chapter" href="sd_notification_service.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Design a Notification Service</div>
+          <div class="ch-desc">Design a multi-channel (push/email/SMS/in-app) delivery service: an async queue-and-workers pipeline, at-least-once with idempotency, retries/backoff and a dead-letter queue, per-user rate caps and priority lanes.</div>
+        </a>
+        <a class="chapter" href="sd_payment_system.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">Design a Payment System</div>
+          <div class="ch-desc">Design a payment system where correctness beats everything: idempotency keys, the immutable double-entry ledger, exactly-once, saga vs. 2PC, a payment state machine, and reconciliation.</div>
+        </a>
+        <a class="chapter" href="sd_code_judge.html">
+          <div class="ch-label">Chapter 5</div>
+          <div class="ch-title">Design a Code Judge (Online Judge)</div>
+          <div class="ch-desc">Design an online judge that runs untrusted submissions safely and returns a verdict fast: the queue + sandboxed worker-pool architecture, layered isolation, the verdict lifecycle, and autoscaling for spikes.</div>
+        </a>
+        <a class="chapter" href="sd_url_shortener.html">
+          <div class="ch-label">Chapter 6</div>
+          <div class="ch-title">Design a URL Shortener</div>
+          <div class="ch-desc">The canonical read-heavy key-value system: base62 key generation (four approaches compared), the 301-vs-302 redirect trade-off, cache-aside + CDN, sharding, custom aliases and TTL — with estimation and six interview Q&amp;As.</div>
+        </a>
+        <a class="chapter" href="sd_unique_id.html">
+          <div class="ch-label">Chapter 7</div>
+          <div class="ch-title">Design a Unique ID Generator</div>
+          <div class="ch-desc">Hand out billions of time-sortable unique IDs with no central bottleneck: the Snowflake 64-bit layout (timestamp + machine-id + sequence), clock-skew hazards, and alternatives (ticket servers, ULID/UUIDv7).</div>
+        </a>
+        <a class="chapter" href="sd_video_platform.html">
+          <div class="ch-label">Chapter 8</div>
+          <div class="ch-title">Design a Video Platform (video-sharing / short-video-style)</div>
+          <div class="ch-desc">Design a video-sharing / short-video platform: resumable chunked upload, an idempotent transcode fan-out to a bitrate ladder, HLS/DASH adaptive-bitrate delivery over a CDN, and a ranked feed — with fully worked estimation.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART XII -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">XII</span>
+        <span class="part-name">Real-World Engineering Case Studies</span>
+        <span class="part-count">4 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="cs_discord_messages.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">How Discord Stores Billions (then Trillions) of Messages</div>
+          <div class="ch-desc">How Discord scaled messages MongoDB → Cassandra → ScyllaDB: the bucketed data model, the pain points (hot partitions, GC, compaction) and the cut-over — rewritten from their public posts, with the interview angle.</div>
+        </a>
+        <a class="chapter" href="cs_uber_mysql.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">Why Uber Migrated from Postgres to MySQL</div>
+          <div class="ch-desc">Why Uber moved write-heavy, many-index tables from Postgres to MySQL/InnoDB — write and replication amplification vs. a clustered PK index; a balanced "match the engine to the workload" takeaway from the 2016 post.</div>
+        </a>
+        <a class="chapter" href="cs_twitter_manhattan.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Twitter's Manhattan — a Real-Time Multi-Tenant Distributed Database</div>
+          <div class="ch-desc">Twitter's Manhattan: a multi-tenant distributed database with self-service provisioning and QoS as first-class goals — the four-layer architecture, pluggable engines, and tunable consistency (2014 post).</div>
+        </a>
+        <a class="chapter" href="cs_netflix_kv.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">Netflix's Key-Value Data Abstraction Layer</div>
+          <div class="ch-desc">Netflix's Key-Value Data Abstraction Layer: one database-agnostic KV API over Cassandra/EVCache/etc. with namespaces, chunking, adaptive pagination and idempotency (2024 post) — the "storage abstraction" interview angle.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART XIII -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">XIII</span>
+        <span class="part-name">Systems, Networking &amp; Performance Deep-Dives</span>
+        <span class="part-count">5 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="td_kubernetes.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Kubernetes — a Practical Deep-Dive</div>
+          <div class="ch-desc">Kubernetes from first principles: the control-plane/node architecture, core objects and the reconcile loop, the networking and storage models, scheduling and rollouts — plus a kubectl debugging cheat-set and interview framing.</div>
+        </a>
+        <a class="chapter" href="td_tcpip.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">TCP/IP &amp; Packet Analysis — a Practical Deep-Dive</div>
+          <div class="ch-desc">What actually happens on the wire, checked against the RFCs: the IPv4/UDP/TCP headers, the 3-way handshake and teardown, reliability and congestion control, NAT, and hands-on tcpdump/Wireshark analysis.</div>
+        </a>
+        <a class="chapter" href="td_lowlatency_cpp.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Low-Latency C++ (for Trading &amp; Real-Time Systems)</div>
+          <div class="ch-desc">How to write C++ fast at the <em>tail</em> (p99), not just on average: cache and data layout, branch prediction, keeping the heap off the hot path, false sharing, atomics/memory-ordering, a lock-free SPSC ring, and honest measurement.</div>
+        </a>
+        <a class="chapter" href="td_wifi.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">WiFi &amp; Connectivity — the Software/Networking View</div>
+          <div class="ch-desc">Where 802.11 sits for a software engineer (the link layer beneath IP): bands/channels and generations, the frame taxonomy, joining a network, WPA2/WPA3 conceptually, CSMA/CA, roaming, and software-layer debugging.</div>
+        </a>
+        <a class="chapter" href="td_cloud_networking.html">
+          <div class="ch-label">Chapter 5</div>
+          <div class="ch-title">Cloud &amp; Data-Center Networking: Multi-Tenant Overlays, BGP &amp; Network Automation</div>
+          <div class="ch-desc">How a multi-tenant cloud fabric really works: Clos/spine-leaf, underlay vs overlay and encapsulation (VXLAN/Geneve/GRE), BGP &amp; EVPN as the control plane, SDN/network virtualization, mTLS vs IPsec, SR-IOV/DPU offload and RoCE for GPU clusters, plus network-and-systems automation and how to operate it.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART XIV -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">XIV</span>
+        <span class="part-name">Applied System Design &amp; Emerging Topics</span>
+        <span class="part-count">3 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="ds_device_lab.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Design a Device Lab / Test-Farm Platform</div>
+          <div class="ch-desc">Design the software platform that orchestrates racks of real physical devices for round-the-clock automated tests: the control-plane/data-plane architecture, a device state machine, capability-matching scheduling, and the flaky-test-vs-flaky-device split.</div>
+        </a>
+        <a class="chapter" href="ds_agent_workflow.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">Designing Agentic AI &amp; Multi-Agent Workflows</div>
+          <div class="ch-desc">Design agentic AI — an LLM in a perceive → plan → act → observe loop with tools and memory: reasoning patterns, tool/function-calling, multi-agent topologies, orchestration budgets, evaluation, and guardrails (incl. prompt-injection defense). All public patterns.</div>
+        </a>
+        <a class="chapter" href="ds_mobile_telemetry.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Mobile Telemetry &amp; the Data Flywheel (Privacy-First)</div>
+          <div class="ch-desc">A privacy-first data flywheel: devices emit signals → a pipeline aggregates them → products improve → users generate more signal. On-device vs. central, differential privacy done accurately, the ingestion spine, and governance.</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- PART XV -->
+    <div class="part">
+      <div class="part-head">
+        <span class="part-roman">XV</span>
+        <span class="part-name">Server Systems Software &amp; Firmware</span>
+        <span class="part-count">4 chapters</span>
+      </div>
+      <div class="chapters">
+        <a class="chapter" href="td_server_firmware.html">
+          <div class="ch-label">Chapter 1</div>
+          <div class="ch-title">Server Firmware &amp; Boot: BIOS/UEFI, BMC &amp; Root of Trust</div>
+          <div class="ch-desc">The stack below the OS: the power-on boot chain and UEFI PI phases, Secure Boot vs Measured Boot, the hardware root of trust, the always-on BMC (IPMI/Redfish) for out-of-band management, and fleet provisioning via PXE/NetBoot.</div>
+        </a>
+        <a class="chapter" href="td_kernel_hardware.html">
+          <div class="ch-label">Chapter 2</div>
+          <div class="ch-title">The Linux Kernel &amp; the Hardware Boundary</div>
+          <div class="ch-desc">Where software meets silicon: the user/kernel divide and how a syscall works, loadable modules and a char driver, the device model, PCIe from the kernel's view, DMA and the IOMMU, interrupts, and NUMA — each bridged from backend concepts.</div>
+        </a>
+        <a class="chapter" href="td_system_observability.html">
+          <div class="ch-label">Chapter 3</div>
+          <div class="ch-title">Low-Level Observability &amp; Hardware Diagnostics</div>
+          <div class="ch-desc">APM sunk beneath the process boundary: the PMU and tracepoints, perf and flame graphs, eBPF and its verifier, ftrace, and how to read the machine's own error channels — MCE/MCA, ECC/EDAC, PCIe AER, thermal, the BMC SEL — across a fleet.</div>
+        </a>
+        <a class="chapter" href="td_node_orchestration.html">
+          <div class="ch-label">Chapter 4</div>
+          <div class="ch-title">Node-Level Orchestration &amp; Fleet Bring-up</div>
+          <div class="ch-desc">Orchestration from the node's side: what a container really is (cgroups + namespaces), the kubelet/CRI, exposing accelerators via device plugins, bare-metal bring-up as "CI/CD for hardware", fleet telemetry, and interconnect (PCIe/NVLink/RDMA) as topology context.</div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">
+  <div class="fnote">The Interview Prep Handbook &middot; Generic, publicly-shareable interview-preparation material &middot; 15 parts, 105 chapters.</div>
+</div>
+
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complexity Analysis — Training Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+.nav { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 40px; position: sticky; top: 0; background: var(--bg); padding: 16px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #6c7086; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+/* centered math display */
+.math { background: var(--bg3); border-radius: 8px; padding: 14px 18px; margin: 14px 0; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 15px; color: var(--text); overflow-x: auto; }
+.math .op { color: var(--purple); }
+.derive { border-left: 3px solid var(--cyan); padding-left: 16px; margin: 16px 0; }
+.derive .step { margin: 6px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text2); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part I · Chapter 1 — <b>Complexity Analysis</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Complexity Analysis</h1>
+  <div class="sub">Big-O math foundations &bull; Summation techniques &bull; Recurrences &bull; Master Theorem &bull; Amortized analysis</div>
+</header>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection('intro')">Why &amp; Definitions</button>
+  <button class="nav-btn" onclick="showSection('growth')">Growth Hierarchy</button>
+  <button class="nav-btn" onclick="showSection('sums')">Summation Techniques</button>
+  <button class="nav-btn" onclick="showSection('loops')">Loop Analysis</button>
+  <button class="nav-btn" onclick="showSection('recurrence')">Recurrences</button>
+  <button class="nav-btn" onclick="showSection('master')">Master Theorem</button>
+  <button class="nav-btn" onclick="showSection('amortized')">Amortized Analysis</button>
+  <button class="nav-btn" onclick="showSection('practice')">Worked Examples</button>
+</div>
+
+<!-- ===== Intro ===== -->
+<div class="section active" id="intro">
+<div class="card">
+<h2>Why analyze precisely instead of "going by feel"</h2>
+<p>The most common judgment call when working through problems is <strong>"will this solution time out / overflow?"</strong>. Complexity analysis turns that "feel" into something "computable": given the upper bound on <code>n</code>, work out the order of magnitude of the operation count and compare it against the roughly <code>10^8 ~ 10^9</code> operations per second a machine can do — then you can tell whether it will TLE (Time Limit Exceeded).</p>
+
+<div class="insight">
+  <p><strong>Core mindset:</strong> complexity = "how the operation count grows as the input <code>n</code> gets large." We only care about the <strong>order of growth</strong>, not constants or lower-order terms — because once n is large enough, the highest-order term dominates everything.</p>
+</div>
+
+<h3>The three asymptotic notations</h3>
+<table>
+  <tr><th>Notation</th><th>Meaning</th><th>In plain terms</th></tr>
+  <tr><td><code>O(f)</code></td><td>Upper bound</td><td>"at most" on the order of f — the one used most often</td></tr>
+  <tr><td><code>Ω(f)</code></td><td>Lower bound</td><td>"at least" on the order of f</td></tr>
+  <tr><td><code>Θ(f)</code></td><td>Tight bound</td><td>upper and lower bounds match — "exactly" on the order of f</td></tr>
+</table>
+
+<h4>The formal definition of Big-O</h4>
+<div class="math"><span class="op">T(n) = O(f(n))</span> &nbsp;⟺&nbsp; there exist constants c &gt; 0, n₀ such that for all n ≥ n₀,&nbsp; T(n) ≤ c · f(n)</div>
+<p>In plain terms: <strong>beyond some n₀, T(n) is forever held below c·f(n)</strong>. The constant c lets us ignore coefficients, and n₀ lets us ignore the noise from small n.</p>
+
+<div class="derive">
+  <p style="margin:0"><strong>Example: prove <code>3n² + 5n + 100 = O(n²)</code></strong></p>
+  <div class="step">We need to find c, n₀ such that 3n² + 5n + 100 ≤ c·n²</div>
+  <div class="step">For n ≥ 1: 5n ≤ 5n², 100 ≤ 100n²</div>
+  <div class="step">So 3n² + 5n + 100 ≤ 3n² + 5n² + 100n² = 108n²</div>
+  <div class="step">Take c = 108, n₀ = 1 and it holds → it is O(n²) ✓</div>
+</div>
+
+<div class="tip">
+  <p><strong>In practice you don't prove it like this.</strong> Just remember the rules: <strong>drop constant coefficients, keep only the highest-order term</strong>. <code>3n² + 5n + 100</code> → <code>O(n²)</code>. The formal proof above explains "why you're allowed to drop them."</p>
+</div>
+
+<h3>Simplification rules</h3>
+<ul>
+  <li><strong>Drop constant coefficients:</strong> <code>O(3n)</code> = <code>O(n)</code>, <code>O(n/2)</code> = <code>O(n)</code></li>
+  <li><strong>Keep only the highest order:</strong> <code>O(n² + n)</code> = <code>O(n²)</code></li>
+  <li><strong>Addition takes the larger:</strong> two segments run back to back → <code>O(f) + O(g) = O(max(f,g))</code></li>
+  <li><strong>Multiplication multiplies:</strong> nesting → <code>O(f) × O(g) = O(f·g)</code></li>
+  <li><strong>The log base doesn't matter:</strong> <code>log₂n</code> and <code>log₁₀n</code> differ only by a constant factor → both written as <code>O(log n)</code></li>
+</ul>
+</div>
+</div>
+
+<!-- ===== Growth hierarchy ===== -->
+<div class="section" id="growth">
+<div class="card">
+<h2>Growth hierarchy — which beats which</h2>
+<p>From slow to fast (fewest to most operations as n grows). <strong>Memorize it</strong> — judging TLE relies entirely on it.</p>
+
+<div class="math"><span class="op">O(1) &lt; O(log n) &lt; O(√n) &lt; O(n) &lt; O(n log n) &lt; O(n²) &lt; O(n³) &lt; O(2ⁿ) &lt; O(n!)</span></div>
+
+<h3>Operation counts for each order at different n</h3>
+<table>
+  <tr><th>n</th><th>log n</th><th>n</th><th>n log n</th><th>n²</th><th>2ⁿ</th></tr>
+  <tr><td>10</td><td>3.3</td><td>10</td><td>33</td><td>100</td><td>1,024</td></tr>
+  <tr><td>100</td><td>6.6</td><td>100</td><td>664</td><td>10,000</td><td>~10³⁰</td></tr>
+  <tr><td>1,000</td><td>10</td><td>1,000</td><td>~10⁴</td><td>10⁶</td><td>explodes</td></tr>
+  <tr><td>10⁶</td><td>20</td><td>10⁶</td><td>~2×10⁷</td><td>10¹²</td><td>—</td></tr>
+</table>
+
+<div class="insight">
+  <p><strong>TLE lookup table (about 1 second = 10⁸ operations):</strong> from the upper bound on n in the constraints, directly read off what complexity you should aim for.</p>
+</div>
+
+<table>
+  <tr><th>Upper bound on n</th><th>Acceptable complexity</th><th>Typical approach</th></tr>
+  <tr><td>n ≤ 12</td><td>O(n!)</td><td>Permutations, brute-force enumeration</td></tr>
+  <tr><td>n ≤ 20</td><td>O(2ⁿ)</td><td>Subset enumeration, bitmask DP</td></tr>
+  <tr><td>n ≤ 500</td><td>O(n³)</td><td>Interval DP, Floyd</td></tr>
+  <tr><td>n ≤ 5,000</td><td>O(n²)</td><td>General DP, double loop</td></tr>
+  <tr><td>n ≤ 10⁵</td><td>O(n log n)</td><td>Sorting, binary search, heap, monotonic stack</td></tr>
+  <tr><td>n ≤ 10⁶</td><td>O(n) or O(n log n)</td><td>Linear scan, prefix sums, two pointers</td></tr>
+  <tr><td>n ≥ 10⁸</td><td>O(log n) or O(1)</td><td>Math formula, fast exponentiation</td></tr>
+</table>
+
+<div class="tip">
+  <p><strong>Working backwards:</strong> see <code>n ≤ 500</code> → "ah, O(n³) will pass" → think interval DP. See <code>n ≤ 10⁵</code> → "need O(n log n)" → think sorting or binary search. <strong>The constraints are hinting at the solution.</strong> For example, LC 1359 Count Orders with <code>n ≤ 500</code> (O(n²) tabulation) and LC 1316 Echo Substring with <code>n ≤ 2000</code> (O(n²)) are both judged this way.</p>
+</div>
+
+<h3>Why log n shows up so often</h3>
+<p><code>log n</code> = "how many times n can be divided by 2 until it reaches 1." Whenever each operation <strong>halves</strong> the problem size, you get <code>O(log n)</code>:</p>
+<div class="derive">
+  <div class="step">n → n/2 → n/4 → ... → 1</div>
+  <div class="step">After halving k times you reach 1: n / 2ᵏ = 1 → 2ᵏ = n → k = log₂n</div>
+</div>
+<p>That's why binary search, balanced trees, heap height, and fast exponentiation are all <code>O(log n)</code> — what they have in common is "halving at every step."</p>
+</div>
+</div>
+
+<!-- ===== Summation ===== -->
+<div class="section" id="sums">
+<div class="card">
+<h2>Summation techniques — the mathematical core of loop complexity</h2>
+<p>Analyzing a loop is essentially about <strong>adding up how many times each loop level runs</strong>. Master a handful of common series sums and you can compute it instantly.</p>
+
+<h3>1. Arithmetic series</h3>
+<div class="math"><span class="op">1 + 2 + 3 + ... + n = n(n+1)/2 = Θ(n²)</span></div>
+<div class="derive">
+  <p style="margin:0"><strong>Derivation (Gauss pairing):</strong></p>
+  <div class="step">S = 1 + 2 + ... + (n-1) + n</div>
+  <div class="step">S = n + (n-1) + ... + 2 + 1 &nbsp;(written in reverse)</div>
+  <div class="step">Add the two: 2S = (n+1) + (n+1) + ... + (n+1) = n copies of (n+1)</div>
+  <div class="step">2S = n(n+1) → S = n(n+1)/2</div>
+</div>
+<div class="insight">
+  <p><strong>This is why "a nested loop running a triangle" is O(n²).</strong> For example, the inner loop of LC 1359 Count Orders <code>Σj = (2i-1)(2i)/2 = i(2i-1)</code>, and the double loop of LC 2563 Fair Pairs, both come down to this arithmetic sum.</p>
+</div>
+
+<h3>2. Sum of squares</h3>
+<div class="math"><span class="op">1² + 2² + ... + n² = n(n+1)(2n+1)/6 = Θ(n³)</span></div>
+
+<h3>3. Geometric series</h3>
+<div class="math"><span class="op">1 + 2 + 4 + ... + 2ᵏ = 2^(k+1) − 1 = Θ(2ᵏ)</span></div>
+<p>General form: <code>1 + r + r² + ... + rᵏ = (r^(k+1) − 1)/(r − 1)</code></p>
+<div class="insight">
+  <p><strong>Key insight: the sum of a geometric series ≈ its largest term.</strong> <code>1+2+4+...+n = 2n−1 ≈ 2n = O(n)</code>. So "the total work when the size halves each time" is <code>O(n)</code>, not <code>O(n log n)</code> — the last level (the largest) already accounts for half of it. This <b>counterintuitive</b> fact is key in the Master Theorem and in build-heap analysis.</p>
+</div>
+
+<h3>4. Harmonic series</h3>
+<div class="math"><span class="op">1 + 1/2 + 1/3 + ... + 1/n = Θ(log n)</span></div>
+<p>Use: analyzing loops like "for each <code>i</code>, mark its multiples." If you do it for <strong>every</strong> <code>i</code> (the naive marking method), the cost is <code>Σ n/i = n·(1+1/2+...+1/n) = n·Θ(log n) = Θ(n log n)</code>. The real Sieve of Eratosthenes only marks for <strong>primes</strong>, so the sum becomes <code>n·Σ_{p prime} 1/p = O(n log log n)</code> — smaller. The difference is exactly "only iterate over primes" versus "iterate over every number."</p>
+
+<h3>Common series quick reference</h3>
+<table>
+  <tr><th>Series</th><th>Sum</th><th>Order</th></tr>
+  <tr><td>Σ 1 (i=1..n)</td><td>n</td><td>Θ(n)</td></tr>
+  <tr><td>Σ i</td><td>n(n+1)/2</td><td>Θ(n²)</td></tr>
+  <tr><td>Σ i²</td><td>n(n+1)(2n+1)/6</td><td>Θ(n³)</td></tr>
+  <tr><td>Σ 2ⁱ (i=0..k)</td><td>2^(k+1)−1</td><td>Θ(2ᵏ)</td></tr>
+  <tr><td>Σ 1/i</td><td>≈ ln n</td><td>Θ(log n)</td></tr>
+  <tr><td>Σ i·2ⁱ (i=0..k)</td><td>≈ (k−1)2^(k+1)</td><td>Θ(k·2ᵏ)</td></tr>
+</table>
+</div>
+</div>
+
+<!-- ===== Loops ===== -->
+<div class="section" id="loops">
+<div class="card">
+<h2>Loop analysis — from code to Big-O</h2>
+<p>Method: <strong>work from the innermost level outward, count how many times each level runs, and multiply</strong>. Use summation when the bounds vary.</p>
+
+<h3>Example 1: fixed nesting → multiply</h3>
+<pre><span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++)       <span class="cm">// n times</span>
+    <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; n; j++)   <span class="cm">// n times</span>
+        sum++;                    <span class="cm">// O(1)</span>
+<span class="cm">// total n × n = O(n²)</span></pre>
+
+<h3>Example 2: triangular nesting → arithmetic sum</h3>
+<pre><span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++)       <span class="cm">// i = 0..n-1</span>
+    <span class="kw">for</span> (<span class="kw">int</span> j = i; j &lt; n; j++)   <span class="cm">// runs (n-i) times</span>
+        sum++;</pre>
+<div class="derive">
+  <div class="step">Total count = Σ(n−i) for i=0..n-1 = n + (n−1) + ... + 1</div>
+  <div class="step">= n(n+1)/2 = Θ(n²)</div>
+</div>
+<div class="warning">
+  <p><strong>Common misjudgment:</strong> seeing "the inner loop starts at i" and panicking that it's O(n·something). In fact triangular nesting is still <code>O(n²)</code> — the constant just becomes 1/2, and constants get dropped.</p>
+</div>
+
+<h3>Example 3: size halving → log</h3>
+<pre><span class="kw">for</span> (<span class="kw">int</span> i = n; i &gt; <span class="num">1</span>; i = i / <span class="num">2</span>)   <span class="cm">// halve until 1</span>
+    sum++;
+<span class="cm">// n → n/2 → n/4 → ... → 1, log₂n times → O(log n)</span></pre>
+
+<h3>Example 4: inner variable tied to the outer → multiply then sum</h3>
+<pre><span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt; n; i *= <span class="num">2</span>)      <span class="cm">// log n times</span>
+    <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; i; j++)      <span class="cm">// i times</span>
+        sum++;</pre>
+<div class="derive">
+  <div class="step">i = 1, 2, 4, ..., n → inner loop runs 1 + 2 + 4 + ... + n times</div>
+  <div class="step">= geometric series ≈ 2n = Θ(n) &nbsp;(not O(n log n)!)</div>
+</div>
+<div class="insight">
+  <p><strong>Trap:</strong> the outer loop runs log n times and the inner runs at most n times, so intuition says <code>O(n log n)</code>. But the inner counts are the <strong>geometric series</strong> <code>1,2,4,...,n</code>, whose sum ≈ its largest term = <code>2n = O(n)</code>. The power of "sum ≈ largest term" for geometric series.</p>
+</div>
+
+<h3>Example 5: two segments back to back → take the larger</h3>
+<pre>sort(arr);                    <span class="cm">// O(n log n)</span>
+<span class="kw">for</span> (<span class="kw">int</span> x : arr) process(x);   <span class="cm">// O(n)</span>
+<span class="cm">// O(n log n) + O(n) = O(n log n)  ← take the larger</span></pre>
+
+<h3>while + two pointers → amortized O(n)</h3>
+<pre><span class="kw">int</span> j = <span class="num">0</span>;
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+    <span class="kw">while</span> (j &lt; n &amp;&amp; cond) j++;   <span class="cm">// j only increases, never decreases</span>
+}
+<span class="cm">// looks nested, but j moves at most n steps overall → O(n) total, not O(n²)</span></pre>
+<div class="tip">
+  <p><strong>Common pattern:</strong> sliding window, the stack in LC 2434 robotWithString, LC 2197 merging non-coprime numbers — all cases of "looks nested, but the inner pointer moves only O(n) steps overall" → amortized O(n). The key test: <strong>does the inner variable "reset" between outer iterations</strong>? If it doesn't reset → amortized.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Recurrence ===== -->
+<div class="section" id="recurrence">
+<div class="card">
+<h2>Recurrence relations</h2>
+<p>The complexity of recursive / divide-and-conquer algorithms is written as a <strong>recurrence</strong>: <code>T(n)</code> expressed in terms of smaller <code>T</code>. Solving it gives you the complexity.</p>
+
+<h3>How to write a recurrence</h3>
+<p>A divide-and-conquer algorithm usually looks like this:</p>
+<div class="math"><span class="op">T(n) = a · T(n/b) + f(n)</span></div>
+<ul>
+  <li><code>a</code> = how many recursive calls (into how many subproblems)</li>
+  <li><code>n/b</code> = the size of each subproblem (divided by what)</li>
+  <li><code>f(n)</code> = the cost of splitting + combining (the non-recursive part)</li>
+</ul>
+
+<h3>Method 1: recursion tree</h3>
+<p>Draw the work at each level as a tree and sum over all levels. Take <strong>Merge Sort</strong> <code>T(n) = 2T(n/2) + n</code> as an example:</p>
+<pre><span class="cm">level 0:            n                    work = n</span>
+<span class="cm">level 1:       n/2     n/2               work = n/2 + n/2 = n</span>
+<span class="cm">level 2:    n/4 n/4   n/4 n/4            work = 4 × n/4 = n</span>
+<span class="cm">  ...                                every level is n</span>
+<span class="cm">level k:   1  1  1  ...  1  (n leaves)   work = n</span></pre>
+<div class="derive">
+  <div class="step">Work at every level is n</div>
+  <div class="step">Number of levels = tree height = log₂n (halving each level)</div>
+  <div class="step">Total work = n × log₂n = Θ(n log n)</div>
+</div>
+
+<h3>Method 2: substitution (unrolling)</h3>
+<p>Repeatedly unroll <code>T(n) = 2T(n/2) + n</code>:</p>
+<div class="derive">
+  <div class="step">T(n) = 2T(n/2) + n</div>
+  <div class="step">     = 2[2T(n/4) + n/2] + n = 4T(n/4) + 2n</div>
+  <div class="step">     = 8T(n/8) + 3n</div>
+  <div class="step">     = 2ᵏT(n/2ᵏ) + k·n &nbsp;(after unrolling k times)</div>
+  <div class="step">When n/2ᵏ = 1 → k = log₂n, T(1)=1</div>
+  <div class="step">     = n·T(1) + n·log₂n = n + n log n = Θ(n log n)</div>
+</div>
+
+<h3>Common recurrences at a glance</h3>
+<table>
+  <tr><th>Recurrence</th><th>Solution</th><th>Typical algorithm</th></tr>
+  <tr><td>T(n) = T(n/2) + O(1)</td><td>O(log n)</td><td>Binary search</td></tr>
+  <tr><td>T(n) = T(n−1) + O(1)</td><td>O(n)</td><td>Linear recursion</td></tr>
+  <tr><td>T(n) = 2T(n/2) + O(n)</td><td>O(n log n)</td><td>Merge Sort, quicksort (average)</td></tr>
+  <tr><td>T(n) = 2T(n/2) + O(1)</td><td>O(n)</td><td>Tree traversal</td></tr>
+  <tr><td>T(n) = 2T(n/2) + O(log n)</td><td>O(n)</td><td>Build heap (Floyd's bottom-up)</td></tr>
+  <tr><td>T(n) = T(n−1) + O(n)</td><td>O(n²)</td><td>Quicksort (worst), selection sort</td></tr>
+  <tr><td>T(n) = 2T(n−1) + O(1)</td><td>Θ(2ⁿ)</td><td>Tower of Hanoi</td></tr>
+  <tr><td>T(n) = T(n−1) + T(n−2) + O(1)</td><td>Θ(φⁿ) ≈ Θ(1.618ⁿ)</td><td>Naive recursive Fibonacci (exponential, but not tightly 2ⁿ)</td></tr>
+</table>
+
+<div class="warning">
+  <p><strong>Note the huge difference between T(n/2) and T(n−1):</strong> <code>T(n−1)+O(1)</code> is O(n), but <code>T(n/2)+O(1)</code> is O(log n). The former subtracts 1 each time (a linear number of steps), the latter halves each time (a logarithmic number of steps). This is also why "halving" algorithms are so much faster.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Master Theorem ===== -->
+<div class="section" id="master">
+<div class="card">
+<h2>Master Theorem — the shortcut formula for divide-and-conquer recurrences</h2>
+<p>For recurrences of the form <code>T(n) = a·T(n/b) + f(n)</code>, skip the unrolling and plug straight into the formula. This is the <strong>master key</strong> to divide-and-conquer complexity.</p>
+
+<div class="math"><span class="op">T(n) = a·T(n/b) + f(n)</span>,&nbsp; a ≥ 1, b &gt; 1</div>
+
+<h3>Comparing f(n) with n^(log_b a)</h3>
+<p>The key is comparing which is larger: the "combine cost <code>f(n)</code>" or the "total number of leaves <code>n^(log_b a)</code>." Let <code>c* = log_b a</code>:</p>
+
+<table>
+  <tr><th>Case</th><th>Condition</th><th>Result</th><th>Who dominates</th></tr>
+  <tr><td>Case 1</td><td>f(n) = O(n^(c*−ε))</td><td>Θ(n^c*)</td><td>Leaves (recursion) dominate</td></tr>
+  <tr><td>Case 2</td><td>f(n) = Θ(n^c*)</td><td>Θ(n^c* · log n)</td><td>The two are balanced</td></tr>
+  <tr><td>Case 3</td><td>f(n) = Ω(n^(c*+ε))</td><td>Θ(f(n))</td><td>The root (combine) dominates</td></tr>
+</table>
+
+<div class="insight">
+  <p><strong>Intuition:</strong> <code>n^(log_b a)</code> is the recursion tree's "total number of leaves" = the pure recursion work. <code>f(n)</code> is the combine work at each level. <strong>Whichever grows faster decides the total complexity</strong>; if they grow equally fast you get an extra <code>log n</code> factor (every level contributes the same amount, over log levels).</p>
+</div>
+
+<h3>How to compute log_b a</h3>
+<div class="derive">
+  <div class="step">log_b a = "b raised to what power equals a"</div>
+  <div class="step">log₂2 = 1 (2¹=2), &nbsp; log₂4 = 2 (2²=4), &nbsp; log₂8 = 3</div>
+  <div class="step">log₃9 = 2 (3²=9), &nbsp; log₄2 = 0.5 (4^0.5=2)</div>
+</div>
+
+<h3>Three classic applications</h3>
+
+<h4>Merge Sort: T(n) = 2T(n/2) + n</h4>
+<div class="derive">
+  <div class="step">a=2, b=2, f(n)=n → c* = log₂2 = 1</div>
+  <div class="step">f(n) = n = Θ(n¹) = Θ(n^c*) → Case 2</div>
+  <div class="step">Result = Θ(n · log n) ✓</div>
+</div>
+
+<h4>Binary search: T(n) = T(n/2) + 1</h4>
+<div class="derive">
+  <div class="step">a=1, b=2, f(n)=1 → c* = log₂1 = 0</div>
+  <div class="step">f(n) = 1 = Θ(n⁰) = Θ(n^c*) → Case 2</div>
+  <div class="step">Result = Θ(n⁰ · log n) = Θ(log n) ✓</div>
+</div>
+
+<h4>Naive matrix multiplication subproblem: T(n) = 8T(n/2) + n²</h4>
+<div class="derive">
+  <div class="step">a=8, b=2, f(n)=n² → c* = log₂8 = 3</div>
+  <div class="step">f(n) = n² = O(n^(3−ε)) (ε=1) → Case 1 (leaves dominate)</div>
+  <div class="step">Result = Θ(n³) ✓ (this is also why Strassen uses a=7 to bring it down to n^2.81)</div>
+</div>
+
+<div class="warning">
+  <p><strong>Limitations of the Master Theorem:</strong> it only applies to "even-split" recurrences of the form <code>a·T(n/b)+f(n)</code>. <code>T(n)=T(n/3)+T(2n/3)+n</code> (uneven split) and <code>T(n)=T(n−1)+n</code> (subtractive) can't use it — use a recursion tree or substitution instead. There's also a well-known <strong>"gap"</strong>: when <code>f(n)</code> falls exactly between Case 2 and Case 3 (e.g. <code>f(n) = n^c* · log n</code>, such as <code>T(n)=2T(n/2)+n log n</code>), none of the three cases apply and you must solve it with a recursion tree — that example's answer is <code>Θ(n log²n)</code>, not <code>Θ(n log n)</code>. Case 3 also carries an implicit "regularity condition" (<code>a·f(n/b) ≤ c·f(n)</code>, <code>c&lt;1</code>), which the vast majority of polynomial <code>f(n)</code> satisfy automatically.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Amortized ===== -->
+<div class="section" id="amortized">
+<div class="card">
+<h2>Amortized analysis</h2>
+<p>Some operations are <strong>occasionally expensive but mostly cheap</strong>. Amortized analysis computes "the average cost over a sequence of operations" rather than the worst-case cost of a single operation.</p>
+
+<div class="insight">
+  <p><strong>The core distinction:</strong> amortized ≠ average case. Average takes the expectation over "random inputs"; amortized guarantees an upper bound on the total cost over "a sequence of operations," <strong>without relying on probability</strong> — it holds even for the worst-case input.</p>
+</div>
+
+<h3>Classic example: push on a dynamic array (ArrayList)</h3>
+<p>When the array is full it must "grow" = allocate a new array twice as large + copy all elements (O(n)). A single push is O(n) worst case, but amortized it is <strong>O(1)</strong>.</p>
+<div class="derive">
+  <p style="margin:0"><strong>Aggregate method:</strong> compute the total cost of n pushes</p>
+  <div class="step">Growth happens at size = 1, 2, 4, 8, ..., n</div>
+  <div class="step">Total copy cost = 1 + 2 + 4 + ... + n = geometric series ≈ 2n</div>
+  <div class="step">Total cost of n pushes = n (each write) + 2n (copies) = 3n</div>
+  <div class="step">Average per operation = 3n / n = O(1) amortized ✓</div>
+</div>
+<div class="insight">
+  <p>Once again <strong>"the sum of a geometric series ≈ its largest term"</strong> is at work: all the growth copies together add up to only <code>2n</code>, not <code>n × n</code>. So normal growth of a dynamic array is actually cheap; what really blows up memory is "pre-allocating a large capacity for every node up front" (see space complexity below).</p>
+</div>
+
+<h3>Three methods of amortized analysis</h3>
+<table>
+  <tr><th>Method</th><th>Approach</th></tr>
+  <tr><td>Aggregate</td><td>Compute the total cost T(n) of n operations, amortized = T(n)/n</td></tr>
+  <tr><td>Accounting</td><td>Cheap operations "prepay" credit, expensive ones "withdraw" it</td></tr>
+  <tr><td>Potential</td><td>Define a potential function Φ, amortized cost = actual + ΔΦ</td></tr>
+</table>
+
+<h3>Common amortized examples</h3>
+<ul>
+  <li><strong>Monotonic stack</strong> (robotWithString, merging non-coprime numbers, min-product): each element is <strong>pushed at most once and popped at most once</strong> → n elements make 2n stack operations total → amortized O(n), even if one while loop pops many at once.</li>
+  <li><strong>Sliding window</strong> (longest nice subarray): the left and right pointers each advance monotonically, moving n steps each overall → O(n).</li>
+  <li><strong>Union-Find with path compression <em>and</em> union by rank/size</strong>: a single operation is amortized <code>O(α(n))</code> (inverse Ackermann function, essentially constant). Note that either optimization alone gives only <code>O(log n)</code>.</li>
+</ul>
+
+<div class="tip">
+  <p><strong>Interview heuristic:</strong> when "the inner loop looks O(n) but the variable only increases, never decreases or resets" → use an amortized argument that "the total number of steps is O(n)," don't report O(n²). The theoretical name for this argument is exactly <strong>amortized analysis</strong>.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Practice ===== -->
+<div class="section" id="practice">
+<div class="card">
+<h2>Worked examples — practice on classic problems</h2>
+<p>Apply the techniques above to a few common LeetCode problems.</p>
+
+<h3>1. Count Orders (LC 1359) — tabulation DP</h3>
+<pre><span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">2</span>; i &lt;= n; i++)
+    <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">1</span>; j &lt;= <span class="num">2</span>*i-<span class="num">1</span>; j++)
+        dp[i] += dp[i-1] * j;</pre>
+<div class="derive">
+  <div class="step">Inner-loop count = Σ(2i−1) for i=2..n ≈ Σ 2i = 2·Σi = 2·n²/2 = n²</div>
+  <div class="step">→ O(n²). n≤500 → 250,000 operations, well below 10⁸ → passes comfortably</div>
+  <div class="step">(Optimizable: the inner arithmetic sum has a closed form i(2i−1) → O(n))</div>
+</div>
+
+<h3>2. Echo Substring (LC 1316) — brute force with pruning</h3>
+<div class="derive">
+  <div class="step">Enumerate half-length len × start i × compare len characters</div>
+  <div class="step">= Σ_len Σ_i len ≈ n × n × n / constant = O(n³)</div>
+  <div class="step">n≤2000 → 8×10⁹ blows up in theory, but the while rarely runs to the full length → passes in practice</div>
+  <div class="step">Robust version: lcp DP or rolling hash → O(n²) = 4×10⁶</div>
+</div>
+
+<h3>3. Fair Distribution of Cookies (LC 2305) — subset enumeration</h3>
+<div class="derive">
+  <div class="step">Enumerate submasks of each subset: Σ_{mask} 2^(popcount(mask))</div>
+  <div class="step">= each bit has three states (out / in the large set / in the small set) = 3ⁿ</div>
+  <div class="step">n≤8 → 3⁸ = 6561 → extremely fast</div>
+</div>
+<div class="insight">
+  <p><strong>Derivation of "enumerating submasks = 3ⁿ":</strong> for each element it can be (a) not in the mask, (b) in the mask but not in the submask, or (c) in the submask. One of three choices, n independent elements → 3ⁿ. This is a common complexity in bitmask DP.</p>
+</div>
+
+<h3>4. Binary-search-on-answer type (LC 2861 Alloys) — n × binary search</h3>
+<div class="derive">
+  <div class="step">Binary search the answer for each machine: log(upper bound) iterations</div>
+  <div class="step">Each binary-search step checks every metal: O(n)</div>
+  <div class="step">k machines → O(k · n · log(upper bound))</div>
+  <div class="step">Everything ≤ 10⁵ scale → about 10⁵ × 30 = 3×10⁶ → passes comfortably</div>
+</div>
+
+<h3>5. Tarjan's bridge finding (LC 1192) — graph traversal</h3>
+<div class="derive">
+  <div class="step">DFS visits each node once and looks at each edge twice (undirected)</div>
+  <div class="step">= O(V + E)</div>
+  <div class="step">V,E ≤ 10⁵ → 2×10⁵ → passes comfortably</div>
+</div>
+
+<div class="tip">
+  <p><strong>Estimation SOP:</strong> (1) identify the dominant loop / recursion structure → (2) compute the order using summation / recurrences / the Master Theorem → (3) plug in the upper bound on n to get the actual operation count → (4) compare against 10⁸/sec to judge TLE → (5) if it exceeds, think about whether you can lower the order (closed-form arithmetic sum, binary search, monotonic stack, amortization).</p>
+</div>
+
+<h3>Don't forget space complexity</h3>
+<ul>
+  <li><strong>Extra space</strong>: excludes input and output, counts only the auxiliary structures you allocate.</li>
+  <li>A DP table <code>dp[n][m]</code> → O(n·m); a rolling array can compress it to O(m) (as in LC 1335 minDifficulty).</li>
+  <li>Hidden space of recursion: the call stack depth. A DFS on a chain-shaped graph has depth O(n) and may overflow the stack.</li>
+  <li><code>new ArrayList(n)</code> × n of them → O(n²) space → MLE (Memory Limit Exceeded — a common trap: pre-allocating a large capacity for every node).</li>
+</ul>
+</div>
+</div>
+</div>
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><span class="bkspacer"></span><a class="bkc" href="index.html">📖 Contents</a><a href="algo_toolbox_cheatsheet.html">Algorithm Toolbox Cheat Sheet ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

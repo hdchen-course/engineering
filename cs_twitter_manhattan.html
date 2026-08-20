@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Study: Twitter's Manhattan — a Real-Time Multi-Tenant Distributed Database — Real-World Engineering Case Studies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XII · Chapter 3 — <b>Case Study: Twitter Manhattan</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Case Study: Twitter's Manhattan — a Real-Time Multi-Tenant Distributed Database</h1>
+  <div class="sub">A close reading of Twitter's public April 2014 engineering post introducing Manhattan, rewritten in our own words. Twitter built its own distributed database so any team inside the company could self-serve durable, low-latency, always-on storage on shared multi-tenant clusters — instead of standing up a fresh cluster per feature. The standout idea is treating multi-tenancy, quotas, and self-service as first-class design goals. Every fact below is drawn from that post (via the Internet Archive) and cited in §10; specifics not stated there — and internal metrics never published — are omitted rather than invented.</div>
+</header>
+
+<div class="ins"><div class="insl">Why this case study is worth memorizing</div><p>Most database case studies argue about a data structure. Manhattan argues about an <em>operating model</em>: it is the classic example of turning storage into a <strong>self-serve, multi-tenant internal platform</strong> — "storage as a service, not just technology." It forces you to reason about the problems that only appear at organizational scale: how one noisy tenant is stopped from starving everyone else, how a team provisions capacity in seconds without a storage engineer in the loop, and how a lean, pluggable core lets you swap storage engines under the same interface. Read it as a worked example of designing a shared platform, not just a database.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. The Problem — Why Twitter Built Its Own Database</h2>
+
+<p class="lead">By 2014, Twitter's storage needs had outgrown the way it was running storage. In their telling, they needed a system that could serve <strong>millions of queries per second</strong> with <strong>extremely low latency in a real-time environment</strong>, be <strong>always available</strong>, and <strong>scale across several regions</strong> around the world. On <strong>April 2, 2014</strong>, Twitter's Core Storage team published a post introducing the database they built to meet that bar, which they called <strong>Manhattan</strong>.</p>
+
+<h3>What they were running before</h3>
+<p>Twitter did not start from scratch philosophically — they started from experience. The post says they had <strong>"used and made significant contributions to many open source databases,"</strong> and that they <strong>"already had many large storage clusters at Twitter"</strong> when they began building Manhattan. That existing footprint is exactly what taught them which properties to encourage and which to avoid.</p>
+
+<div class="note"><div class="notel">A note on what the post does and doesn't name</div><p>The post refers only to <strong>"many open source databases"</strong> and <strong>"many large storage clusters"</strong> — it does <strong>not</strong> name a specific prior system in this piece. We therefore describe the pre-Manhattan situation the way the post does, rather than attaching a particular product name that the source doesn't support.</p></div>
+
+<h3>The pain that made a new build worth it</h3>
+<p>Two operational frustrations drove the decision, both stated plainly in the post:</p>
+<ul>
+  <li><strong>Real-time latency the existing options didn't meet.</strong> Twitter reported spending <strong>"far too much time firefighting production systems"</strong> to hit the performance their products expected — the real-time nature of Twitter demanded lower latency than what they were getting.</li>
+  <li><strong>Setting up storage was too manual.</strong> <strong>"Standing up new storage capacity for a use case involved too much manual work and process."</strong> Every new feature that needed storage meant operator toil and delay.</li>
+</ul>
+<p>Their conclusion was blunt: the situation was <strong>"simply not sustainable."</strong> The fix wasn't a bigger cluster — it was a different kind of system, one designed from day one to be operated at scale and consumed as a service.</p>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. Design Goals — What "Good" Had to Mean</h2>
+
+<p>Manhattan's requirements read like a distributed-systems checklist, but the ordering is the story: <strong>availability, operability, and developer productivity sit alongside raw performance</strong>, not below it. The post lists these goals:</p>
+
+<table class="tbl">
+<thead><tr><th>Goal</th><th>What Twitter meant by it</th></tr></thead>
+<tbody>
+<tr><td><strong>Reliability</strong></td><td>A durable datastore with <em>predictable</em> performance that teams can trust through failures, slowdowns, expansions, and hotspots. Worst-case (tail) performance matters more than average.</td></tr>
+<tr><td><strong>Availability</strong></td><td>Most use cases favor availability over consistency, so an <strong>always-on, eventually consistent</strong> database was a must.</td></tr>
+<tr><td><strong>Extensibility</strong></td><td>A <strong>modular foundation</strong> so they could add everything from new storage engines to strong consistency later. A <strong>schemaless key-value data model</strong> fit most customers and left room to add structure.</td></tr>
+<tr><td><strong>Operability</strong></td><td>As clusters grow from hundreds to thousands of nodes, ordinary operations must stay easy. Every feature is weighed for operational complexity and ease of diagnosis.</td></tr>
+<tr><td><strong>Low latency</strong></td><td>As a real-time service, Twitter's products require consistent low latency, so they made trade-offs explicitly to guarantee it.</td></tr>
+<tr><td><strong>Real-world scalability</strong></td><td>Scale in <em>every</em> metric — cluster size, requests per second, data size, geography, and <strong>number of tenants</strong> — without sacrificing cost-effectiveness or ease of operation.</td></tr>
+<tr><td><strong>Developer productivity</strong></td><td>Any developer should be able to store what they need on a <strong>self-service platform</strong> that "just works," without a storage engineer intervening.</td></tr>
+</tbody>
+</table>
+
+<div class="tip"><div class="tipl">The design philosophy underneath the list</div><p>The post repeatedly favors <strong>predictability over peak cleverness</strong>. They measure <code>p999</code> and <code>p9999</code> latency because they care how slow the slowest 0.01% of requests are, and they provision for <strong>worst-case</strong> throughput. Their maxim: <em>"simple and working trumps fancy and broken,"</em> and <em>"rare events are no longer rare at scale."</em> That mindset — protect the tail, keep the core simple — shapes every later decision.</p></div>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. Multi-Tenancy — the Standout Idea</h2>
+
+<p>The single most transferable idea in Manhattan is that <strong>multi-tenancy, Quality of Service (QoS), and self-service were "first-class citizens"</strong> — explicit design goals, not features added on later. Twitter had learned the hard way why this matters: in previous systems they were <strong>"building out clusters for every feature,"</strong> which increased operator burden, wasted resources, and slowed teams from shipping.</p>
+
+<h3>Why multi-tenancy is hard</h3>
+<p>Letting many unrelated applications share the same cluster trades a clean isolation boundary for efficiency — and that trade creates real problems the post enumerates: you must now reason about <strong>isolation, resource management, capacity modeling across many customers, rate limiting, QoS, and quotas</strong> all at once. The core risk is the <strong>noisy-neighbor</strong> problem: one application's traffic spike or runaway job can consume shared CPU, disk, and network and degrade <em>everyone else</em>. A per-feature cluster makes that impossible by construction; a shared cluster has to <em>engineer</em> it away.</p>
+
+<h3>How Manhattan addresses it</h3>
+<p>Twitter's answer was a dedicated <strong>rate-limiting service</strong> plus quotas and visibility, guided by one non-negotiable principle stated in their reliability section: <em>"if a customer causes a problem, the problem should be limited to that customer and not spread to others."</em></p>
+<ul>
+  <li><strong>Quota enforcement and rate-limiting.</strong> Usage is bounded per tenant, and engineers are <strong>alerted when they cross their defined thresholds</strong>, so a tenant learns it is misbehaving before it hurts neighbors.</li>
+  <li><strong>Sub-second, spike-tolerant throttling.</strong> Rate limiting happens <strong>"not at a coarse grain but at a subsecond level,"</strong> with tolerance for the bursty traffic real applications actually produce — throttling only what's needed rather than punishing normal spikes.</li>
+  <li><strong>Resource isolation across many metrics.</strong> Twitter monitors and, when needed, throttles usage across many metrics <strong>"to ensure no one application can affect others on the system."</strong></li>
+  <li><strong>Manual operator controls too.</strong> Beyond automatic enforcement, operators have manual levers to recover from incidents and to mitigate impact on all customers — including the tenant that went over capacity.</li>
+</ul>
+
+<div class="ins"><div class="insl">The economic payoff of doing multi-tenancy well</div><p>Because most tenants don't use all their allotted resources at once, a large shared multi-tenant cluster can <strong>absorb traffic spikes far more easily</strong> than a fleet of single-purpose clusters could — statistical multiplexing across tenants. Combined with self-service (§7), it let teams launch features fast, which the post says drove <strong>a rise in experimentation and a proliferation of new use cases</strong>. Twitter even built internal APIs to feed usage data to capacity/cost analysis, so they could see which use cases cost the business the most.</p></div>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. Architecture — a Layered, Pluggable System</h2>
+
+<p>To stay modular and let features roll out incrementally, Twitter separated Manhattan into <strong>four layers: interfaces, storage services, storage engines, and the core.</strong> The design goals for the build were explicit: <em>keep the core lean and simple; bring value incrementally; make multi-tenancy/QoS/self-service first-class; focus on predictability; and treat storage as a service.</em></p>
+
+<h3>The core</h3>
+<p>The core is described as <strong>"the most critical aspect of the storage system"</strong> — highly stable and robust. It handles <strong>failure, eventual consistency, routing, topology management, intra- and inter-datacenter replication, and conflict resolution.</strong> Crucially, pieces inside the core are <strong>"completely pluggable,"</strong> so the team could iterate on designs and unit-test effectively without destabilizing the whole.</p>
+<p>Operators can <strong>alter the topology at any time</strong> to add or remove capacity. Topology information is stored in <strong>ZooKeeper</strong> for its strong coordination, but — an important detail — ZooKeeper is <strong>not in the critical path for reads or writes</strong>. Extensive metrics across all hosts give the team deep visibility into correctness and performance.</p>
+
+<h3>Storage services</h3>
+<p>On top of the core sit optional services that provide features developers expect from traditional databases. The post gives three examples:</p>
+<ul>
+  <li><strong>Batch Hadoop importing.</strong> A pipeline lets a team generate a dataset in HDFS and register it through a self-service interface; watchers convert it into the read-only <code>seadb</code> format and import it for fast serving from SSD or memory. Because subsequent versions of a multi-terabyte dataset typically change <strong>less than 10–20%</strong>, Manhattan produces <strong>binary diffs</strong> to cut cross-datacenter import bandwidth and time.</li>
+  <li><strong>Strong Consistency service.</strong> Using a consensus algorithm with a replicated log to guarantee in-order events reach all replicas, it enables <strong>Check-And-Set (CAS), strong reads, and strong writes</strong>, in two modes: <strong><code>LOCAL_CAS</code></strong> (coordinated within one datacenter) and <strong><code>GLOBAL_CAS</code></strong> (across a quorum of datacenters), each with its own latency/data-modeling trade-offs.</li>
+  <li><strong>Timeseries Counters service.</strong> A thin, efficient counting layer built for Twitter's Observability infrastructure, designed to handle <strong>millions of increments per second</strong>.</li>
+</ul>
+
+<h3>Interfaces</h3>
+<p>The interface layer is how a customer interacts with the store. At the time of the post, Manhattan exposed a <strong>key/value interface</strong>, with a <strong>graph-based interface</strong> (to interact with edges) described as in progress.</p>
+
+<div class="note"><div class="notel">Where quotas and self-service live</div><p>Multi-tenancy, quota enforcement, rate-limiting, and self-serve provisioning are part of the <strong>service layer</strong> Twitter wraps around the core (the "storage as a service" layer), not the core itself. The diagram in §6 places them there deliberately, matching the prose.</p></div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. Storage Engines &amp; Data Model</h2>
+
+<p>At the lowest level sits the question of <strong>how bytes are laid out on disk and in memory</strong>. To avoid the complexity and risk of managing many external codebases, Twitter chose to build their <strong>initial storage engines in-house</strong>, while keeping the option to plug in external engines later. That control let them focus on the features they needed most. The post lists <strong>three</strong> engines:</p>
+
+<div class="miniboxes">
+  <div class="mb"><div class="mbh">seadb — read-only</div><ul><li>A read-only file format for <strong>batch-processed data from Hadoop</strong>.</li><li>The target of the batch-import pipeline; served fast from SSD/memory.</li></ul></div>
+  <div class="mb"><div class="mbh">sstable — LSM tree</div><ul><li>A <strong>log-structured merge-tree</strong> based format.</li><li>Tuned for <strong>heavy write workloads</strong>.</li></ul></div>
+  <div class="mb"><div class="mbh">btree — B-tree</div><ul><li>A <strong>B-tree</strong> based format.</li><li>Tuned for <strong>heavy read, light write</strong> workloads.</li></ul></div>
+  <div class="mb"><div class="mbh">shared trait</div><ul><li><strong>All</strong> storage engines support <strong>block-based compression</strong>.</li><li>Same interface/core above them — engines are pluggable.</li></ul></div>
+</div>
+
+<p>The reason to offer several engines is the same reason a well-designed platform offers several instance types: <strong>different workloads have different physics</strong>. An LSM tree turns random writes into sequential ones, which is ideal for write-heavy streams; a B-tree gives efficient point/range reads for read-heavy data; a read-only format serves precomputed Hadoop datasets with no write path at all. Because they sit behind a common core and interface, a team can pick the engine matching its access pattern without changing how it talks to Manhattan.</p>
+
+<h3>Data model and consistency</h3>
+<p>The data model is a <strong>schemaless key-value</strong> store — enough for most customers, with <em>"room to add structure later."</em> Consistency is <strong>eventually consistent at the core</strong> (favoring availability), with <strong>strong consistency available as an opt-in</strong> where a use case truly needs it — and the post is careful that developers must understand the trade-offs, since strong consistency typically implies mastership over a partition range and the risk of a few seconds of unavailability during master election.</p>
+<p>To converge an eventually consistent system, Manhattan runs an always-on <strong>replica reconciliation</strong> process, helped by two optimizations: <strong>read-repair</strong> (frequently read data converges faster) and <strong>hinted-handoff</strong> (a secondary delivery path for writes that failed because a node was briefly down).</p>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. Diagram — the Layered Architecture</h2>
+
+<p>Follow a request from the top down. A Twitter service talks to an <strong>interface</strong>; the request passes through the <strong>storage-services</strong> layer (where multi-tenancy, quotas, and rate-limiting live) into the <strong>core</strong> (routing, topology, replication, consistency); the core reads and writes through one of the <strong>pluggable storage engines</strong>. ZooKeeper holds topology to the side of the read/write path, not on it.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 560" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="mah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+
+  <!-- Client -->
+  <rect x="330" y="14" width="200" height="42" rx="8" fill="#e0f2fe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="430" y="32" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">Twitter service (client)</text>
+  <text x="430" y="47" text-anchor="middle" font-size="8.5" fill="#526176">millions of queries/sec, real-time</text>
+  <line x1="430" y1="56" x2="430" y2="82" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#mah)"/>
+
+  <!-- Interfaces band -->
+  <rect x="60" y="84" width="740" height="58" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="150" y="118" text-anchor="middle" font-size="11" font-weight="800" fill="#334155">INTERFACES</text>
+  <rect x="330" y="96" width="180" height="34" rx="7" fill="#dbeafe" stroke="#2563eb" stroke-width="1.3"/>
+  <text x="420" y="117" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">key / value interface</text>
+  <rect x="540" y="96" width="210" height="34" rx="7" fill="#eef2ff" stroke="#6366f1" stroke-width="1.3" stroke-dasharray="4,3"/>
+  <text x="645" y="117" text-anchor="middle" font-size="9.5" font-weight="700" fill="#4338ca">graph interface (planned)</text>
+  <line x1="430" y1="142" x2="430" y2="168" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#mah)"/>
+
+  <!-- Storage services band -->
+  <rect x="60" y="170" width="740" height="98" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="150" y="196" text-anchor="middle" font-size="11" font-weight="800" fill="#334155">STORAGE</text>
+  <text x="150" y="210" text-anchor="middle" font-size="11" font-weight="800" fill="#334155">SERVICES</text>
+  <rect x="300" y="180" width="150" height="30" rx="6" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.2"/>
+  <text x="375" y="199" text-anchor="middle" font-size="8.5" font-weight="700" fill="#0d7a6f">Batch Hadoop import</text>
+  <rect x="460" y="180" width="160" height="30" rx="6" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.2"/>
+  <text x="540" y="199" text-anchor="middle" font-size="8.5" font-weight="700" fill="#0d7a6f">Strong Consistency (CAS)</text>
+  <rect x="630" y="180" width="130" height="30" rx="6" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.2"/>
+  <text x="695" y="199" text-anchor="middle" font-size="8.5" font-weight="700" fill="#0d7a6f">Timeseries counters</text>
+  <rect x="300" y="224" width="460" height="34" rx="7" fill="#fef3c7" stroke="#d97706" stroke-width="1.4"/>
+  <text x="530" y="238" text-anchor="middle" font-size="9" font-weight="700" fill="#92400e">Multi-tenancy · QoS: quotas · rate-limiting · self-serve provisioning</text>
+  <text x="530" y="251" text-anchor="middle" font-size="8" fill="#92400e">isolates tenants so one customer's problem stays limited to that customer</text>
+  <line x1="430" y1="268" x2="430" y2="294" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#mah)"/>
+
+  <!-- Core band -->
+  <rect x="60" y="296" width="740" height="96" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="130" y="348" text-anchor="middle" font-size="11" font-weight="800" fill="#334155">CORE</text>
+  <rect x="240" y="308" width="360" height="72" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="420" y="328" text-anchor="middle" font-size="9.5" font-weight="700" fill="#5b21b6">routing · topology management</text>
+  <text x="420" y="344" text-anchor="middle" font-size="9.5" font-weight="700" fill="#5b21b6">intra / inter-datacenter replication</text>
+  <text x="420" y="360" text-anchor="middle" font-size="9.5" font-weight="700" fill="#5b21b6">eventual consistency · conflict resolution</text>
+  <text x="420" y="374" text-anchor="middle" font-size="8.5" fill="#6d28d9">pluggable internals · lean &amp; simple</text>
+  <!-- ZooKeeper side box -->
+  <rect x="630" y="316" width="150" height="56" rx="7" fill="#f1f5f9" stroke="#64748b" stroke-width="1.3"/>
+  <text x="705" y="337" text-anchor="middle" font-size="9.5" font-weight="700" fill="#334155">ZooKeeper</text>
+  <text x="705" y="351" text-anchor="middle" font-size="8" fill="#526176">topology store</text>
+  <text x="705" y="363" text-anchor="middle" font-size="8" fill="#526176">off read/write path</text>
+  <line x1="600" y1="344" x2="628" y2="344" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#mah)"/>
+  <line x1="420" y1="392" x2="420" y2="418" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#mah)"/>
+
+  <!-- Storage engines band -->
+  <rect x="60" y="420" width="740" height="122" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="430" y="438" text-anchor="middle" font-size="11" font-weight="800" fill="#334155">PLUGGABLE STORAGE ENGINES (built in-house)</text>
+  <rect x="110" y="448" width="200" height="60" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.4"/>
+  <text x="210" y="470" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b">seadb</text>
+  <text x="210" y="485" text-anchor="middle" font-size="8.5" fill="#991b1b">read-only file format</text>
+  <text x="210" y="498" text-anchor="middle" font-size="8.5" fill="#991b1b">Hadoop batch data</text>
+  <rect x="330" y="448" width="200" height="60" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="430" y="470" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">sstable — LSM tree</text>
+  <text x="430" y="485" text-anchor="middle" font-size="8.5" fill="#166534">heavy-write workloads</text>
+  <text x="430" y="498" text-anchor="middle" font-size="8.5" fill="#166534">sequential writes</text>
+  <rect x="550" y="448" width="200" height="60" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="650" y="470" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">btree</text>
+  <text x="650" y="485" text-anchor="middle" font-size="8.5" fill="#1d4ed8">read-heavy, light-write</text>
+  <text x="650" y="498" text-anchor="middle" font-size="8.5" fill="#1d4ed8">efficient point/range reads</text>
+  <text x="430" y="528" text-anchor="middle" font-size="9" fill="#526176">all engines support block-based compression · same core &amp; interface above them</text>
+</svg>
+<div class="svg-cap">Manhattan's four layers, top to bottom: interfaces (key/value; graph planned) → storage services (batch import, strong-consistency CAS, timeseries counters, and the multi-tenancy/QoS controls) → the lean, pluggable core (routing, topology, cross-datacenter replication, eventual consistency) → three in-house pluggable storage engines (seadb, sstable/LSM, btree). ZooKeeper holds topology beside the read/write path, not on it.</div>
+</div>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Storage as a Service — Self-Serve Provisioning</h2>
+
+<p>The layer that made Manhattan a <em>platform</em> rather than a <em>database</em> is self-service. Twitter observed that existing databases were <strong>"designed to be setup and administered for a specific set of use-cases"</strong> — a poor fit for a company spawning new internal services constantly. Their solution: <strong>"storage as a service."</strong></p>
+<ul>
+  <li><strong>Provision in seconds.</strong> Engineers specify what their application needs — <strong>storage size, queries per second, and so on</strong> — and <strong>start using storage in seconds</strong>, without waiting for hardware to be installed or schemas to be set up.</li>
+  <li><strong>Managed multi-tenant environment.</strong> Customers run in shared clusters that the operational teams manage for them, with built-in visibility into their own data and workloads.</li>
+  <li><strong>Guardrails built in.</strong> Quota enforcement and rate-limiting (§3) are part of the same self-service surface, and usage data flows to Capacity and Fleet Management for planning.</li>
+  <li><strong>Operable by design.</strong> Tooling lets operators change the whole topology by editing a file of host groups and weights; eventually they built an <strong>automated agent</strong> that accepts high-level goals for cluster state and safely stacks and executes the directives with no further operator attention.</li>
+</ul>
+<div class="tip"><div class="tipl">Why this is the force-multiplier</div><p>Self-service is what converts a good database into organizational leverage. When provisioning drops from "file a ticket, wait for a storage engineer" to "declare your needs, start in seconds," the number of teams who can ship storage-backed features goes up — and the storage team stops being a bottleneck. Multi-tenancy makes that economically viable; self-service makes it fast. Together they are the whole point of Manhattan.</p></div>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Trade-offs &amp; Lessons</h2>
+
+<p>Manhattan is a build-vs-buy decision at extreme scale, and it is worth being balanced about what that costs and what it buys.</p>
+
+<div class="miniboxes">
+  <div class="mb pro"><div class="mbh">What the approach bought</div><ul>
+    <li><strong>Self-serve + multi-tenant</strong> storage removed per-feature clusters and operator toil — an operational force-multiplier.</li>
+    <li>A <strong>lean, pluggable core</strong> let them add engines and strong consistency incrementally without rewrites.</li>
+    <li><strong>Predictable tail latency</strong> and always-on availability tuned to Twitter's real-time products.</li>
+    <li>Efficiency: shared clusters <strong>absorb spikes</strong> via multiplexing across tenants.</li>
+  </ul></div>
+  <div class="mb con"><div class="mbh">What it cost</div><ul>
+    <li><strong>Building and operating your own database</strong> is a large, ongoing investment — a dedicated Core Storage team, on-call, and customer support for internal users.</li>
+    <li>Multi-tenancy adds hard problems: <strong>isolation, capacity modeling, rate-limiting, QoS</strong> that a single-tenant cluster never faces.</li>
+    <li><strong>Eventual consistency by default</strong> pushes trade-off awareness onto application developers; strong consistency is opt-in and carries its own latency cost.</li>
+    <li>In-house engines mean <strong>you</strong> own every bug and every feature gap.</li>
+  </ul></div>
+</div>
+
+<div class="warn"><div class="warnl">The honest framing</div><p>This is <strong>not</strong> a template most companies should copy. Twitter built Manhattan because they had exhausted the operability of running many clusters at a scale and real-time bar few organizations reach, and they had the team to sustain a bespoke database. For almost everyone else, a managed multi-tenant database (or a smaller number of well-run shared clusters) is the right call. The <em>transferable</em> lessons are architectural, not "build your own DB."</p></div>
+
+<div class="tip"><div class="tipl">The lessons that generalize</div><p><strong>(1)</strong> Treat <strong>multi-tenancy, quotas, and self-service as first-class design goals</strong>, not afterthoughts — isolation and provisioning speed decide whether a shared platform succeeds. <strong>(2)</strong> Keep a <strong>lean, pluggable core</strong> so you can swap storage engines and add capabilities incrementally behind a stable interface. <strong>(3)</strong> <strong>Design for the tail and for operability</strong> — <code>p9999</code>, worst-case throughput, one-command operations — because "rare events are no longer rare at scale." <strong>(4)</strong> Offer <strong>multiple engines for multiple workloads</strong> rather than forcing one structure to serve every access pattern.</p></div>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Interview Angle — How to Use This</h2>
+
+<p>Manhattan is ideal material for <strong>"design a multi-tenant storage service"</strong> or <strong>"design a key-value store"</strong> questions, and for any prompt where <strong>isolation, self-service provisioning, and pluggable engines</strong> come up. Cited well, it signals platform-level thinking.</p>
+
+<h3>What signal it sends</h3>
+<ul>
+  <li>You think about storage as a <strong>platform with tenants</strong>, not a single database — you can name the noisy-neighbor problem and the QoS/quota machinery that contains it.</li>
+  <li>You reason about <strong>layering and pluggability</strong>: a lean core, engines chosen per workload, services layered on top.</li>
+  <li>You weigh <strong>availability vs. consistency</strong> deliberately (eventually consistent by default, strong consistency opt-in) and design for <strong>tail latency and operability</strong>, not just averages.</li>
+</ul>
+
+<div class="iq">"Twitter's Manhattan is my go-to example for a multi-tenant storage platform. They made multi-tenancy, QoS, and self-service first-class goals: teams provision storage-size and QPS and start in seconds, and a rate-limiting service enforces quotas at sub-second granularity so one noisy tenant can't starve others — 'a customer's problem stays that customer's problem.' Architecturally it's layered — interfaces, storage services, a lean pluggable core doing routing/replication/consistency, and pluggable storage engines (an LSM engine for writes, a B-tree engine for reads, a read-only engine for Hadoop data). It's eventually consistent by default with strong consistency opt-in. The lesson I take is: for a shared storage service, isolation and provisioning speed matter as much as the data structure."</div>
+
+<h3>Probe questions and crisp answers</h3>
+<div class="card">
+<p><strong>Q: How do you stop one tenant from starving others in a shared storage cluster?</strong><br>Make isolation a first-class feature. Give each tenant a <strong>quota</strong> (storage size, QPS) and enforce it with a <strong>rate-limiting service</strong> that throttles at <strong>sub-second</strong> granularity while tolerating normal bursts, monitor usage across many resource metrics, and <strong>alert tenants when they cross thresholds</strong> so they self-correct. Keep manual operator overrides for incidents. The guiding invariant is that one customer's problem must stay limited to that customer. Statistical multiplexing (tenants rarely peak together) is what makes the shared cluster efficient in the first place.</p>
+<p><strong>Q: Why support multiple pluggable storage engines instead of one?</strong><br>Because access patterns have different physics. An <strong>LSM tree</strong> (sstable) turns random writes into sequential ones — great for write-heavy streams; a <strong>B-tree</strong> gives efficient point and range reads for read-heavy data; a <strong>read-only format</strong> (seadb) serves precomputed batch datasets with no write path. Putting them behind one lean core and a common interface lets a team pick the engine that matches its workload without changing how it talks to the system, and lets the platform add engines later without rewrites.</p>
+<p><strong>Q: What does self-serve provisioning actually require underneath?</strong><br>A control surface where a team declares needs (size, QPS) and gets capacity in seconds; a <strong>multi-tenant</strong> substrate so you're allocating from a shared pool rather than racking hardware per request; <strong>quota/rate-limit</strong> enforcement so self-service can't become self-harm; deep <strong>visibility</strong> so tenants and operators can see workloads; and strong <strong>operational tooling/automation</strong> (Manhattan used an agent that takes high-level goals for cluster state) so growth doesn't scale operator headcount linearly.</p>
+<p><strong>Q: Eventual vs. strong consistency — how would you offer both?</strong><br>Default to <strong>eventual consistency</strong> for availability, and converge with an always-on <strong>replica reconciliation</strong> process plus <strong>read-repair</strong> and <strong>hinted-handoff</strong>. Offer <strong>strong consistency as opt-in</strong> for the use cases that need it, implemented with a consensus algorithm and a replicated log to enable CAS/strong reads/strong writes — and be explicit that it costs latency and typically implies mastership over a partition range (so a master election can mean brief unavailability). Let the developer choose per use case.</p>
+</div>
+
+<!-- ══════════════ SECTION 10 ══════════════ -->
+<h2>10. Sources</h2>
+<p>This chapter is a <strong>summary rewritten in our own words</strong> from Twitter's public engineering blog post introducing Manhattan. All facts, layers, engine names, and mechanisms above are drawn from that post and reflect the system <strong>as described on its publication date (April 2, 2014)</strong>; Manhattan and Twitter's (now X's) infrastructure have certainly evolved since, and the post itself noted a fuller technical white paper was planned. Where a specific figure or system name wasn't stated in the post, we <strong>omitted it rather than infer it</strong> — and precise internal metrics (cluster sizes, exact QPS, latencies) were never made public, so they do not appear here.</p>
+<ul>
+  <li><strong>"Manhattan, our real-time, multi-tenant distributed database for Twitter scale"</strong> — Twitter Engineering blog (Core Storage team), published April 2, 2014. Source of: the problem/context and design goals; the multi-tenancy/QoS/self-service goals and the rate-limiting service; the four-layer architecture (interfaces, storage services, storage engines, core); the pluggable core with ZooKeeper for topology off the read/write path; eventual consistency with opt-in strong consistency, replica reconciliation, read-repair, and hinted-handoff; the three in-house storage engines (<code>seadb</code>, <code>sstable</code>/LSM, <code>btree</code>) and block-based compression; the schemaless key/value data model and planned graph interface; and the batch-Hadoop-import, Strong-Consistency (LOCAL_CAS/GLOBAL_CAS), and timeseries-counter services.<br>Original URL (now redirects to X): <code>https://blog.twitter.com/engineering/en_us/a/2014/manhattan-our-real-time-multi-tenant-distributed-database-for-twitter-scale</code><br>Accessed via the Internet Archive (Wayback Machine) snapshot of that post: <code>https://web.archive.org/web/2020/https://blog.twitter.com/engineering/en_us/a/2014/manhattan-our-real-time-multi-tenant-distributed-database-for-twitter-scale</code></li>
+</ul>
+<div class="note"><div class="notel">Attribution and balance note</div><p>Twitter (now X) is named here because this is <strong>public, published</strong> engineering information, cited above — no confidential or internal material is used. The post is the Core Storage team's own account from 2014 and is understandably positive about the system they built; treat it as a lesson in designing a multi-tenant, self-serve storage platform rather than as an independent benchmark. Because the original blog URL now redirects to X's domain and can be difficult to load directly, the citation above also points at the archived copy actually used to write this chapter.</p></div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="cs_uber_mysql.html">&lsaquo; Case Study: Why Uber Migrated from Postgres to MySQL</a><a class="bkc" href="index.html">📖 Contents</a><a href="cs_netflix_kv.html">Case Study: Netflix's Key-Value Data Abstraction Layer &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

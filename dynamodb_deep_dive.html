@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon DynamoDB Deep Dive — FAANG System Design Interview Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* HEADER */
+.page-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px 20px;
+}
+.header-tag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.header-title { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.header-title span { color: #93c5fd; }
+.header-desc { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 700px; }
+
+/* TABS */
+.tab-bar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 44px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.tab-btn {
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text3);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 3px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.tab-btn:hover { color: var(--blue); background: var(--blue-l); }
+.tab-btn.active { color: var(--blue-d); border-bottom-color: var(--blue); }
+
+/* CONTENT */
+.content { padding: 32px 44px 60px; max-width: 1100px; margin: 0 auto; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* SECTION */
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--blue-l);
+}
+.subsection-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text2);
+  margin: 20px 0 10px;
+}
+
+/* CARD */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .icon { font-size: 18px; }
+
+/* COLLAPSIBLE */
+.collapsible {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.collapsible-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  transition: background .15s;
+  user-select: none;
+}
+.collapsible-header:hover { background: var(--bg3); }
+.collapsible-header .arrow {
+  transition: transform .2s;
+  font-size: 12px;
+  color: var(--text3);
+}
+.collapsible.open .collapsible-header .arrow { transform: rotate(90deg); }
+.collapsible-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease;
+}
+.collapsible.open .collapsible-body { max-height: 5000px; }
+.collapsible-content {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* CODE */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--blue-d);
+}
+pre {
+  font-family: 'JetBrains Mono', monospace;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 16px 20px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+pre code { background: none; color: inherit; padding: 0; }
+
+/* TABLE */
+.table-wrapper { overflow-x: auto; margin: 12px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th { background: var(--bg3); font-weight: 600; color: var(--text2); }
+tr:hover td { background: var(--bg3); }
+
+/* BADGE */
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 8px; }
+.badge-blue { background: var(--blue-l); color: var(--blue-d); }
+.badge-green { background: var(--green-l); color: var(--green); }
+.badge-yellow { background: var(--yellow-l); color: var(--yellow); }
+.badge-red { background: var(--red-l); color: var(--red); }
+.badge-purple { background: var(--purple-l); color: var(--purple); }
+
+/* KEY POINT */
+.key-point {
+  background: var(--yellow-l);
+  border-left: 4px solid var(--yellow);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.key-point strong { color: var(--yellow); }
+
+/* INFO BOX */
+.info-box {
+  background: var(--blue-l);
+  border-left: 4px solid var(--blue);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.warning-box {
+  background: var(--red-l);
+  border-left: 4px solid var(--red);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+
+/* SVG DIAGRAM */
+.diagram-container {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  margin: 16px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.diagram-caption {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* LIST */
+ul, ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 6px; font-size: 14px; }
+
+/* COMPARISON */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+@media (max-width: 768px) {
+  .comparison-grid { grid-template-columns: 1fr; }
+  .content { padding: 20px; }
+  .page-header { padding: 24px 20px 16px; }
+  .tab-bar { padding: 0 20px; }
+}
+
+.highlight { background: var(--yellow-l); padding: 1px 4px; border-radius: 3px; }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part V · Chapter 6 — <b>DynamoDB Deep Dive</b></span><span class="bkspacer"></span></nav>
+
+<div class="page-header">
+  <div class="header-tag">FAANG System Design Interview Prep</div>
+  <h1 class="ht header-title">Amazon DynamoDB <span>Deep Dive</span></h1>
+  <div class="header-desc">Comprehensive guide to a managed serverless key-value / document store: partition &amp; sort keys, single-table design, GSIs vs LSIs, capacity modes, hot partitions, Streams, TTL, transactions, and consistency — framed for staff-level system design interviews.</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="datamodel">Data Model</button>
+  <button class="tab-btn" data-tab="indexes">Indexes</button>
+  <button class="tab-btn" data-tab="capacity">Capacity &amp; Scaling</button>
+  <button class="tab-btn" data-tab="streams">Streams / TTL / Txns</button>
+  <button class="tab-btn" data-tab="interview">Interview</button>
+</div>
+
+<div class="content">
+
+<!-- ==================== OVERVIEW TAB ==================== -->
+<div id="tab-overview" class="tab-panel active">
+  <div class="section">
+    <h2 class="section-title">What DynamoDB Is</h2>
+    <p>DynamoDB is a fully managed, serverless, multi-region NoSQL database that offers key-value and document data models. It descends from the 2007 Amazon Dynamo paper — a highly available, eventually consistent key-value store — but the public service (launched 2012) is a distinct, hosted system. Its defining promise is <strong>predictable single-digit-millisecond latency at any scale</strong>: performance is a function of your access pattern, not of how much data you store.</p>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">&#9654;</span> Design Philosophy in One Sentence</div>
+      <p>DynamoDB deliberately trades away the flexible ad-hoc querying of a relational database in exchange for <strong>bounded, horizontally scalable performance</strong>. You cannot run an arbitrary <code>JOIN</code> or a <code>WHERE</code> on a non-indexed attribute cheaply; instead you design your keys and indexes up front around the exact queries your application will make.</p>
+    </div>
+
+    <div class="info-box">
+      <strong>The mental model shift:</strong> In relational design you normalize first and figure out queries later — the query planner adapts. In DynamoDB you <span class="highlight">enumerate access patterns first</span>, then design keys and indexes so every pattern is a direct key lookup or a narrow range query. Modeling is query-driven, not entity-driven.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Architecture at a Glance</h2>
+    <p>A table is transparently split into <strong>partitions</strong> — units of storage and throughput distributed across many nodes. The partition key is hashed to route each item to a partition; the service replicates each partition (typically 3 copies across Availability Zones within a Region) and handles all placement, splitting, repair, and failover for you.</p>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 820 430" width="780" xmlns="http://www.w3.org/2000/svg">
+        <text x="410" y="24" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#0f172a">Request Routing: Partition Key → Hash → Partition → Replicas</text>
+
+        <!-- Client -->
+        <rect x="40" y="60" width="150" height="50" rx="8" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+        <text x="115" y="82" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#1d4ed8">PutItem / GetItem</text>
+        <text x="115" y="99" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">PK = "USER#42"</text>
+
+        <!-- Request router -->
+        <rect x="250" y="55" width="150" height="60" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+        <text x="325" y="80" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#5b21b6">Request Router</text>
+        <text x="325" y="98" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">hash(PK) → partition</text>
+
+        <path d="M190 85 L250 85" stroke="#59677c" stroke-width="2" marker-end="url(#ovArrow)"/>
+
+        <!-- Partitions -->
+        <rect x="470" y="45" width="140" height="70" rx="8" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+        <text x="540" y="68" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#166534">Partition A</text>
+        <text x="540" y="85" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">hash 0x00–0x3F</text>
+        <text x="540" y="100" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">≤10 GB, 3k RCU/1k WCU</text>
+
+        <rect x="470" y="130" width="140" height="70" rx="8" fill="#fef3c7" stroke="#a35905" stroke-width="1.5"/>
+        <text x="540" y="153" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#92400e">Partition B</text>
+        <text x="540" y="170" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">hash 0x40–0x7F</text>
+        <text x="540" y="185" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">target for USER#42</text>
+
+        <rect x="470" y="215" width="140" height="70" rx="8" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+        <text x="540" y="238" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#166534">Partition C</text>
+        <text x="540" y="255" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#334155">hash 0x80–0xBF</text>
+        <text x="540" y="270" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">… and so on</text>
+
+        <path d="M400 85 L470 80" stroke="#59677c" stroke-width="1.5" marker-end="url(#ovArrow)"/>
+        <path d="M400 90 L470 160" stroke="#7c3aed" stroke-width="2" marker-end="url(#ovArrowP)"/>
+        <path d="M400 95 L470 245" stroke="#59677c" stroke-width="1.5" marker-end="url(#ovArrow)"/>
+
+        <!-- Replicas of partition B -->
+        <text x="700" y="60" text-anchor="middle" font-family="Inter" font-size="10" font-weight="700" fill="#334155">Partition B replicas</text>
+        <rect x="650" y="130" width="100" height="24" rx="4" fill="#fff" stroke="#117e39" stroke-width="1.5"/>
+        <text x="700" y="146" text-anchor="middle" font-family="Inter" font-size="9" fill="#166534">Leader (AZ-1)</text>
+        <rect x="650" y="160" width="100" height="24" rx="4" fill="#fff" stroke="#cbd5e1"/>
+        <text x="700" y="176" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Replica (AZ-2)</text>
+        <rect x="650" y="190" width="100" height="24" rx="4" fill="#fff" stroke="#cbd5e1"/>
+        <text x="700" y="206" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Replica (AZ-3)</text>
+        <path d="M610 165 L650 155" stroke="#59677c" stroke-width="1.5" marker-end="url(#ovArrow)"/>
+
+        <!-- caption for consistency -->
+        <rect x="40" y="330" width="750" height="70" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="60" y="355" font-family="Inter" font-size="11" font-weight="600" fill="#334155">Writes go to the partition leader and are replicated to a quorum of copies.</text>
+        <text x="60" y="375" font-family="Inter" font-size="11" fill="#334155">• Strongly consistent read → served from the leader.  • Eventually consistent read → may hit any replica (cheaper, may be stale for &lt; ~1s).</text>
+        <text x="60" y="392" font-family="Inter" font-size="10" fill="#59677c">All partitioning, splitting, replication, and failover are managed by the service — invisible to the client.</text>
+
+        <defs>
+          <marker id="ovArrow" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#59677c"/></marker>
+          <marker id="ovArrowP" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#7c3aed"/></marker>
+        </defs>
+      </svg>
+      <div class="diagram-caption">Fig 1: A table is sharded into partitions by a hash of the partition key; each partition is replicated across AZs.</div>
+    </div>
+
+    <div class="key-point">
+      <strong>Interview Insight:</strong> The single most important consequence of this architecture is the <span class="highlight">per-partition throughput ceiling</span>: roughly <strong>3,000 RCU and 1,000 WCU per physical partition</strong>. If your traffic concentrates on one partition key ("hot partition"), you can be throttled even while the table's total provisioned capacity is barely used. Good key design spreads load across partitions.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">DynamoDB vs a Relational Database</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Dimension</th><th>DynamoDB</th><th>Relational (e.g. MySQL/Postgres)</th></tr></thead>
+        <tbody>
+          <tr><td>Data model</td><td>Key-value + document (schemaless items)</td><td>Relational tables with fixed schema</td></tr>
+          <tr><td>Query flexibility</td><td>Key lookups + range on sort key + index queries only</td><td>Arbitrary SQL, JOINs, ad-hoc WHERE</td></tr>
+          <tr><td>Scaling</td><td>Horizontal, automatic, effectively unbounded</td><td>Vertical first; sharding is manual/complex</td></tr>
+          <tr><td>Performance model</td><td>Predictable single-digit ms, independent of data size</td><td>Degrades as data grows / queries get complex</td></tr>
+          <tr><td>Joins</td><td><span class="badge badge-red">None</span> — pre-join via single-table design</td><td>First-class</td></tr>
+          <tr><td>Transactions</td><td>ACID across up to 100 items (single Region)</td><td>Full multi-statement ACID</td></tr>
+          <tr><td>Operational burden</td><td>Fully managed, serverless</td><td>You (or RDS) manage tuning, replicas, failover</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box">
+      <strong>Referencing public systems is fine in interviews:</strong> DynamoDB is a good point of contrast to Google Spanner (globally-distributed, strongly-consistent SQL with TrueTime) and to Apache Cassandra (self-managed wide-column store with a similar partition/clustering-key model). Naming these tradeoffs signals breadth.
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DATA MODEL TAB ==================== -->
+<div id="tab-datamodel" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Primary Keys: Partition Key &amp; Sort Key</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Two Key Schemas</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li><strong>Simple primary key</strong> — partition key only (a.k.a. hash key). The partition key must be unique across the table. Access is a direct <code>GetItem</code> by that key.</li>
+          <li><strong>Composite primary key</strong> — partition key + sort key (a.k.a. range key). Uniqueness is on the <em>pair</em>. All items sharing a partition key form an <strong>item collection</strong>, physically stored together and sorted by sort key.</li>
+        </ul>
+        <p>The sort key unlocks the two most valuable relational-free capabilities: <strong>range queries</strong> (<code>begins_with</code>, <code>between</code>, <code>&gt;</code>, <code>&lt;</code>) and <strong>storing heterogeneous related items together</strong> in one collection so a single <code>Query</code> retrieves them in one round trip.</p>
+        <pre><code>// Query one partition, one round trip, results sorted by SK:
+Query(
+  KeyConditionExpression = "PK = :pk AND begins_with(SK, :prefix)",
+  ExpressionAttributeValues = { ":pk": "USER#42", ":prefix": "ORDER#" }
+)
+// Returns all of user 42's orders, ordered by the SK (e.g. ORDER#&lt;timestamp&gt;).</code></pre>
+        <div class="key-point"><strong>Key type rules:</strong> Partition and sort key attributes must be scalar — <code>String</code>, <code>Number</code>, or <code>Binary</code>. You cannot use a Boolean, list, map, or set as a key attribute.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Hard Limits You Must Know</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Limit</th><th>Value</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Max item size</strong></td><td><span class="badge badge-blue">400 KB</span></td><td>Includes attribute names + values (UTF-8 bytes for strings, binary length, etc.). Store large blobs in S3 and keep a pointer in the item.</td></tr>
+          <tr><td><strong>Physical partition storage</strong></td><td>~10 GB</td><td>Soft internal unit; the service auto-splits partitions as they grow. Only becomes a hard cap on a single item collection when an <em>LSI</em> exists (see below).</td></tr>
+          <tr><td><strong>Per-partition throughput</strong></td><td>~3,000 RCU / 1,000 WCU</td><td>Ceiling for a single physical partition — the root cause of hot-partition throttling.</td></tr>
+          <tr><td><strong>Item collection size (LSI only)</strong></td><td>10 GB</td><td>If a table has any Local Secondary Index, all items sharing a partition key (base + all LSIs) must fit in 10 GB.</td></tr>
+          <tr><td><strong>Query / Scan page size</strong></td><td>1 MB per request</td><td>Larger results require pagination via <code>LastEvaluatedKey</code>.</td></tr>
+          <tr><td><strong>BatchGetItem / BatchWriteItem</strong></td><td>100 items / 25 items</td><td>Batch read up to 100 items (16 MB); batch write up to 25 put/delete requests (16 MB).</td></tr>
+          <tr><td><strong>Transaction size</strong></td><td>100 items / 4 MB</td><td>Per <code>TransactWriteItems</code> / <code>TransactGetItems</code> call.</td></tr>
+          <tr><td><strong>GSIs per table</strong></td><td>20 (default quota)</td><td>Adjustable via a service quota increase.</td></tr>
+          <tr><td><strong>LSIs per table</strong></td><td>5</td><td>Must be defined at table creation; cannot be added later.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning-box"><strong>The 400 KB trap:</strong> item size counts attribute <em>names</em> too. Long descriptive attribute names ("customerShippingAddressLine1") multiplied across millions of items waste both size budget and money. Standard single-table designs use short names (<code>PK</code>, <code>SK</code>, <code>GSI1PK</code>, <code>data</code>).</div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Single-Table Design</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Why One Table Instead of Many</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>Because DynamoDB has no joins, the standard pattern is to store <strong>multiple entity types in a single table</strong> and use generic key attributes (<code>PK</code>, <code>SK</code>) plus overloaded values so that related entities land in the same item collection. A single <code>Query</code> then fetches a parent and its children together — the "pre-computed join."</p>
+        <ul>
+          <li><strong>Key overloading:</strong> the same <code>PK</code>/<code>SK</code> attributes hold different meanings for different item types, distinguished by a type prefix (<code>USER#</code>, <code>ORDER#</code>, <code>PRODUCT#</code>).</li>
+          <li><strong>Fewer round trips:</strong> retrieve a user profile and their recent orders in one request.</li>
+          <li><strong>Fewer moving parts / cost:</strong> one table's capacity, alarms, and backups instead of a dozen.</li>
+        </ul>
+        <div class="info-box"><strong>Honest caveat:</strong> single-table design is powerful but hard to evolve and hard for newcomers to read. Many teams pragmatically use a small number of tables (one per bounded context). In an interview, know the pattern and its tradeoffs — do not claim "always one table."</div>
+      </div></div>
+    </div>
+
+    <div class="section">
+      <h3 class="subsection-title">Worked example: e-commerce single-table layout</h3>
+      <p>Access patterns to satisfy: (1) get a user profile, (2) list a user's orders newest-first, (3) get an order with its line items, (4) look up an order by its order id, (5) list all orders in a given status.</p>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Entity</th><th>PK</th><th>SK</th><th>Other attributes</th></tr></thead>
+          <tbody>
+            <tr><td>User profile</td><td><code>USER#42</code></td><td><code>PROFILE#42</code></td><td>name, email, createdAt</td></tr>
+            <tr><td>Order (in user's list)</td><td><code>USER#42</code></td><td><code>ORDER#2026-08-01#1001</code></td><td>total, status, GSI1PK=<code>STATUS#SHIPPED</code></td></tr>
+            <tr><td>Order (metadata)</td><td><code>ORDER#1001</code></td><td><code>METADATA</code></td><td>total, status, createdAt</td></tr>
+            <tr><td>Order line item</td><td><code>ORDER#1001</code></td><td><code>ITEM#SKU-778</code></td><td>qty, price, name</td></tr>
+            <tr><td>Order line item</td><td><code>ORDER#1001</code></td><td><code>ITEM#SKU-902</code></td><td>qty, price, name</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <pre><code>// Pattern 2: list user 42's orders, newest first
+Query(PK = "USER#42", SK begins_with "ORDER#", ScanIndexForward = false)
+
+// Pattern 3 & 4: look up order 1001 by its id and get its line items in ONE query
+Query(PK = "ORDER#1001")   // returns the METADATA row + every ITEM# row
+
+// Pattern 5: all shipped orders — served by a GSI (see Indexes tab)
+Query(IndexName = "GSI1", GSI1PK = "STATUS#SHIPPED")</code></pre>
+      <div class="key-point"><strong>Sort-key design is a superpower:</strong> putting a zero-padded timestamp or ISO-8601 date inside the SK (<code>ORDER#2026-08-01#1001</code>) makes "newest first" a free <code>ScanIndexForward=false</code> scan — no sorting, no filtering.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Modeling Relationships</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Relationship</th><th>DynamoDB technique</th></tr></thead>
+        <tbody>
+          <tr><td>One-to-many</td><td>Parent and children share a partition key; children distinguished by SK prefix. One <code>Query</code> fetches all.</td></tr>
+          <tr><td>Many-to-many</td><td><strong>Adjacency list</strong>: store each edge as an item; a GSI inverts the relationship so you can traverse it both directions.</td></tr>
+          <tr><td>Hierarchies / graphs</td><td>Adjacency list + inverted GSI; composite SKs encode paths (e.g. <code>A#B#C</code>) for prefix queries.</td></tr>
+          <tr><td>Uniqueness constraint</td><td>Insert a sentinel item with a <code>ConditionExpression attribute_not_exists(PK)</code>; often inside a transaction with the main write.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== INDEXES TAB ==================== -->
+<div id="tab-indexes" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Secondary Indexes Enable New Access Patterns</h2>
+    <p>The base table only lets you query by its primary key. Secondary indexes let you query by <em>other</em> attributes. DynamoDB offers two kinds, and choosing correctly is a classic interview discriminator.</p>
+
+    <div class="comparison-grid">
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--blue-d)">Global Secondary Index (GSI)</div>
+        <ul>
+          <li>A <strong>different partition key and (optional) sort key</strong> from the base table.</li>
+          <li>Stored as a <strong>separate, asynchronously-maintained</strong> table behind the scenes.</li>
+          <li><span class="badge badge-yellow">Eventually consistent only</span> — no strongly consistent reads.</li>
+          <li>Own capacity (provisioned) or shares the table's on-demand billing.</li>
+          <li>Up to <strong>20 per table</strong> (default quota); can add or delete any time.</li>
+        </ul>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--purple)">Local Secondary Index (LSI)</div>
+        <ul>
+          <li><strong>Same partition key</strong> as the base table, but a <strong>different sort key</strong>.</li>
+          <li>Stored in the <em>same partition</em> as the base item (shares the item collection).</li>
+          <li><span class="badge badge-green">Supports strongly consistent reads</span>.</li>
+          <li>Shares the table's provisioned throughput; no separate capacity.</li>
+          <li>Up to <strong>5 per table</strong>, and <strong>must be created with the table</strong> — never added later.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="warning-box"><strong>The 10 GB LSI catch:</strong> because an LSI lives in the base item's partition, the presence of any LSI caps each item collection (all items with the same partition key, across base + LSIs) at <strong>10 GB</strong>. GSIs have no such limit because they are stored separately. When in doubt, prefer a GSI.</div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">GSI vs LSI — Decision Table</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Property</th><th>GSI</th><th>LSI</th></tr></thead>
+        <tbody>
+          <tr><td>Partition key</td><td>Any attribute (different from base)</td><td>Same as base table</td></tr>
+          <tr><td>Sort key</td><td>Optional, any attribute</td><td>Required, different attribute</td></tr>
+          <tr><td>Read consistency</td><td>Eventual only</td><td>Eventual <em>or</em> strong</td></tr>
+          <tr><td>Created</td><td>Any time (add/remove live)</td><td>Only at table creation</td></tr>
+          <tr><td>Throughput</td><td>Separate (provisioned) / shared (on-demand)</td><td>Shares base table capacity</td></tr>
+          <tr><td>Max per table</td><td>20 (default)</td><td>5</td></tr>
+          <tr><td>Item collection size limit</td><td>None</td><td>10 GB per partition key</td></tr>
+          <tr><td>Key uniqueness</td><td>Not required (many items can share GSI key)</td><td>Not required</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="key-point"><strong>Rule of thumb:</strong> reach for a <strong>GSI by default</strong>. Use an LSI only when you specifically need <em>strong consistency on an alternate sort order within the same partition key</em> and are confident item collections stay under 10 GB. In practice GSIs cover the vast majority of needs.</div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Projections — What Gets Copied Into the Index</h2>
+    <p>An index does not necessarily contain every attribute. The <strong>projection</strong> controls which non-key attributes are copied. This is a direct cost/latency lever: a smaller projection is cheaper to store and write, but querying a non-projected attribute forces an extra fetch from the base table.</p>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Projection type</th><th>Contains</th><th>When to use</th></tr></thead>
+        <tbody>
+          <tr><td><code>KEYS_ONLY</code></td><td>Index key + base table key only</td><td>Smallest/cheapest; when you only need the keys, then batch-get the rest.</td></tr>
+          <tr><td><code>INCLUDE</code></td><td>Keys + a chosen list of extra attributes</td><td>The best balance: project exactly the attributes your query returns → covering index.</td></tr>
+          <tr><td><code>ALL</code></td><td>Every attribute of the item</td><td>Fastest reads (no base-table fetch) but highest storage + write cost.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning-box"><strong>Non-projected attribute penalty (GSI):</strong> if a query requests an attribute that is <em>not</em> projected into a GSI, DynamoDB does <strong>not</strong> automatically fetch it — you get only projected attributes back. You must issue a separate <code>GetItem</code>/<code>BatchGetItem</code> against the base table. (LSIs can auto-fetch non-projected attributes from the base item, at extra read cost, because they are co-located.)</div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">GSI Write Amplification &amp; Throttling</h2>
+    <div class="diagram-container">
+      <svg viewBox="0 0 780 250" width="740" xmlns="http://www.w3.org/2000/svg">
+        <text x="390" y="22" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#0f172a">One base write can fan out to multiple index writes</text>
+        <rect x="40" y="70" width="150" height="60" rx="8" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+        <text x="115" y="95" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#1d4ed8">PutItem</text>
+        <text x="115" y="113" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">base table (1 WCU)</text>
+
+        <rect x="320" y="30" width="150" height="45" rx="8" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+        <text x="395" y="57" text-anchor="middle" font-family="Inter" font-size="10" fill="#166534">GSI1 write (async)</text>
+        <rect x="320" y="95" width="150" height="45" rx="8" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+        <text x="395" y="122" text-anchor="middle" font-family="Inter" font-size="10" fill="#166534">GSI2 write (async)</text>
+        <rect x="320" y="160" width="150" height="45" rx="8" fill="#fef3c7" stroke="#a35905" stroke-width="1.5"/>
+        <text x="395" y="187" text-anchor="middle" font-family="Inter" font-size="10" fill="#92400e">GSI3 write (async)</text>
+
+        <path d="M190 95 L320 52" stroke="#59677c" stroke-width="1.5" marker-end="url(#ixArrow)"/>
+        <path d="M190 100 L320 117" stroke="#59677c" stroke-width="1.5" marker-end="url(#ixArrow)"/>
+        <path d="M190 105 L320 182" stroke="#59677c" stroke-width="1.5" marker-end="url(#ixArrow)"/>
+
+        <rect x="530" y="70" width="220" height="120" rx="8" fill="#fee2e2" stroke="#c62020" stroke-width="1.5"/>
+        <text x="640" y="95" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#c62020">Back-pressure risk</text>
+        <text x="640" y="120" text-anchor="middle" font-family="Inter" font-size="9.5" fill="#334155">If a GSI's own capacity is</text>
+        <text x="640" y="136" text-anchor="middle" font-family="Inter" font-size="9.5" fill="#334155">exhausted, base-table writes</text>
+        <text x="640" y="152" text-anchor="middle" font-family="Inter" font-size="9.5" fill="#334155">can be throttled too.</text>
+        <text x="640" y="172" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">Size GSI capacity ≥ base write rate.</text>
+        <path d="M470 117 L530 125" stroke="#c62020" stroke-width="1.5" marker-end="url(#ixArrowR)"/>
+
+        <defs>
+          <marker id="ixArrow" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#59677c"/></marker>
+          <marker id="ixArrowR" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#c62020"/></marker>
+        </defs>
+      </svg>
+      <div class="diagram-caption">Fig 2: Every base-table write that changes a projected/key attribute propagates to each relevant GSI, consuming that GSI's write capacity.</div>
+    </div>
+    <ul>
+      <li>An item write updates <strong>every GSI whose key or projected attributes changed</strong> — so N GSIs can mean up to N+1 write operations' worth of capacity.</li>
+      <li>GSI maintenance is <strong>asynchronous</strong>: the base write succeeds immediately, and the index converges shortly after (the source of eventual consistency).</li>
+      <li><span class="highlight">If a provisioned GSI runs out of write capacity, it can back-pressure and throttle writes to the base table.</span> A common cause of "my writes are throttled and I don't know why."</li>
+      <li><strong>Sparse indexes:</strong> an item only appears in a GSI if it has the GSI's key attributes. Omitting the attribute keeps items out of the index — a cheap, powerful filter (e.g. only "OPEN" tickets carry a <code>gsiStatus</code> attribute).</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== CAPACITY TAB ==================== -->
+<div id="tab-capacity" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Capacity Units: RCU &amp; WCU</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#128290;</span> The Arithmetic (memorize this)</div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Operation</th><th>Cost</th></tr></thead>
+          <tbody>
+            <tr><td>1 <strong>RCU</strong> (read capacity unit)</td><td>1 <strong>strongly</strong> consistent read/sec of an item up to <strong>4 KB</strong></td></tr>
+            <tr><td>Eventually consistent read</td><td>2 reads/sec of up to 4 KB per RCU (i.e. half the cost)</td></tr>
+            <tr><td>Transactional read</td><td>2 RCU per 4 KB (double the cost)</td></tr>
+            <tr><td>1 <strong>WCU</strong> (write capacity unit)</td><td>1 write/sec of an item up to <strong>1 KB</strong></td></tr>
+            <tr><td>Transactional write</td><td>2 WCU per 1 KB (double the cost)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Sizes always <strong>round up</strong> to the next 4 KB (reads) or 1 KB (writes). A 6 KB item costs 2 RCU (strong) or 1 RCU (eventual, 6 KB → 2× 4 KB units → round to 2 units → half = 1); a 1.5 KB write costs 2 WCU.</p>
+      <pre><code>// Example: 100 strongly-consistent reads/sec of 8 KB items
+//   8 KB → 2 units of 4 KB → 2 RCU per read → 200 RCU
+// Same as eventually consistent: 100 RCU (half cost)
+// Example: 50 writes/sec of 3 KB items
+//   3 KB → 3 units of 1 KB → 3 WCU per write → 150 WCU</code></pre>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">On-Demand vs Provisioned</h2>
+    <div class="comparison-grid">
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--green)">On-Demand</div>
+        <ul>
+          <li>Pay <strong>per request</strong> (per million reads/writes); no capacity planning.</li>
+          <li>Scales instantly with traffic; ideal for spiky, unpredictable, or new workloads.</li>
+          <li>Instantly serves up to <strong>2× your previous peak</strong>; ramps higher automatically.</li>
+          <li>Optional <strong>max throughput</strong> setting to cap runaway cost.</li>
+          <li>Typically pricier per request at steady high volume than well-tuned provisioned.</li>
+        </ul>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--blue-d)">Provisioned</div>
+        <ul>
+          <li>You set RCU/WCU; pay for provisioned capacity whether used or not.</li>
+          <li>Cheapest for <strong>steady, predictable</strong> traffic.</li>
+          <li>Pair with <strong>auto scaling</strong> (target utilization, e.g. 70%) to track demand.</li>
+          <li><strong>Reserved capacity</strong> gives large discounts for 1- or 3-year commitments.</li>
+          <li>Under-provisioning → throttling (<code>ProvisionedThroughputExceededException</code>).</li>
+        </ul>
+      </div>
+    </div>
+    <div class="info-box"><strong>Switching modes:</strong> you can flip a table between on-demand and provisioned. Historically limited to once per 24 hours; today the switch is far more flexible. A common lifecycle: launch on-demand to learn the traffic shape, then move steady workloads to provisioned + auto scaling + reserved capacity for cost.</div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Auto Scaling &amp; Burst</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>How Provisioned Capacity Tracks Demand</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li><strong>Application Auto Scaling</strong> adjusts provisioned RCU/WCU toward a target utilization (default 70%) between a min and max you set. It reacts to CloudWatch metrics over minutes — it is <em>not</em> instantaneous, so it smooths trends but does not absorb sudden spikes.</li>
+          <li><strong>Burst capacity</strong> lets a partition draw on up to <strong>~300 seconds</strong> of previously unused capacity to absorb short spikes — a built-in cushion, not a guarantee.</li>
+          <li>For truly spiky traffic where auto scaling lags, <strong>on-demand</strong> mode is usually the better answer.</li>
+        </ul>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Hot Partitions &amp; Adaptive Capacity</h2>
+    <div class="diagram-container">
+      <svg viewBox="0 0 780 300" width="740" xmlns="http://www.w3.org/2000/svg">
+        <text x="390" y="22" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#0f172a">Hot key vs well-distributed key</text>
+
+        <!-- Hot -->
+        <text x="195" y="52" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#c62020">Hot partition (bad key)</text>
+        <rect x="60" y="65" width="90" height="120" rx="6" fill="#fee2e2" stroke="#c62020" stroke-width="2"/>
+        <text x="105" y="130" text-anchor="middle" font-family="Inter" font-size="10" fill="#c62020">P1</text>
+        <text x="105" y="146" text-anchor="middle" font-family="Inter" font-size="20" fill="#c62020">&#128293;</text>
+        <rect x="160" y="140" width="70" height="45" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="195" y="166" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">P2 idle</text>
+        <rect x="240" y="140" width="70" height="45" rx="6" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="275" y="166" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">P3 idle</text>
+        <text x="195" y="205" text-anchor="middle" font-family="Inter" font-size="9" fill="#c62020">All traffic → PK="GLOBAL" → throttled at 1k WCU</text>
+
+        <!-- Good -->
+        <text x="585" y="52" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#117e39">Well-distributed key</text>
+        <rect x="470" y="90" width="70" height="70" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+        <text x="505" y="130" text-anchor="middle" font-family="Inter" font-size="10" fill="#166534">P1</text>
+        <rect x="550" y="90" width="70" height="70" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+        <text x="585" y="130" text-anchor="middle" font-family="Inter" font-size="10" fill="#166534">P2</text>
+        <rect x="630" y="90" width="70" height="70" rx="6" fill="#dcfce7" stroke="#117e39" stroke-width="1.5"/>
+        <text x="665" y="130" text-anchor="middle" font-family="Inter" font-size="10" fill="#166534">P3</text>
+        <text x="585" y="185" text-anchor="middle" font-family="Inter" font-size="9" fill="#117e39">High-cardinality PK spreads load evenly</text>
+
+        <rect x="60" y="230" width="650" height="55" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="80" y="252" font-family="Inter" font-size="10" font-weight="600" fill="#334155">Adaptive capacity (automatic): isolates a hot item onto its own partition and reshuffles unused capacity toward hot keys.</text>
+        <text x="80" y="272" font-family="Inter" font-size="10" fill="#59677c">It mitigates skew but cannot exceed the ~1k WCU / ~3k RCU single-partition ceiling for a single hot key. Design the key well.</text>
+      </svg>
+      <div class="diagram-caption">Fig 3: A low-cardinality partition key concentrates traffic; a high-cardinality key spreads it across partitions.</div>
+    </div>
+    <ul>
+      <li><strong>Hot partition</strong> = disproportionate reads/writes to one partition key. Because a single partition tops out near 3,000 RCU / 1,000 WCU, a hot key throttles even when the table has spare total capacity.</li>
+      <li><strong>Adaptive capacity</strong> (automatic, always on) does two things: it <em>reshuffles</em> capacity toward busy partitions, and it can <em>split partitions by item access frequency</em> — isolating a single hot item onto its own partition. It reacts quickly but cannot beat the per-partition physical ceiling for one key.</li>
+      <li><strong>Write sharding</strong> is the classic fix for an unavoidably hot key: append a suffix (<code>METRIC#2026-08-13#&lt;0-9&gt;</code>) to spread writes across N synthetic partitions, then scatter-gather on read.</li>
+    </ul>
+    <div class="key-point"><strong>Interview one-liner:</strong> "Adaptive capacity handles <em>imbalance</em> for free, but it can't raise the ceiling of a single partition key. If one key must absorb more than ~1,000 writes/sec, shard the key." Great keys are high-cardinality and access-uniform (user id, not "status" or "true").</div>
+  </div>
+</div>
+
+<!-- ==================== STREAMS / TTL / TXN TAB ==================== -->
+<div id="tab-streams" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">DynamoDB Streams</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Change Data Capture for Your Table</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>A Stream is an ordered, immutable log of item-level modifications (create/update/delete). It is the foundation for event-driven architectures on top of DynamoDB.</p>
+        <ul>
+          <li><strong>Retention:</strong> stream records are available for <strong>24 hours</strong>.</li>
+          <li><strong>Ordering:</strong> records for the <em>same partition key</em> appear in the correct order; there is no total order across different keys (mirrors the shard model).</li>
+          <li><strong>View types</strong> (<code>StreamViewType</code>): <code>KEYS_ONLY</code>, <code>NEW_IMAGE</code>, <code>OLD_IMAGE</code>, <code>NEW_AND_OLD_IMAGES</code>.</li>
+          <li><strong>Consumers:</strong> AWS Lambda (most common — event source mapping polls shards for you) or the Kinesis Client Library via the DynamoDB Streams Kinesis Adapter.</li>
+          <li><strong>Alternative:</strong> <em>Kinesis Data Streams for DynamoDB</em> emits the same change events to a Kinesis stream for longer retention and larger fan-out.</li>
+        </ul>
+        <div class="info-box"><strong>Common uses:</strong> maintaining a materialized/aggregate view, replicating to OpenSearch for search, invalidating a cache, fanning out notifications, and — internally — powering <strong>Global Tables</strong> (multi-Region replication is built on Streams).</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">TTL (Time To Live)</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Automatic Expiry Without Consuming Write Capacity</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li>You designate one numeric attribute holding a <strong>Unix epoch time in seconds</strong>. When that time passes, the item becomes eligible for deletion.</li>
+          <li>Deletion is a background process — items are typically removed within <strong>a couple of days</strong> of expiry, <em>not</em> instantly. Expired-but-not-yet-deleted items can still appear in reads.</li>
+          <li>TTL deletes <strong>do not consume write capacity</strong> and incur no extra charge — a major cost win versus manually deleting old rows.</li>
+          <li>TTL deletions <strong>appear in Streams</strong> as delete records, tagged with a principal of the DynamoDB service, so you can archive expired data (e.g. to S3) via a Lambda consumer.</li>
+        </ul>
+        <div class="warning-box"><strong>Filter expired items in reads if correctness matters:</strong> because deletion lags expiry, add a <code>FilterExpression</code> (<code>expiresAt &gt; :now</code>) to hide logically-expired items until the background sweep removes them.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Conditional Writes &amp; Optimistic Locking</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Compare-and-Set Without a Lock</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>Any single-item write (<code>PutItem</code>, <code>UpdateItem</code>, <code>DeleteItem</code>) can carry a <code>ConditionExpression</code>. The write is applied atomically only if the condition holds; otherwise it fails with <code>ConditionalCheckFailedException</code> and consumes capacity but changes nothing.</p>
+        <pre><code>// Idempotent create — fail if the item already exists
+PutItem(Item = {...}, ConditionExpression = "attribute_not_exists(PK)")
+
+// Optimistic locking with a version attribute (no pessimistic lock needed)
+UpdateItem(
+  Key = { PK: "ACCOUNT#7" },
+  UpdateExpression = "SET balance = :new, version = :v1",
+  ConditionExpression = "version = :v0",
+  Values = { ":new": 90, ":v1": 6, ":v0": 5 }
+)   // fails if another writer already bumped version → caller retries
+
+// Atomic counter (no read needed; last-writer-safe increment)
+UpdateItem(Key={...}, UpdateExpression = "ADD viewCount :one", {":one": 1})</code></pre>
+        <div class="key-point"><strong>Why this matters:</strong> DynamoDB has no row locks you hold across round trips. Concurrency is handled with <em>optimistic</em> concurrency control (version attribute + conditional write) and <em>atomic</em> update expressions (<code>ADD</code>, <code>SET x = x + :n</code>). This is a classic concurrency question you may get: "how do you prevent lost updates?"</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Transactions</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>ACID Across Multiple Items</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li><code>TransactWriteItems</code> — all-or-nothing across up to <strong>100 items</strong> / 4 MB, spanning multiple tables in one Region and account. Supports <code>Put</code>, <code>Update</code>, <code>Delete</code>, and <code>ConditionCheck</code> actions.</li>
+          <li><code>TransactGetItems</code> — a consistent snapshot read of up to 100 items.</li>
+          <li><strong>Serializable isolation.</strong> If any item's condition fails or two transactions conflict, the whole transaction is rejected (<code>TransactionCanceledException</code> with per-item reasons).</li>
+          <li><strong>Cost:</strong> transactional operations are <strong>2×</strong> the normal capacity (2 WCU/KB write, 2 RCU/4KB read) because of the two-phase prepare/commit protocol.</li>
+          <li><strong>Idempotency:</strong> pass a <code>ClientRequestToken</code> so a retried transaction is not applied twice (dedup window ~10 minutes).</li>
+        </ul>
+        <div class="info-box"><strong>Design guidance:</strong> transactions are the right tool for cross-item invariants (transfer money between two accounts; enforce a uniqueness sentinel alongside the main item). But they cost double and add contention — prefer a single-item conditional write or single-partition design when you can express the invariant within one item.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Strong vs Eventual Consistency</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Read type</th><th>Behavior</th><th>Cost</th><th>Available on</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Eventually consistent</strong> (default)</td><td>May reflect a slightly stale copy; converges within ~1s. Cheapest.</td><td>0.5 RCU / 4 KB</td><td>Base table, LSI, GSI</td></tr>
+          <tr><td><strong>Strongly consistent</strong></td><td>Reflects all writes acknowledged before the read; served from the leader.</td><td>1 RCU / 4 KB</td><td>Base table, LSI</td></tr>
+          <tr><td><strong>Transactional read</strong></td><td>Serializable snapshot across items.</td><td>2 RCU / 4 KB</td><td>Base table</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning-box"><strong>GSIs are eventually consistent — always.</strong> There is no strongly consistent read on a Global Secondary Index, because the index is maintained asynchronously. If you need read-your-writes on an alternate key, either use an LSI (strong, same partition key) or design so the base-table key covers the pattern. <strong>Global Tables</strong> (multi-Region) are also eventually consistent across Regions with last-writer-wins conflict resolution.</div>
+    <div class="key-point"><strong>CAP framing for interviews:</strong> within a Region DynamoDB gives you the <em>choice</em> per read (strong vs eventual). Across Regions (Global Tables) it favors availability and low latency (AP-leaning), reconciling concurrent writes by last-writer-wins on a per-item basis.</div>
+  </div>
+</div>
+
+<!-- ==================== INTERVIEW TAB ==================== -->
+<div id="tab-interview" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Access-Pattern-First Modeling Method</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#128269;</span> The Repeatable Framework</div>
+      <ol>
+        <li><strong>Enumerate every access pattern</strong> as a sentence: "get X by Y", "list all Z for a W newest-first", "find all items in state S." Do this before touching keys.</li>
+        <li><strong>List the entities and relationships</strong> (an ER diagram is still useful) — but treat it as input, not the schema.</li>
+        <li><strong>Assign primary keys</strong> so the highest-frequency patterns are direct <code>GetItem</code>/<code>Query</code> calls. Co-locate items that are read together into one item collection.</li>
+        <li><strong>Cover the rest with GSIs</strong> (inverted index, sparse index, status index). Choose projections to make hot queries covering.</li>
+        <li><strong>Validate</strong>: for each access pattern, write the exact query and confirm it is a key/index lookup — never a table <code>Scan</code> or a <code>FilterExpression</code> doing the heavy lifting.</li>
+      </ol>
+      <div class="key-point"><strong>Red flag to call out:</strong> if a pattern can only be served by a full <code>Scan</code> or a broad <code>FilterExpression</code>, the model is wrong — filters run <em>after</em> capacity is consumed reading the rows. Redesign keys or add a GSI.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Worked Interview Prompt: Design a URL Shortener on DynamoDB</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>From access patterns to keys, indexes, and capacity</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p><strong>Access patterns:</strong> (1) resolve short code → long URL (hot, read-heavy), (2) create a short code (must be unique), (3) list a user's links newest-first, (4) count clicks per link, (5) auto-expire temporary links.</p>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Item</th><th>PK</th><th>SK</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>Short link</td><td><code>LINK#abc123</code></td><td><code>LINK#abc123</code></td><td>longUrl, ownerId, createdAt, ttl (epoch s), clicks</td></tr>
+              <tr><td>User→link edge</td><td><code>USER#42</code></td><td><code>LINK#2026-08-13#abc123</code></td><td>SK date prefix → newest-first list</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul>
+          <li><strong>Pattern 1 (resolve):</strong> <code>GetItem(PK=LINK#abc123)</code> — a single-partition point read, single-digit ms. Front with <strong>DAX</strong> (in-memory cache) if read volume is extreme.</li>
+          <li><strong>Pattern 2 (unique create):</strong> <code>PutItem</code> with <code>ConditionExpression="attribute_not_exists(PK)"</code> — regenerate code on collision.</li>
+          <li><strong>Pattern 3 (list user links):</strong> <code>Query(PK=USER#42, begins_with(SK,"LINK#"), ScanIndexForward=false)</code>.</li>
+          <li><strong>Pattern 4 (click count):</strong> atomic <code>UpdateItem ... ADD clicks :one</code>. If a single link is wildly hot, <strong>write-shard</strong> the counter across N suffixes and sum on read.</li>
+          <li><strong>Pattern 5 (expiry):</strong> set the <code>ttl</code> attribute; TTL sweep deletes for free and emits a Stream record for archival.</li>
+          <li><strong>Capacity:</strong> spiky/unknown launch traffic → <strong>on-demand</strong>; once steady, move to provisioned + auto scaling; reserved capacity for the baseline.</li>
+        </ul>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">When to Use DynamoDB — and When Not To</h2>
+    <div class="comparison-grid">
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--green)">Great fit</div>
+        <ul>
+          <li>Known, key-based access patterns at massive scale (user sessions, shopping carts, device state, feature flags).</li>
+          <li>Need predictable low latency regardless of data volume.</li>
+          <li>Serverless / event-driven stacks (pairs naturally with Lambda + Streams).</li>
+          <li>Spiky or unpredictable traffic (on-demand mode).</li>
+          <li>Multi-Region active-active with Global Tables.</li>
+        </ul>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--red)">Poor fit</div>
+        <ul>
+          <li>Ad-hoc analytics / OLAP aggregations → Redshift, BigQuery, ClickHouse.</li>
+          <li>Rich relational querying, many-way JOINs, complex reporting → RDS/Aurora, Spanner.</li>
+          <li>Full-text / relevance search → OpenSearch/Elasticsearch.</li>
+          <li>Unknown, evolving query patterns during early product discovery.</li>
+          <li>Large objects → store in S3, keep a pointer (400 KB item cap).</li>
+        </ul>
+      </div>
+    </div>
+    <div class="info-box"><strong>Companion services worth naming:</strong> <strong>DAX</strong> (write-through/read-through microsecond cache in front of DynamoDB), <strong>PartiQL</strong> (SQL-compatible query syntax over the same key-based access — it does <em>not</em> add joins or remove the need for indexes), <strong>zero-ETL to OpenSearch/Redshift</strong> for search and analytics, and <strong>PITR</strong> (point-in-time recovery, continuous backups up to 35 days).</div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Rapid-Fire Q&amp;A</h2>
+
+    <div class="collapsible"><div class="collapsible-header"><span>Q: Why did my write get throttled even though total capacity looks fine?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content"><p>Almost always a <strong>hot partition</strong>: traffic concentrated on one partition key hits the ~1,000 WCU / ~3,000 RCU single-partition ceiling. Adaptive capacity helps with imbalance but can't exceed one partition's ceiling for one key. Also check whether a <strong>GSI ran out of write capacity</strong> and back-pressured the base table. Fixes: higher-cardinality key, write sharding, or on-demand mode.</p></div></div></div>
+
+    <div class="collapsible"><div class="collapsible-header"><span>Q: GSI or LSI?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content"><p>Default to <strong>GSI</strong> (different partition key, add/remove anytime, no 10 GB collection cap, own capacity). Use an <strong>LSI</strong> only when you need <strong>strong consistency on an alternate sort key within the same partition key</strong>, and you must decide at table-creation time. LSIs impose a 10 GB per-item-collection limit; GSIs do not.</p></div></div></div>
+
+    <div class="collapsible"><div class="collapsible-header"><span>Q: How do you prevent lost updates without locks?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content"><p><strong>Optimistic concurrency:</strong> keep a <code>version</code> attribute; every <code>UpdateItem</code> asserts <code>ConditionExpression="version = :expected"</code> and bumps it. A conflicting concurrent writer fails and retries. For pure counters, use the atomic <code>ADD</code>/<code>SET x = x + :n</code> update expression, which needs no read.</p></div></div></div>
+
+    <div class="collapsible"><div class="collapsible-header"><span>Q: Strongly consistent read on a GSI?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content"><p>Not possible — GSIs are maintained asynchronously and are <strong>always eventually consistent</strong>. If you need read-your-writes, use an LSI (strong) or make the base-table primary key serve the pattern.</p></div></div></div>
+
+    <div class="collapsible"><div class="collapsible-header"><span>Q: How does DynamoDB do multi-Region?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content"><p><strong>Global Tables</strong>: active-active replication built on Streams. Reads/writes are local and fast in each Region; replication is asynchronous and eventually consistent, with <strong>last-writer-wins</strong> conflict resolution per item. Good for low-latency global reads and Region-failure resilience; not for strict cross-Region serializability (that's Spanner's niche).</p></div></div></div>
+
+    <div class="collapsible"><div class="collapsible-header"><span>Q: Scan vs Query — and why avoid Scan?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content"><p><code>Query</code> targets a single partition key (+ optional sort-key condition) and reads only matching items — efficient. <code>Scan</code> reads the <strong>entire table</strong> and applies filters afterward, consuming capacity for every item examined. Reserve <code>Scan</code> for rare full-table jobs (exports, migrations), ideally parallel-segmented and rate-limited. A well-modeled table almost never needs a <code>Scan</code> on the hot path.</p></div></div></div>
+  </div>
+</div>
+
+<div class="section">
+  <h2 class="section-title">Terminology &amp; Acronyms</h2>
+  <p>Quick reference for the key terms in this chapter.</p>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Partition key</strong></td><td>Attribute hashed to route an item to a partition; also called the hash key.</td></tr>
+        <tr><td><strong>Sort key</strong></td><td>Second key attribute that orders items within a partition and enables range queries; also called the range key.</td></tr>
+        <tr><td><strong>Item collection</strong></td><td>All items sharing one partition key, stored together and ordered by sort key.</td></tr>
+        <tr><td><strong>Single-table design</strong></td><td>Storing multiple entity types in one table with overloaded keys to pre-join related items.</td></tr>
+        <tr><td><strong>RCU</strong></td><td>Read Capacity Unit — one strongly consistent read per second of an item up to 4 KB.</td></tr>
+        <tr><td><strong>WCU</strong></td><td>Write Capacity Unit — one write per second of an item up to 1 KB.</td></tr>
+        <tr><td><strong>GSI</strong></td><td>Global Secondary Index — a separately-stored index on any key; always eventually consistent.</td></tr>
+        <tr><td><strong>LSI</strong></td><td>Local Secondary Index — alternate sort key on the same partition key; supports strong reads; fixed at table creation.</td></tr>
+        <tr><td><strong>Projection</strong></td><td>The set of attributes copied into a secondary index — KEYS_ONLY, INCLUDE, or ALL.</td></tr>
+        <tr><td><strong>Hot partition</strong></td><td>A partition key taking disproportionate traffic, throttled at the per-partition ceiling (~3,000 RCU / 1,000 WCU).</td></tr>
+        <tr><td><strong>Adaptive capacity</strong></td><td>Automatic feature that reshuffles capacity toward busy partitions and isolates hot items.</td></tr>
+        <tr><td><strong>Write sharding</strong></td><td>Spreading a hot key's writes across synthetic key suffixes, then scatter-gathering on read.</td></tr>
+        <tr><td><strong>DynamoDB Streams</strong></td><td>Ordered, 24-hour change-data-capture log of item-level create, update, and delete events.</td></tr>
+        <tr><td><strong>TTL</strong></td><td>Time To Live — a Unix-epoch-seconds attribute that marks items for free background deletion.</td></tr>
+        <tr><td><strong>Optimistic concurrency control</strong></td><td>Preventing lost updates via a version attribute checked with a conditional write.</td></tr>
+        <tr><td><strong>Transaction</strong></td><td>All-or-nothing, serializable operation across up to 100 items (TransactWriteItems / TransactGetItems).</td></tr>
+        <tr><td><strong>Global Tables</strong></td><td>Multi-Region active-active replication built on Streams; eventually consistent with last-writer-wins.</td></tr>
+        <tr><td><strong>Scan vs Query</strong></td><td>Query reads one partition efficiently; Scan reads the whole table and filters afterward.</td></tr>
+        <tr><td><strong>DAX</strong></td><td>DynamoDB Accelerator — an in-memory write-through cache giving microsecond-latency reads.</td></tr>
+        <tr><td><strong>PITR</strong></td><td>Point-in-Time Recovery — continuous backups enabling restore to any second within the last 35 days.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div> <!-- end .content -->
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Collapsible cards
+document.querySelectorAll('.collapsible-header').forEach(header => {
+  header.addEventListener('click', () => {
+    header.parentElement.classList.toggle('open');
+  });
+});
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="cassandra_deep_dive.html">‹ Cassandra Deep Dive</a><a class="bkc" href="index.html">📖 Contents</a><a href="bigquery_deep_dive.html">BigQuery Deep Dive ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

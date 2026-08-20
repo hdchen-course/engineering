@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MongoDB Deep Dive — System Design Interview Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* HEADER */
+.page-header {
+  background: linear-gradient(135deg, #052e16 0%, #14532d 40%, #16a34a 100%);
+  padding: 40px 44px 20px;
+}
+.header-tag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.header-title { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.header-title span { color: #86efac; }
+.header-desc { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 700px; }
+
+/* TABS / NAV */
+.tab-bar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 44px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.tab-btn {
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text3);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 3px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
+  font-family: 'Inter', system-ui, sans-serif;
+  text-decoration: none;
+}
+.tab-btn:hover { color: var(--green); background: var(--green-l); }
+.tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* CONTENT */
+.content { padding: 32px 44px 60px; max-width: 1100px; margin: 0 auto; }
+
+/* SECTION */
+.section { margin-bottom: 28px; scroll-margin-top: 64px; }
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--green-l);
+}
+.subsection-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text2);
+  margin: 20px 0 10px;
+}
+
+/* CARD */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .icon { font-size: 18px; }
+
+/* COLLAPSIBLE */
+.collapsible {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.collapsible-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  transition: background .15s;
+  user-select: none;
+}
+.collapsible-header:hover { background: var(--bg3); }
+.collapsible-header .arrow {
+  transition: transform .2s;
+  font-size: 12px;
+  color: var(--text3);
+}
+.collapsible.open .collapsible-header .arrow { transform: rotate(90deg); }
+.collapsible-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease;
+}
+.collapsible.open .collapsible-body { max-height: 6000px; }
+.collapsible-content {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* CODE */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--blue-d);
+}
+pre {
+  font-family: 'JetBrains Mono', monospace;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 16px 20px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+pre code { background: none; color: inherit; padding: 0; }
+
+/* TABLE */
+.table-wrapper { overflow-x: auto; margin: 12px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+th { background: var(--bg3); font-weight: 600; color: var(--text2); }
+tr:hover td { background: var(--bg3); }
+
+/* BADGE */
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 8px; }
+.badge-blue { background: var(--blue-l); color: var(--blue-d); }
+.badge-green { background: var(--green-l); color: var(--green); }
+.badge-yellow { background: var(--yellow-l); color: var(--yellow); }
+.badge-red { background: var(--red-l); color: var(--red); }
+.badge-purple { background: var(--purple-l); color: var(--purple); }
+
+/* KEY POINT */
+.key-point {
+  background: var(--yellow-l);
+  border-left: 4px solid var(--yellow);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.key-point strong { color: var(--yellow); }
+
+/* INFO BOX */
+.info-box {
+  background: var(--blue-l);
+  border-left: 4px solid var(--blue);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.warning-box {
+  background: var(--red-l);
+  border-left: 4px solid var(--red);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+
+/* SVG DIAGRAM */
+.diagram-container {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  margin: 16px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.diagram-caption {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* LIST */
+ul, ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 6px; font-size: 14px; }
+
+/* COMPARISON */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+/* Q&A */
+.qa { margin: 12px 0; }
+.qa .q {
+  font-weight: 700;
+  color: var(--text);
+  background: var(--bg3);
+  padding: 10px 14px;
+  border-radius: 8px 8px 0 0;
+  border-left: 4px solid var(--green);
+}
+.qa .a {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  font-size: 13.5px;
+}
+
+@media (max-width: 768px) {
+  .comparison-grid { grid-template-columns: 1fr; }
+  .content { padding: 20px; }
+  .page-header { padding: 24px 20px 16px; }
+  .tab-bar { padding: 0 20px; }
+}
+
+.highlight { background: var(--yellow-l); padding: 1px 4px; border-radius: 3px; }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part V · Chapter 4 — <b>MongoDB Deep Dive</b></span><span class="bkspacer"></span></nav>
+
+<div class="page-header">
+  <div class="header-tag">System Design Interview Prep — Document Databases</div>
+  <h1 class="ht header-title">MongoDB <span>Deep Dive</span></h1>
+  <div class="header-desc">A concrete, correct walkthrough of the document/BSON model, schema design, indexing and the ESR rule, the aggregation pipeline, replica sets, sharding, consistency controls, and multi-document transactions — with a worked data model and interview Q&amp;A. Reflects MongoDB behavior as of the 6.0/7.0/8.0 era.</div>
+</div>
+
+<div class="tab-bar">
+  <a class="tab-btn" href="#model">Document Model</a>
+  <a class="tab-btn" href="#schema">Schema Design</a>
+  <a class="tab-btn" href="#indexes">Indexes &amp; ESR</a>
+  <a class="tab-btn" href="#aggregation">Aggregation</a>
+  <a class="tab-btn" href="#replication">Replica Sets</a>
+  <a class="tab-btn" href="#sharding">Sharding</a>
+  <a class="tab-btn" href="#consistency">Consistency</a>
+  <a class="tab-btn" href="#transactions">Transactions</a>
+  <a class="tab-btn" href="#example">Data Model</a>
+  <a class="tab-btn" href="#interview">Interview</a>
+</div>
+
+<div class="content">
+
+<!-- ==================== DOCUMENT MODEL ==================== -->
+<div id="model" class="section">
+  <h2 class="section-title">The Document &amp; BSON Model</h2>
+  <p>MongoDB stores data as <strong>documents</strong> grouped into <strong>collections</strong> inside <strong>databases</strong>. A document is a set of field/value pairs — conceptually a JSON object — but on the wire and on disk it is encoded as <strong>BSON</strong> (Binary JSON), a length-prefixed binary format that adds types JSON lacks and makes traversal/skip fast.</p>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">&#128196;</span> Why BSON, not plain JSON?</div>
+    <ul>
+      <li><strong>Richer types:</strong> BSON adds <code>ObjectId</code>, <code>Date</code>, <code>Decimal128</code> (IEEE-754 128-bit decimal, exact for money), 32/64-bit ints, <code>Binary</code>, <code>Timestamp</code>, and <code>Double</code> — JSON only has number/string/bool/null/array/object.</li>
+      <li><strong>Traversable:</strong> Each element is length-prefixed, so the server can skip a subdocument or array without parsing every byte.</li>
+      <li><strong>Compact for numbers:</strong> integers and doubles are stored in fixed binary form instead of as text.</li>
+    </ul>
+    <div class="key-point">
+      <strong>The 16 MB rule:</strong> a single BSON document is capped at <span class="highlight">16 MB</span>. This is the most important physical constraint driving schema design — it bounds how much you can embed. For larger blobs, use GridFS (which chunks files across documents) or object storage with a reference.
+    </div>
+  </div>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>The <code>_id</code> field and ObjectId</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <ul>
+        <li>Every document has a unique <code>_id</code>. If you don't supply one, the driver generates an <code>ObjectId</code>. It is the primary key and is automatically indexed with a unique index.</li>
+        <li>An <strong>ObjectId is 12 bytes</strong>: a 4-byte Unix timestamp (seconds), a 5-byte random value per process, and a 3-byte incrementing counter. It is <em>roughly</em> monotonic (ordered by creation second), which matters for insert locality and sharding.</li>
+        <li>You may use your own <code>_id</code> (e.g. a natural key or UUID) — but a monotonically increasing <code>_id</code> creates a write hotspot on the last B-tree page, and is a poor <em>shard key</em> for the same reason.</li>
+      </ul>
+      <pre><code>{
+  "_id": ObjectId("665f0c1a9b3e2a0c1d4e5f60"),
+  "sku": "TSHIRT-BLK-M",
+  "name": "Black T-Shirt (M)",
+  "price": NumberDecimal("19.99"),
+  "tags": ["apparel", "unisex"],
+  "attrs": { "color": "black", "size": "M" },
+  "createdAt": ISODate("2026-01-15T10:30:00Z")
+}</code></pre>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>Storage engine: WiredTiger</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p>WiredTiger has been the default storage engine since MongoDB 3.2. Key properties an interviewer expects you to know:</p>
+      <ul>
+        <li><strong>Document-level concurrency:</strong> writers take a lock at the document level (via optimistic MVCC), so concurrent writes to different documents in the same collection don't block each other.</li>
+        <li><strong>MVCC + snapshots:</strong> readers see a consistent point-in-time snapshot without blocking writers — this underpins <code>snapshot</code> read concern and transactions.</li>
+        <li><strong>Compression:</strong> block compression on by default (<code>snappy</code>; <code>zstd</code> and <code>zlib</code> available) plus prefix compression on indexes.</li>
+        <li><strong>Journaling / durability:</strong> a write-ahead journal makes committed writes crash-recoverable; checkpoints flush a consistent snapshot to disk (roughly every 60s or by log size).</li>
+      </ul>
+    </div></div>
+  </div>
+</div>
+
+<!-- ==================== SCHEMA DESIGN ==================== -->
+<div id="schema" class="section">
+  <h2 class="section-title">Schema Design: Embedding vs Referencing</h2>
+  <p>MongoDB is "flexible schema," but that does <em>not</em> mean "no schema" — it means the schema lives in your access patterns. The core modeling decision is whether related data is <strong>embedded</strong> in one document or <strong>referenced</strong> across documents. <span class="highlight">Model for how you read and write, not for how the entities relate on paper.</span></p>
+
+  <div class="comparison-grid">
+    <div class="card" style="margin:0">
+      <div class="card-title" style="color:var(--green)">Embed when…</div>
+      <ul>
+        <li>Data is <strong>read together</strong> ("one round trip serves the screen").</li>
+        <li>The relationship is <strong>one-to-few</strong> and <strong>bounded</strong> (an order's line items, a user's addresses).</li>
+        <li>The child has <strong>no independent lifecycle</strong> — it doesn't need to be queried on its own.</li>
+        <li>You want atomicity: a single-document update is always atomic, giving you all-or-nothing for the whole embedded tree with no transaction.</li>
+      </ul>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-title" style="color:var(--blue)">Reference when…</div>
+      <ul>
+        <li>The child set is <strong>unbounded</strong> or large (a product's reviews, a user's events) — embedding risks the 16 MB limit.</li>
+        <li>The entity is <strong>shared / queried independently</strong> (a product referenced by many orders).</li>
+        <li>Data changes at very different rates (avoid rewriting a huge document to update one hot counter).</li>
+        <li>You'd otherwise duplicate large data many times.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warning-box">
+    <strong>The unbounded-array anti-pattern.</strong> Embedding an ever-growing array (comments, events, IoT readings) into one document is the classic mistake: the document grows toward 16 MB, updates rewrite more and more data, and indexes on the array bloat. Cap embedded arrays, or reference/bucket instead.
+  </div>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>Design patterns that make document modeling work</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Pattern</th><th>What it does</th><th>Use when</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Subset</strong></td><td>Embed only the "hot" few (e.g. last 5 reviews) in the parent; keep the full set in a referenced collection.</td><td>You show a preview but rarely need the whole child set.</td></tr>
+          <tr><td><strong>Extended reference</strong></td><td>Duplicate a few frequently-read fields from a referenced doc (e.g. copy <code>productName</code> into the order line) instead of joining.</td><td>Read-heavy paths where a $lookup per read is too costly. Accept controlled duplication.</td></tr>
+          <tr><td><strong>Computed</strong></td><td>Store pre-aggregated results (counts, sums, rollups) rather than recomputing on every read.</td><td>Reads vastly outnumber the writes that change the value.</td></tr>
+          <tr><td><strong>Bucket</strong></td><td>Group many small time-series events into one document per time window/device.</td><td>High-volume time-series/IoT; avoids one-doc-per-reading overhead. (See also native time-series collections, 5.0+.)</td></tr>
+          <tr><td><strong>Outlier</strong></td><td>Handle the rare "celebrity" document (millions of children) with an overflow flag/collection so the common case stays simple.</td><td>Skewed distributions where a few parents are huge.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="info-box">
+        <strong>Tradeoff to state out loud in an interview:</strong> denormalization/duplication trades write complexity and consistency risk for read speed and fewer round trips. Because MongoDB gives you atomicity only <em>within</em> a single document for free, embedding is also a way to get atomic multi-field updates without a transaction.
+      </div>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>Modeling relationship cardinalities</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <ul>
+        <li><strong>One-to-few:</strong> embed as an array of subdocuments.</li>
+        <li><strong>One-to-many:</strong> reference — store the parent's <code>_id</code> on each child, index it.</li>
+        <li><strong>One-to-squillions (unbounded):</strong> reference from the child to the parent only; never embed. Consider the outlier/bucket patterns.</li>
+        <li><strong>Many-to-many:</strong> store an array of references on the side you query from (often both), or a dedicated join collection when you need attributes on the relationship itself.</li>
+      </ul>
+    </div></div>
+  </div>
+</div>
+
+<!-- ==================== INDEXES ==================== -->
+<div id="indexes" class="section">
+  <h2 class="section-title">Indexes &amp; the ESR Rule</h2>
+  <p>MongoDB indexes are <strong>B-trees</strong>. Without a supporting index a query does a <strong>collection scan</strong> (<code>COLLSCAN</code> in <code>explain</code>); with one it does an <code>IXSCAN</code>. Use <code>db.coll.explain("executionStats")</code> and watch <code>totalDocsExamined</code> vs <code>nReturned</code> — a healthy indexed query keeps them close.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>Index types you must be able to name</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Type</th><th>What it indexes</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Single field</strong></td><td>One field, asc/desc.</td><td>Direction is irrelevant for a single-field index (it can be scanned either way).</td></tr>
+          <tr><td><strong>Compound</strong></td><td>Multiple fields in order.</td><td>Serves queries on any <em>left prefix</em>; order matters — see ESR below.</td></tr>
+          <tr><td><strong>Multikey</strong></td><td>An array field.</td><td>Created automatically when a field holds an array; one index entry per array element. A compound index may contain at most one array field.</td></tr>
+          <tr><td><strong>Text</strong></td><td>String content for keyword search.</td><td>Tokenizes + stems; one text index per collection. For real relevance search, Atlas Search (Lucene) is the modern option.</td></tr>
+          <tr><td><strong>Geospatial</strong></td><td><code>2dsphere</code> (GeoJSON on a sphere) / <code>2d</code> (legacy planar).</td><td>Powers <code>$near</code>, <code>$geoWithin</code>, <code>$geoIntersects</code>.</td></tr>
+          <tr><td><strong>Hashed</strong></td><td>Hash of a field's value.</td><td>Used for hashed sharding to spread writes evenly; supports equality, not range.</td></tr>
+          <tr><td><strong>Wildcard</strong></td><td><code>$**</code> or a subtree.</td><td>For unpredictable/arbitrary field names; not a substitute for designed indexes.</td></tr>
+          <tr><td><strong>TTL</strong></td><td>A date field, with <code>expireAfterSeconds</code>.</td><td>A background thread deletes expired docs — sessions, caches, ephemeral data.</td></tr>
+          <tr><td><strong>Partial / Sparse</strong></td><td>Only documents matching a filter (partial) or only docs that contain the field (sparse).</td><td>Smaller, cheaper indexes; partial is the more general, preferred option.</td></tr>
+          <tr><td><strong>Unique</strong></td><td>Enforces uniqueness on the key.</td><td>Can be combined with partial to enforce uniqueness only on a subset.</td></tr>
+        </tbody>
+      </table></div>
+    </div></div>
+  </div>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>The ESR rule — compound index field order</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p>The canonical MongoDB compound-index heuristic — worth committing to memory. Order the fields of a compound index as <strong>Equality → Sort → Range</strong>:</p>
+      <ol>
+        <li><strong>Equality</strong> fields first — the exact-match predicates (<code>field: value</code>, <code>$in</code>). These narrow the scan to a contiguous slice of the index.</li>
+        <li><strong>Sort</strong> fields next — so the index already returns rows in the requested <code>sort()</code> order and MongoDB can skip an in-memory sort (avoiding a blocking <code>SORT</code> stage, which is limited to 100 MB unless <code>allowDiskUse</code> — since MongoDB 4.4 this is the shared blocking-sort limit for both <code>find()</code> and aggregation, and 6.0+ spills to disk past it by default).</li>
+        <li><strong>Range</strong> fields last — inequalities (<code>$gt</code>, <code>$lt</code>, <code>$gte</code>, ranges). A range "opens up" the scan, so anything after it can't be used to seek or to satisfy a sort.</li>
+      </ol>
+      <pre><code>// Query: orders for a customer, shipped, newest first, within a date range
+db.orders.find({
+  customerId: 1234,           // Equality
+  status: "SHIPPED",          // Equality
+  createdAt: { $gte: start, $lt: end }   // Range
+}).sort({ createdAt: -1 })    // Sort
+
+// ESR-ordered index:
+db.orders.createIndex({ customerId: 1, status: 1, createdAt: -1 })
+//   E: customerId, status   S/R: createdAt (serves both the sort and the range)</code></pre>
+      <div class="key-point">
+        <strong>Why order matters:</strong> a compound index only serves a query if the query uses a <em>left prefix</em> of its keys. Putting a range field before a sort field forces MongoDB to do a separate sort. Equality-then-sort-then-range keeps the whole operation index-driven.
+      </div>
+      <div class="info-box">
+        <strong>Covered queries:</strong> if every field the query needs (filter + returned projection) lives in the index, MongoDB answers from the index alone (<code>totalDocsExamined: 0</code>) — never touching documents. Exclude <code>_id</code> in the projection if it isn't in the index. This is the document-DB analogue of a covering index.
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ==================== AGGREGATION ==================== -->
+<div id="aggregation" class="section">
+  <h2 class="section-title">The Aggregation Pipeline</h2>
+  <p>Aggregation processes documents through an ordered array of <strong>stages</strong>; each stage transforms the stream and feeds the next — like a Unix pipe. It is how MongoDB does group-bys, joins, reshaping, and analytics.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>Common stages</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Stage</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>$match</code></td><td>Filter documents (like <code>find</code>). Put it <strong>first</strong> so it can use an index and shrink the stream early.</td></tr>
+          <tr><td><code>$group</code></td><td>Group by an expression and accumulate (<code>$sum</code>, <code>$avg</code>, <code>$push</code>, <code>$addToSet</code>, …).</td></tr>
+          <tr><td><code>$project</code> / <code>$addFields</code> / <code>$set</code></td><td>Reshape: include/exclude/compute fields.</td></tr>
+          <tr><td><code>$sort</code> / <code>$limit</code> / <code>$skip</code></td><td>Order and paginate. <code>$sort</code> + <code>$limit</code> together let the engine keep only top-N.</td></tr>
+          <tr><td><code>$lookup</code></td><td>Left outer join to another collection.</td></tr>
+          <tr><td><code>$unwind</code></td><td>Flatten an array into one document per element.</td></tr>
+          <tr><td><code>$facet</code> / <code>$bucket</code></td><td>Run multiple sub-pipelines in one pass; bucket into ranges (histograms).</td></tr>
+          <tr><td><code>$merge</code> / <code>$out</code></td><td>Write results back to a collection (materialized views / ETL).</td></tr>
+        </tbody>
+      </table></div>
+      <pre><code>// Revenue per product category for shipped orders in 2026 Q1, top 5
+db.orders.aggregate([
+  { $match: { status: "SHIPPED",
+              createdAt: { $gte: ISODate("2026-01-01"), $lt: ISODate("2026-04-01") } } },
+  { $unwind: "$items" },
+  { $group: { _id: "$items.category",
+              revenue: { $sum: { $multiply: ["$items.qty", "$items.price"] } },
+              orders:  { $addToSet: "$_id" } } },
+  { $addFields: { orderCount: { $size: "$orders" } } },
+  { $project: { orders: 0 } },
+  { $sort: { revenue: -1 } },
+  { $limit: 5 }
+])</code></pre>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>Performance rules for pipelines</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <ul>
+        <li><strong>Filter and sort early.</strong> A leading <code>$match</code>/<code>$sort</code> can use an index; the optimizer also tries to push a <code>$match</code> before a <code>$project</code>/<code>$lookup</code> automatically, but writing it early is clearer and safe.</li>
+        <li><strong>Memory limit:</strong> each blocking stage (notably <code>$group</code> and <code>$sort</code>) holds up to <strong>100 MB</strong> of RAM. In <strong>MongoDB 6.0+</strong> a stage exceeding that spills to disk automatically (<code>allowDiskUseByDefault=true</code>); pre-6.0 it errored unless you passed <code>allowDiskUse: true</code>. Spilling is slower, and you can force the old error-instead-of-spill behavior per operation with <code>allowDiskUse: false</code>. <code>$sort</code> feeding a small <code>$limit</code> avoids the cap entirely.</li>
+        <li><strong><code>$lookup</code> is a join</strong> — index the foreign field (<code>localField</code>/<code>foreignField</code> or the joined pipeline's <code>$match</code>) and it uses a fast <em>indexed nested-loop join</em>. Without such an index, MongoDB 5.1+ may use a hash join (given enough memory) rather than a per-document collection scan, but an index on the foreign field is still the recommended fast path. On large datasets, denormalizing (extended reference) often beats <code>$lookup</code>.</li>
+        <li>Only the first <code>$match</code>/<code>$sort</code> (before any transforming stage) can leverage indexes; after a <code>$group</code>/<code>$unwind</code> the stream is synthetic.</li>
+      </ul>
+    </div></div>
+  </div>
+</div>
+
+<!-- ==================== REPLICA SETS ==================== -->
+<div id="replication" class="section">
+  <h2 class="section-title">Replica Sets &amp; Elections</h2>
+  <p>A <strong>replica set</strong> is MongoDB's HA unit: a group of <code>mongod</code> processes holding the same data. One is the <strong>primary</strong> (takes all writes); the rest are <strong>secondaries</strong> that replicate from it. This is how MongoDB provides redundancy and automatic failover.</p>
+
+  <div class="diagram-container">
+    <svg viewBox="0 0 760 300" width="720" xmlns="http://www.w3.org/2000/svg">
+      <text x="380" y="24" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#0f172a">Replica Set (3 members) — oplog replication + heartbeats</text>
+      <!-- Primary -->
+      <rect x="300" y="50" width="160" height="60" rx="10" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+      <text x="380" y="76" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#1d4ed8">PRIMARY</text>
+      <text x="380" y="95" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">all writes • writes oplog</text>
+      <!-- Secondaries -->
+      <rect x="90" y="190" width="160" height="60" rx="10" fill="#dcfce7" stroke="#117e39" stroke-width="2"/>
+      <text x="170" y="216" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#166534">SECONDARY</text>
+      <text x="170" y="235" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">applies oplog</text>
+      <rect x="510" y="190" width="160" height="60" rx="10" fill="#dcfce7" stroke="#117e39" stroke-width="2"/>
+      <text x="590" y="216" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#166534">SECONDARY</text>
+      <text x="590" y="235" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">applies oplog</text>
+      <!-- oplog arrows -->
+      <path d="M320 110 L200 190" stroke="#1658ea" stroke-width="1.8" marker-end="url(#ah)"/>
+      <path d="M440 110 L560 190" stroke="#1658ea" stroke-width="1.8" marker-end="url(#ah)"/>
+      <text x="200" y="150" font-family="Inter" font-size="9" fill="#1658ea">oplog tail</text>
+      <text x="510" y="150" font-family="Inter" font-size="9" fill="#1658ea">oplog tail</text>
+      <!-- heartbeat -->
+      <path d="M250 220 L510 220" stroke="#c62020" stroke-width="1.2" stroke-dasharray="4,3"/>
+      <text x="380" y="214" text-anchor="middle" font-family="Inter" font-size="9" fill="#c62020">heartbeats every 2s (all members)</text>
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="#1658ea"/></marker>
+      </defs>
+    </svg>
+    <div class="diagram-caption">Fig 1: A 3-member replica set. Secondaries tail the primary's oplog; members heartbeat to detect failure.</div>
+  </div>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>The oplog — how replication works</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <ul>
+        <li>The primary records every write as an <strong>idempotent</strong> operation in the <strong>oplog</strong> (<code>local.oplog.rs</code>), a <strong>capped collection</strong> (fixed-size, rolls over).</li>
+        <li>Each secondary <strong>tails</strong> the oplog and applies operations in order, converging to the same state. Replication is <strong>asynchronous</strong> by default.</li>
+        <li>Idempotency matters: an update like "set x=5" is stored so it can be re-applied safely, which makes recovery and re-sync robust.</li>
+        <li><strong>Oplog window</strong> = how far back the oplog reaches. If a secondary falls behind further than the window, it can no longer catch up incrementally and needs a full <strong>initial sync</strong>. Size the oplog for your peak write rate and maintenance windows.</li>
+      </ul>
+    </div></div>
+  </div>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>Elections &amp; failover</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <ul>
+        <li>Members exchange <strong>heartbeats</strong> (default every 2 seconds). If the primary is unreachable past the election timeout (<code>electionTimeoutMillis</code>, default <strong>10 seconds</strong>), secondaries call an election.</li>
+        <li>MongoDB uses a <strong>Raft-inspired protocol</strong> (replication protocol version 1). A candidate must win votes from a <strong>strict majority</strong> of voting members to become primary — this prevents split-brain (two primaries).</li>
+        <li><strong>Majority math:</strong> a set of N voting members tolerates the loss of <code>floor((N-1)/2)</code> members and still elects a primary. So 3 members tolerate 1 failure; 5 tolerate 2. Use an <strong>odd</strong> number of voting members.</li>
+        <li>Member roles: <strong>priority</strong> biases which node becomes primary; <strong>hidden</strong>/<strong>delayed</strong> members serve backups/analytics without taking traffic; an <strong>arbiter</strong> votes but holds no data (use sparingly — it can't provide a <code>w:majority</code> data copy).</li>
+        <li>A former primary that rejoins with writes the new primary never received will <strong>roll back</strong> those un-replicated writes — the reason to use <code>w:majority</code> (below).</li>
+      </ul>
+      <div class="warning-box">
+        <strong>Arbiter caution:</strong> an arbiter lets you form a majority cheaply (e.g. 2 data + 1 arbiter) but holds no data, so it can't satisfy <code>w:majority</code> acknowledgment if a data node is down, and it weakens durability guarantees. Prefer three full data-bearing members.
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ==================== SHARDING ==================== -->
+<div id="sharding" class="section">
+  <h2 class="section-title">Sharding — Horizontal Scale</h2>
+  <p>Sharding partitions a collection's documents across multiple <strong>shards</strong> (each itself a replica set) so the dataset and throughput exceed one machine. Applications talk to a <strong>mongos</strong> router; <strong>config servers</strong> (their own replica set) hold the metadata mapping ranges of the shard key to shards.</p>
+
+  <div class="diagram-container">
+    <svg viewBox="0 0 780 320" width="740" xmlns="http://www.w3.org/2000/svg">
+      <text x="390" y="22" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#0f172a">Sharded Cluster Topology</text>
+      <!-- app -->
+      <rect x="320" y="40" width="140" height="40" rx="8" fill="#f1f5f9" stroke="#59677c" stroke-width="1.5"/>
+      <text x="390" y="65" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#334155">Application</text>
+      <!-- mongos -->
+      <rect x="300" y="110" width="180" height="46" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+      <text x="390" y="130" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#5b21b6">mongos (router)</text>
+      <text x="390" y="147" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">routes by shard key</text>
+      <path d="M390 80 L390 110" stroke="#59677c" stroke-width="1.5" marker-end="url(#ah2)"/>
+      <!-- config -->
+      <rect x="540" y="110" width="200" height="46" rx="8" fill="#fef3c7" stroke="#a35905" stroke-width="2"/>
+      <text x="640" y="130" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#92400e">Config Servers (RS)</text>
+      <text x="640" y="147" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">chunk → shard metadata</text>
+      <path d="M480 133 L540 133" stroke="#a35905" stroke-width="1.3" stroke-dasharray="4,2"/>
+      <!-- shards -->
+      <rect x="40" y="210" width="200" height="80" rx="10" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+      <text x="140" y="235" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#1d4ed8">Shard A (replica set)</text>
+      <text x="140" y="255" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">chunks: key ∈ [min, k1)</text>
+      <text x="140" y="272" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">primary + secondaries</text>
+      <rect x="290" y="210" width="200" height="80" rx="10" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+      <text x="390" y="235" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#1d4ed8">Shard B (replica set)</text>
+      <text x="390" y="255" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">chunks: key ∈ [k1, k2)</text>
+      <text x="390" y="272" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">primary + secondaries</text>
+      <rect x="540" y="210" width="200" height="80" rx="10" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+      <text x="640" y="235" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#1d4ed8">Shard C (replica set)</text>
+      <text x="640" y="255" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">chunks: key ∈ [k2, max)</text>
+      <text x="640" y="272" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">primary + secondaries</text>
+      <path d="M340 156 L150 210" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#ah3)"/>
+      <path d="M390 156 L390 210" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#ah3)"/>
+      <path d="M440 156 L630 210" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#ah3)"/>
+      <defs>
+        <marker id="ah2" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="#59677c"/></marker>
+        <marker id="ah3" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="#7c3aed"/></marker>
+      </defs>
+    </svg>
+    <div class="diagram-caption">Fig 2: mongos routes queries using config-server metadata; each shard is a replica set owning a set of chunks.</div>
+  </div>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>Choosing a shard key — what matters most</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p>The shard key determines how documents distribute and which queries stay fast. A good key balances three properties:</p>
+      <ul>
+        <li><strong>High cardinality</strong> — many distinct values, so data can split into many chunks. (A boolean or a country field can't split beyond a handful of chunks.)</li>
+        <li><strong>Low frequency / even distribution</strong> — no single value dominates, so no shard gets a disproportionate share.</li>
+        <li><strong>Non-monotonic</strong> — an ever-increasing key (timestamp, <code>ObjectId</code>, auto-increment) sends every new insert to the <em>same</em> "max" chunk on one shard: a <strong>hot shard</strong>. Use a <strong>hashed shard key</strong>, or a compound key that leads with a well-distributed field, to spread writes.</li>
+      </ul>
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Strategy</th><th>Distribution</th><th>Range queries</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Ranged</strong></td><td>By contiguous key ranges. Can hotspot if the key is monotonic or skewed.</td><td>Efficient — a range query is <strong>targeted</strong> to the few shards holding that range.</td></tr>
+          <tr><td><strong>Hashed</strong></td><td>Even, by hash of the key — great for write scaling.</td><td>Poor — a range on the key must <strong>scatter-gather</strong> to all shards.</td></tr>
+          <tr><td><strong>Compound</strong></td><td>Lead with a distributing field, add a field that queries target (e.g. <code>{ tenantId: 1, orderId: 1 }</code>).</td><td>Targeted when the query includes the leading prefix.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="key-point">
+        <strong>Targeted vs scatter-gather:</strong> if a query includes the shard key (or its prefix), mongos routes it to just the relevant shard(s) — a <strong>targeted</strong> query. If it does not, mongos must <strong>broadcast to every shard</strong> and merge results — a <strong>scatter-gather</strong> query, whose latency tracks the slowest shard and which doesn't scale with cluster size. Design the shard key so your highest-QPS queries are targeted.
+      </div>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>Chunks, balancing, and hot shards</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <ul>
+        <li>Sharded data is divided into <strong>chunks</strong> — contiguous shard-key ranges. Default chunk size is <strong>128 MB</strong> (configurable). Modern MongoDB (6.0+) distributes data based on <strong>data size per shard</strong> rather than raw chunk count, and no longer auto-splits chunks the way older versions did.</li>
+        <li>The <strong>balancer</strong> runs in the background and <strong>migrates</strong> chunks between shards to keep them balanced, throttling to limit impact on live traffic.</li>
+        <li><strong>Jumbo chunks:</strong> if too many documents share one shard-key value, a chunk can't split and grows unbounded — it's marked "jumbo" and can't be migrated, creating imbalance. This is a direct symptom of a low-cardinality/high-frequency key.</li>
+        <li><strong>Hot shard:</strong> a monotonic shard key funnels all new writes to one shard regardless of how many shards you add — the classic sharding failure. Fix with hashed or compound keys.</li>
+        <li><strong>Zone sharding</strong> pins key ranges to specific shards (e.g. by region for data-locality/compliance).</li>
+      </ul>
+      <div class="info-box">
+        <strong>Evolving the key:</strong> since 4.4 you can <em>refine</em> a shard key by appending fields (<code>refineCollectionShardKey</code>); since 5.0 you can fully <strong>reshard</strong> a collection online (<code>reshardCollection</code>). Historically the shard key was immutable, so this used to be irreversible — worth mentioning that it's now recoverable but expensive.
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ==================== CONSISTENCY ==================== -->
+<div id="consistency" class="section">
+  <h2 class="section-title">Consistency: Write/Read Concern, Read Preference, Causal</h2>
+  <p>MongoDB lets you tune the consistency/latency/durability tradeoff <em>per operation</em> with three independent (orthogonal) knobs. Interviewers may probe how the three knobs interact.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>Write concern — durability of a write</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Write concern</th><th>Acknowledged when…</th><th>Guarantee</th></tr></thead>
+        <tbody>
+          <tr><td><code>w: 0</code></td><td>Fire-and-forget (no ack).</td><td>None — write may be lost. Rarely appropriate.</td></tr>
+          <tr><td><code>w: 1</code></td><td>The primary has applied it.</td><td>Durable on primary only — <span class="badge badge-yellow">can be rolled back</span> if the primary fails before replicating.</td></tr>
+          <tr><td><code>w: "majority"</code> <span class="badge badge-green">default (5.0+)</span></td><td>A majority of data-bearing members have it.</td><td>Survives failover — <strong>never rolled back</strong>. This is the safe default.</td></tr>
+          <tr><td><code>j: true</code></td><td>Written to the on-disk journal (not just memory).</td><td>Survives a process/power crash on the acknowledging nodes.</td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li>Add <code>wtimeout</code> so a write doesn't block forever if a majority can't be reached.</li>
+        <li><strong>Since MongoDB 5.0 the default write concern is <code>w: "majority"</code></strong> — a deliberate shift toward safety over raw speed. Before 5.0 it was <code>w: 1</code>.</li>
+      </ul>
+    </div></div>
+  </div>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>Read concern — what you're allowed to see</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Read concern</th><th>Returns</th></tr></thead>
+        <tbody>
+          <tr><td><code>local</code> <span class="badge badge-blue">default</span></td><td>The node's most recent data — may include writes that could still be rolled back.</td></tr>
+          <tr><td><code>available</code></td><td>Like local but on sharded clusters may return orphaned docs; lowest latency, weakest guarantee.</td></tr>
+          <tr><td><code>majority</code></td><td>Only data acknowledged by a majority — i.e. <strong>durable, won't be rolled back</strong>.</td></tr>
+          <tr><td><code>linearizable</code></td><td>Reflects all majority-acknowledged writes that completed before the read began; single-document, primary-only. Strongest, slowest.</td></tr>
+          <tr><td><code>snapshot</code></td><td>A consistent point-in-time view across the operation — used by multi-document transactions.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="key-point">
+        <strong>Pairing for read-your-own-writes durability:</strong> <code>w:"majority"</code> writes + <code>readConcern:"majority"</code> reads guarantees you never see (nor lose) a write that later disappears. Combine with a causally consistent session to also get monotonic ordering across a secondary read.
+      </div>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>Read preference — which member serves the read</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Read preference</th><th>Routes reads to</th><th>Use for</th></tr></thead>
+        <tbody>
+          <tr><td><code>primary</code> <span class="badge badge-blue">default</span></td><td>Primary only.</td><td>Strong consistency / read-your-writes.</td></tr>
+          <tr><td><code>primaryPreferred</code></td><td>Primary, or a secondary if none.</td><td>Availability during failover.</td></tr>
+          <tr><td><code>secondary</code></td><td>Secondaries only.</td><td>Offloading reads; tolerates staleness.</td></tr>
+          <tr><td><code>secondaryPreferred</code></td><td>Secondaries, else primary.</td><td>Read scaling with a fallback.</td></tr>
+          <tr><td><code>nearest</code></td><td>Lowest network latency member.</td><td>Geo-distributed low-latency reads.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="warning-box">
+        <strong>Secondary reads are eventually consistent.</strong> Because replication is async, a secondary can lag the primary. Reading from a secondary can return stale data and even non-monotonic results across requests. If you need "read my own write," read from the primary or use a causally consistent session.
+      </div>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>Causal consistency</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <ul>
+        <li>A <strong>causally consistent session</strong> guarantees that operations respect their causal order: read-your-writes, monotonic reads, monotonic writes, and writes-follow-reads — even when reading from secondaries.</li>
+        <li>It works by tracking a logical <strong>cluster time</strong> / operation time token in the session and having each operation wait until the target node has advanced past it.</li>
+        <li>Available since MongoDB 3.6 via client sessions. It's the right tool when you want to scale reads onto secondaries without exposing users to their own stale reads.</li>
+      </ul>
+    </div></div>
+  </div>
+</div>
+
+<!-- ==================== TRANSACTIONS ==================== -->
+<div id="transactions" class="section">
+  <h2 class="section-title">Multi-Document Transactions</h2>
+  <p>A single-document write in MongoDB is <strong>always atomic</strong>, including updates to embedded arrays/subdocuments — which is why good document design removes the <em>need</em> for many transactions. When you genuinely must update several documents (or collections) atomically, MongoDB supports <strong>ACID multi-document transactions</strong>.</p>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">&#128274;</span> What you get, and when it arrived</div>
+    <ul>
+      <li><strong>Replica-set transactions since 4.0; sharded-cluster (distributed) transactions since 4.2.</strong></li>
+      <li><strong>Snapshot isolation:</strong> a transaction reads from a single consistent snapshot; other clients see none of its writes until commit (all-or-nothing).</li>
+      <li>Transactions use <code>readConcern:"snapshot"</code> and commit with a write concern (use <code>w:"majority"</code> for durability across failover).</li>
+      <li><strong>Default time limit:</strong> a transaction that runs longer than <code>transactionLifetimeLimitSeconds</code> (default <strong>60 seconds</strong>) is aborted — to bound the resources pinned by its snapshot.</li>
+    </ul>
+    <pre><code>const session = client.startSession();
+try {
+  session.startTransaction({ readConcern: { level: "snapshot" },
+                             writeConcern: { w: "majority" } });
+  await accounts.updateOne({ _id: from }, { $inc: { balance: -100 } }, { session });
+  await accounts.updateOne({ _id: to   }, { $inc: { balance:  100 } }, { session });
+  await session.commitTransaction();
+} catch (e) {
+  await session.abortTransaction();   // then retry on transient errors
+} finally {
+  session.endSession();
+}</code></pre>
+  </div>
+
+  <div class="warning-box">
+    <strong>Use transactions sparingly.</strong> They add locking, coordination, and (on sharded clusters) two-phase-commit overhead, and long transactions pin snapshots and stress the storage engine. Prefer to <em>design them away</em> by embedding related data in one document. When you do use them: keep them short, touch few documents, and implement <strong>retry-on-transient-error</strong> logic (the driver marks retryable transient/commit errors with labels).
+  </div>
+  <div class="info-box">
+    <strong>Retryable writes</strong> (default-on in modern drivers) are a lighter-weight guarantee: the driver safely retries a single write once through a brief network interruption without duplicating it, using a unique operation id. This covers many cases people reach for transactions to solve.
+  </div>
+</div>
+
+<!-- ==================== DATA MODEL EXAMPLE ==================== -->
+<div id="example" class="section">
+  <h2 class="section-title">Worked Data Model: E-Commerce Orders</h2>
+  <p>A concrete example that exercises every earlier decision. Requirements: show an order (with its line items) in one read; a product is referenced by many orders and has an unbounded stream of reviews; the storefront filters products by category and lists a customer's recent orders.</p>
+
+  <div class="subsection-title">1. <code>products</code> — reference target, subset pattern for reviews</div>
+  <pre><code>// products: queried on its own and referenced by orders → its own collection.
+{
+  _id: ObjectId("..."),
+  sku: "TSHIRT-BLK-M",
+  name: "Black T-Shirt (M)",
+  category: "apparel",
+  price: NumberDecimal("19.99"),
+  attrs: { color: "black", size: "M" },
+  ratingAvg: 4.6,           // COMPUTED pattern: pre-aggregated, updated on write
+  ratingCount: 812,
+  recentReviews: [          // SUBSET pattern: only the last few embedded for preview
+    { user: "jdoe", stars: 5, text: "Great fit", at: ISODate("2026-02-01") }
+  ]
+}
+// Full, unbounded review history lives in its own collection (referenced):
+// reviews: { _id, productId, userId, stars, text, createdAt }</code></pre>
+
+  <div class="subsection-title">2. <code>orders</code> — embed line items, extended reference for product fields</div>
+  <pre><code>// An order's items are one-to-few, bounded, and always read WITH the order → EMBED.
+// We copy name/price into each item (EXTENDED REFERENCE) so rendering the order
+// needs no $lookup, and the historical price is frozen at purchase time.
+{
+  _id: ObjectId("..."),
+  customerId: ObjectId("...C1..."),
+  status: "SHIPPED",
+  createdAt: ISODate("2026-03-14T09:00:00Z"),
+  total: NumberDecimal("59.97"),          // COMPUTED: denormalized for fast listing
+  items: [
+    { productId: ObjectId("...P1..."), name: "Black T-Shirt (M)",
+      qty: 3, price: NumberDecimal("19.99"), category: "apparel" }
+  ],
+  shipTo: { line1: "...", city: "...", country: "US" }   // EMBED: no independent life
+}</code></pre>
+
+  <div class="subsection-title">3. Indexes (ESR-driven) and shard key</div>
+  <pre><code>// "a customer's recent shipped orders": E=customerId,status  S/R=createdAt
+db.orders.createIndex({ customerId: 1, status: 1, createdAt: -1 })
+
+// storefront filter "products in a category, cheapest first"
+db.products.createIndex({ category: 1, price: 1 })
+
+// reviews looked up by product, newest first
+db.reviews.createIndex({ productId: 1, createdAt: -1 })
+
+// SHARDING: customerId leads → a customer's orders are co-located (targeted reads),
+// and customerId is high-cardinality & non-monotonic (no hot shard).
+sh.shardCollection("shop.orders", { customerId: 1, _id: 1 })</code></pre>
+
+  <div class="key-point">
+    <strong>Why this shape:</strong> the order screen is one document read (embedded items + copied product fields, no join). Products stay separate because they're shared and their reviews are unbounded. The compound index follows ESR so "recent orders" needs no in-memory sort. The shard key co-locates each customer's data so the hottest query is targeted, not scatter-gather — and it isn't monotonic, so writes spread across shards.
+  </div>
+</div>
+
+<!-- ==================== INTERVIEW ==================== -->
+<div id="interview" class="section">
+  <h2 class="section-title">When to Use MongoDB — and When to Avoid It</h2>
+  <div class="comparison-grid">
+    <div class="card" style="margin:0">
+      <div class="card-title" style="color:var(--green)">Good fit</div>
+      <ul>
+        <li>Evolving / semi-structured schemas; per-record variation (product catalogs, CMS, user profiles).</li>
+        <li>Data naturally shaped as documents read together (an order, a page, an event).</li>
+        <li>Need horizontal write scale with built-in sharding &amp; HA replica sets.</li>
+        <li>High-volume ingest / time-series (native time-series collections, 5.0+).</li>
+        <li>Geospatial queries, and integrated full-text search via Atlas Search.</li>
+      </ul>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-title" style="color:var(--red)">Reach for something else</div>
+      <ul>
+        <li><strong>Heavily relational, many-to-many with ad-hoc joins</strong> → a relational DB. <code>$lookup</code> exists but isn't a JOIN-first engine.</li>
+        <li><strong>Complex multi-entity transactions as the norm</strong> → an RDBMS where transactions are the default, not the exception.</li>
+        <li><strong>Large-scale OLAP / columnar analytics</strong> → ClickHouse / BigQuery / a warehouse.</li>
+        <li><strong>Graph traversal</strong> (social graphs, recommendations) → a graph DB.</li>
+        <li><strong>Pure key-value cache</strong> at sub-ms latency → Redis/Memcached.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2 class="section-title" style="margin-top:28px;">Interview Q&amp;A</h2>
+
+  <div class="qa">
+    <div class="q">Q: Embed or reference — how do you decide?</div>
+    <div class="a">Model for access patterns. Embed one-to-few, bounded data that's read together and has no independent lifecycle (it also gives you free single-document atomicity). Reference when the child set is unbounded or large (16 MB doc limit), when the entity is shared or queried on its own, or when parts change at very different rates. Name the tradeoff: referencing costs a join/second round trip; embedding/duplicating costs write complexity and consistency maintenance.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: What is the ESR rule and why does field order matter?</div>
+    <div class="a">Order compound-index fields Equality → Sort → Range. Equality predicates narrow to a contiguous index slice; sort fields next let the index return rows already ordered (no blocking 100 MB in-memory SORT); range fields last because an inequality opens the scan and nothing after it can seek or satisfy a sort. A compound index only helps queries using a left prefix of its keys.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: How do you pick a shard key, and what goes wrong?</div>
+    <div class="a">Want high cardinality, low frequency, and non-monotonic values, and ideally include it in the hottest queries so they're targeted rather than scatter-gather. Failure modes: a monotonic key (timestamp/ObjectId) creates a hot shard because all inserts hit the max chunk on one shard; a low-cardinality key can't split, producing un-migratable jumbo chunks and imbalance. Fixes: hashed shard key (even writes, but range queries scatter) or a compound key leading with a distributing field. Since 5.0 you can reshard online if you got it wrong.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: Targeted vs scatter-gather query?</div>
+    <div class="a">If the query carries the shard key (or its prefix), mongos routes it to only the shard(s) owning that range — targeted, scales with the cluster. If not, mongos broadcasts to every shard and merges — scatter-gather, bounded by the slowest shard and not scalable. Design the shard key so the highest-QPS queries are targeted.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: Walk me through an election.</div>
+    <div class="a">Members heartbeat every ~2s. If the primary is unreachable past <code>electionTimeoutMillis</code> (default 10s), an eligible secondary becomes a candidate and requests votes under a Raft-inspired protocol (PV1). It needs a strict majority of voting members to win, which prevents split-brain. Priority biases who wins; use an odd number of voting members so N tolerates floor((N-1)/2) failures. A rejoining old primary rolls back any writes the new primary never received — which is why <code>w:"majority"</code> matters.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: How do write concern, read concern, and read preference differ?</div>
+    <div class="a">They're independent. Write concern = durability of a write (<code>w:1</code> primary-only and roll-back-able vs <code>w:"majority"</code> durable; <code>j:true</code> for journal). Read concern = what a read may see (<code>local</code> default, <code>majority</code> = won't-be-rolled-back, <code>linearizable</code>, <code>snapshot</code> for transactions). Read preference = which member serves the read (primary vs secondary/nearest). Note the 5.0 default write concern is <code>majority</code>; the default read concern is <code>local</code> and default read preference is <code>primary</code>.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: If I read from a secondary, can I read my own write?</div>
+    <div class="a">Not guaranteed by default — replication is async so a secondary may lag. Either read from the primary, or use a causally consistent session, which tracks cluster/operation time so reads wait for the target node to catch up (read-your-writes + monotonic reads), even on secondaries.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: When do you actually need a multi-document transaction?</div>
+    <div class="a">Rarely, if the schema is designed well — a single-document update (including embedded arrays) is already atomic. Reach for a transaction only for genuine cross-document/cross-collection invariants (e.g. money transfer between two accounts). Then keep it short, touch few docs, use <code>w:"majority"</code>, mind the 60s default lifetime limit, and retry on transient/commit-error labels. Replica-set transactions landed in 4.0, sharded in 4.2. Consider retryable writes first for single-write resilience.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: What's the significance of the 16 MB document limit?</div>
+    <div class="a">It's the hard cap on a single BSON document and the reason you can't embed unbounded data. It pushes you toward referencing, the subset pattern, and bucketing for growing collections (comments, events, time-series). For large binaries, use GridFS or external object storage with a reference.</div>
+  </div>
+</div>
+
+<!-- ==================== TERMINOLOGY ==================== -->
+<div class="section">
+  <h2 class="section-title">Terminology &amp; Acronyms</h2>
+  <p class="lead">Quick reference for the key terms in this chapter.</p>
+  <div class="table-wrapper"><table class="tbl">
+    <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><strong>BSON</strong></td><td>Binary JSON — the length-prefixed binary format MongoDB uses to encode documents on the wire and on disk.</td></tr>
+      <tr><td><strong>Document / Collection</strong></td><td>A document is a set of field/value pairs (a JSON-like record); a collection is a group of documents, akin to a table.</td></tr>
+      <tr><td><strong>ObjectId</strong></td><td>The 12-byte default <code>_id</code>: 4-byte timestamp + 5-byte random + 3-byte counter; roughly monotonic.</td></tr>
+      <tr><td><strong>Decimal128</strong></td><td>IEEE-754 128-bit decimal BSON type; stores exact decimals, used for money.</td></tr>
+      <tr><td><strong>WiredTiger</strong></td><td>The default storage engine — document-level concurrency, MVCC snapshots, compression, and journaling.</td></tr>
+      <tr><td><strong>MVCC</strong></td><td>Multi-Version Concurrency Control — readers see a point-in-time snapshot without blocking writers.</td></tr>
+      <tr><td><strong>GridFS</strong></td><td>Spec for storing files larger than the 16 MB document limit by chunking them across documents.</td></tr>
+      <tr><td><strong>ESR rule</strong></td><td>Equality → Sort → Range — the recommended field order for a compound index.</td></tr>
+      <tr><td><strong>Compound index</strong></td><td>An index over multiple fields; serves queries that use any left prefix of its keys.</td></tr>
+      <tr><td><strong>Multikey index</strong></td><td>An index on an array field — one entry per element; a compound index may hold at most one array field.</td></tr>
+      <tr><td><strong>Covered query</strong></td><td>A query answered entirely from an index, examining zero documents (<code>totalDocsExamined: 0</code>).</td></tr>
+      <tr><td><strong>COLLSCAN / IXSCAN</strong></td><td>Collection scan vs index scan, as reported by <code>explain</code>.</td></tr>
+      <tr><td><strong>Aggregation pipeline</strong></td><td>An ordered array of stages that transform a document stream — group-bys, joins, reshaping, analytics.</td></tr>
+      <tr><td><strong>$lookup</strong></td><td>Aggregation stage that performs a left outer join to another collection.</td></tr>
+      <tr><td><strong>Replica set</strong></td><td>A group of <code>mongod</code> processes holding the same data, providing redundancy and automatic failover.</td></tr>
+      <tr><td><strong>Oplog</strong></td><td>A capped collection of idempotent write operations that secondaries tail to replicate the primary.</td></tr>
+      <tr><td><strong>Election</strong></td><td>A Raft-inspired majority vote among voting members that selects a new primary, preventing split-brain.</td></tr>
+      <tr><td><strong>Sharding</strong></td><td>Horizontal partitioning of a collection's documents across multiple shards to scale beyond one machine.</td></tr>
+      <tr><td><strong>Shard key</strong></td><td>The field(s) that determine how documents distribute across shards and which queries stay targeted.</td></tr>
+      <tr><td><strong>mongos</strong></td><td>The query router that directs operations to shards using config-server metadata.</td></tr>
+      <tr><td><strong>Config servers</strong></td><td>A dedicated replica set holding the chunk-range-to-shard mapping metadata.</td></tr>
+      <tr><td><strong>Chunk</strong></td><td>A contiguous shard-key range; the unit the balancer migrates (default 128 MB).</td></tr>
+      <tr><td><strong>Balancer</strong></td><td>Background process that migrates chunks between shards to keep data evenly distributed.</td></tr>
+      <tr><td><strong>Targeted vs scatter-gather</strong></td><td>A query carrying the shard key routes to specific shard(s) (targeted); one without it broadcasts to all shards (scatter-gather).</td></tr>
+      <tr><td><strong>Write concern</strong></td><td>The durability a write must reach before acknowledgment (<code>w:1</code>, <code>w:"majority"</code>, <code>j:true</code>).</td></tr>
+      <tr><td><strong>Read concern</strong></td><td>The visibility guarantee for a read (<code>local</code>, <code>majority</code>, <code>linearizable</code>, <code>snapshot</code>).</td></tr>
+      <tr><td><strong>Read preference</strong></td><td>Which replica-set member serves a read (primary, secondary, nearest).</td></tr>
+      <tr><td><strong>Causal consistency</strong></td><td>A session guarantee that operations respect causal order (read-your-writes, monotonic reads) even on secondaries.</td></tr>
+      <tr><td><strong>Multi-document transaction</strong></td><td>ACID, snapshot-isolated update spanning multiple documents/collections; commits all-or-nothing.</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+</div> <!-- end .content -->
+
+<script>
+// Collapsible cards
+document.querySelectorAll('.collapsible-header').forEach(header => {
+  header.addEventListener('click', () => {
+    header.parentElement.classList.toggle('open');
+  });
+});
+
+// Sticky-nav active state on scroll
+const sections = [...document.querySelectorAll('.section[id]')];
+const links = [...document.querySelectorAll('.tab-btn')];
+const byId = Object.fromEntries(links.map(l => [l.getAttribute('href').slice(1), l]));
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      if (byId[e.target.id]) byId[e.target.id].classList.add('active');
+    }
+  });
+}, { rootMargin: '-60px 0px -70% 0px' });
+sections.forEach(s => obs.observe(s));
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="redis_deep_dive.html">‹ Redis Deep Dive</a><a class="bkc" href="index.html">📖 Contents</a><a href="cassandra_deep_dive.html">Cassandra Deep Dive ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

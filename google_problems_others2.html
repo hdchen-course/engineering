@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assorted Problems II — Arrays, Intervals &amp; Greedy — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 12 — <b>Assorted Problems II — Arrays, Intervals &amp; Greedy</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Assorted Problems II — Arrays, Intervals &amp; Greedy</h1>
+  <div class="sub">Seven Google-style array, interval, and greedy problems &bull; original framing, execution-tested code, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+<div class="tip" style="margin-bottom:24px;"><p><strong>How to read this chapter:</strong> the second mixed set of problems &mdash; array, interval, and greedy problems where the trick is a <em>construction</em> rather than a formula: a two-pass sweep, a sliding window that shrinks on an exact condition, a diagonal-pair hash, an overlaps list, a two-dimensional Fenwick tree, a monotonic next-greater/next-smaller table, or an interactive minimax filter. Every worked example was invented for this book, and each stated output was produced by <em>compiling and running</em> the accompanying Java.</p>
+<p>Beyond the hand-picked cases, every solution here was cross-checked against an <strong>independent reference</strong> over tens to hundreds of thousands of random inputs, asserting identical results at every step:</p>
+<ul>
+<li>Candy &mdash; against an iterate-until-stable relaxation</li>
+<li>Fruit-Into-Baskets &mdash; against a quadratic window scan</li>
+<li>Minimum-Area-Rectangle &mdash; against an all-pairs corner search</li>
+<li>My-Calendar-II &mdash; against a per-integer-point booking counter</li>
+<li>the 2D Fenwick tree &mdash; against a naive prefix sum over a mutable reference grid</li>
+<li>Odd-Even-Jump &mdash; against a from-each-start simulation</li>
+<li>Guess-the-Word &mdash; by solving every secret against a mock oracle inside the ten-guess budget</li>
+</ul>
+<p>The recurring lesson: <strong>find the invariant, then the loop writes itself.</strong></p></div>
+
+
+<!-- PROBLEM: Candy -->
+<div class="card">
+<h2>Candy</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Children stand in a line, each with an integer <strong>rating</strong>. You hand out candy under two rules: every child gets <strong>at least one</strong> candy, and a child with a <strong>higher rating than an immediate neighbour</strong> must get <strong>strictly more</strong> candy than that neighbour. Return the <strong>minimum total</strong> candy that satisfies both rules.</p>
+<ul>
+  <li>Equal-rating neighbours have <strong>no</strong> constraint on each other &mdash; either may have more.</li>
+  <li>The constraint is local (only immediate neighbours), but a long increasing run forces a long increasing candy count.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> ratings <code>[1,3,2,2,1]</code> &rarr; <code>7</code>. A minimum assignment is <code>[1,2,1,2,1]</code>: the peak at index 1 beats both neighbours, the <code>2</code> at index 3 beats the trailing <code>1</code>, and the two equal <code>2</code>s at indices 2&ndash;3 are free of each other. Summing gives <code>1+2+1+2+1 = 7</code> &mdash; computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Two greedy passes, then take the per-child maximum.</strong> The two neighbour constraints pull in opposite directions, so satisfy them one at a time. Start everyone at one candy. Sweep <strong>left to right</strong>: whenever a child has a higher rating than the one on the <em>left</em>, give them one more than that left neighbour &mdash; this satisfies every &ldquo;taller than my left&rdquo; rule. Sweep <strong>right to left</strong>: whenever a child has a higher rating than the one on the <em>right</em>, they need more than that right neighbour, so take the <em>maximum</em> of what they already hold and <code>right+1</code>. Taking the max is essential &mdash; it preserves the left-pass guarantee while adding the right-pass one, so both hold simultaneously.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">candy</span>(<span class="kw">int</span>[] ratings) {
+    <span class="kw">int</span> n = ratings.length;
+    <span class="kw">int</span>[] candy = <span class="kw">new</span> <span class="kw">int</span>[n];
+    <span class="type">Arrays</span>.fill(candy, <span class="num">1</span>);                 <span class="cm">// rule 1: everyone gets >= 1</span>
+    <span class="cm">// left-to-right: satisfy "taller than my LEFT neighbour"</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt; n; i++)
+        <span class="kw">if</span> (ratings[i] &gt; ratings[i - <span class="num">1</span>])
+            candy[i] = candy[i - <span class="num">1</span>] + <span class="num">1</span>;
+    <span class="cm">// right-to-left: satisfy "taller than my RIGHT neighbour"</span>
+    <span class="cm">// MAX keeps the left-pass result intact -&gt; both rules hold</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = n - <span class="num">2</span>; i &gt;= <span class="num">0</span>; i--)
+        <span class="kw">if</span> (ratings[i] &gt; ratings[i + <span class="num">1</span>])
+            candy[i] = <span class="type">Math</span>.max(candy[i], candy[i + <span class="num">1</span>] + <span class="num">1</span>);
+    <span class="kw">int</span> total = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> c : candy) total += c;
+    <span class="kw">return</span> total;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; two linear passes plus a sum. Space <code>O(n)</code> for the candy array (an <code>O(1)</code>-space slope-counting variant exists but is trickier to get right).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>The right pass must take a max, not an overwrite.</strong> Assigning <code>candy[i] = candy[i+1] + 1</code> directly would overwrite the value the left pass carefully built up for a child who is a peak (taller than <em>both</em> sides), breaking the left constraint. <code>Math.max</code> is the whole trick. <strong>Equal ratings reset the run.</strong> Neighbours with equal ratings impose no constraint, so a run of increases stops at a plateau &mdash; don&rsquo;t keep incrementing across equals. <strong>One pass is not enough.</strong> A single left-to-right sweep handles only the left neighbour; the classic bug is forgetting that a descending run (each taller than its right) needs the mirror pass. <strong>Everyone starts at one</strong>, so the minimum total is never below <code>n</code>.</p></div>
+</div>
+
+
+<!-- PROBLEM: Fruit Into Baskets -->
+<div class="card">
+<h2>Fruit Into Baskets</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You walk along a row of fruit trees, represented by an array where <code>fruits[i]</code> is the <strong>type</strong> of fruit on tree <code>i</code>. You carry <strong>two baskets</strong>, each holding an unlimited quantity of a <strong>single type</strong>. Starting at any tree, you pick from every tree moving right until you hit a type that fits in neither basket, then stop. Return the <strong>most fruit you can collect</strong>. Equivalently: the length of the <strong>longest contiguous subarray with at most two distinct values</strong>.</p>
+<ul>
+  <li>The picked trees must be <strong>contiguous</strong> &mdash; you cannot skip a tree.</li>
+  <li>At most two distinct types total, but each may appear any number of times.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>[3,3,1,1,1,2,2]</code> &rarr; <code>5</code>. The best contiguous run using two types is <code>1,1,1,2,2</code> (types <code>{1,2}</code>), length <code>5</code>; extending left to the <code>3</code>s would introduce a third type. For <code>[4,1,1,2,2,2,3]</code> the answer is also <code>5</code> (<code>1,1,2,2,2</code>) &mdash; both computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Slide a window right, and whenever it holds three distinct types, shrink from the left until it holds two again.</strong> Keep a small map from fruit type to its count inside the window. Advancing the right edge adds one fruit; if that pushes the distinct-type count to three, walk the left edge forward &mdash; decrementing counts and dropping a type when its count reaches zero &mdash; until only two types remain. After each right-edge step the window is valid, so record its length. Because the left edge only ever moves forward, every index enters and leaves the window at most once.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">totalFruit</span>(<span class="kw">int</span>[] fruits) {
+    <span class="type">Map</span>&lt;<span class="type">Integer</span>,<span class="type">Integer</span>&gt; count = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();
+    <span class="kw">int</span> left = <span class="num">0</span>, best = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> right = <span class="num">0</span>; right &lt; fruits.length; right++) {
+        count.merge(fruits[right], <span class="num">1</span>, <span class="type">Integer</span>::sum);   <span class="cm">// add the new tree</span>
+        <span class="kw">while</span> (count.size() &gt; <span class="num">2</span>) {                    <span class="cm">// 3rd type -&gt; shrink</span>
+            <span class="kw">int</span> lf = fruits[left];
+            count.merge(lf, -<span class="num">1</span>, <span class="type">Integer</span>::sum);
+            <span class="kw">if</span> (count.get(lf) == <span class="num">0</span>) count.remove(lf);    <span class="cm">// type fully left window</span>
+            left++;
+        }
+        best = <span class="type">Math</span>.max(best, right - left + <span class="num">1</span>);
+    }
+    <span class="kw">return</span> best;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; each index is added once and removed at most once; the map holds at most three keys at any moment. Space <code>O(1)</code> (the map never exceeds three entries).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Shrink only while strictly more than two types.</strong> Stopping the inner loop one step early leaves three types in the window; running it one step too far needlessly shortens a valid window &mdash; the exact condition is <code>size() &gt; 2</code>. <strong>Remove the key at count zero.</strong> Leaving a stale zero-count entry in the map inflates <code>size()</code> and breaks the distinct-type test. <strong>&ldquo;At most two,&rdquo; not &ldquo;exactly two.&rdquo;</strong> A single-type array is entirely valid &mdash; don&rsquo;t force two types. <strong>It&rsquo;s a subarray, not a subsequence.</strong> The trees are contiguous, which is exactly why a sliding window (not a frequency count over the whole array) is the right tool.</p></div>
+</div>
+
+
+<!-- PROBLEM: Minimum Area Rectangle -->
+<div class="card">
+<h2>Minimum Area Rectangle</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a set of distinct points in the plane, find the <strong>minimum area</strong> of any rectangle formed from four of them whose sides are <strong>parallel to the x- and y-axes</strong>. If no such axis-aligned rectangle exists, return <code>0</code>.</p>
+<ul>
+  <li>Only axis-aligned rectangles count &mdash; tilted ones are ignored.</li>
+  <li>All four corners must be present in the input set.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> points <code>(1,1),(1,4),(3,1),(3,4),(4,2)</code> &rarr; <code>6</code>. The four corners <code>(1,1),(1,4),(3,1),(3,4)</code> form a rectangle of width <code>2</code> and height <code>3</code>, area <code>6</code>; the stray point <code>(4,2)</code> completes no rectangle. With only <code>(0,0),(0,3),(2,0)</code> the answer is <code>0</code> &mdash; three points can never close a rectangle. Both computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Treat each pair of points as the two opposite corners of a diagonal, and check whether the other two corners exist.</strong> Hash every point into a set for O(1) presence tests. For an axis-aligned rectangle, a diagonal from <code>(x1,y1)</code> to <code>(x2,y2)</code> needs distinct x&rsquo;s and distinct y&rsquo;s; the remaining corners are then exactly <code>(x1,y2)</code> and <code>(x2,y1)</code>. If both are in the set, the rectangle exists and its area is <code>|x1-x2| &times; |y1-y2|</code>. Scan all pairs, keep the smallest area, and return <code>0</code> if none was ever completed.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">minAreaRect</span>(<span class="kw">int</span>[][] points) {
+    <span class="type">Set</span>&lt;<span class="type">Long</span>&gt; set = <span class="kw">new</span> <span class="type">HashSet</span>&lt;&gt;();
+    <span class="kw">for</span> (<span class="kw">int</span>[] p : points) set.add(key(p[<span class="num">0</span>], p[<span class="num">1</span>]));
+    <span class="kw">int</span> best = <span class="type">Integer</span>.MAX_VALUE;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; points.length; i++)
+        <span class="kw">for</span> (<span class="kw">int</span> j = i + <span class="num">1</span>; j &lt; points.length; j++) {
+            <span class="kw">int</span> x1 = points[i][<span class="num">0</span>], y1 = points[i][<span class="num">1</span>];
+            <span class="kw">int</span> x2 = points[j][<span class="num">0</span>], y2 = points[j][<span class="num">1</span>];
+            <span class="kw">if</span> (x1 == x2 || y1 == y2) <span class="kw">continue</span>;        <span class="cm">// not a true diagonal</span>
+            <span class="cm">// the OTHER two corners of the axis-aligned rectangle</span>
+            <span class="kw">if</span> (set.contains(key(x1, y2)) &amp;&amp; set.contains(key(x2, y1))) {
+                <span class="kw">int</span> area = <span class="type">Math</span>.abs(x1 - x2) * <span class="type">Math</span>.abs(y1 - y2);
+                best = <span class="type">Math</span>.min(best, area);
+            }
+        }
+    <span class="kw">return</span> best == <span class="type">Integer</span>.MAX_VALUE ? <span class="num">0</span> : best;
+}
+<span class="cm">// pack (x,y) into one long key; coords fit in a known bound</span>
+<span class="kw">private</span> <span class="kw">long</span> <span class="fn">key</span>(<span class="kw">int</span> x, <span class="kw">int</span> y) { <span class="kw">return</span> (<span class="kw">long</span>) x * <span class="num">100000L</span> + y; }</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n<sup>2</sup>)</code> &mdash; every pair of points is examined once with O(1) set lookups. Space <code>O(n)</code> for the point set.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Use the diagonal pair, not adjacent corners.</strong> Iterating pairs as <em>opposite</em> corners is what lets a single hash-set lookup confirm the other two; trying to build rectangles from adjacent edges is far messier. <strong>Skip degenerate pairs.</strong> If the two points share an x or a y they lie on a common edge, not a diagonal &mdash; <code>continue</code>, or you would compute a zero-area &ldquo;rectangle.&rdquo; <strong>No rectangle returns 0.</strong> Guard the sentinel <code>Integer.MAX_VALUE</code> so an empty result reports <code>0</code>, never the sentinel. <strong>Pack points into a hashable key.</strong> A <code>long</code> (or a <code>Set&lt;String&gt;</code>) avoids the cost and pitfalls of hashing <code>int[]</code> by identity. <strong>Overflow.</strong> If coordinates can be large, multiply areas in <code>long</code> to avoid a 32-bit overflow.</p></div>
+</div>
+
+
+<!-- PROBLEM: My Calendar II -->
+<div class="card">
+<h2>My Calendar II</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Implement a booking calendar with one operation, <code>book(start, end)</code> over the half-open interval <code>[start, end)</code>. A booking is accepted unless it would cause a <strong>triple booking</strong> &mdash; some instant covered by three intervals at once. Return <code>true</code> and record the event if it can be added without a triple overlap; otherwise return <code>false</code> and record nothing. <strong>Double</strong> bookings are allowed.</p>
+<ul>
+  <li>Intervals are half-open: <code>[10,20)</code> and <code>[20,30)</code> do <strong>not</strong> overlap.</li>
+  <li>A rejected booking must leave the calendar unchanged.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> the sequence <code>book(10,20)</code>, <code>book(15,25)</code>, <code>book(5,12)</code>, <code>book(18,30)</code>, <code>book(20,29)</code> returns <code>true, true, true, false, true</code>. The fourth call is rejected because <code>[18,20)</code> is already double-booked by <code>[10,20)</code> and <code>[15,25)</code>, so adding <code>[18,30)</code> there would be a triple. The fifth succeeds: <code>[20,29)</code> starts exactly at 20, where <code>[10,20)</code> has just closed and the double-booked window <code>[15,20)</code> has ended, so with half-open intervals it touches no double-booked region. Computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Keep two lists: all accepted intervals, and the sub-intervals that are currently double-booked.</strong> A new interval creates a triple booking exactly when it overlaps a region that is <em>already</em> doubly booked &mdash; so first test the incoming interval against the <code>overlaps</code> list; any intersection means reject. If it survives, it becomes a legal (at most double) booking, so record any new double-booked regions it forms with the existing single bookings (the intersection of the new interval with each prior one), then add it to the master list. Two intervals <code>[s1,e1)</code> and <code>[s2,e2)</code> intersect iff <code>s1 &lt; e2 &amp;&amp; s2 &lt; e1</code>, and their overlap is <code>[max(s1,s2), min(e1,e2))</code>.</p>
+
+<pre><span class="kw">class</span> <span class="type">MyCalendarTwo</span> {
+    <span class="type">List</span>&lt;<span class="kw">int</span>[]&gt; booked = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();    <span class="cm">// every accepted interval</span>
+    <span class="type">List</span>&lt;<span class="kw">int</span>[]&gt; overlaps = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();  <span class="cm">// already double-booked regions</span>
+
+    <span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">book</span>(<span class="kw">int</span> start, <span class="kw">int</span> end) {
+        <span class="cm">// hitting an existing double booking would make it a triple</span>
+        <span class="kw">for</span> (<span class="kw">int</span>[] o : overlaps)
+            <span class="kw">if</span> (start &lt; o[<span class="num">1</span>] &amp;&amp; o[<span class="num">0</span>] &lt; end) <span class="kw">return</span> <span class="kw">false</span>;
+        <span class="cm">// safe to add: record new double-booked regions vs. each prior booking</span>
+        <span class="kw">for</span> (<span class="kw">int</span>[] b : booked)
+            <span class="kw">if</span> (start &lt; b[<span class="num">1</span>] &amp;&amp; b[<span class="num">0</span>] &lt; end)
+                overlaps.add(<span class="kw">new</span> <span class="kw">int</span>[]{<span class="type">Math</span>.max(start, b[<span class="num">0</span>]),
+                                        <span class="type">Math</span>.min(end,   b[<span class="num">1</span>])});
+        booked.add(<span class="kw">new</span> <span class="kw">int</span>[]{start, end});
+        <span class="kw">return</span> <span class="kw">true</span>;
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> per <code>book</code> call (scan the two lists), so <code>O(n<sup>2</sup>)</code> over <code>n</code> bookings. Space <code>O(n)</code> for the interval lists. (A balanced-tree sweep of boundary deltas gives <code>O(n log n)</code> total, at the cost of more code.)</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Check against the double-booked list first.</strong> The triple condition is &ldquo;overlaps something already doubled,&rdquo; not &ldquo;overlaps two separate singles&rdquo; &mdash; maintaining the <code>overlaps</code> list makes the test a single scan. <strong>Half-open comparison.</strong> Use strict <code>&lt;</code> on both ends (<code>start &lt; e &amp;&amp; s &lt; end</code>) so touching endpoints like <code>[20,29)</code> after <code>[…,20)</code> are <em>not</em> treated as overlapping. <strong>Reject cleanly.</strong> On a triple, return <code>false</code> before mutating either list &mdash; a rejected booking must not leave stray overlap fragments behind. <strong>Record the intersection, not the whole interval.</strong> The new double-booked region is only <code>[max(starts), min(ends))</code>, not the entire incoming interval.</p></div>
+</div>
+
+
+<!-- PROBLEM: Range Sum Query 2D - Mutable -->
+<div class="card">
+<h2>Range Sum Query 2D — Mutable</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given an <code>m &times; n</code> integer matrix, support two operations efficiently and interleaved: <code>update(row, col, val)</code> sets a cell to a new value, and <code>sumRegion(r1, c1, r2, c2)</code> returns the sum of the rectangular block with corners <code>(r1,c1)</code> and <code>(r2,c2)</code> inclusive. With frequent updates, a static prefix-sum table is too slow to maintain; aim for <code>O(log m &middot; log n)</code> per operation.</p>
+<ul>
+  <li>Updates and queries arrive in any order and any number of times.</li>
+  <li>A static 2D prefix sum answers queries in O(1) but costs <code>O(mn)</code> to rebuild after each update.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> on the matrix <code>[[3,0,1,4],[5,6,3,2],[1,2,0,1],[4,1,0,1]]</code>, <code>sumRegion(1,1,2,3)</code> sums rows 1&ndash;2, cols 1&ndash;3: <code>(6+3+2)+(2+0+1) = 14</code>. After <code>update(2,2,7)</code> that cell rises from <code>0</code> to <code>7</code>, so the same query becomes <code>21</code>. Both computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Use a two-dimensional Binary Indexed (Fenwick) tree that stores prefix sums and supports point updates.</strong> A 1D Fenwick tree gives <code>O(log n)</code> point-update and prefix-sum; nesting one inside another extends both to 2D, so a single cell change touches only <code>O(log m &middot; log n)</code> tree nodes rather than the whole grid. The tree is <strong>1-indexed</strong>, so cell <code>(row,col)</code> lives at tree position <code>(row+1,col+1)</code>. <code>update</code> applies the <em>delta</em> from the old value (keeping a shadow copy of raw cells) and ripples it up via <code>i += i &amp; -i</code>. A region sum comes from <strong>inclusion&ndash;exclusion</strong> over four prefix rectangles: <code>sum(r2,c2) - sum(r1-1,c2) - sum(r2,c1-1) + sum(r1-1,c1-1)</code>.</p>
+
+<pre><span class="kw">class</span> <span class="type">NumMatrix</span> {
+    <span class="kw">private</span> <span class="kw">int</span>[][] tree, nums;
+    <span class="kw">private</span> <span class="kw">int</span> R, C;
+
+    <span class="kw">public</span> <span class="fn">NumMatrix</span>(<span class="kw">int</span>[][] matrix) {
+        R = matrix.length; C = matrix[<span class="num">0</span>].length;
+        tree = <span class="kw">new</span> <span class="kw">int</span>[R + <span class="num">1</span>][C + <span class="num">1</span>];   <span class="cm">// 1-indexed Fenwick grid</span>
+        nums = <span class="kw">new</span> <span class="kw">int</span>[R][C];             <span class="cm">// raw cell values (for deltas)</span>
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; R; i++)
+            <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; C; j++)
+                update(i, j, matrix[i][j]);
+    }
+
+    <span class="kw">public</span> <span class="kw">void</span> <span class="fn">update</span>(<span class="kw">int</span> row, <span class="kw">int</span> col, <span class="kw">int</span> val) {
+        <span class="kw">int</span> delta = val - nums[row][col];   <span class="cm">// change to propagate</span>
+        nums[row][col] = val;
+        <span class="kw">for</span> (<span class="kw">int</span> i = row + <span class="num">1</span>; i &lt;= R; i += i &amp; (-i))
+            <span class="kw">for</span> (<span class="kw">int</span> j = col + <span class="num">1</span>; j &lt;= C; j += j &amp; (-j))
+                tree[i][j] += delta;
+    }
+
+    <span class="cm">// sum of the block [0..r-1] x [0..c-1] (r, c are 1-indexed bounds)</span>
+    <span class="kw">private</span> <span class="kw">int</span> <span class="fn">prefix</span>(<span class="kw">int</span> r, <span class="kw">int</span> c) {
+        <span class="kw">int</span> s = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="kw">int</span> i = r; i &gt; <span class="num">0</span>; i -= i &amp; (-i))
+            <span class="kw">for</span> (<span class="kw">int</span> j = c; j &gt; <span class="num">0</span>; j -= j &amp; (-j))
+                s += tree[i][j];
+        <span class="kw">return</span> s;
+    }
+
+    <span class="kw">public</span> <span class="kw">int</span> <span class="fn">sumRegion</span>(<span class="kw">int</span> r1, <span class="kw">int</span> c1, <span class="kw">int</span> r2, <span class="kw">int</span> c2) {
+        <span class="cm">// inclusion-exclusion over four prefix rectangles</span>
+        <span class="kw">return</span> prefix(r2 + <span class="num">1</span>, c2 + <span class="num">1</span>) - prefix(r1, c2 + <span class="num">1</span>)
+             - prefix(r2 + <span class="num">1</span>, c1) + prefix(r1, c1);
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(log m &middot; log n)</code> per <code>update</code> and per <code>sumRegion</code>; construction is <code>O(mn &middot; log m &middot; log n)</code>. Space <code>O(mn)</code> for the tree plus the shadow grid.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>1-indexing is mandatory.</strong> The <code>i &amp; -i</code> lowest-set-bit walk breaks at index 0 (it would loop forever), so every cell maps to <code>+1</code> in both dimensions; forgetting this off-by-one is the classic Fenwick bug. <strong>Store a delta, not the value.</strong> <code>update</code> must add <code>val - old</code> and refresh the shadow cell &mdash; adding the raw <code>val</code> would double-count. <strong>Inclusion&ndash;exclusion signs.</strong> Region sum subtracts the top and left strips and <em>adds back</em> the doubly-subtracted top-left corner; a wrong sign here is silent and only shows on interior queries. <strong>Constructor reuse.</strong> Initializing by calling <code>update</code> on a zeroed tree is clean but <code>O(mn log m log n)</code>; a direct build is faster if construction time matters. <strong>Alternative:</strong> a 2D segment tree gives the same bounds and supports range updates, but is heavier to write under interview time pressure.</p></div>
+</div>
+
+
+<!-- PROBLEM: Odd Even Jump -->
+<div class="card">
+<h2>Odd Even Jump</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>From index <code>i</code> in an array you may &ldquo;jump&rdquo; to a later index, alternating jump types. On an <strong>odd-numbered jump</strong> (the 1st, 3rd, 5th&hellip;) you move to the <em>smallest index</em> <code>j &gt; i</code> whose value is the <strong>smallest value that is &ge; <code>arr[i]</code></strong> (ties broken by smallest index). On an <strong>even-numbered jump</strong> you move to the smallest index <code>j &gt; i</code> whose value is the <strong>largest value that is &le; <code>arr[i]</code></strong>. A starting index is <strong>good</strong> if some sequence of jumps reaches the <strong>last index</strong>. Count the good starting indices.</p>
+<ul>
+  <li>The first jump from any start is always odd (jump number 1).</li>
+  <li>If no valid target exists for the required jump type, that path is stuck.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>[6,3,8,5,10,7]</code> &rarr; <code>4</code>. The last index (5) is always good, and starts 0, 2, and 3 also reach the end via a legal alternating chain &mdash; so four of the six starts succeed. Index 4 (<code>10</code>) is NOT good: its first (odd) jump needs a later value &ge; 10, but the only later value is 7, so it is stuck. Computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Precompute, for every index, where an odd jump and an even jump land; then fill a DP from the right.</strong> Define <code>odd[i]</code> = &ldquo;starting at <code>i</code> with an odd jump, can I reach the end?&rdquo; and <code>even[i]</code> likewise for an even jump. The last index is a base case (<code>odd = even = true</code>). Processing indices right to left, maintain a <code>TreeMap</code> from value to index over the <em>already-seen</em> (later) indices. An odd jump wants the <code>ceilingEntry(arr[i])</code> (smallest value &ge;); its destination continues with an <em>even</em> jump, so <code>odd[i] = even[dest]</code>. An even jump wants <code>floorEntry(arr[i])</code> (largest value &le;) and continues odd, so <code>even[i] = odd[dest]</code>. Inserting each value after querying, and letting a later duplicate overwrite an earlier one, enforces the &ldquo;smallest index on ties&rdquo; rule. The answer counts indices with <code>odd[i]</code> true, since every start&rsquo;s first jump is odd.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">oddEvenJumps</span>(<span class="kw">int</span>[] arr) {
+    <span class="kw">int</span> n = arr.length;
+    <span class="kw">boolean</span>[] odd = <span class="kw">new</span> <span class="kw">boolean</span>[n];   <span class="cm">// reach end, next jump is ODD</span>
+    <span class="kw">boolean</span>[] even = <span class="kw">new</span> <span class="kw">boolean</span>[n];  <span class="cm">// reach end, next jump is EVEN</span>
+    odd[n - <span class="num">1</span>] = even[n - <span class="num">1</span>] = <span class="kw">true</span>;    <span class="cm">// last index: already there</span>
+    <span class="type">TreeMap</span>&lt;<span class="type">Integer</span>,<span class="type">Integer</span>&gt; map = <span class="kw">new</span> <span class="type">TreeMap</span>&lt;&gt;();
+    map.put(arr[n - <span class="num">1</span>], n - <span class="num">1</span>);
+    <span class="kw">for</span> (<span class="kw">int</span> i = n - <span class="num">2</span>; i &gt;= <span class="num">0</span>; i--) {
+        <span class="type">Map</span>.Entry&lt;<span class="type">Integer</span>,<span class="type">Integer</span>&gt; hi = map.ceilingEntry(arr[i]); <span class="cm">// smallest &gt;=</span>
+        <span class="kw">if</span> (hi != <span class="kw">null</span>) odd[i] = even[hi.getValue()];
+        <span class="type">Map</span>.Entry&lt;<span class="type">Integer</span>,<span class="type">Integer</span>&gt; lo = map.floorEntry(arr[i]);   <span class="cm">// largest &lt;=</span>
+        <span class="kw">if</span> (lo != <span class="kw">null</span>) even[i] = odd[lo.getValue()];
+        map.put(arr[i], i);   <span class="cm">// later duplicate wins -&gt; smallest index on ties</span>
+    }
+    <span class="kw">int</span> good = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">boolean</span> b : odd) <span class="kw">if</span> (b) good++;   <span class="cm">// first jump is always odd</span>
+    <span class="kw">return</span> good;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n log n)</code> &mdash; each index does two <code>TreeMap</code> lookups and one insert. Space <code>O(n)</code> for the two DP arrays and the map.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Odd vs. even semantics differ.</strong> Odd jumps take the smallest value that is <em>&ge;</em> (ceiling); even jumps take the largest value that is <em>&le;</em> (floor). Swapping <code>ceilingEntry</code> and <code>floorEntry</code> is the most common bug. <strong>Ties go to the smallest index.</strong> Because we scan right to left and <code>put</code> after querying, a later index with the same value overwrites the map entry, so a subsequent (further-left) query resolves to the nearest such index &mdash; exactly the tie rule. <strong>Count <code>odd</code>, not <code>even</code>.</strong> Every start begins with jump number 1, which is odd. <strong>Don&rsquo;t brute-force paths.</strong> Simulating jumps from each start is <code>O(n<sup>2</sup>)</code>; the right-to-left DP over precomputed targets is the intended <code>O(n log n)</code>. A monotonic-stack pass over value-sorted indices can replace the <code>TreeMap</code> for <code>O(n)</code> target precomputation.</p></div>
+</div>
+
+
+<!-- PROBLEM: Guess the Word -->
+<div class="card">
+<h2>Guess the Word</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You are given a list of equal-length candidate words, one of which is a hidden <strong>secret</strong>, and an oracle object <code>Master</code> with a single method <code>guess(word)</code>. Calling it returns how many <strong>positions</strong> the guessed word shares with the secret (an exact-position character match count), or <code>-1</code> if the word is not in the allowed list. You have a <strong>bounded budget</strong> of guesses (say ten). Find the secret &mdash; get <code>guess</code> to return a full-length match &mdash; within the budget.</p>
+<ul>
+  <li>The <code>Master</code> API is opaque: it reveals only the match <em>count</em>, never which positions matched.</li>
+  <li>Each wrong guess still gives information &mdash; the returned count constrains which words can be the secret.</li>
+</ul>
+<div class="insight"><p><strong>Example (against a mock oracle):</strong> with an eight-word dictionary and secret <code>"abcdez"</code>, the strategy finds it in <strong>2 guesses</strong>. Run against random dictionaries of up to 100 six-letter words &mdash; taking every word in turn as the secret &mdash; it always finds the secret within <strong>6 guesses</strong>, comfortably under a ten-guess budget. All computed by running it against a <code>MockMaster</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Guess, read the match count, and discard every candidate that would not have produced that same count &mdash; picking each guess to shrink the pool as much as possible.</strong> The key fact: if <code>guess(w)</code> returns <code>m</code>, then the secret must match <code>w</code> in exactly <code>m</code> positions, so any candidate whose position-match with <code>w</code> is not <code>m</code> is eliminated. That filter alone converges, but a careless pick can leave a large pool; a <strong>minimax</strong> pick does better. For each candidate, bucket the others by their match count against it and take the size of the largest bucket &mdash; the worst-case surviving pool if that word were guessed. Choose the candidate whose worst-case bucket is <em>smallest</em> (the &ldquo;most constrained&rdquo; word). This keeps the pool small enough to finish well inside the budget. We build a <code>MockMaster</code> to execute and verify the strategy end to end.</p>
+
+<pre><span class="kw">interface</span> <span class="type">Master</span> { <span class="kw">int</span> <span class="fn">guess</span>(<span class="type">String</span> word); }   <span class="cm">// opaque oracle</span>
+
+<span class="kw">public</span> <span class="kw">void</span> <span class="fn">findSecret</span>(<span class="type">String</span>[] words, <span class="type">Master</span> master) {
+    <span class="type">List</span>&lt;<span class="type">String</span>&gt; candidates = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;(<span class="type">Arrays</span>.asList(words));
+    <span class="kw">for</span> (<span class="kw">int</span> round = <span class="num">0</span>; round &lt; <span class="num">10</span> &amp;&amp; !candidates.isEmpty(); round++) {
+        <span class="type">String</span> pick = pickMostConstrained(candidates);   <span class="cm">// minimax choice</span>
+        <span class="kw">int</span> m = master.guess(pick);
+        <span class="kw">if</span> (m == pick.length()) <span class="kw">return</span>;                <span class="cm">// full match -&gt; solved</span>
+        <span class="type">List</span>&lt;<span class="type">String</span>&gt; next = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+        <span class="kw">for</span> (<span class="type">String</span> w : candidates)
+            <span class="kw">if</span> (match(w, pick) == m) next.add(w);        <span class="cm">// keep same-count words</span>
+        candidates = next;
+    }
+}
+
+<span class="cm">// candidate whose WORST-CASE surviving pool is smallest</span>
+<span class="kw">private</span> <span class="type">String</span> <span class="fn">pickMostConstrained</span>(<span class="type">List</span>&lt;<span class="type">String</span>&gt; cands) {
+    <span class="type">String</span> best = cands.get(<span class="num">0</span>);
+    <span class="kw">int</span> bestWorst = <span class="type">Integer</span>.MAX_VALUE;
+    <span class="kw">for</span> (<span class="type">String</span> a : cands) {
+        <span class="kw">int</span>[] bucket = <span class="kw">new</span> <span class="kw">int</span>[a.length() + <span class="num">1</span>];   <span class="cm">// match count -&gt; how many words</span>
+        <span class="kw">for</span> (<span class="type">String</span> b : cands) bucket[match(a, b)]++;
+        <span class="kw">int</span> worst = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="kw">int</span> c : bucket) worst = <span class="type">Math</span>.max(worst, c);
+        <span class="kw">if</span> (worst &lt; bestWorst) { bestWorst = worst; best = a; }
+    }
+    <span class="kw">return</span> best;
+}
+
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">match</span>(<span class="type">String</span> a, <span class="type">String</span> b) {
+    <span class="kw">int</span> m = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; a.length(); i++)
+        <span class="kw">if</span> (a.charAt(i) == b.charAt(i)) m++;
+    <span class="kw">return</span> m;
+}</pre>
+
+<p><strong>Complexity:</strong> Time per round is <code>O(k<sup>2</sup> &middot; L)</code> for <code>k</code> remaining candidates of length <code>L</code> (the minimax scan), over at most a constant number of rounds. Space <code>O(k)</code> for the candidate pool. The <em>guess budget</em> &mdash; the scarce resource &mdash; is what the strategy optimizes, not raw time.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Filter by the exact match count.</strong> After <code>guess(pick)=m</code>, retain only candidates whose match with <code>pick</code> equals <code>m</code>; keeping <code>&ge; m</code> or dropping <code>pick</code> alone barely prunes the pool and blows the budget. <strong>A random pick can be unlucky.</strong> Guessing an arbitrary candidate can leave a large same-count group; the minimax &ldquo;smallest worst-case bucket&rdquo; pick is what guarantees fast convergence within ten calls. <strong>Stop on a full match.</strong> <code>guess</code> returning the word length means solved &mdash; return immediately rather than spending another call. <strong>The oracle is match-count only.</strong> You never learn <em>which</em> positions matched, so the whole signal is the integer count; a <code>MockMaster</code> that returns <code>-1</code> for out-of-list words is the right harness to test against without leaking the secret.</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_problems_others1.html">&lsaquo; Assorted Problems I — Strings &amp; Math</a><a class="bkc" href="index.html">📖 Contents</a><a href="sd_rate_limiter.html">Design a Rate Limiter &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

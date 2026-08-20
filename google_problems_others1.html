@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assorted Problems I — Strings &amp; Math — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 11 — <b>Assorted Problems I — Strings &amp; Math</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Assorted Problems I — Strings &amp; Math</h1>
+  <div class="sub">Eight Google-style string- and number-manipulation problems &bull; original framing, execution-tested code, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+<div class="tip" style="margin-bottom:24px;"><p><strong>How to read this chapter:</strong> an assortment of the &ldquo;warm-up&rdquo; string and math problems that open many interviews &mdash; short to state, but each hides one subtlety (overflow, a bijection, a boundary, a double-count) that separates a correct answer from a plausible-looking wrong one. Every worked example was invented for this book, and each stated output was produced by <em>compiling and running</em> the accompanying Java. Beyond the hand-picked cases, every solution here was cross-checked against an <strong>independent reference</strong> over hundreds of thousands of random inputs &mdash; <code>reverse</code> against a 64-bit reversal with range clamp, <code>isIsomorphic</code> against a canonical pattern encoding, license formatting against a naive left-to-right rebuild, Bulls-and-Cows against a list-removal counter, the strobogrammatic check against a literal 180&deg; rotate-and-compare, and the LR-string reachability against a breadth-first search over all reachable states &mdash; asserting identical results at every step. The recurring lesson: <strong>name the one edge case before you code</strong>, because these problems are all edge cases.</p></div>
+
+
+<!-- PROBLEM: Reverse Integer -->
+<div class="card">
+<h2>Reverse Integer</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a signed 32-bit integer, return it with its <strong>decimal digits reversed</strong>, preserving the sign. If the reversed value falls <strong>outside the 32-bit range</strong> <code>[-2<sup>31</sup>, 2<sup>31</sup>-1]</code>, return <code>0</code>. You may not use a wider 64-bit type to dodge the overflow &mdash; detect it during the build.</p>
+<ul>
+  <li>Trailing zeros vanish on reversal: <code>-6820</code> becomes <code>-286</code>.</li>
+  <li>The valid range is asymmetric: the most negative value <code>-2147483648</code> has no positive counterpart, so overflow must be checked on both ends.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>reverse(12345)&rarr;54321</code>; <code>reverse(-6820)&rarr;-286</code> (reversing <code>6820</code> drops the trailing zero to give <code>286</code>, sign kept); <code>reverse(1534236469)&rarr;0</code> (its reversal <code>9646324351</code> exceeds <code>2147483647</code>, so we return <code>0</code>) &mdash; all computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Peel digits off the end with <code>% 10</code> and rebuild, but test for overflow <em>before</em> each multiply-and-add.</strong> Working in <code>int</code> throughout, the signed remainder <code>x % 10</code> carries the sign for free (in Java the remainder takes the dividend's sign: <code>-6820 % 10</code> is <code>0</code> and <code>-682 % 10</code> is <code>-2</code>), so no separate sign bookkeeping is needed. The only danger is that <code>res * 10 + digit</code> can overflow. We guard it by comparing <code>res</code> against <code>Integer.MAX_VALUE/10</code> (and <code>MIN_VALUE/10</code>): if <code>res</code> is already past that threshold, or exactly at it with a digit that would tip it over (<code>&gt; 7</code> on the positive end, <code>&lt; -8</code> on the negative), we return <code>0</code>.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">reverse</span>(<span class="kw">int</span> x) {
+    <span class="kw">int</span> res = <span class="num">0</span>;
+    <span class="kw">while</span> (x != <span class="num">0</span>) {
+        <span class="kw">int</span> digit = x % <span class="num">10</span>;          <span class="cm">// signed: keeps x's sign, no abs() needed</span>
+        x /= <span class="num">10</span>;
+        <span class="cm">// check overflow BEFORE res = res*10 + digit</span>
+        <span class="kw">if</span> (res &gt; <span class="type">Integer</span>.MAX_VALUE / <span class="num">10</span> ||
+            (res == <span class="type">Integer</span>.MAX_VALUE / <span class="num">10</span> &amp;&amp; digit &gt; <span class="num">7</span>)) <span class="kw">return</span> <span class="num">0</span>;
+        <span class="kw">if</span> (res &lt; <span class="type">Integer</span>.MIN_VALUE / <span class="num">10</span> ||
+            (res == <span class="type">Integer</span>.MIN_VALUE / <span class="num">10</span> &amp;&amp; digit &lt; -<span class="num">8</span>)) <span class="kw">return</span> <span class="num">0</span>;
+        res = res * <span class="num">10</span> + digit;
+    }
+    <span class="kw">return</span> res;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(d)</code> where <code>d</code> is the number of digits (at most 10 for a 32-bit int) &mdash; effectively <code>O(1)</code>. Space <code>O(1)</code>: a single accumulator.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Overflow is the whole problem.</strong> Reversing into a wider <code>long</code> and then range-checking works but is explicitly what a strong interviewer disallows &mdash; the point is to catch overflow while staying in 32 bits, hence the &ldquo;compare against <code>MAX/10</code> before multiplying&rdquo; trick. The magic <code>7</code> and <code>-8</code> are the last digits of <code>2147483647</code> and <code>-2147483648</code>. <strong>Signed remainder.</strong> In Java <code>%</code> follows the dividend&rsquo;s sign, so a single loop handles negatives without a separate <code>abs</code> pass (which would itself overflow on <code>MIN_VALUE</code>). <strong>Trailing zeros.</strong> They disappear naturally &mdash; <code>reverse(120)</code> is <code>21</code>, not <code>021</code> &mdash; because leading zeros carry no value.</p></div>
+</div>
+
+
+<!-- PROBLEM: Isomorphic Strings -->
+<div class="card">
+<h2>Isomorphic Strings</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Two strings are <strong>isomorphic</strong> if the characters of the first can be replaced to obtain the second, with a <strong>consistent one-to-one mapping</strong>: every occurrence of a character maps to the same character, and <strong>no two distinct characters map to the same one</strong>. The mapping must be a bijection &mdash; order is preserved and character identity may change.</p>
+<ul>
+  <li>Equal lengths are required; a mismatch is an immediate <code>false</code>.</li>
+  <li>The mapping is checked in <strong>both directions</strong>: <code>a&rarr;x</code> forbids any other source char also mapping to <code>x</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>("abca","zxyz")&rarr;true</code> (<code>a&rarr;z, b&rarr;x, c&rarr;y</code>, and the final <code>a&rarr;z</code> is consistent); <code>("mango","hello")&rarr;false</code> (both <code>n</code> and <code>g</code> would have to map to <code>l</code> &mdash; two sources collide on one target); <code>("aa","cd")&rarr;false</code> (<code>a</code> maps to <code>c</code> then <code>d</code> &mdash; one source, two targets, caught by the forward map at index 1) &mdash; computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Keep two maps and verify both directions as you scan.</strong> A single forward map <code>s&rarr;t</code> catches &ldquo;one character maps to two different ones,&rdquo; but misses the mirror failure where <em>two</em> source characters land on the <em>same</em> target &mdash; that violates the one-to-one requirement too. So we maintain a reverse map <code>t&rarr;s</code> as well. At each index, if either map already binds the character to something different from the current partner, the strings are not isomorphic; otherwise we record both bindings and continue.</p>
+
+<pre><span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">isIsomorphic</span>(<span class="type">String</span> s, <span class="type">String</span> t) {
+    <span class="kw">if</span> (s.length() != t.length()) <span class="kw">return</span> <span class="kw">false</span>;
+    <span class="type">Map</span>&lt;<span class="type">Character</span>,<span class="type">Character</span>&gt; st = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();   <span class="cm">// s -&gt; t</span>
+    <span class="type">Map</span>&lt;<span class="type">Character</span>,<span class="type">Character</span>&gt; ts = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();   <span class="cm">// t -&gt; s (mirror check)</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; s.length(); i++) {
+        <span class="kw">char</span> a = s.charAt(i), b = t.charAt(i);
+        <span class="cm">// a already bound to a DIFFERENT char? not consistent</span>
+        <span class="kw">if</span> (st.containsKey(a) &amp;&amp; st.get(a) != b) <span class="kw">return</span> <span class="kw">false</span>;
+        <span class="cm">// b already claimed by a DIFFERENT source? collision</span>
+        <span class="kw">if</span> (ts.containsKey(b) &amp;&amp; ts.get(b) != a) <span class="kw">return</span> <span class="kw">false</span>;
+        st.put(a, b);
+        ts.put(b, a);
+    }
+    <span class="kw">return</span> <span class="kw">true</span>;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; one pass with constant-time map operations. Space <code>O(k)</code> where <code>k</code> is the number of distinct characters (bounded by the alphabet, so <code>O(1)</code> for a fixed charset).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Check both directions.</strong> The single most common bug is using only the forward map, which wrongly accepts <code>("mango","hello")</code> because it never notices that <code>n</code> and <code>g</code> both map to <code>l</code>. A bijection needs the reverse map too. <strong>Length guard first.</strong> Unequal lengths can never be isomorphic; check it up front to avoid an index error. <strong>Whole-alphabet variant.</strong> An <code>int[256]</code> pair of arrays initialized to a sentinel is a faster, allocation-free alternative to the two hash maps when the charset is small and fixed.</p></div>
+</div>
+
+
+<!-- PROBLEM: Jewels and Stones -->
+<div class="card">
+<h2>Jewels and Stones</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You are given a string <code>jewels</code>, each character a distinct type of jewel, and a string <code>stones</code>, each character a stone you hold. Return <strong>how many of your stones are also jewels</strong>. Characters are case-sensitive, so <code>"a"</code> and <code>"A"</code> are different types.</p>
+<ul>
+  <li>Each character in <code>jewels</code> is distinct; <code>stones</code> may repeat freely.</li>
+  <li>Count every matching stone, including duplicates.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>jewels="xZ"</code>, <code>stones="xxyZZ"</code> &rarr; <code>4</code> &mdash; the stones <code>x, x, Z, Z</code> are jewels (the lone <code>y</code> is not), computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Put the jewel types in a hash set, then scan the stones once and tally membership.</strong> Because <code>jewels</code> tells us exactly which characters count, a set gives O(1) &ldquo;is this a jewel?&rdquo; lookups; a linear pass over <code>stones</code> then adds one for every stone found in the set. This is the canonical &ldquo;precompute a lookup, then stream the input&rdquo; shape.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">numJewelsInStones</span>(<span class="type">String</span> jewels, <span class="type">String</span> stones) {
+    <span class="type">Set</span>&lt;<span class="type">Character</span>&gt; set = <span class="kw">new</span> <span class="type">HashSet</span>&lt;&gt;();
+    <span class="kw">for</span> (<span class="kw">char</span> c : jewels.toCharArray()) set.add(c);   <span class="cm">// jewel types</span>
+    <span class="kw">int</span> count = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">char</span> c : stones.toCharArray())
+        <span class="kw">if</span> (set.contains(c)) count++;                  <span class="cm">// O(1) membership per stone</span>
+    <span class="kw">return</span> count;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(j + s)</code> for jewel and stone lengths &mdash; build the set, then one pass. Space <code>O(j)</code> for the set.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Case sensitivity.</strong> <code>'a'</code> and <code>'A'</code> are separate jewel types; don&rsquo;t lowercase. <strong>Don&rsquo;t nest loops.</strong> A brute-force &ldquo;for each stone, scan all jewels&rdquo; is <code>O(j&times;s)</code>; the set collapses the inner scan to O(1). <strong>Fixed-charset shortcut.</strong> If inputs are ASCII, a <code>boolean[128]</code> flag array is even leaner than a <code>HashSet</code> and avoids boxing.</p></div>
+</div>
+
+
+<!-- PROBLEM: Unique Email Address -->
+<div class="card">
+<h2>Unique Email Address</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>An email splits at <code>'@'</code> into a <strong>local</strong> part and a <strong>domain</strong>. When normalizing the local part: <strong>dots are ignored</strong> and everything from the first <code>'+'</code> onward is <strong>dropped</strong>. The domain is left untouched. Given a list of addresses, return how many <strong>distinct</strong> mailboxes they actually reach.</p>
+<ul>
+  <li>Dots and <code>'+'</code> rules apply <strong>only to the local part</strong> &mdash; a dot in the domain is significant.</li>
+  <li>Two addresses that normalize to the same <code>local@domain</code> reach the same inbox and count once.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> given <code>john.doe+work@mail.com</code>, <code>johndoe@mail.com</code>, <code>j.o.h.n.doe@other.com</code>, <code>alice+promo@mail.com</code> &rarr; <code>3</code>. The first two both normalize to <code>johndoe@mail.com</code> (dots stripped, <code>+work</code> dropped); the third is <code>johndoe@other.com</code> (different domain); the fourth is <code>alice@mail.com</code> &mdash; three distinct inboxes, computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Normalize each address to a canonical string and count the distinct results in a set.</strong> Split once at <code>'@'</code>. In the local part, first truncate at the earliest <code>'+'</code> (a later <code>'+'</code> would already be gone), then delete all dots. Re-join with the untouched domain and add to a <code>HashSet</code>; the set&rsquo;s final size is the answer. The ordering &mdash; cut at <code>'+'</code> before or after removing dots &mdash; doesn&rsquo;t matter here since neither operation reintroduces the other&rsquo;s trigger, but cutting first is marginally less work.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">numUniqueEmails</span>(<span class="type">String</span>[] emails) {
+    <span class="type">Set</span>&lt;<span class="type">String</span>&gt; seen = <span class="kw">new</span> <span class="type">HashSet</span>&lt;&gt;();
+    <span class="kw">for</span> (<span class="type">String</span> e : emails) {
+        <span class="kw">int</span> at = e.indexOf(<span class="str">'@'</span>);
+        <span class="type">String</span> local = e.substring(<span class="num">0</span>, at);
+        <span class="type">String</span> domain = e.substring(at);        <span class="cm">// includes '@', left untouched</span>
+        <span class="kw">int</span> plus = local.indexOf(<span class="str">'+'</span>);
+        <span class="kw">if</span> (plus &gt;= <span class="num">0</span>) local = local.substring(<span class="num">0</span>, plus);  <span class="cm">// drop from first '+'</span>
+        local = local.replace(<span class="str">"."</span>, <span class="str">""</span>);            <span class="cm">// ignore all dots (local only)</span>
+        seen.add(local + domain);
+    }
+    <span class="kw">return</span> seen.size();
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(total characters)</code> across all addresses. Space <code>O(total characters)</code> for the set of normalized keys.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Rules apply to the local part only.</strong> Stripping dots from the <em>domain</em> too is the classic bug &mdash; <code>mail.com</code> and <code>mailcom</code> are different hosts. Split at <code>'@'</code> first and never touch the domain. <strong>Drop from the first <code>'+'</code>.</strong> Everything after it (including any later <code>'+'</code> or dots) is gone, so truncating at the earliest <code>'+'</code> is correct. <strong>Keep the <code>'@'</code> attached.</strong> Building the key as <code>local + domain</code> where <code>domain</code> still carries its <code>'@'</code> avoids accidentally merging a local and a domain that happen to concatenate to the same string.</p></div>
+</div>
+
+
+<!-- PROBLEM: License Key Formatting -->
+<div class="card">
+<h2>License Key Formatting</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a license string of alphanumerics and dashes and an integer <code>k</code>, reformat it so that each group contains exactly <code>k</code> characters, groups are joined by dashes, and <strong>all letters are uppercase</strong>. The <strong>first (leftmost) group may be shorter</strong> than <code>k</code> but must be non-empty; every group after it has exactly <code>k</code> characters.</p>
+<ul>
+  <li>Remove all existing dashes first; they carry no positional meaning.</li>
+  <li>Grouping is counted <strong>from the right</strong>, so any remainder lands in the first group.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>("2b-Xk9--p", k=3)&rarr;"2BX-K9P"</code> (six real chars <code>2BXK9P</code> split cleanly into two groups of 3); <code>("abcde-fg", k=2)&rarr;"A-BC-DE-FG"</code> (seven chars <code>ABCDEFG</code>: groups of 2 from the right leave a lone <code>A</code> as the shorter first group) &mdash; computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Scan the original from the right, appending kept characters and inserting a dash every <code>k</code> characters.</strong> Walking right-to-left lets the &ldquo;short group&rdquo; fall out for free: we count only the characters we keep, and whenever the count so far is a positive multiple of <code>k</code> we place a dash <em>before</em> adding the next character. Skipping dashes as we go means the input&rsquo;s original grouping is irrelevant. At the end we reverse the buffer once to restore left-to-right order. Using <code>sb.length() % (k+1) == k</code> tracks position within the current group including the dashes already written.</p>
+
+<pre><span class="kw">public</span> <span class="type">String</span> <span class="fn">licenseKeyFormatting</span>(<span class="type">String</span> s, <span class="kw">int</span> k) {
+    <span class="type">StringBuilder</span> sb = <span class="kw">new</span> <span class="type">StringBuilder</span>();
+    <span class="kw">for</span> (<span class="kw">int</span> i = s.length() - <span class="num">1</span>; i &gt;= <span class="num">0</span>; i--) {   <span class="cm">// right to left</span>
+        <span class="kw">char</span> c = s.charAt(i);
+        <span class="kw">if</span> (c == <span class="str">'-'</span>) <span class="kw">continue</span>;                     <span class="cm">// drop old dashes</span>
+        <span class="cm">// every k kept chars, insert a group separator first</span>
+        <span class="kw">if</span> (sb.length() % (k + <span class="num">1</span>) == k) sb.append(<span class="str">'-'</span>);
+        sb.append(<span class="type">Character</span>.toUpperCase(c));
+    }
+    <span class="kw">return</span> sb.reverse().toString();                 <span class="cm">// flip back to left-to-right</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> for a string of length <code>n</code> &mdash; one scan plus one reverse. Space <code>O(n)</code> for the output buffer.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>The first group is shorter, not the last.</strong> Grouping from the <em>right</em> is what forces the remainder into the leftmost group; grouping from the left instead would wrongly shorten the final group. <strong>Uppercase every letter.</strong> Digits pass through unchanged, but letters must be uppercased. <strong>All-dashes / empty result.</strong> If the input is only dashes, the result is the empty string &mdash; make sure no leading dash survives (scanning right-to-left and reversing handles this, since the dash is only inserted <em>between</em> kept characters). <strong>The <code>% (k+1)</code> counter.</strong> Because dashes live in the buffer too, the group boundary is at length <code>k</code>, then <code>2k+1</code>, then <code>3k+2</code>&hellip; which is exactly &ldquo;length mod <code>k+1</code> equals <code>k</code>.&rdquo;</p></div>
+</div>
+
+
+<!-- PROBLEM: Bulls and Cows -->
+<div class="card">
+<h2>Bulls and Cows</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>In the guessing game, given a <code>secret</code> number and a <code>guess</code> of equal length (both strings of digits), return a hint <code>"xAyB"</code> where <code>x</code> is the number of <strong>bulls</strong> (digits correct in both value and position) and <code>y</code> is the number of <strong>cows</strong> (digits present in the secret but in the wrong position). Each secret digit and each guess digit can be paired at most once.</p>
+<ul>
+  <li>A digit already counted as a bull is not available to also be a cow.</li>
+  <li>Cows are bounded by how many copies of a digit the secret and guess share among their non-bull positions.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>secret="1123"</code>, <code>guess="0111"</code> &rarr; <code>"1A1B"</code>. Position 1 matches (<code>1</code>=<code>1</code>) &rarr; 1 bull. Among the rest, the secret&rsquo;s non-bull digits are <code>{1,2,3}</code> and the guess&rsquo;s are <code>{0,1,1}</code>; they share a single <code>1</code>, so 1 cow &mdash; the guess&rsquo;s <em>second</em> extra <code>1</code> has no partner. Computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Count bulls in one pass; for everything that is not a bull, tally digit frequencies on each side and sum the per-digit minimums.</strong> Bulls are exact position matches, easy to count directly. For cows, the subtlety is not double-counting: a digit can only be a cow as many times as it appears un-matched on <em>both</em> sides. So we histogram the non-bull digits of the secret and of the guess separately, then for each digit <code>0&ndash;9</code> add <code>min(secretCount, guessCount)</code>. Positions consumed as bulls are excluded from both histograms, so they can never leak into the cow count.</p>
+
+<pre><span class="kw">public</span> <span class="type">String</span> <span class="fn">getHint</span>(<span class="type">String</span> secret, <span class="type">String</span> guess) {
+    <span class="kw">int</span> bulls = <span class="num">0</span>, cows = <span class="num">0</span>;
+    <span class="kw">int</span>[] s = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">10</span>], g = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">10</span>];   <span class="cm">// non-bull digit histograms</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; secret.length(); i++) {
+        <span class="kw">char</span> sc = secret.charAt(i), gc = guess.charAt(i);
+        <span class="kw">if</span> (sc == gc) bulls++;                     <span class="cm">// exact position match</span>
+        <span class="kw">else</span> { s[sc - <span class="str">'0'</span>]++; g[gc - <span class="str">'0'</span>]++; }    <span class="cm">// defer to cow tally</span>
+    }
+    <span class="kw">for</span> (<span class="kw">int</span> d = <span class="num">0</span>; d &lt; <span class="num">10</span>; d++)
+        cows += <span class="type">Math</span>.min(s[d], g[d]);            <span class="cm">// shared copies only</span>
+    <span class="kw">return</span> bulls + <span class="str">"A"</span> + cows + <span class="str">"B"</span>;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; one pass to classify, then a constant 10-bucket sum. Space <code>O(1)</code>: two fixed size-10 arrays.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Don&rsquo;t double-count.</strong> The defining trap: a digit that is a bull must be removed from cow consideration, and a cow can be claimed only up to the shared count. Summing <code>min(s[d], g[d])</code> over non-bull positions handles both automatically. <strong>Bulls first, then cows.</strong> Counting cows over <em>all</em> positions (including the matched ones) inflates the answer. <strong>Single pass is enough.</strong> You can classify bulls and build both histograms in the same loop; a second pass only sums the 10 buckets. <strong>Repeated digits.</strong> The whole difficulty comes from repeats &mdash; with all-distinct digits any frequency scheme works, so interviewers test <code>"1123"</code>-style inputs on purpose.</p></div>
+</div>
+
+
+<!-- PROBLEM: Strobogrammatic Number -->
+<div class="card">
+<h2>Strobogrammatic Number</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>A <strong>strobogrammatic</strong> number reads the same after being rotated <strong>180&deg;</strong> (turned upside down). Given a number as a string, decide whether it is strobogrammatic. Under rotation the digits pair up as <code>0&harr;0</code>, <code>1&harr;1</code>, <code>8&harr;8</code>, and <code>6&harr;9</code> (each becomes the other); every other digit (<code>2,3,4,5,7</code>) is invalid.</p>
+<ul>
+  <li>Rotation reverses the order <em>and</em> flips each digit, so the check pairs position <code>i</code> with position <code>n-1-i</code>.</li>
+  <li>A single middle digit must map to itself &mdash; only <code>0</code>, <code>1</code>, <code>8</code> qualify (so lone <code>6</code> or <code>9</code> fails).</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>"1961"&rarr;true</code> (rotated: the outer <code>1&hellip;1</code> pair to <code>1&hellip;1</code>, the inner <code>9,6</code> become <code>6,9</code> read back to <code>9,6</code>); <code>"962"&rarr;false</code> (<code>2</code> is not a rotatable digit, and <code>9</code>&rsquo;s partner would need to be <code>6</code>, not <code>2</code>); <code>"6"&rarr;false</code> (a lone <code>6</code> rotates to <code>9</code>, not itself); <code>"8"&rarr;true</code> &mdash; computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Walk two pointers inward and confirm each outer pair is a valid rotation of the other.</strong> Because a 180&deg; turn both reverses the string and swaps <code>6/9</code>, the character at the left pointer must be the rotation-partner of the character at the right pointer. A small map encodes the five legal digits and their partners; anything else fails immediately. When the pointers meet on a middle character (odd length), the same test applies with <code>l == r</code>, which correctly demands a self-symmetric digit (<code>0</code>, <code>1</code>, or <code>8</code>).</p>
+
+<pre><span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">isStrobogrammatic</span>(<span class="type">String</span> num) {
+    <span class="type">Map</span>&lt;<span class="type">Character</span>,<span class="type">Character</span>&gt; pair = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();
+    pair.put(<span class="str">'0'</span>,<span class="str">'0'</span>); pair.put(<span class="str">'1'</span>,<span class="str">'1'</span>); pair.put(<span class="str">'8'</span>,<span class="str">'8'</span>);
+    pair.put(<span class="str">'6'</span>,<span class="str">'9'</span>); pair.put(<span class="str">'9'</span>,<span class="str">'6'</span>);      <span class="cm">// 2,3,4,5,7 absent -> invalid</span>
+    <span class="kw">int</span> l = <span class="num">0</span>, r = num.length() - <span class="num">1</span>;
+    <span class="kw">while</span> (l &lt;= r) {                            <span class="cm">// l==r handles the odd middle digit</span>
+        <span class="kw">char</span> a = num.charAt(l), b = num.charAt(r);
+        <span class="cm">// left char must be the rotation-partner of the right char</span>
+        <span class="kw">if</span> (!pair.containsKey(a) || pair.get(a) != b) <span class="kw">return</span> <span class="kw">false</span>;
+        l++; r--;
+    }
+    <span class="kw">return</span> <span class="kw">true</span>;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; each pointer moves through half the string. Space <code>O(1)</code>: a fixed five-entry map.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>6 and 9 are partners, not self-symmetric.</strong> A lone <code>6</code> or <code>9</code> in the middle is invalid because it rotates into the <em>other</em> digit; only <code>0/1/8</code> map to themselves. Checking <code>pair.get(a) != b</code> at <code>l == r</code> enforces this automatically. <strong>Reject <code>2,3,4,5,7</code> outright.</strong> They have no upside-down form; leaving them out of the map makes <code>containsKey</code> fail fast. <strong>It&rsquo;s a paired check, not &ldquo;each digit rotatable.&rdquo;</strong> <code>"69"</code> is valid but <code>"66"</code> is not &mdash; the partner relationship across the two ends is what matters, not whether each digit individually rotates. <strong>Leading-zero nuance.</strong> As a standalone predicate <code>"00"</code> reads the same rotated and is accepted; if the caller treats these as numbers, it may separately forbid leading zeros &mdash; clarify the contract.</p></div>
+</div>
+
+
+<!-- PROBLEM: Swap Adjacent in LR String -->
+<div class="card">
+<h2>Swap Adjacent in LR String</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Two strings <code>start</code> and <code>end</code> consist of the characters <code>'L'</code>, <code>'R'</code>, and <code>'X'</code>. In one move you may replace <code>"XL"</code> with <code>"LX"</code> (an <code>L</code> slides one step <strong>left</strong>) or <code>"RX"</code> with <code>"XR"</code> (an <code>R</code> slides one step <strong>right</strong>). Decide whether <code>start</code> can be transformed into <code>end</code> by any sequence of such moves.</p>
+<ul>
+  <li><code>L</code> and <code>R</code> never pass through each other &mdash; the relative order of the non-<code>X</code> characters is invariant.</li>
+  <li>Each <code>L</code> can only end up at the same index or to the <em>left</em> of where it started; each <code>R</code> only at the same index or to the <em>right</em>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>("XL","LX")&rarr;true</code> (the <code>L</code> slides left); <code>("LXXRX","LXXXR")&rarr;true</code> (the <code>R</code> slides one step right, the <code>L</code> is already in place); <code>("XRLX","XLRX")&rarr;false</code> (that would require <code>L</code> and <code>R</code> to swap order, which no move allows); <code>("XRX","RXX")&rarr;false</code> (the <code>R</code> would have to move <em>left</em>) &mdash; all computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Ignore the <code>X</code>s and compare the two token streams position by position, enforcing the direction each token may drift.</strong> Since a move only swaps a letter with an adjacent <code>X</code>, the subsequence of non-<code>X</code> characters never changes order &mdash; so first, dropping all <code>X</code>s, <code>start</code> and <code>end</code> must yield the identical <code>L/R</code> sequence. Second, an <code>L</code> can only travel left, so its index in <code>start</code> must be <code>&gt;=</code> its index in <code>end</code>; an <code>R</code> can only travel right, so its <code>start</code> index must be <code>&lt;=</code> its <code>end</code> index. We check both with two pointers that skip <code>X</code>s on each side and compare the aligned tokens.</p>
+
+<pre><span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">canTransform</span>(<span class="type">String</span> start, <span class="type">String</span> end) {
+    <span class="kw">if</span> (start.length() != end.length()) <span class="kw">return</span> <span class="kw">false</span>;
+    <span class="kw">int</span> n = start.length(), i = <span class="num">0</span>, j = <span class="num">0</span>;
+    <span class="kw">while</span> (i &lt; n || j &lt; n) {
+        <span class="kw">while</span> (i &lt; n &amp;&amp; start.charAt(i) == <span class="str">'X'</span>) i++;   <span class="cm">// next real token in start</span>
+        <span class="kw">while</span> (j &lt; n &amp;&amp; end.charAt(j) == <span class="str">'X'</span>) j++;     <span class="cm">// next real token in end</span>
+        <span class="kw">if</span> (i == n || j == n) <span class="kw">return</span> i == n &amp;&amp; j == n;  <span class="cm">// both must run out together</span>
+        <span class="kw">if</span> (start.charAt(i) != end.charAt(j)) <span class="kw">return</span> <span class="kw">false</span>; <span class="cm">// order of L/R differs</span>
+        <span class="kw">char</span> c = start.charAt(i);
+        <span class="kw">if</span> (c == <span class="str">'L'</span> &amp;&amp; i &lt; j) <span class="kw">return</span> <span class="kw">false</span>;         <span class="cm">// L can't move right</span>
+        <span class="kw">if</span> (c == <span class="str">'R'</span> &amp;&amp; i &gt; j) <span class="kw">return</span> <span class="kw">false</span>;         <span class="cm">// R can't move left</span>
+        i++; j++;
+    }
+    <span class="kw">return</span> <span class="kw">true</span>;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; each pointer advances through the string once. Space <code>O(1)</code>: just the two indices.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Two invariants, both required.</strong> Matching the <code>X</code>-stripped token sequences catches order violations (<code>("XRLX","XLRX")</code>), and the per-token index comparison catches illegal drift direction (<code>("XRX","RXX")</code>) &mdash; you need both checks, not just one. <strong>Direction is fixed per token.</strong> <code>L</code> only decreases its index, <code>R</code> only increases it; mixing these up is the core bug. <strong>Tokens must exhaust together.</strong> If one side runs out of <code>L/R</code> tokens before the other, they had different token counts &mdash; return false unless <em>both</em> pointers reached the end. <strong>Length guard.</strong> Different lengths can never match; check it first. <strong>Why not brute-force BFS?</strong> Exploring all reachable states is exponential; the two-invariant characterization is the O(n) insight the interviewer is after (and it&rsquo;s exactly what a BFS over small inputs confirms).</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_problems_design.html">&lsaquo; Design &amp; Object-Oriented</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_others2.html">Assorted Problems II — Arrays, Intervals &amp; Greedy &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

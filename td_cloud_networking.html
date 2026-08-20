@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloud &amp; Data-Center Networking: Multi-Tenant Overlays, BGP &amp; Network Automation — The Interview Prep Handbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XIII · Chapter 5 — <b>Cloud &amp; Data-Center Networking</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Cloud &amp; Data-Center Networking: Multi-Tenant Overlays, BGP &amp; Network Automation</h1>
+  <div class="sub">How a modern data center turns a shared physical fabric into thousands of isolated virtual networks — and why "the network became software." We build up from the physical Clos fabric, through encapsulation and overlays (VXLAN, Geneve), the BGP/EVPN control plane, SDN and host offload (SR-IOV, DPUs, RoCEv2), secure communication (mTLS vs IPsec), the automation loops that provision it safely, and how you operate and debug it. Everything is generic and vendor-neutral; the only named systems are Google's published networking papers and NVIDIA's public products, used purely as concrete reference points.</div>
+</header>
+
+<div class="ins"><div class="insl">Read this like a story</div><p>If you already know backend and distributed systems, cloud networking is the same ideas one layer down. §1 frames the core problem: multi-tenancy at hyperscale, and why the network turned into software. §2 lays the physical foundation — the Clos / spine-leaf fabric and why it replaced big-iron core switches. §3 is the conceptual heart: <em>underlay vs overlay</em> and encapsulation (VXLAN, Geneve, GRE), the network's answer to multi-tenancy. §4 is the control plane that makes it all reachable — BGP in the data center and MP-BGP/EVPN. §5 zooms out to SDN and network virtualization. §6 secures the traffic (mTLS vs IPsec). §7 drops to the host: NICs, SR-IOV, DPUs, and RDMA for GPU clusters. §8 is the part a cloud-platform engineer lives in — automation as reconciliation loops. §9 is operating and debugging it. §10 is the interview questions, walked end to end.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. Why Cloud Networking Is Its Own Problem</h2>
+<p class="lead">In a single-tenant world, "the network" is plumbing: cables, switches, and IP addresses you mostly ignore. In a cloud, the network is the <strong>product</strong>. One physical fabric must simultaneously host thousands of tenants who each believe they own a private network — with overlapping IP ranges, their own subnets and firewall rules, and zero visibility into each other. That is the same multi-tenancy problem a database solves with per-tenant schemas or row-level isolation, except now it must hold at line rate for every packet.</p>
+
+<h3>The three forces: scale, isolation, and change</h3>
+<ul>
+  <li><strong>Scale.</strong> A large data center is hundreds of thousands of servers, each with multiple virtual machines or containers, each with one or more virtual NICs. The number of endpoints dwarfs anything a traditional enterprise network was designed for, and east-west (server-to-server) traffic vastly exceeds north-south (in/out of the building).</li>
+  <li><strong>Isolation.</strong> Tenant A must never see tenant B's packets, even though both ride the same wires and may use the same <code>10.0.0.0/8</code> addresses. Isolation must be enforced in the data path, not by trust.</li>
+  <li><strong>Change.</strong> Endpoints appear and vanish constantly as VMs and containers are scheduled. A control plane driven by humans typing on switches cannot keep up; the network's desired state has to be described in code and continuously reconciled.</li>
+</ul>
+
+<h3>"The network became software"</h3>
+<p>The response to all three forces is the same: move intelligence off fixed-function hardware and into software you can program, version, and automate. The physical switches become a fast, simple <strong>underlay</strong> whose only job is to move IP packets between servers. Everything a tenant cares about — their virtual network, addresses, routing, and policy — lives in a software-defined <strong>overlay</strong> built on top. This split is the single most important idea in the chapter, and every later section is a consequence of it.</p>
+<div class="tip"><div class="tipl">Bridge from what you know</div><p>An overlay network is a per-tenant <em>namespace</em> over shared infrastructure — exactly like multi-tenancy in a database or the way a VPC gives each customer a private view of a shared cloud. Encapsulation (the next big idea) is the network's version of tunneling one tenant's traffic inside the provider's own packets, much like a per-tenant VPN. If you can hold "shared physical substrate, per-tenant virtual view, reconciled by a control loop" in your head, you already understand the shape of cloud networking.</p></div>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. The Data-Center Fabric: Clos / Spine-Leaf</h2>
+<p>Before any overlay exists, packets need a physical network to cross. Modern data centers almost universally build that underlay as a <strong>Clos fabric</strong> — a multi-stage network first described by Charles Clos in 1953 for telephone switching — realized today as a <strong>spine-leaf</strong> (a folded <strong>fat-tree</strong>) topology.</p>
+
+<h3>Leaves, spines, and why not a big core switch</h3>
+<p>Every server connects to a <strong>leaf</strong> switch (the top-of-rack, or ToR). Every leaf connects to <em>every</em> <strong>spine</strong> switch; leaves never connect to leaves, and spines never connect to spines. The result: any server reaches any server on a <em>different</em> rack in the same number of hops — leaf → spine → leaf (two servers on the same leaf stay local and are even closer) — so inter-rack latency is <strong>uniform and predictable</strong>, and there is no single congested "core."</p>
+<p>The older design put a giant, expensive chassis switch at the center of a tree. That "big-iron core" is a scaling dead end: it is a single failure domain, it can only be upgraded by replacing the whole box (a "forklift upgrade"), and it caps total bandwidth at what one box can switch. Spine-leaf instead scales <strong>horizontally</strong> — need more bandwidth between racks? add spines. Need more racks? add leaves. It is built from many identical, cheap, fixed-function switches, which is exactly the commodity-hardware, scale-out philosophy backend engineers know from stateless service fleets.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- spines -->
+  <text x="350" y="24" text-anchor="middle" font-size="11" font-weight="700" fill="#6d28d9">Spine layer</text>
+  <rect x="150" y="34" width="90" height="30" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/><text x="195" y="54" text-anchor="middle" font-size="10" font-weight="700" fill="#6d28d9">Spine 1</text>
+  <rect x="305" y="34" width="90" height="30" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/><text x="350" y="54" text-anchor="middle" font-size="10" font-weight="700" fill="#6d28d9">Spine 2</text>
+  <rect x="460" y="34" width="90" height="30" rx="5" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/><text x="505" y="54" text-anchor="middle" font-size="10" font-weight="700" fill="#6d28d9">Spine 3</text>
+  <!-- leaves -->
+  <text x="350" y="150" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">Leaf layer (top-of-rack)</text>
+  <rect x="70" y="158" width="110" height="30" rx="5" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/><text x="125" y="178" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">Leaf A</text>
+  <rect x="295" y="158" width="110" height="30" rx="5" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/><text x="350" y="178" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">Leaf B</text>
+  <rect x="520" y="158" width="110" height="30" rx="5" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/><text x="575" y="178" text-anchor="middle" font-size="10" font-weight="700" fill="#1d4ed8">Leaf C</text>
+  <!-- full mesh leaf-spine links -->
+  <g stroke="#94a3b8" stroke-width="1.1">
+    <line x1="125" y1="158" x2="195" y2="64"/><line x1="125" y1="158" x2="350" y2="64"/><line x1="125" y1="158" x2="505" y2="64"/>
+    <line x1="350" y1="158" x2="195" y2="64"/><line x1="350" y1="158" x2="350" y2="64"/><line x1="350" y1="158" x2="505" y2="64"/>
+    <line x1="575" y1="158" x2="195" y2="64"/><line x1="575" y1="158" x2="350" y2="64"/><line x1="575" y1="158" x2="505" y2="64"/>
+  </g>
+  <!-- servers -->
+  <g font-size="8.5" fill="#166534">
+    <rect x="72" y="238" width="48" height="24" rx="4" fill="#dcfce7" stroke="#16a34a"/><text x="96" y="254" text-anchor="middle">srv</text>
+    <rect x="128" y="238" width="48" height="24" rx="4" fill="#dcfce7" stroke="#16a34a"/><text x="152" y="254" text-anchor="middle">srv</text>
+    <rect x="297" y="238" width="48" height="24" rx="4" fill="#dcfce7" stroke="#16a34a"/><text x="321" y="254" text-anchor="middle">srv</text>
+    <rect x="353" y="238" width="48" height="24" rx="4" fill="#dcfce7" stroke="#16a34a"/><text x="377" y="254" text-anchor="middle">srv</text>
+    <rect x="522" y="238" width="48" height="24" rx="4" fill="#dcfce7" stroke="#16a34a"/><text x="546" y="254" text-anchor="middle">srv</text>
+    <rect x="578" y="238" width="48" height="24" rx="4" fill="#dcfce7" stroke="#16a34a"/><text x="602" y="254" text-anchor="middle">srv</text>
+  </g>
+  <g stroke="#cbd5e1" stroke-width="1">
+    <line x1="96" y1="238" x2="120" y2="188"/><line x1="152" y1="238" x2="130" y2="188"/>
+    <line x1="321" y1="238" x2="345" y2="188"/><line x1="377" y1="238" x2="355" y2="188"/>
+    <line x1="546" y1="238" x2="570" y2="188"/><line x1="602" y1="238" x2="580" y2="188"/>
+  </g>
+  <text x="350" y="288" text-anchor="middle" font-size="9.5" fill="#526176">every leaf connects to every spine; any cross-rack path is leaf → spine → leaf (uniform hop count)</text>
+</svg>
+<div class="svg-cap">A spine-leaf (folded fat-tree) Clos fabric. Servers attach to leaf (ToR) switches; each leaf connects to every spine. Bandwidth scales by adding spines; capacity by adding leaves.</div>
+</div>
+
+<h3>ECMP: many equal paths at once</h3>
+<p>Because a leaf reaches every other leaf through <em>any</em> spine, there are multiple equal-cost paths for every flow. <strong>ECMP (Equal-Cost Multi-Path)</strong> spreads traffic across them. A switch hashes each packet's flow tuple — typically the 5-tuple (source IP, destination IP, protocol, source port, destination port) — and picks an uplink from that hash. Hashing on the flow keeps every packet of a given flow on one path (so no reordering), while different flows spread across all spines. This is how a fabric aggregates many modest links into enormous bisection bandwidth (the total bandwidth available between the two halves of the fabric — a measure of how much any-to-any traffic it can carry at once).</p>
+
+<h3>Oversubscription</h3>
+<div class="formula"><span class="cm"># oversubscription ratio at a leaf</span>
+<b>oversubscription</b> = (downlink bandwidth to servers) : (uplink bandwidth to spines)
+
+<span class="cm"># e.g. 48 server ports at 25G = 1200G down, 8 uplinks at 100G = 800G up</span>
+1200G : 800G  =  <b>1.5 : 1</b>   <span class="cm"># 1.5x oversubscribed</span></div>
+<p>A leaf usually has more capacity facing its servers than facing the spines, because not every server bursts at once. The <strong>oversubscription ratio</strong> quantifies that bet. <code>1:1</code> is non-blocking (full line rate even if everyone bursts) but expensive; <code>3:1</code> or higher is common where traffic is bursty and averages low. Getting this ratio wrong is a classic capacity-planning failure: too aggressive and the fabric congests under load; too conservative and you have paid for idle optics.</p>
+<div class="note"><div class="notel">Bridge from what you know</div><p>ECMP across spines is load balancing — the same idea as spreading requests across a stateless service fleet, but done per-packet-flow in hardware. Oversubscription is capacity planning under statistical multiplexing: you provision for the aggregate, not the sum of worst cases, exactly like sizing a connection pool or a thread pool.</p></div>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. Underlay vs Overlay &amp; Encapsulation</h2>
+<p>The fabric of §2 moves IP packets between servers. But tenants want their <em>own</em> networks — their own L2 segments, their own IP ranges, isolated from everyone else. The answer is to run a <strong>virtual network on top of</strong> the physical one. The physical IP network is the <strong>underlay</strong>; each tenant's virtual network is an <strong>overlay</strong>; the glue between them is <strong>encapsulation</strong>.</p>
+
+<h3>The core trick: a packet inside a packet</h3>
+<p>When a VM sends a frame, the software switch on its host does not put that frame on the wire as-is. It <strong>encapsulates</strong> it — wraps the tenant's original ("inner") frame inside a new ("outer") IP/UDP packet addressed from this host to the destination host. The underlay only ever sees the outer packet and routes it like any other IP traffic; it neither knows nor cares about the tenant frame hidden inside. At the destination host, the software switch strips the outer header (<strong>decapsulation</strong>) and delivers the original frame to the target VM. The two hosts form the endpoints of a tunnel — commonly called <strong>VTEPs</strong> (VXLAN Tunnel Endpoints).</p>
+<p>This is the mechanism that delivers multi-tenancy: a <strong>tenant identifier</strong> carried in the encapsulation header tells the receiving host which virtual network the inner frame belongs to, so two tenants can use the identical <code>10.0.0.5</code> address and never collide — their packets carry different tenant IDs and are decapsulated into different virtual networks.</p>
+
+<h3>VXLAN — the go-to standard</h3>
+<p><strong>VXLAN (Virtual Extensible LAN, RFC 7348)</strong> encapsulates an Ethernet frame inside <strong>UDP</strong> (destination port <strong>4789</strong>). Its tenant identifier is the <strong>VNI (VXLAN Network Identifier)</strong>, which is <strong>24 bits</strong> wide — allowing roughly <strong>16 million</strong> segments, versus the mere <strong>4094</strong> usable VLANs of the old 12-bit 802.1Q tag. That jump from ~4K to ~16M is the whole reason VXLAN exists: VLANs simply cannot number a hyperscale multi-tenant cloud.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg">
+  <text x="360" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">VXLAN encapsulation — outer headers wrap the tenant's original frame</text>
+  <!-- outer -->
+  <rect x="20" y="46" width="90" height="46" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1.3"/><text x="65" y="66" text-anchor="middle" font-size="9" font-weight="700" fill="#1d4ed8">Outer Eth</text><text x="65" y="82" text-anchor="middle" font-size="8" fill="#526176">14B</text>
+  <rect x="110" y="46" width="90" height="46" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1.3"/><text x="155" y="66" text-anchor="middle" font-size="9" font-weight="700" fill="#1d4ed8">Outer IP</text><text x="155" y="82" text-anchor="middle" font-size="8" fill="#526176">20B (v4)</text>
+  <rect x="200" y="46" width="80" height="46" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1.3"/><text x="240" y="66" text-anchor="middle" font-size="9" font-weight="700" fill="#1d4ed8">UDP</text><text x="240" y="82" text-anchor="middle" font-size="8" fill="#526176">8B · dport 4789</text>
+  <rect x="280" y="46" width="95" height="46" rx="4" fill="#fef3c7" stroke="#d97706" stroke-width="1.3"/><text x="327" y="63" text-anchor="middle" font-size="9" font-weight="700" fill="#92400e">VXLAN hdr</text><text x="327" y="78" text-anchor="middle" font-size="8" fill="#92400e">8B · 24-bit VNI</text><text x="327" y="89" text-anchor="middle" font-size="7.5" fill="#92400e">(tenant ID)</text>
+  <!-- inner -->
+  <rect x="375" y="46" width="95" height="46" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.3"/><text x="422" y="66" text-anchor="middle" font-size="9" font-weight="700" fill="#166534">Inner Eth</text><text x="422" y="82" text-anchor="middle" font-size="8" fill="#166534">tenant MAC</text>
+  <rect x="470" y="46" width="95" height="46" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.3"/><text x="517" y="66" text-anchor="middle" font-size="9" font-weight="700" fill="#166534">Inner IP</text><text x="517" y="82" text-anchor="middle" font-size="8" fill="#166534">tenant IP</text>
+  <rect x="565" y="46" width="135" height="46" rx="4" fill="#dcfce7" stroke="#16a34a" stroke-width="1.3"/><text x="632" y="66" text-anchor="middle" font-size="9" font-weight="700" fill="#166534">Payload</text><text x="632" y="82" text-anchor="middle" font-size="8" fill="#166534">L4 + data</text>
+  <!-- brackets -->
+  <path d="M20 104 L20 112 L375 112 L375 104" fill="none" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="197" y="128" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">outer / underlay headers added by the VTEP (~50B of overhead)</text>
+  <path d="M375 138 L375 146 L700 146 L700 138" fill="none" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="537" y="162" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">original tenant frame, carried opaquely</text>
+  <text x="360" y="196" text-anchor="middle" font-size="9" fill="#526176">the underlay routes only on the outer IP header; the inner frame + VNI are decapsulated at the far VTEP</text>
+</svg>
+<div class="svg-cap">VXLAN packet layout: the tenant's original Ethernet frame is wrapped in outer Ethernet + IP + UDP + an 8-byte VXLAN header carrying the 24-bit VNI. Total added overhead is about 50 bytes for IPv4.</div>
+</div>
+
+<h4>Encapsulation overhead</h4>
+<div class="formula"><span class="cm"># VXLAN over IPv4 outer, added bytes:</span>
+outer Ethernet <b>14</b> + outer IPv4 <b>20</b> + UDP <b>8</b> + VXLAN <b>8</b>  =  <b>~50 bytes</b>
+<span class="cm"># (IPv6 outer or extra tags push this higher; ~54B is often quoted for VXLAN/IPv4)</span></div>
+
+<h3>Geneve — the extensible successor</h3>
+<p><strong>Geneve (Generic Network Virtualization Encapsulation, RFC 8926)</strong> was designed to fix VXLAN's rigidity. VXLAN's header is fixed: 24 bits of VNI and little else. Geneve adds a <strong>variable-length options field built from TLVs (Type-Length-Value)</strong>, so control planes can attach metadata — security tags, telemetry, service-chaining hints — to each packet without inventing a new protocol. Geneve also runs over UDP (assigned port <strong>6081</strong>) and carries a 24-bit VNI, but its extensibility is why many modern SDN stacks and DPUs default to it.</p>
+
+<table class="tbl">
+  <tr><th>Property</th><th>VXLAN (RFC 7348)</th><th>Geneve (RFC 8926)</th><th>GRE / FoU</th></tr>
+  <tr><td>Transport</td><td>UDP 4789</td><td>UDP 6081</td><td>GRE = IP proto 47; FoU wraps GRE/other in UDP</td></tr>
+  <tr><td>Tenant ID</td><td>24-bit VNI (~16M)</td><td>24-bit VNI (~16M)</td><td>32-bit optional GRE key</td></tr>
+  <tr><td>Extensibility</td><td>Fixed header</td><td>Variable TLV options</td><td>Minimal / fixed</td></tr>
+  <tr><td>Typical use</td><td>De facto data-center overlay standard</td><td>Programmable SDN, DPU offload</td><td>Point-to-point tunnels, legacy</td></tr>
+</table>
+
+<h4>GRE and FoU, briefly</h4>
+<p><strong>GRE (Generic Routing Encapsulation)</strong> is the older, simpler tunnel: it wraps almost any payload directly in IP (protocol number 47) with a small header and an optional 32-bit key. It predates the multi-tenant cloud and is common for point-to-point tunnels. Its weakness in a Clos fabric is that it is <em>not</em> UDP, so ECMP hardware — which hashes on UDP/TCP ports — sees no port entropy and tends to pin all GRE traffic to a single path. <strong>FoU (Foo-over-UDP)</strong> fixes exactly that: it wraps GRE (or another protocol) inside UDP so the outer UDP source port can be varied per flow, restoring ECMP spread. This "wrap it in UDP so ECMP works" motivation is the same reason VXLAN and Geneve chose UDP in the first place.</p>
+
+<h3>The MTU / PMTUD caveat — a classic trap</h3>
+<div class="trap"><div class="trapl">Common mistake — the encapsulation MTU black hole</div><p>Every ~50 bytes of VXLAN/Geneve overhead comes <em>out of</em> the underlay's MTU. If the underlay MTU is 1500 and a tenant sends a full 1500-byte frame, the encapsulated packet is ~1550 bytes — too big. If the "don't fragment" bit is set (as it is for most TCP), a router drops it and should return an ICMP "fragmentation needed" message so the sender lowers its packet size — this is <strong>Path MTU Discovery (PMTUD)</strong>. But cloud fabrics and firewalls frequently <em>block</em> that ICMP, so the sender never learns; large packets vanish silently while small ones (pings, TCP handshakes) succeed. The signature is maddening: "the connection opens but hangs on the first big transfer." The fix is to raise the underlay to <strong>jumbo frames (e.g. 9000-byte MTU)</strong> so encapsulation fits with room to spare, and/or clamp the tenant TCP MSS so inner segments stay small enough after wrapping. This one is a strong probe because it tests whether you actually understand encapsulation overhead.</p></div>
+
+<div class="note"><div class="notel">Bridge from what you know</div><p>Encapsulation is tunneling: the tenant packet is the "message," the outer header is the "envelope," and the fabric is a courier that only reads the envelope. It is conceptually identical to a per-tenant VPN, or to wrapping an application message in an RPC/HTTP frame — a header the transport understands, carrying an opaque payload the transport ignores.</p></div>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. BGP in the Data Center</h2>
+<p>The fabric can forward packets, and overlays can carry tenants — but something has to tell every switch and host <em>where every address lives</em>. That job belongs to a routing protocol, and the modern data center has largely standardized on one: <strong>BGP (Border Gateway Protocol)</strong>, the same protocol that stitches the public internet together, repurposed for the inside of a building.</p>
+
+<h3>BGP as distributed reachability</h3>
+<p>BGP is fundamentally a way for routers to <em>advertise</em> "I can reach these prefixes" to their neighbors, who re-advertise onward. Think of it as a controlled gossip of reachability that converges on a consistent picture of the network — a distributed agreement about who can reach what, built from peer-to-peer announcements rather than a central authority. Each router applies policy to decide which advertisements to accept, prefer, and propagate.</p>
+
+<h4>eBGP vs iBGP</h4>
+<ul>
+  <li><strong>eBGP (external BGP)</strong> runs between routers in <em>different</em> autonomous systems (ASes). It is the internet's inter-domain protocol, and in the data center it is the popular choice for the fabric: each leaf and each spine is given its own AS number, and every leaf-spine link is an eBGP session. eBGP's loop prevention (it rejects routes whose AS-path already contains its own AS) and its natural per-hop behavior make it clean for a Clos fabric.</li>
+  <li><strong>iBGP (internal BGP)</strong> runs between routers <em>within</em> the same AS. iBGP has a catch: to prevent loops it does not re-advertise a route learned from one iBGP peer to another iBGP peer, so a naive iBGP network needs a full mesh of sessions between all routers — which explodes at scale.</li>
+</ul>
+
+<h4>Route reflectors</h4>
+<p>The fix for the iBGP full-mesh explosion is a <strong>route reflector</strong>: a designated router that is allowed to re-advertise (reflect) iBGP routes between clients, so each router peers only with the reflector instead of with every other router. It turns an O(n²) mesh into an O(n) hub-and-spoke of control-plane sessions. (In pure-eBGP fabric designs there is no full-mesh problem to solve, so reflectors appear more often in the overlay/EVPN control plane described below.)</p>
+
+<h4>ECMP comes for free</h4>
+<p>Because a leaf learns the same destination prefix from every spine with an equal AS-path length, BGP installs <em>all</em> of those next-hops and the fabric load-balances across them via ECMP (§2). With a unique AS number per switch, the paths differ in AS-path <em>content</em>, so this needs <code>multipath-relax</code> (accept equal-<em>length</em> paths even when the AS numbers differ) — or a design where every spine shares one AS so the paths are truly identical and multipath works by default. Routing protocol and load balancing become the same mechanism.</p>
+
+<h3>BGP to the host</h3>
+<p>A striking modern pattern is running <strong>BGP all the way down to the server</strong>. The host runs a lightweight BGP speaker and peers with its ToR leaf, advertising the addresses it owns — including the virtual IPs of the services or containers it hosts. When a container moves, the new host simply advertises that address and the old one withdraws it; the fabric reconverges with no manual reconfiguration. This makes service and pod mobility a routing event rather than an orchestration special-case, and it is why "BGP to the host" shows up constantly in container-networking designs.</p>
+
+<h3>MP-BGP / EVPN — the VXLAN control plane</h3>
+<p>VXLAN (§3) defines how to <em>encapsulate</em>, but not how a VTEP learns <em>which remote host owns which tenant MAC/IP</em>. The early answer was flood-and-learn (multicast the unknown traffic and learn from replies) — noisy and hard to scale. The modern answer is <strong>EVPN (Ethernet VPN)</strong> carried over <strong>MP-BGP (Multiprotocol BGP)</strong>.</p>
+<p>MP-BGP extends BGP to carry address families beyond plain IPv4 routes. EVPN is one such family: it lets every VTEP <em>advertise, via BGP</em>, the tenant MAC and IP addresses sitting behind it, tagged with their VNI. Now a VTEP learns all remote endpoints from BGP updates — a proper control plane — instead of flooding. This <strong>MP-BGP/EVPN as the control plane for VXLAN</strong> combination is the backbone of the standards-based multi-tenant data center.</p>
+<div class="formula"><span class="cm"># the clean separation EVPN gives you</span>
+<b>data plane</b>  = VXLAN encapsulation (how bytes are wrapped &amp; tunneled)
+<b>control plane</b> = MP-BGP / EVPN   (how VTEPs learn remote MAC/IP ↔ VNI ↔ host)</div>
+
+<h3>A note on internet-edge BGP</h3>
+<p>The same protocol also does its original job at the <strong>edge</strong>: the routers connecting the data center to the outside world speak eBGP with other providers to exchange internet reachability. This is where <strong>route leaks and hijacks</strong> live — accidentally (or maliciously) advertising prefixes you shouldn't, drawing in traffic that isn't yours. Google's publicly documented <strong>Espresso</strong> edge and <strong>B4</strong> WAN work are well-known examples of applying SDN principles (§5) to this edge/WAN routing at scale, moving path selection into software rather than leaving it purely to per-router BGP policy.</p>
+
+<div class="tip"><div class="tipl">Bridge from what you know</div><p>BGP is eventually consistent, policy-driven reachability gossip: peers exchange "I can reach X," apply local policy, and converge — much like an anti-entropy/gossip protocol converging on membership, but for routes. EVPN then uses that same distribution mechanism as a <em>publish/subscribe bus</em> for endpoint locations, exactly the way a service mesh uses a control plane to tell every proxy where every service instance currently lives.</p></div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. Network Virtualization &amp; SDN</h2>
+<p>Everything so far implies a division of labor that deserves its own name. <strong>Software-Defined Networking (SDN)</strong> is the deliberate separation of the <strong>control plane</strong> (the logic that decides where traffic should go) from the <strong>data plane</strong> (the fast machinery that actually forwards packets).</p>
+
+<h3>Control plane vs data plane</h3>
+<ul>
+  <li><strong>Data plane (forwarding plane).</strong> Per-packet work: match this packet against a table, rewrite headers, encapsulate, forward, drop, count. It must run at line rate, so it lives in ASICs, NIC/DPU hardware, or tightly optimized software switches.</li>
+  <li><strong>Control plane.</strong> The decision-making: compute routes, program the forwarding tables, distribute tenant/endpoint state, enforce policy. It can run in general-purpose software — even centrally — because it operates at the timescale of <em>changes</em>, not of individual packets.</li>
+</ul>
+<p>Traditional networking baked both planes into every switch, each running its own distributed routing algorithm. SDN pulls the control plane out into software — often a logically centralized <strong>SDN controller</strong> — that has a global view and programs the many simple, fast data-plane elements beneath it. This is the same architectural move as separating a database's query planner from its storage engine, or a scheduler's placement logic from the nodes that run the work.</p>
+
+<h3>VRFs: many routing tables in one box</h3>
+<p>A <strong>VRF (Virtual Routing and Forwarding)</strong> instance is an independent routing table living inside a single physical router or host. Each tenant gets its own VRF, so tenant A's routes are invisible to tenant B even on shared hardware — the routing-table equivalent of the per-tenant isolation encapsulation provides in the data path. VRFs plus VXLAN/EVPN are how a shared fabric presents each tenant a fully private L3 network.</p>
+
+<h3>Programmable data planes</h3>
+<p>The data plane itself has become programmable. Languages and interfaces for describing packet-processing pipelines let engineers define <em>how</em> a switch or NIC parses and acts on packets rather than accepting fixed vendor behavior — pushing new encapsulations, telemetry, or load-balancing logic into the hardware fast path. Combined with a software control plane, this makes the entire network a programmable, testable system rather than a box of static configuration.</p>
+
+<h3>A public reference point: network virtualization at scale</h3>
+<p>Google's publicly published <strong>Andromeda</strong> is a well-documented example of a large network-virtualization stack: it provides each tenant a virtual network over a shared physical fabric, doing the encapsulation, virtual routing, firewalling, and load balancing largely in software on the hosts, orchestrated by a centralized control plane — with a deliberate design principle of moving as much per-packet work as possible onto a fast path (and, increasingly across the industry, offloading that fast path to hardware, §7). It is a useful concrete illustration of the control/data-plane split applied to multi-tenant networking; Google's <strong>Jupiter</strong> data-center fabric papers similarly document the Clos-fabric ideas of §2 at hyperscale.</p>
+<div class="note"><div class="notel">Bridge from what you know</div><p>The SDN controller reconciling forwarding tables against a desired network state is precisely a Kubernetes-style controller reconciling actual pods against a desired spec — a control loop watching declared intent and driving the data plane toward it. Hold that analogy; §8 makes it the center of the job.</p></div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. Secure Communication in the Fabric</h2>
+<p>Isolation (§3) keeps tenants from <em>seeing</em> each other's packets, but it does not make the packets <em>confidential or authenticated</em> against a compromised host, a rogue admin, or a tapped link. For that you need cryptography, and two families dominate: <strong>mutual TLS</strong> at the application layer and <strong>IPsec</strong> at the network layer.</p>
+
+<h3>Mutual TLS (mTLS)</h3>
+<p>Ordinary TLS authenticates the <em>server</em> to the client (the padlock in a browser). <strong>Mutual TLS</strong> makes both ends present certificates, so the client authenticates the server <em>and</em> the server authenticates the client. In a service mesh, every service has an identity (a certificate), and every connection is mutually authenticated and encrypted — a workload cannot talk to another workload without proving who it is. mTLS operates per-connection at the application/transport boundary, is identity-aware (the certificate names the workload), and is the natural fit for <strong>service-to-service</strong> traffic.</p>
+
+<h3>IPsec</h3>
+<p><strong>IPsec</strong> secures IP packets themselves, below the application, and is the standard for <strong>network-to-network</strong> or host-to-host tunnels (site-to-site VPNs, encrypting overlay traffic across an untrusted underlay or WAN). Its pieces are worth knowing precisely:</p>
+<ul>
+  <li><strong>ESP (Encapsulating Security Payload)</strong> provides <em>encryption</em> plus integrity/authentication of the payload. This is what you almost always use, because it actually encrypts.</li>
+  <li><strong>AH (Authentication Header)</strong> provides integrity and authentication but <em>no</em> encryption. It is largely of historical interest — it also breaks with NAT because it authenticates parts of the IP header that NAT rewrites.</li>
+  <li><strong>IKE (Internet Key Exchange)</strong> is the handshake that authenticates the peers and negotiates the keys and parameters (the "security associations") that ESP/AH then use. IKE is the control plane; ESP is the data plane.</li>
+</ul>
+
+<h4>Transport mode vs tunnel mode — get this right</h4>
+<table class="tbl">
+  <tr><th></th><th>Transport mode</th><th>Tunnel mode</th></tr>
+  <tr><td>What's protected</td><td>Only the IP <em>payload</em>; the original IP header stays exposed.</td><td>The <em>entire</em> original IP packet, header and all, is encrypted and wrapped in a new outer IP header.</td></tr>
+  <tr><td>Header</td><td>Reuses the original IP header.</td><td>Adds a new outer IP header (like an encrypted tunnel/VPN).</td></tr>
+  <tr><td>Typical use</td><td>Host-to-host, where the endpoints are the crypto endpoints.</td><td>Gateway-to-gateway / site-to-site VPN, where routers encrypt on behalf of the networks behind them.</td></tr>
+</table>
+<div class="trap"><div class="trapl">Common mistake</div><p>Confusing "tunnel vs transport" with "ESP vs AH." They are orthogonal: <em>mode</em> (transport/tunnel) decides <em>how much of the packet</em> is protected and whether a new outer header is added; <em>protocol</em> (ESP/AH) decides <em>what protection</em> (encryption+auth vs auth-only). You pick one from each column — e.g. "ESP in tunnel mode" is the classic site-to-site VPN.</p></div>
+
+<h3>Which one, and where</h3>
+<div class="miniboxes">
+  <div class="mb"><div class="mbh">Reach for mTLS when…</div><ul><li>Securing service-to-service (east-west) app traffic.</li><li>You want per-workload <em>identity</em>, not just an encrypted pipe.</li><li>Policy is "which service may call which," enforced with certificates.</li></ul></div>
+  <div class="mb"><div class="mbh">Reach for IPsec when…</div><ul><li>Encrypting whole networks or the overlay across an untrusted underlay/WAN.</li><li>Endpoints are gateways/hosts, and apps are unaware of crypto.</li><li>You need transparent, application-agnostic packet encryption.</li></ul></div>
+</div>
+<p>They are not mutually exclusive — a cloud commonly runs mTLS between services <em>and</em> encrypts inter-data-center links with IPsec (or link-layer encryption). Both are the cryptographic backbone of <strong>zero trust</strong>: the network location of a peer grants it nothing; every connection must be authenticated and encrypted regardless of which side of any perimeter it is on. That is the bridge from "isolation by topology" to "trust by verified identity."</p>
+<div class="iq">Isolation stops tenants from seeing each other's packets; it doesn't make a packet trustworthy. So I'd layer identity on top — mTLS for service-to-service, where I want per-workload certificates and policy, and IPsec (ESP, tunnel mode) to encrypt overlay or inter-site links transparently. Under zero trust, network position grants nothing; every hop is authenticated.</div>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Host Networking &amp; Hardware Offload</h2>
+<p>All the encapsulation, virtual routing, firewalling, and crypto above has to happen <em>somewhere</em> for every packet entering and leaving a server. Do it on the host CPU and you burn cores that customers are paying to run their workloads, and you add latency and jitter. The modern answer is to push that work down into the network hardware. This section follows the packet's path onto the wire and the offloads along the way.</p>
+
+<h3>The NIC datapath and SR-IOV</h3>
+<p>A <strong>NIC (Network Interface Card)</strong> traditionally hands packets to the OS kernel, which copies and processes them before the application sees them. In a virtualized host that means the hypervisor's software switch touches every packet — flexible but CPU-hungry.</p>
+<p><strong>SR-IOV (Single-Root I/O Virtualization)</strong> lets one physical NIC present itself as many. It exposes one <strong>PF (Physical Function)</strong> — the full-featured device the host manages — and many lightweight <strong>VFs (Virtual Functions)</strong>, each of which can be assigned <em>directly</em> to a VM or container. That VM's packets flow straight between its VF and the wire, bypassing the hypervisor software switch entirely — near-bare-metal throughput and latency. The trade-off: the packet skips the host's software switch, so the <em>overlay/policy work that switch used to do</em> must now be done somewhere else — which is exactly the case for a smarter NIC.</p>
+
+<h3>The DPU / SmartNIC</h3>
+<p>A <strong>DPU (Data Processing Unit)</strong> — also called a SmartNIC — is a NIC with its own general-purpose CPU cores, memory, and programmable packet-processing engines. It runs the host's networking data plane <em>on the card</em> instead of on the host CPU: VXLAN/Geneve encapsulation, the virtual switch and firewall rules, load balancing, telemetry, and encryption are all offloaded. The host CPU is freed to run tenant workloads, and — importantly for a cloud provider — the networking/security software runs on the DPU in a domain the tenant's compromised VM cannot reach.</p>
+<p>NVIDIA's <strong>BlueField</strong> DPU is a public, concrete example of this class of device; NVIDIA's <strong>ConnectX</strong> is the corresponding high-speed NIC line and <strong>Spectrum</strong> the Ethernet switch line. Naming them is just to make the category tangible — the concept (offload the data plane off the CPU onto a programmable NIC) is general.</p>
+<div class="note"><div class="notel">Bridge from what you know</div><p>A DPU is the network's version of offloading blocking work off your main thread: the host CPU is the application thread, and the DPU is a dedicated I/O co-processor / sidecar that handles packets asynchronously so the CPU never blocks on them. "Move the data plane off the CPU" is the same instinct as async I/O, a sidecar proxy, or a dedicated I/O thread pool.</p></div>
+
+<h3>RDMA and RoCEv2 — the GPU-cluster fast path</h3>
+<p>Training large models needs GPUs across many servers to exchange gradients constantly, and the network can easily become the bottleneck. <strong>RDMA (Remote Direct Memory Access)</strong> lets one machine read/write another machine's memory <em>directly</em>, with the NICs doing the transfer and the CPU and OS kernel out of the loop — zero-copy, kernel-bypass, ultra-low latency. <strong>RoCEv2 (RDMA over Converged Ethernet, version 2)</strong> carries RDMA over a routable UDP/IP Ethernet network, so it runs across an ordinary IP Clos fabric.</p>
+<p>RDMA was born on lossless fabrics and performs badly if packets are dropped, so RoCEv2 needs the Ethernet fabric to behave as <strong>near-lossless</strong>. Three mechanisms cooperate:</p>
+<ul>
+  <li><strong>PFC (Priority Flow Control, 802.1Qbb)</strong> lets a congested switch tell the upstream sender to <em>pause</em> a specific traffic class rather than dropping its packets — per-priority backpressure so RDMA traffic isn't lost.</li>
+  <li><strong>ECN (Explicit Congestion Notification)</strong> lets switches <em>mark</em> packets (instead of dropping them) as congestion builds, signaling the endpoints to slow down before queues overflow.</li>
+  <li><strong>DCQCN (Data Center Quantized Congestion Notification)</strong> is the end-to-end congestion-control algorithm for RoCEv2 that reacts to those ECN marks, ramping each flow's rate up and down to hold the fabric just below the loss point. PFC is the emergency brake; ECN+DCQCN is the smooth throttle that keeps you from needing it.</li>
+</ul>
+<p>On top of RDMA, <strong>GPUDirect RDMA</strong> lets the NIC move data straight into and out of GPU memory without a bounce through host RAM, and collective-communication libraries such as <strong>NCCL</strong> use these paths to implement fast all-reduce/all-gather across a cluster. This is the networking half of the interconnect story in <em>Part XV · Chapter 4</em>; the fabric here (RoCEv2 over Clos, made lossless by PFC/ECN/DCQCN) is what those collectives run on.</p>
+<div class="warn"><div class="warnl">Why lossless is hard</div><p>PFC prevents drops but introduces its own hazards at scale — pause frames can propagate backward and cause <strong>congestion spreading</strong> or even PFC deadlock across a topology. Tuning ECN thresholds and DCQCN so the fabric rarely has to fire PFC is a genuinely hard operational problem, and a good signal in an interview that you understand the trade-off rather than just the acronyms.</p></div>
+
+<h3>Provisioning and host security (tie-ins)</h3>
+<p>Before a host can join the fabric it must be <em>brought up</em> and <em>trusted</em>. Provisioning typically bootstraps over the network: <strong>DHCP</strong> hands the machine an address and boot info, <strong>PXE</strong> network-boots an installer, and <strong>Redfish</strong> gives a standardized out-of-band API to the server's management controller for power, firmware, and boot control — the mechanics covered in <em>Part XV · Chapter 1</em>.</p>
+<p>Trust is established by a chain of measured or verified boot steps:</p>
+<ul>
+  <li><strong>Secure Boot</strong> verifies each stage of the boot chain against signatures before executing it, so unsigned/modified firmware or bootloaders won't run — a <em>static</em>, signature-based root of trust.</li>
+  <li><strong>TPM (Trusted Platform Module)</strong> is a hardware chip that stores keys and accumulates <em>measurements</em> (hashes) of the boot components into PCRs, enabling remote <strong>attestation</strong> — a host can prove to a control plane what software it actually booted.</li>
+  <li><strong>DRTM / measured launch</strong> establishes a <em>dynamic</em> root of trust: it can measure and launch a trusted environment at runtime, from a known hardware-enforced starting point, without depending on every earlier boot stage being trusted. The distinction worth knowing: Secure Boot is a <em>static</em> chain verified from power-on, whereas DRTM creates a <em>fresh, measured</em> trust anchor at launch time (a "late launch"), reducing how much earlier code you must trust.</li>
+</ul>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Network &amp; Systems Automation</h2>
+<p>This is the part a cloud-platform engineer actually lives in. A fabric with hundreds of switches, thousands of hosts, and constantly churning tenant state cannot be operated by logging into devices and typing. The network must be described as <strong>data</strong> and driven by <strong>software loops</strong> — and doing that safely across a shared, multi-tenant fabric is the core of the job.</p>
+
+<h3>Intent / declarative configuration</h3>
+<p>The foundational shift is from <em>imperative</em> ("SSH to switch, run these commands") to <strong>declarative / intent-based</strong> configuration: you describe the <em>desired end state</em> — these tenants, these VNIs, these routes, this policy — and let a system compute and apply the steps to get there. This is <strong>infrastructure as code (IaC)</strong> for the network: the desired state lives in version control, is code-reviewed, and is the single source of truth.</p>
+
+<h3>The reconciliation loop</h3>
+<p>Declared intent is only half of it; something must continuously make reality match. A <strong>reconciliation loop</strong> repeatedly (1) reads desired state, (2) reads observed/actual state from the devices, (3) computes the diff, and (4) applies the minimum changes to converge — then repeats forever, correcting drift whenever reality wanders (a switch reboots to defaults, someone makes a manual change, a device is replaced).</p>
+<pre><span class="cm"># the network control loop, in pseudocode — a reconciler</span>
+<span class="kw">while</span> <span class="kw">True</span>:
+    desired = load_intent()          <span class="cm"># from version-controlled source of truth</span>
+    actual  = fetch_device_state()   <span class="cm"># stream telemetry / read configs</span>
+    diff    = compute_diff(actual, desired)
+    <span class="kw">if</span> diff:
+        <span class="kw">if</span> validate(diff):           <span class="cm"># dry-run / model-check BEFORE touching prod</span>
+            apply_incrementally(diff, canary=<span class="kw">True</span>)   <span class="cm"># small blast radius first</span>
+        <span class="kw">else</span>:
+            alert(<span class="str">"intent rejected by validation"</span>)
+    sleep(interval)                  <span class="cm"># steady-state drift correction</span></pre>
+<div class="note"><div class="notel">Bridge from what you know</div><p>This is exactly a Kubernetes controller: watch desired spec, observe actual, reconcile the difference, loop. The network is just another resource whose "pods" are VNIs, routes, and ACLs. If you have written or reasoned about a controller/operator, you already understand fabric automation — the control theory is identical, only the nouns change.</p></div>
+
+<h3>Network state machines &amp; safe rollout</h3>
+<p>A shared fabric multiplies the blast radius: one bad push can black-hole traffic for <em>many</em> tenants at once. So the automation is built around safety, not just convenience:</p>
+<ul>
+  <li><strong>Config validation before apply.</strong> Model or dry-run the change against a representation of the network to catch a route leak, a loop, or a lost prefix <em>before</em> it reaches hardware — the network equivalent of a type-checker and unit tests in CI.</li>
+  <li><strong>Staged / canary rollout.</strong> Apply to one device, one rack, one failure domain first; verify health (§9) against SLOs; only then widen. Never change everything at once.</li>
+  <li><strong>Immutability &amp; versioned artifacts.</strong> Treat a device's config as an immutable, versioned artifact rendered from intent, not a thing you hand-edit in place. Every change is a new version with a known diff.</li>
+  <li><strong>Fast, automatic rollback.</strong> Because each version is known and diffable, a failed rollout reverts to the last-good version automatically when health checks fail — bounded time-to-recovery instead of a frantic manual undo.</li>
+  <li><strong>State machines for multi-step changes.</strong> A migration (say, moving a tenant to a new VNI) is modeled as an explicit state machine with safe, resumable transitions, so a failure mid-way leaves the fabric in a known, recoverable state rather than a half-applied mess.</li>
+</ul>
+<div class="tip"><div class="tipl">Interview signal</div><p>Asked "how would you safely roll out a fabric-wide change," the strong answer is a loop, not a command: intent in version control → validate/dry-run → canary one failure domain → verify against SLOs → widen → auto-rollback on regression, with every config an immutable versioned artifact. That framing — <em>reconcile, validate, canary, roll back</em> — signals you think about blast radius on a shared multi-tenant fabric, which is the whole point of the role.</p></div>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Operating the Network</h2>
+<p>A built network still has to be <em>run</em>: observed, held to objectives, and debugged when — not if — it misbehaves. The failure modes here are a common source of interview questions because they test whether you truly understand the mechanisms of the earlier sections.</p>
+
+<h3>Observability</h3>
+<ul>
+  <li><strong>Flow logs</strong> record per-connection metadata (who talked to whom, ports, bytes, accept/drop) — invaluable for security forensics, debugging reachability, and capacity analysis.</li>
+  <li><strong>Streaming telemetry</strong> replaces old-style polling (SNMP every 30s) with devices <em>pushing</em> a high-frequency stream of counters and state (queue depths, drops, interface errors, ECN marks). It is the "observed state" feeding the reconciliation loop of §8 and the raw material for detecting congestion or drift in near-real-time.</li>
+  <li><strong>Active probing</strong> — synthetic packets that traverse real paths — measures actual latency, loss, and reachability continuously, catching black holes that passive counters miss.</li>
+</ul>
+
+<h3>SLOs and error budgets</h3>
+<p>Network health is expressed the same way as any service's: <strong>SLOs (Service Level Objectives)</strong> on latency, packet loss, and availability, with an <strong>error budget</strong> that governs how much risk (and change velocity) is acceptable. A rollout (§8) that burns error budget is halted and rolled back. This ties the automation and the operations together: the same SLOs that gate a canary are the ones on the operator's dashboard.</p>
+
+<h3>Classic failure modes</h3>
+<table class="tbl">
+  <tr><th>Failure</th><th>What happens</th><th>Why / how to catch it</th></tr>
+  <tr><td><strong>Black-holing</strong></td><td>Traffic is silently forwarded into a device or route that drops it — packets vanish with no error.</td><td>A stale/incorrect route or a failed next-hop. Caught by active probing and end-to-end reachability checks, not by interface counters alone.</td></tr>
+  <tr><td><strong>Asymmetric routing</strong></td><td>Forward and return paths differ; stateful devices (firewalls, NAT) on one path never see the other direction and drop the flow.</td><td>ECMP or policy sending the two directions different ways. Suspect it when connections work one way or fail only through stateful middleboxes.</td></tr>
+  <tr><td><strong>MTU / PMTUD black hole</strong></td><td>Small packets pass, large ones vanish; connections open then hang (see §3).</td><td>Encapsulation overhead + blocked ICMP "frag needed." Fix with jumbo-frame underlay and/or MSS clamping.</td></tr>
+  <tr><td><strong>ECMP hash polarization</strong></td><td>Traffic that should spread across many paths piles onto a few, congesting some links while others sit idle.</td><td>Successive switches hashing on the same fields the same way, so they all make correlated choices. Fixed by varying the hash seed/inputs per stage and adding port entropy (why VXLAN/FoU use UDP).</td></tr>
+  <tr><td><strong>BGP route leak / hijack</strong></td><td>A router advertises prefixes it shouldn't, drawing traffic away from the rightful owner — outage or interception.</td><td>Missing import/export policy or filtering. Prevented by strict prefix filters, max-prefix limits, and route validation (§4).</td></tr>
+</table>
+<div class="trap"><div class="trapl">Common mistake — blaming the app for a network black hole</div><p>"The API works from my laptop but times out from the new subnet, and only on large responses." That is almost never the application — it is the §3 MTU/PMTUD black hole: something on the new path added encapsulation, the resulting packets exceed the underlay MTU, and the ICMP that would fix it is filtered. The tell-tale sign is <em>size-dependent</em> failure (handshake fine, bulk transfer hangs). Reach for MTU/MSS before you reach for the app logs.</p></div>
+
+<!-- ══════════════ SECTION 10 ══════════════ -->
+<h2>10. Common Interview Questions</h2>
+<p>These pull the whole chapter together. Each answer is written the way you'd say it out loud — mechanism first, then the trade-off.</p>
+
+<div class="card">
+<p><strong>Q: Walk a packet from VM-A on one host to VM-B on another, across an overlay.</strong><br>VM-A emits an Ethernet frame to VM-B's (tenant) IP. The source host's virtual switch / DPU looks up VM-B's location and VNI, <em>encapsulates</em> the frame in outer Ethernet + IP + UDP + a VXLAN header carrying the 24-bit VNI, with the outer IP addressed from this host (VTEP) to VM-B's host. The Clos underlay routes that outer packet purely on its outer IP — spreading it across spines via ECMP — knowing nothing of the tenant inside. The destination VTEP receives it, strips the outer headers, reads the VNI to pick the right tenant network (bridge domain), and delivers the original frame to VM-B. The VTEP knew VM-B's MAC/IP-to-host mapping because it was advertised via MP-BGP/EVPN, not flooded. And the whole thing only works if the underlay MTU has room for the ~50 bytes of encapsulation.</p>
+<p><strong>Q: VXLAN vs Geneve — when and why?</strong><br>Both wrap an Ethernet frame in UDP with a 24-bit VNI (~16M tenants, versus ~4K VLANs), and both route over a plain L3 underlay. The difference is extensibility: VXLAN's header is fixed; Geneve adds variable-length TLV options so the control plane can carry metadata — security tags, telemetry, service-chaining — per packet. Pick VXLAN for maximum interop as the de facto standard; pick Geneve when you need that programmable metadata, which is why many SDN stacks and DPUs default to it.</p>
+<p><strong>Q: Why run BGP inside the data center?</strong><br>Because a Clos fabric is many equal-cost paths that change as links and hosts come and go, and BGP is a mature, policy-rich, massively scalable way to distribute reachability and load-balance over ECMP — the same protocol proven on the internet. eBGP-per-switch gives clean loop prevention and per-hop behavior; MP-BGP/EVPN then rides the same protocol to distribute tenant MAC/IP-to-VTEP mappings as the VXLAN control plane; and BGP-to-the-host turns container/service mobility into a routing event. One protocol, underlay and overlay.</p>
+<p><strong>Q: mTLS vs IPsec — which and where?</strong><br>mTLS secures service-to-service traffic at the application/transport layer with per-workload <em>identity</em> (both ends present certificates) — ideal for a zero-trust service mesh where policy is "which service may call which." IPsec secures IP packets below the app — ideal for encrypting whole networks or the overlay across an untrusted underlay/WAN, transparently to applications. Remember the two orthogonal IPsec choices: ESP (encrypt+auth) vs AH (auth only, effectively legacy), and transport mode (payload only) vs tunnel mode (whole packet + new outer header, the site-to-site VPN). You often run both: mTLS east-west, IPsec between sites.</p>
+<p><strong>Q: What does a DPU actually offload?</strong><br>The host's networking <em>data plane</em>: VXLAN/Geneve encapsulation, the virtual switch and firewall, load balancing, telemetry, and crypto — all run on the NIC's own cores instead of the host CPU. That frees CPU for tenant workloads, cuts latency/jitter, and isolates the networking/security software in a domain a compromised guest VM can't reach. It's the "move the data plane off the CPU" instinct — the packet-world equivalent of offloading blocking I/O to a co-processor. With SR-IOV giving VMs a direct NIC path, the DPU is <em>where</em> the overlay/policy work that used to sit in the host software switch now lives.</p>
+<p><strong>Q: Design the control plane for a multi-tenant virtual network.</strong><br>Separate control and data planes (SDN). The <em>data plane</em> is host virtual switches / DPUs doing VXLAN or Geneve encapsulation with a per-tenant VNI, each tenant in its own VRF for L3 isolation. The <em>control plane</em> distributes endpoint state — a VTEP-to-MAC/IP mapping per VNI — via MP-BGP/EVPN (or an equivalent centralized controller like the publicly documented Andromeda model), so hosts learn locations without flooding. Drive the whole thing from declarative intent in version control, reconciled by a control loop that validates changes (dry-run/model-check), canaries them one failure domain at a time against SLOs, and auto-rolls back on regression. Secure it with per-workload mTLS and encrypt inter-site links with IPsec; offload the data plane to DPUs; and instrument it with streaming telemetry and flow logs so the reconciler and the on-call see the same truth. Call out the blast-radius danger of a shared fabric and the MTU headroom the overlay needs — that's the difference between reciting acronyms and having operated one.</p>
+</div>
+
+<div class="note"><div class="notel">One-line summary</div><p>Cloud networking makes one physical Clos fabric (§2) look like thousands of private tenant networks by wrapping tenant packets in VXLAN/Geneve overlays over a shared L3 underlay (§3), distributing reachability and endpoint state with BGP and MP-BGP/EVPN (§4) under an SDN control/data-plane split (§5), securing it with mTLS and IPsec toward zero trust (§6), offloading the per-packet data plane to SR-IOV/DPUs and running GPU clusters over lossless RoCEv2 (§7), all provisioned and changed safely by declarative intent and reconciliation loops (§8), then observed and debugged against SLOs where the classic killers are black holes, asymmetric routing, MTU/PMTUD, ECMP polarization, and BGP leaks (§9).</p></div>
+
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Underlay / overlay</strong></td><td>The shared physical IP network vs. the per-tenant virtual network built on top of it.</td></tr>
+<tr><td><strong>Clos fabric (spine-leaf)</strong></td><td>Multi-stage, horizontally scalable topology where every leaf connects to every spine.</td></tr>
+<tr><td><strong>ToR</strong></td><td>Top-of-Rack — the leaf switch each server in a rack attaches to.</td></tr>
+<tr><td><strong>ECMP</strong></td><td>Equal-Cost Multi-Path — spreads flows across multiple equal-cost paths by hashing the flow tuple.</td></tr>
+<tr><td><strong>Encapsulation</strong></td><td>Wrapping a tenant's inner frame inside an outer packet the underlay routes on.</td></tr>
+<tr><td><strong>VTEP</strong></td><td>VXLAN Tunnel Endpoint — the host/switch that encapsulates and decapsulates overlay traffic.</td></tr>
+<tr><td><strong>VXLAN</strong></td><td>Virtual Extensible LAN — encapsulates Ethernet in UDP (port 4789) with a 24-bit VNI.</td></tr>
+<tr><td><strong>VNI</strong></td><td>VXLAN Network Identifier — 24-bit tenant/segment ID (~16 million), versus ~4K VLANs.</td></tr>
+<tr><td><strong>Geneve</strong></td><td>Generic Network Virtualization Encapsulation — VXLAN-like but with variable-length TLV options (UDP port 6081).</td></tr>
+<tr><td><strong>GRE</strong></td><td>Generic Routing Encapsulation — simple tunnel wrapping almost any payload directly in IP (IP protocol 47), predates cloud multi-tenancy.</td></tr>
+<tr><td><strong>PMTUD</strong></td><td>Path MTU Discovery — mechanism relying on ICMP to shrink packet size; breaks silently when that ICMP is blocked.</td></tr>
+<tr><td><strong>BGP</strong></td><td>Border Gateway Protocol — policy-driven reachability protocol used for both the fabric and the internet edge.</td></tr>
+<tr><td><strong>MP-BGP</strong></td><td>Multiprotocol BGP — extends BGP to carry address families beyond plain IPv4 routes.</td></tr>
+<tr><td><strong>EVPN</strong></td><td>Ethernet VPN — the MP-BGP address family that distributes tenant MAC/IP-to-VTEP mappings; VXLAN's control plane.</td></tr>
+<tr><td><strong>SDN</strong></td><td>Software-Defined Networking — separates the control plane (decisions) from the data plane (forwarding).</td></tr>
+<tr><td><strong>VRF</strong></td><td>Virtual Routing and Forwarding — an independent, per-tenant routing table inside one physical device.</td></tr>
+<tr><td><strong>mTLS</strong></td><td>Mutual TLS — both ends present certificates, giving per-workload identity for service-to-service traffic.</td></tr>
+<tr><td><strong>IPsec</strong></td><td>Network-layer packet encryption (ESP for encrypt+auth, IKE for key exchange) for host- or site-to-site tunnels.</td></tr>
+<tr><td><strong>SR-IOV</strong></td><td>Single-Root I/O Virtualization — one NIC exposes many virtual functions assignable directly to VMs.</td></tr>
+<tr><td><strong>DPU</strong></td><td>Data Processing Unit (SmartNIC) — programmable NIC that runs the networking data plane off the host CPU.</td></tr>
+<tr><td><strong>RDMA</strong></td><td>Remote Direct Memory Access — direct memory-to-memory transfer bypassing CPU and kernel.</td></tr>
+<tr><td><strong>RoCEv2</strong></td><td>RDMA over Converged Ethernet v2 — carries RDMA over a routable UDP/IP Ethernet fabric.</td></tr>
+<tr><td><strong>PFC</strong></td><td>Priority Flow Control (802.1Qbb) — pauses a specific traffic class instead of dropping its packets.</td></tr>
+<tr><td><strong>ECN</strong></td><td>Explicit Congestion Notification — marks packets to signal congestion rather than dropping them.</td></tr>
+<tr><td><strong>DCQCN</strong></td><td>Data Center Quantized Congestion Notification — RoCEv2 end-to-end congestion control reacting to ECN marks.</td></tr>
+</table>
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="td_wifi.html">&lsaquo; WiFi &amp; Connectivity — the Software/Networking View</a><a class="bkc" href="index.html">📖 Contents</a><a href="ds_device_lab.html">Design a Device Lab / Test-Farm Platform &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

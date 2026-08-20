@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choosing the Right Database — System Design Interview Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* HEADER */
+.page-header {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px 20px;
+}
+.header-tag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.header-title { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.header-title span { color: #93c5fd; }
+.header-desc { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 700px; }
+
+/* TABS / NAV */
+.tab-bar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 44px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.tab-btn {
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text3);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 3px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
+  font-family: 'Inter', system-ui, sans-serif;
+  text-decoration: none;
+}
+.tab-btn:hover { color: var(--blue); background: var(--blue-l); }
+.tab-btn.active { color: var(--blue-d); border-bottom-color: var(--blue); }
+
+/* CONTENT */
+.content { padding: 32px 44px 60px; max-width: 1100px; margin: 0 auto; }
+
+/* SECTION */
+.section { margin-bottom: 28px; scroll-margin-top: 70px; }
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--blue-l);
+}
+.subsection-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text2);
+  margin: 20px 0 10px;
+}
+
+/* CARD */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .icon { font-size: 18px; }
+
+/* COLLAPSIBLE */
+.collapsible {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.collapsible-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  transition: background .15s;
+  user-select: none;
+}
+.collapsible-header:hover { background: var(--bg3); }
+.collapsible-header .arrow {
+  transition: transform .2s;
+  font-size: 12px;
+  color: var(--text3);
+}
+.collapsible.open .collapsible-header .arrow { transform: rotate(90deg); }
+.collapsible-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease;
+}
+.collapsible.open .collapsible-body { max-height: 6000px; }
+.collapsible-content {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* CODE */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--blue-d);
+}
+pre {
+  font-family: 'JetBrains Mono', monospace;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 16px 20px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+pre code { background: none; color: inherit; padding: 0; }
+
+/* TABLE */
+.table-wrapper { overflow-x: auto; margin: 12px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+th { background: var(--bg3); font-weight: 600; color: var(--text2); }
+tr:hover td { background: var(--bg3); }
+
+/* BADGE */
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 8px; }
+.badge-blue { background: var(--blue-l); color: var(--blue-d); }
+.badge-green { background: var(--green-l); color: var(--green); }
+.badge-yellow { background: var(--yellow-l); color: var(--yellow); }
+.badge-red { background: var(--red-l); color: var(--red); }
+.badge-purple { background: var(--purple-l); color: var(--purple); }
+.badge-teal { background: var(--teal-l); color: var(--teal); }
+
+/* KEY POINT */
+.key-point {
+  background: var(--yellow-l);
+  border-left: 4px solid var(--yellow);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.key-point strong { color: var(--yellow); }
+
+/* INFO BOX */
+.info-box {
+  background: var(--blue-l);
+  border-left: 4px solid var(--blue);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.warning-box {
+  background: var(--red-l);
+  border-left: 4px solid var(--red);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+
+/* SVG DIAGRAM */
+.diagram-container {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  margin: 16px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.diagram-caption {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* LIST */
+ul, ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 6px; font-size: 14px; }
+
+/* COMPARISON */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+@media (max-width: 768px) {
+  .comparison-grid { grid-template-columns: 1fr; }
+  .content { padding: 20px; }
+  .page-header { padding: 24px 20px 16px; }
+  .tab-bar { padding: 0 20px; }
+}
+
+.highlight { background: var(--yellow-l); padding: 1px 4px; border-radius: 3px; }
+
+/* Q&A */
+.qa { border-left: 4px solid var(--purple); background: var(--purple-l); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+.qa .q { font-weight: 700; color: var(--purple); font-size: 14px; margin-bottom: 6px; }
+.qa .a { font-size: 13.5px; color: var(--text2); }
+
+/* cross-ref chips */
+.xref-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.xref {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-radius: 10px;
+  background: var(--bg2); border: 1px solid var(--border);
+  text-decoration: none; color: var(--text); font-weight: 600; font-size: 13px;
+  box-shadow: var(--shadow-sm); transition: all .15s;
+}
+.xref:hover { border-color: var(--blue); color: var(--blue-d); transform: translateY(-1px); }
+.xref .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part V · Chapter 1 — <b>Choosing the Right Database</b></span><span class="bkspacer"></span></nav>
+
+<div class="page-header">
+  <div class="header-tag">FAANG System Design Interview Prep · Data Layer</div>
+  <h1 class="ht header-title">Choosing the Right <span>Database</span></h1>
+  <div class="header-desc">The decision framework interviewers actually want: derive the datastore from access patterns, consistency needs, throughput, data-model fit, scale, latency, cost, and operational burden — then defend it. Includes a cross-engine comparison matrix and classic scenario mappings.</div>
+</div>
+
+<div class="tab-bar">
+  <a class="tab-btn active" href="#framework">Framework</a>
+  <a class="tab-btn" href="#dimensions">7 Dimensions</a>
+  <a class="tab-btn" href="#cap">CAP / PACELC</a>
+  <a class="tab-btn" href="#matrix">Comparison Matrix</a>
+  <a class="tab-btn" href="#models">Data Models</a>
+  <a class="tab-btn" href="#scenarios">Scenarios</a>
+  <a class="tab-btn" href="#polyglot">Polyglot</a>
+  <a class="tab-btn" href="#qa">Interview Q&amp;A</a>
+</div>
+
+<div class="content">
+
+<!-- ==================== FRAMEWORK ==================== -->
+<div class="section" id="framework">
+  <h2 class="section-title">The Decision Framework</h2>
+  <p>In a system-design interview, "which database?" is never answered by naming a favorite product. It is answered by <strong>deriving</strong> the store from the workload. The signal an interviewer is grading is whether you can state requirements, translate them into properties a datastore must have, and then justify a choice against explicit trade-offs. A great answer sounds like: <em>"Reads are 100:1 over writes, we need single-digit-millisecond point lookups by key at 500k RPS, the data is a self-contained document, and we can tolerate reading data that is a few seconds stale — so I'll use a partitioned key-value/document store and front it with a cache."</em></p>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">&#129518;</span> The funnel: requirements &rarr; properties &rarr; store</div>
+    <ol>
+      <li><strong>Enumerate access patterns first.</strong> List every read and write the feature performs, keyed by <em>how</em> it looks data up (by primary key? by secondary attribute? by range? full-text? aggregation?). The access pattern, not the data, dictates the store — especially for non-relational engines where you model the table around the query.</li>
+      <li><strong>Quantify.</strong> Read/write ratio, peak QPS, object size, total dataset size, growth rate, and the latency budget (p50 and p99).</li>
+      <li><strong>Fix the correctness bar.</strong> Do you need strong consistency and multi-item transactions, or is eventual consistency acceptable? What must survive a region failure?</li>
+      <li><strong>Match to a data model.</strong> Relational, key-value, document, wide-column, columnar-analytical, search, or blob.</li>
+      <li><strong>Check it scales &amp; costs out.</strong> Can it partition to your data size and QPS? What is the $ and the operational burden (managed vs self-run, failover, backups, schema changes)?</li>
+      <li><strong>Consider polyglot.</strong> The right answer is frequently <em>more than one</em> store — a system of record plus a cache, an index, and an analytics sink.</li>
+    </ol>
+  </div>
+
+  <div class="key-point">
+    <strong>Interview meta-tip:</strong> Say "it depends" only if you immediately name <em>what it depends on</em>. "It depends on the read/write ratio and whether we need cross-item transactions" is a strong sentence; "it depends" alone is a non-answer. Always close with a concrete recommendation and one sentence naming what you gave up.
+  </div>
+
+  <div class="info-box">
+    <strong>OLTP vs OLAP is the first fork.</strong> If the workload is many small, latency-sensitive point operations serving live traffic, you are in <strong>OLTP</strong> territory (MySQL, Postgres, DynamoDB, Cassandra, MongoDB, Redis). If it is a few large scans that aggregate over huge historical datasets for dashboards/ML, you are in <strong>OLAP</strong> territory (BigQuery, Redshift, Snowflake, ClickHouse). Trying to serve OLAP from an OLTP row-store — or user-facing reads from a columnar warehouse — is the single most common mismatched answer.
+  </div>
+</div>
+
+<!-- ==================== 7 DIMENSIONS ==================== -->
+<div class="section" id="dimensions">
+  <h2 class="section-title">The Seven Decision Dimensions</h2>
+  <p>Every datastore choice is a point in this seven-axis space. Walk them explicitly and the recommendation writes itself.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>1 &middot; Access patterns — model around the query</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <ul>
+        <li><strong>Point lookup by key</strong> (get value for id) &rarr; key-value / document / any indexed store. Cheapest possible operation.</li>
+        <li><strong>Lookup by non-key attribute</strong> &rarr; you need a secondary index (relational secondary index, DynamoDB GSI, MongoDB secondary index).</li>
+        <li><strong>Range / ordered scan</strong> (latest N per key, time windows) &rarr; a store that keeps data sorted: relational B+tree, Cassandra clustering columns, DynamoDB sort key.</li>
+        <li><strong>Ad-hoc joins across entities</strong> &rarr; relational (MySQL/Postgres). NoSQL forces you to denormalize or do client-side joins.</li>
+        <li><strong>Full-text / relevance search</strong> &rarr; a search engine (Elasticsearch/OpenSearch), not <code>LIKE '%term%'</code>.</li>
+        <li><strong>Large aggregations over history</strong> &rarr; a columnar warehouse (BigQuery).</li>
+      </ul>
+      <div class="key-point"><strong>NoSQL rule:</strong> in relational you design the schema, then write queries. In DynamoDB/Cassandra you <em>start from the queries</em> and design a table (partition key + sort key) that answers each one with a single partition read. If a new query needs a different key, you add a new table/index — you do not <code>JOIN</code>.</div>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>2 &middot; Consistency vs availability (CAP / PACELC)</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p>How fresh must a read be, and what happens during a network partition or region failure? A store that chooses availability will keep serving (possibly stale) data during a partition; a store that chooses consistency may reject requests to avoid divergence. See the <a href="#cap">CAP / PACELC section</a> for the full treatment. Money movement and inventory decrements usually need strong consistency and transactions; a "likes" counter or a feed can tolerate eventual consistency.</p>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>3 &middot; Read/write ratio &amp; throughput</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <ul>
+        <li><strong>Read-heavy</strong> (e.g. 100:1): add read replicas and a cache (Redis). Reads scale horizontally cheaply; the hard part is cache invalidation and replica lag.</li>
+        <li><strong>Write-heavy</strong> (ingest, metrics, chat): favor <strong>LSM-tree</strong> engines (Cassandra, ScyllaDB, RocksDB-backed stores) that turn random writes into sequential appends, versus B+tree stores that do random-write-in-place. Also consider buffering writes through a log (Kafka).</li>
+        <li><strong>Throughput ceiling of a single primary:</strong> a single well-tuned MySQL/Postgres primary handles thousands to low-tens-of-thousands of write TPS. Beyond that you shard or move to a natively-partitioned store (DynamoDB/Cassandra) that scales writes linearly with nodes.</li>
+      </ul>
+      <div class="info-box"><strong>B+tree vs LSM in one line:</strong> B+tree = read-optimized, write-amplifies via in-place random page writes. LSM = write-optimized for incoming random writes (sequential appends), but pays read amplification and its own write amplification from background compaction (hence compaction tuning). Match the tree to your dominant operation.</div>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>4 &middot; Data-model fit</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p>Force-fitting a model is expensive forever. Relational for highly-related, normalized entities with ad-hoc queries; document for self-contained aggregates with flexible schema; wide-column for massive time-ordered/partitioned data; key-value for pure lookups; columnar for analytics; graph for deep relationship traversal; search for text. See <a href="#models">Data Models</a>.</p>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>5 &middot; Scale &amp; partitioning</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <ul>
+        <li><strong>Vertical scaling</strong> (bigger box) is the simplest lever and buys a lot; use it before sharding.</li>
+        <li><strong>Partitioning/sharding key choice is the highest-leverage decision.</strong> A good key spreads load evenly and keeps each query on one partition. A bad key creates a <strong>hot partition</strong> (e.g. partitioning chat by <code>date</code> so all of today's traffic hits one node).</li>
+        <li><strong>Natively-sharded stores</strong> (DynamoDB, Cassandra, MongoDB sharded clusters, BigQuery) rebalance for you; <strong>manually-sharded</strong> relational (via Vitess or app-level routing) puts that burden on you, and cross-shard transactions/joins get expensive (distributed 2PC).</li>
+        <li><strong>Consistent hashing</strong> minimizes data movement when adding/removing nodes.</li>
+      </ul>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>6 &middot; Latency budget</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <div class="table-wrapper"><table>
+        <thead><tr><th>Tier</th><th>Typical p99</th><th>Stores</th></tr></thead>
+        <tbody>
+          <tr><td>In-memory</td><td>&lt; 1 ms</td><td>Redis, Memcached</td></tr>
+          <tr><td>Managed KV / SSD OLTP</td><td>single-digit ms</td><td>DynamoDB, Cassandra, well-cached MySQL/Postgres/MongoDB</td></tr>
+          <tr><td>Disk-bound OLTP query</td><td>10s of ms</td><td>Uncached relational query hitting disk</td></tr>
+          <tr><td>Analytical scan</td><td>hundreds of ms &ndash; seconds</td><td>BigQuery, Redshift, ClickHouse</td></tr>
+          <tr><td>Blob fetch</td><td>10s&ndash;100s ms</td><td>Object storage (S3/GCS)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="key-point"><strong>If the budget is sub-millisecond, the answer includes a cache</strong> — no durable, disk-backed store reliably serves &lt;1 ms at the p99. The durable store remains the system of record.</div>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>7 &middot; Cost &amp; operational burden</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <ul>
+        <li><strong>Managed vs self-hosted:</strong> managed (DynamoDB, BigQuery, Aurora, Atlas) trades $ for far less operational toil — no patching, backups, or failover to run yourself. In interviews, prefer managed unless there's a reason not to, and say why.</li>
+        <li><strong>Pricing model shapes design.</strong> DynamoDB bills read/write capacity (and storage) — a hot-partition or full-scan pattern is directly a cost bug. BigQuery on-demand bills by <em>bytes scanned</em>, so partitioning, clustering, and <code>SELECT</code>-only-needed-columns are cost controls, not just perf tuning.</li>
+        <li><strong>Operational burden</strong> includes schema migrations, resharding, version upgrades, backup/restore, and on-call. A store your team can actually run beats a theoretically-superior one they can't.</li>
+      </ul>
+    </div></div>
+  </div>
+</div>
+
+<!-- ==================== CAP / PACELC ==================== -->
+<div class="section" id="cap">
+  <h2 class="section-title">CAP and PACELC — Say It Precisely</h2>
+  <p>Vague, imprecise CAP answers hurt you in interviews — be precise.</p>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">&#9878;</span> CAP theorem (Brewer)</div>
+    <p>During a <strong>network partition (P)</strong>, a distributed store must choose between <strong>Consistency (C)</strong> — every read sees the latest write (linearizability) — and <strong>Availability (A)</strong> — every request gets a non-error response. You cannot have both <em>while partitioned</em>. Crucially, <strong>P is not optional</strong> in a real distributed system (networks fail), so the meaningful choice is <strong>CP vs AP</strong> during a partition. "CA" describes a single node, not a distributed system.</p>
+    <ul>
+      <li><strong>CP</strong> (consistency during partition): reject/limit requests on the minority side to avoid divergence. Examples: MongoDB (primary-based), HBase, ZooKeeper/etcd, Spanner.</li>
+      <li><strong>AP</strong> (availability during partition): keep accepting reads/writes on all sides, reconcile later. Examples: Cassandra, Riak, and the original 2007 Amazon <em>Dynamo</em> paper (vector clocks + client-side conflict merge + sloppy quorums). Note the managed <strong>DynamoDB</strong> service is different: each partition uses a single leader + quorum replication (leaning CP for writes), but defaults to eventually-consistent reads and is engineered to prioritize availability operationally. The "accept on all sides, reconcile later" model applies to multi-region <em>Global Tables</em> (last-writer-wins) and the classic Dynamo paper, not to single-region writes.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">&#9201;</span> PACELC — the more useful model</div>
+    <p>CAP only describes behavior <em>during</em> a partition, which is rare. <strong>PACELC</strong> (Abadi) adds the common case: <em>if Partition, choose Availability or Consistency; Else (normal operation), choose Latency or Consistency.</em> Even with no partition, replication forces a trade — waiting for replicas to acknowledge (consistency) costs latency.</p>
+    <div class="table-wrapper"><table>
+      <thead><tr><th>Store</th><th>PACELC classification</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td>DynamoDB / Cassandra</td><td><span class="badge badge-yellow">PA / EL</span> (tunable)</td><td>Favor availability under partition; favor low latency normally (eventual consistency by default). Both can be tuned toward consistency per request (strongly-consistent read / <code>QUORUM</code>).</td></tr>
+        <tr><td>MongoDB</td><td><span class="badge badge-blue">PC / EC</span> (tunable)</td><td>Primary-based: consistency-leaning, but read preference / read &amp; write concern let you relax it.</td></tr>
+        <tr><td>MySQL / Postgres (async replica)</td><td><span class="badge badge-blue">PC / EL</span></td><td>Primary is the consistent source of truth; async replicas are lower-latency but stale (replica lag).</td></tr>
+        <tr><td>Google Spanner</td><td><span class="badge badge-blue">PC / EC</span></td><td>Chooses consistency in both cases (TrueTime + Paxos); pays latency to stay externally consistent.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="info-box"><strong>Tunable consistency is the pragmatic reality.</strong> Cassandra and DynamoDB aren't strictly "AP" — they let you dial consistency <em>per operation</em>. Cassandra: choose <code>ONE</code>, <code>QUORUM</code>, or <code>ALL</code> for reads and writes; if <code>R + W &gt; RF</code> (replication factor) the read and write quorums overlap, so a read is guaranteed to see the latest acknowledged write (strong consistency). DynamoDB: default reads are eventually consistent (cheaper, lower latency); request a <em>strongly consistent read</em> for the latest value within a region. Global Tables replicate across regions with last-writer-wins and are eventually consistent between regions.</div>
+
+  <div class="warning-box"><strong>Don't claim "strong consistency" for free.</strong> If you say a design is strongly consistent, be ready to name the mechanism (single primary, quorum, consensus like Raft/Paxos) and the cost you pay (write latency, reduced availability during failover, or a leader bottleneck).</div>
+</div>
+
+<!-- ==================== COMPARISON MATRIX ==================== -->
+<div class="section" id="matrix">
+  <h2 class="section-title">Cross-Engine Comparison Matrix</h2>
+  <p>The six stores this library covers in depth, side by side. Numbers are order-of-magnitude guidance for interviews, not SLAs.</p>
+
+  <div class="table-wrapper"><table>
+    <thead>
+      <tr>
+        <th>Dimension</th>
+        <th>MySQL</th>
+        <th>Redis</th>
+        <th>MongoDB</th>
+        <th>Cassandra</th>
+        <th>DynamoDB</th>
+        <th>BigQuery</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Model</strong></td>
+        <td>Relational (rows)</td>
+        <td>In-memory KV + data structures</td>
+        <td>Document (BSON)</td>
+        <td>Wide-column</td>
+        <td>Key-value + document</td>
+        <td>Columnar OLAP warehouse</td>
+      </tr>
+      <tr>
+        <td><strong>Storage engine</strong></td>
+        <td>B+tree (InnoDB)</td>
+        <td>RAM (+ RDB/AOF persistence)</td>
+        <td>B+tree (WiredTiger)</td>
+        <td>LSM-tree</td>
+        <td>proprietary (not publicly specified)</td>
+        <td>Columnar (Capacitor), Dremel exec</td>
+      </tr>
+      <tr>
+        <td><strong>Best workload</strong></td>
+        <td>OLTP, joins, transactions</td>
+        <td>Cache, sessions, counters, queues</td>
+        <td>Flexible docs, evolving schema</td>
+        <td>Write-heavy, time-series, huge scale</td>
+        <td>Serverless KV at any scale</td>
+        <td>Analytics over TB&ndash;PB</td>
+      </tr>
+      <tr>
+        <td><strong>Consistency</strong></td>
+        <td>Strong (ACID, single primary)</td>
+        <td>Strong on primary (async replicas)</td>
+        <td>Tunable (default strong on primary)</td>
+        <td>Tunable (ONE&hellip;QUORUM&hellip;ALL)</td>
+        <td>Eventual default; strong read opt-in</td>
+        <td>Strong (single-writer semantics)</td>
+      </tr>
+      <tr>
+        <td><strong>Transactions</strong></td>
+        <td><span class="badge badge-green">Full multi-row ACID</span></td>
+        <td>MULTI/EXEC + Lua (limited)</td>
+        <td>Multi-doc ACID (4.0+, sharded 4.2+)</td>
+        <td><span class="badge badge-red">No general txns</span> (LWT for CAS)</td>
+        <td>TransactWriteItems (&le;100 items)</td>
+        <td><span class="badge badge-red">Not for OLTP txns</span></td>
+      </tr>
+      <tr>
+        <td><strong>Scaling</strong></td>
+        <td>Vertical + read replicas; shard manually (Vitess)</td>
+        <td>Redis Cluster (16384 hash slots)</td>
+        <td>Auto-sharded clusters</td>
+        <td>Linear, add nodes (masterless)</td>
+        <td>Fully managed auto-partition</td>
+        <td>Serverless, storage/compute separated</td>
+      </tr>
+      <tr>
+        <td><strong>Latency (p99)</strong></td>
+        <td>ms (cached) &ndash; 10s ms</td>
+        <td><span class="badge badge-green">&lt; 1 ms</span></td>
+        <td>single-digit ms</td>
+        <td>single-digit ms</td>
+        <td><span class="badge badge-green">single-digit ms</span></td>
+        <td>sub-sec &ndash; seconds</td>
+      </tr>
+      <tr>
+        <td><strong>Joins / ad-hoc</strong></td>
+        <td><span class="badge badge-green">Yes, rich SQL</span></td>
+        <td>No</td>
+        <td>$lookup (limited)</td>
+        <td>No (denormalize)</td>
+        <td>No (denormalize)</td>
+        <td>Yes, full SQL analytics</td>
+      </tr>
+      <tr>
+        <td><strong>Durability</strong></td>
+        <td>WAL (redo) + replication</td>
+        <td>Optional (AOF everysec / RDB)</td>
+        <td>Journal + replica set</td>
+        <td>Commit log + replication</td>
+        <td>Replicated across 3 AZs</td>
+        <td>Replicated managed storage</td>
+      </tr>
+      <tr>
+        <td><strong>Ops model</strong></td>
+        <td>Self-run or managed (RDS/Aurora)</td>
+        <td>Self-run or managed (ElastiCache)</td>
+        <td>Self-run or Atlas</td>
+        <td>Self-run or managed (Keyspaces)</td>
+        <td><span class="badge badge-green">Fully managed</span></td>
+        <td><span class="badge badge-green">Fully managed serverless</span></td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <div class="key-point"><strong>Reading the matrix in an interview:</strong> pick the two or three rows that matter for the prompt (usually consistency, access pattern, and scale) and reason down those columns — do not recite the whole grid. The point is targeted matching, not encyclopedic recall.</div>
+
+  <h3 class="subsection-title">Also worth naming (brief)</h3>
+  <div class="table-wrapper"><table>
+    <thead><tr><th>Store</th><th>What it is</th><th>Reach for it when&hellip;</th></tr></thead>
+    <tbody>
+      <tr><td><strong>PostgreSQL</strong></td><td>Relational, MVCC, powerful SQL, JSONB, extensions (PostGIS, pgvector)</td><td>You want relational + rich types/geo/vector/analytics in one engine; default "serious OLTP" pick alongside MySQL.</td></tr>
+      <tr><td><strong>Kafka</strong></td><td>Distributed, partitioned, replicated append-only log</td><td>You need a durable event stream / buffer / write-ahead pipe between services — <em>not</em> a database of record for point queries.</td></tr>
+      <tr><td><strong>Elasticsearch / OpenSearch</strong></td><td>Inverted-index search engine, BM25 relevance, aggregations</td><td>Full-text search, fuzzy matching, faceting, log analytics — as a secondary index fed from the system of record, never the sole source of truth.</td></tr>
+      <tr><td><strong>Object storage (S3 / GCS)</strong></td><td>Massively-scalable, cheap blob store; 11 nines durability</td><td>Images, video, backups, data-lake files, large immutable blobs — store the blob here, keep only the metadata/pointer in your DB.</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<!-- ==================== DATA MODELS ==================== -->
+<div class="section" id="models">
+  <h2 class="section-title">Data-Model Fit</h2>
+
+  <div class="comparison-grid">
+    <div class="card" style="margin:0">
+      <div class="card-title" style="color:var(--blue-d)">Relational (MySQL, Postgres)</div>
+      <ul>
+        <li>Normalized tables, foreign keys, ad-hoc <code>JOIN</code>s, ACID transactions.</li>
+        <li>Best when relationships and consistency matter and query shapes evolve.</li>
+        <li>Cost: single-primary write ceiling; sharding is manual and joins/txns break across shards.</li>
+      </ul>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-title" style="color:var(--red)">Key-Value (Redis, DynamoDB)</div>
+      <ul>
+        <li>Get/put by key; O(1) lookups; trivially partitionable.</li>
+        <li>Best for caches, sessions, and any "fetch this blob by id" path.</li>
+        <li>Cost: no ad-hoc queries; secondary access needs extra indexes/tables.</li>
+      </ul>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-title" style="color:var(--green)">Document (MongoDB)</div>
+      <ul>
+        <li>Self-contained JSON/BSON aggregates; flexible schema; nested arrays.</li>
+        <li>Best when one read returns one whole entity (product, profile, order).</li>
+        <li>Cost: cross-document joins are weak; unbounded document growth is an anti-pattern.</li>
+      </ul>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-title" style="color:var(--purple)">Wide-Column (Cassandra)</div>
+      <ul>
+        <li>Partition key + clustering columns keep rows sorted within a partition.</li>
+        <li>Best for write-heavy, time-ordered, per-key data at massive scale.</li>
+        <li>Cost: query-first modeling, no joins, must denormalize; beware unbounded partitions.</li>
+      </ul>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-title" style="color:var(--teal)">Columnar / OLAP (BigQuery)</div>
+      <ul>
+        <li>Column-oriented storage + vectorized execution; scans billions of rows fast.</li>
+        <li>Best for aggregations, reporting, ML feature generation.</li>
+        <li>Cost: not for row-level point reads/writes or live user traffic.</li>
+      </ul>
+    </div>
+    <div class="card" style="margin:0">
+      <div class="card-title" style="color:var(--orange)">Search / Graph / Blob</div>
+      <ul>
+        <li><strong>Search</strong> (Elasticsearch): inverted index for text/relevance.</li>
+        <li><strong>Graph</strong> (Neo4j/Neptune): fast pointer-following traversals — Neo4j's native engine uses index-free adjacency (O(1) per hop); managed Neptune resolves hops via index lookups rather than true index-free adjacency.</li>
+        <li><strong>Blob</strong> (S3): the bytes; DB holds the pointer.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENARIOS ==================== -->
+<div class="section" id="scenarios">
+  <h2 class="section-title">Eight Classic Interview Scenarios</h2>
+  <p>Each maps a prompt to a recommended store via the framework. State the deciding dimension, then commit.</p>
+
+  <div class="collapsible open">
+    <div class="collapsible-header"><span>1 &middot; URL shortener</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p><strong>Access pattern:</strong> write once (create short code &rarr; long URL), read many by exact key. Extremely read-heavy, tiny objects, no joins, no range scans.</p>
+      <p><strong>Recommend:</strong> <span class="badge badge-blue">Key-value store</span> — DynamoDB or Cassandra keyed on the short code, fronted by a <span class="badge badge-red">Redis</span> cache for the most-requested links. A single MySQL/Postgres table also works fine at moderate scale and gives you a free auto-increment counter for base62 code generation.</p>
+      <p><strong>Why:</strong> the workload is a pure point lookup by primary key — the simplest, most partitionable operation. There is nothing relational here, so a KV store scales reads and writes linearly and stays sub-10 ms; the cache absorbs the viral-link read spikes. Choose a strongly-consistent read only on <em>create</em> to avoid duplicate codes; reads can be eventually consistent.</p>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>2 &middot; Social feed / timeline</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p><strong>Access pattern:</strong> read a user's timeline (latest N posts from people they follow) with very low latency; writes fan out to many followers. Read-dominated, staleness of a few seconds is fine.</p>
+      <p><strong>Recommend:</strong> <span class="badge badge-red">Redis</span> (sorted set / list per user) as the precomputed timeline cache, backed by a durable wide-column/KV store (<span class="badge badge-purple">Cassandra</span> or <span class="badge badge-blue">DynamoDB</span>) for posts and the follow graph. Media in <span class="badge badge-teal">object storage</span>.</p>
+      <p><strong>Why:</strong> <em>fan-out-on-write</em> pushes each new post into followers' Redis timelines so reads are O(1) list slices. Eventual consistency is acceptable for a feed. Use <em>fan-out-on-read</em> (query at read time) for celebrity accounts with millions of followers to avoid write amplification — a hybrid is the mature answer.</p>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>3 &middot; Chat / messaging</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p><strong>Access pattern:</strong> very high write throughput; read recent messages per conversation in time order; effectively infinite history.</p>
+      <p><strong>Recommend:</strong> <span class="badge badge-purple">Cassandra</span> (or DynamoDB) with partition key = <code>conversation_id</code> and clustering key = <code>message_ts</code> (descending). Recent conversations/unread counts in <span class="badge badge-red">Redis</span>.</p>
+      <p><strong>Why:</strong> LSM-tree write path suits the write-heavy ingest; partitioning by conversation keeps all of one chat's messages co-located and sorted, so "last 50 messages" is a single-partition sorted range read. <span class="warning-box"><strong>Watch the hot/large partition:</strong> a hugely active group could create an unbounded partition — bucket by <code>(conversation_id, month)</code> to cap partition size.</span></p>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>4 &middot; Metrics / time-series</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p><strong>Access pattern:</strong> huge volume of timestamped writes; queries are range scans over time windows plus downsampling/retention.</p>
+      <p><strong>Recommend:</strong> a purpose-built time-series DB (<span class="badge badge-yellow">Prometheus, InfluxDB, TimescaleDB</span>) for live monitoring; among the matrix stores, <span class="badge badge-purple">Cassandra</span> partitioned by <code>(series_id, time_bucket)</code> serves as a scalable TSDB. Pipe raw events through <span class="badge badge-blue">Kafka</span> and land history in <span class="badge badge-teal">BigQuery</span> for long-range analysis.</p>
+      <p><strong>Why:</strong> time-series needs write-optimized storage, time-bucketed partitioning, retention/TTL, and downsampling — exactly what TSDBs specialize in and what a B+tree OLTP store handles poorly. Keep hot recent data in the TSDB; roll up cold data into the warehouse.</p>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>5 &middot; Analytics / reporting dashboards</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p><strong>Access pattern:</strong> large aggregations (<code>GROUP BY</code>, joins, window functions) over months of historical data; few concurrent analysts; latency of seconds is fine.</p>
+      <p><strong>Recommend:</strong> <span class="badge badge-teal">BigQuery</span> (or Redshift/Snowflake/ClickHouse). Ingest via streaming or batch load; partition and cluster tables on the common filter columns.</p>
+      <p><strong>Why:</strong> columnar storage reads only the referenced columns and compresses aggressively; vectorized/distributed execution scans billions of rows in seconds — 10&ndash;100&times; faster than a row-store for scans. <span class="warning-box"><strong>Never run these on the OLTP primary</strong> — a heavy analytical scan can starve live user traffic. Replicate/ETL into the warehouse instead.</span> On-demand BigQuery bills by bytes scanned, so partition pruning and column selection are cost controls.</p>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>6 &middot; Session store</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p><strong>Access pattern:</strong> read/write a small session blob by session id on nearly every request; must be fast; entries expire.</p>
+      <p><strong>Recommend:</strong> <span class="badge badge-red">Redis</span> with a per-key <code>TTL</code> (or DynamoDB with TTL for a fully-managed, durable option).</p>
+      <p><strong>Why:</strong> in-memory sub-millisecond get/set with native expiry is exactly the session workload. Losing a session on a rare cache flush is usually acceptable (user re-logs in); if not, enable AOF persistence or use DynamoDB. Do <em>not</em> keep sessions in a relational DB — it's needless disk I/O on the hottest path.</p>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>7 &middot; Leaderboard / ranking</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p><strong>Access pattern:</strong> update a score, then read top-N and a player's rank in real time.</p>
+      <p><strong>Recommend:</strong> <span class="badge badge-red">Redis sorted set (ZSET)</span>: <code>ZADD board score member</code>, <code>ZREVRANGE board 0 9 WITHSCORES</code> for top-10, <code>ZREVRANK board member</code> for a player's rank.</p>
+      <p><strong>Why:</strong> a sorted set keeps members ordered by score with O(log N) updates and O(log N + M) range reads — computing rank in any other store means an expensive sort/scan per read. Persist the authoritative scores in a durable store and treat Redis as the fast ranking index.</p>
+      <pre><code>ZADD game:leaderboard 4820 "player:42"
+ZINCRBY game:leaderboard 150 "player:42"
+ZREVRANGE game:leaderboard 0 9 WITHSCORES   # top 10
+ZREVRANK  game:leaderboard "player:42"       # 0-based rank</code></pre>
+    </div></div>
+  </div>
+
+  <div class="collapsible">
+    <div class="collapsible-header"><span>8 &middot; Shopping cart</span><span class="arrow">&#9654;</span></div>
+    <div class="collapsible-body"><div class="collapsible-content">
+      <p><strong>Access pattern:</strong> read/write a cart by user id; must stay available (an unavailable cart loses sales); writes are frequent; data is self-contained per user.</p>
+      <p><strong>Recommend:</strong> <span class="badge badge-blue">DynamoDB</span> keyed on <code>user_id</code> (the canonical Amazon Dynamo use case), optionally cached in Redis.</p>
+      <p><strong>Why:</strong> availability &gt; strict consistency here — you'd rather accept an "add to cart" than reject it, and a stale cart read is tolerable. A KV store keyed by user gives a single-partition read of the whole cart and scales horizontally. Managed DynamoDB delivers the high availability you want (and defaults to eventually-consistent reads). <span class="info-box">It was the <em>classic 2007 Dynamo paper</em> — not today's managed DynamoDB — that let all replicas accept writes and tolerated conflicting versions, merging them client-side via vector clocks (a re-added item reappearing beats losing the sale). Checkout, however, moves to a strongly-consistent, transactional path (inventory decrement + payment), e.g. DynamoDB transactions or a relational store.</span></p>
+    </div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">&#128203;</span> Scenario cheat-sheet</div>
+    <div class="table-wrapper"><table>
+      <thead><tr><th>Scenario</th><th>Primary store</th><th>Deciding dimension</th></tr></thead>
+      <tbody>
+        <tr><td>URL shortener</td><td>KV (DynamoDB) + Redis cache</td><td>Point lookup, read-heavy</td></tr>
+        <tr><td>Social feed</td><td>Redis timeline + Cassandra/DynamoDB</td><td>Low-latency reads, fan-out, eventual OK</td></tr>
+        <tr><td>Chat</td><td>Cassandra (conv_id / ts)</td><td>Write-heavy, time-ordered per key</td></tr>
+        <tr><td>Metrics / time-series</td><td>TSDB / Cassandra; BigQuery for history</td><td>Write volume + time-range scans</td></tr>
+        <tr><td>Analytics dashboards</td><td>BigQuery</td><td>Large aggregations (OLAP)</td></tr>
+        <tr><td>Session store</td><td>Redis (TTL)</td><td>Sub-ms hot path + expiry</td></tr>
+        <tr><td>Leaderboard</td><td>Redis ZSET</td><td>Real-time ranking</td></tr>
+        <tr><td>Shopping cart</td><td>DynamoDB</td><td>Availability + per-user KV</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ==================== POLYGLOT ==================== -->
+<div class="section" id="polyglot">
+  <h2 class="section-title">Polyglot Persistence</h2>
+  <p>Real systems rarely use one store. <strong>Polyglot persistence</strong> means using the right tool per access pattern and keeping them in sync. The senior move in an interview is to name a <strong>system of record (SoR)</strong> — the single source of truth — and treat every other store as a derived view fed from it.</p>
+
+  <div class="diagram-container">
+    <svg viewBox="0 0 860 380" width="820" xmlns="http://www.w3.org/2000/svg">
+      <text x="430" y="24" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#0f172a">Polyglot Persistence around a System of Record</text>
+
+      <!-- App -->
+      <rect x="360" y="45" width="140" height="46" rx="8" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+      <text x="430" y="73" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#1d4ed8">Application</text>
+
+      <!-- SoR -->
+      <rect x="330" y="140" width="200" height="60" rx="10" fill="#dcfce7" stroke="#117e39" stroke-width="2"/>
+      <text x="430" y="165" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#166534">System of Record</text>
+      <text x="430" y="184" text-anchor="middle" font-family="Inter" font-size="10" fill="#334155">MySQL / Postgres / DynamoDB</text>
+
+      <!-- App to SoR -->
+      <path d="M430 91 L430 140" stroke="#59677c" stroke-width="2" marker-end="url(#ah)"/>
+      <text x="470" y="118" font-family="Inter" font-size="9" fill="#59677c">writes (SoT)</text>
+
+      <!-- Cache -->
+      <rect x="60" y="140" width="150" height="60" rx="10" fill="#fee2e2" stroke="#c62020" stroke-width="2"/>
+      <text x="135" y="165" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#c62020">Cache</text>
+      <text x="135" y="184" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">Redis — hot reads</text>
+
+      <!-- Search -->
+      <rect x="650" y="140" width="150" height="60" rx="10" fill="#ffedd5" stroke="#b74509" stroke-width="2"/>
+      <text x="725" y="165" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#b74509">Search</text>
+      <text x="725" y="184" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">Elasticsearch</text>
+
+      <!-- Warehouse -->
+      <rect x="330" y="270" width="200" height="60" rx="10" fill="#ccfbf1" stroke="#0b786e" stroke-width="2"/>
+      <text x="430" y="295" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#0b786e">Analytics Warehouse</text>
+      <text x="430" y="314" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">BigQuery (OLAP)</text>
+
+      <!-- Blob -->
+      <rect x="650" y="270" width="150" height="60" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+      <text x="725" y="295" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#7c3aed">Object Store</text>
+      <text x="725" y="314" text-anchor="middle" font-family="Inter" font-size="9" fill="#334155">S3 — blobs</text>
+
+      <!-- CDC / propagation lines -->
+      <path d="M330 175 L210 175" stroke="#c62020" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ah)"/>
+      <path d="M530 175 L650 175" stroke="#b74509" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ah)"/>
+      <path d="M430 200 L430 270" stroke="#0b786e" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#ah)"/>
+      <path d="M530 195 Q640 240 690 270" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#ah)"/>
+      <text x="440" y="245" text-anchor="start" font-family="Inter" font-size="9" fill="#0b786e">CDC / ETL (Kafka)</text>
+
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 9 3.5, 0 7" fill="#59677c"/>
+        </marker>
+      </defs>
+    </svg>
+    <div class="diagram-caption">Fig 1: Writes hit the system of record; derived stores (cache, search, warehouse, blob) are kept in sync via change-data-capture / an event log.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">&#128257;</span> Keeping derived stores in sync</div>
+    <ul>
+      <li><strong>Cache-aside</strong> for Redis: on read miss, load from SoR and populate; on write, update SoR then invalidate/update the cache. Set TTLs to bound staleness.</li>
+      <li><strong>Change Data Capture (CDC):</strong> tail the SoR's write log (e.g. MySQL binlog via Debezium) into <strong>Kafka</strong>, then fan out to the search index and warehouse. Decouples producers from consumers and gives replay.</li>
+      <li><strong>Dual writes are an anti-pattern:</strong> writing to two stores from application code has no atomicity — a crash between writes leaves them inconsistent. Prefer CDC or the transactional outbox pattern.</li>
+    </ul>
+  </div>
+
+  <div class="key-point"><strong>Interview framing:</strong> "MySQL is my system of record for orders (ACID, transactions). I stream its binlog through Kafka into Elasticsearch for product search and into BigQuery for analytics, and I cache hot product reads in Redis. Each store owns a job it's best at; the SoR owns the truth." That one paragraph demonstrates polyglot thinking, CDC, and clear ownership.</div>
+</div>
+
+<!-- ==================== CROSS-REFS ==================== -->
+<div class="section" id="deepdives">
+  <h2 class="section-title">Go Deeper — The Six Engine Deep-Dives</h2>
+  <p>Each store in the matrix has its own deep-dive in this library. Read the framework here, then drill into the engine you chose.</p>
+  <div class="xref-grid">
+    <a class="xref" href="mysql_deep_dive.html"><span class="dot" style="background:var(--blue)"></span>MySQL / InnoDB Deep Dive</a>
+    <a class="xref" href="redis_deep_dive.html"><span class="dot" style="background:var(--red)"></span>Redis Deep Dive</a>
+    <a class="xref" href="mongodb_deep_dive.html"><span class="dot" style="background:var(--green)"></span>MongoDB Deep Dive</a>
+    <a class="xref" href="cassandra_deep_dive.html"><span class="dot" style="background:var(--purple)"></span>Cassandra Deep Dive</a>
+    <a class="xref" href="dynamodb_deep_dive.html"><span class="dot" style="background:var(--blue-d)"></span>DynamoDB Deep Dive</a>
+    <a class="xref" href="bigquery_deep_dive.html"><span class="dot" style="background:var(--teal)"></span>BigQuery Deep Dive</a>
+  </div>
+</div>
+
+<!-- ==================== INTERVIEW Q&A ==================== -->
+<div class="section" id="qa">
+  <h2 class="section-title">Interview Q&amp;A</h2>
+
+  <div class="qa">
+    <div class="q">Q: "SQL or NoSQL?" — what's the real answer?</div>
+    <div class="a">Reject the false binary. The question is the <em>access pattern and consistency need</em>. Use relational when you need ad-hoc joins, multi-row ACID transactions, and evolving query shapes over related entities. Use a NoSQL store when your access patterns are known and narrow, and you need horizontal write scale or a specific model (KV, document, wide-column). Many systems use both. Name the deciding factor rather than picking a camp.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: When do you introduce a cache, and what breaks?</div>
+    <div class="a">Introduce a cache when reads dominate and the latency budget is tight (sub-ms to low-ms) or the backing store is getting hot. What breaks: <strong>cache invalidation</strong> (stale reads), the <strong>thundering herd</strong> on a popular key expiring (mitigate with request coalescing / staggered TTLs), and <strong>cache stampede</strong> after a flush. Decide the pattern (cache-aside is default) and a staleness bound (TTL). Never let the cache become the source of truth unless you've made it durable on purpose.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: How do you pick a partition/shard key?</div>
+    <div class="a">Pick a key with high cardinality that both (a) spreads writes/reads evenly and (b) co-locates data that's read together. Test it against your top queries: does each land on one partition? Then stress the worst case — is there a value (today's date, a celebrity user, one giant tenant) that concentrates load into one partition? If so, add a bucket/salt to the key. A hot partition caps your whole cluster at one node's throughput regardless of node count.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: Strong vs eventual consistency — how do you decide per feature?</div>
+    <div class="a">Ask "what's the cost of a client reading slightly stale data?" For money, inventory, and uniqueness (usernames), the cost is high &rarr; strong consistency and transactions. For feeds, counts, recommendations, and analytics, brief staleness is invisible &rarr; eventual consistency buys availability and latency. On tunable stores, dial it per operation (DynamoDB strongly-consistent read on the critical path only; Cassandra <code>QUORUM</code> where correctness matters, <code>ONE</code> elsewhere).</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: Why not just use one big relational database for everything?</div>
+    <div class="a">It's a fine default and scales further than people think (replicas + caching + vertical scale). It stops fitting when: writes exceed a single primary's ceiling and sharding breaks your joins/transactions; the workload is analytical scans that starve OLTP; you need sub-ms in-memory access; the data is genuinely schema-less or text-search-shaped; or you need multi-region availability during partitions. Reach for a specialized store only when a measured requirement forces it — premature polyglot adds operational cost.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: How would you serve an OLTP app that also needs heavy analytics?</div>
+    <div class="a">Separate the workloads. Keep the OLTP store (MySQL/Postgres/DynamoDB) for live traffic, and replicate changes via CDC/ETL into an analytical system (BigQuery/Redshift/ClickHouse). Analysts and dashboards query the warehouse; users never touch it. This is HTAP (Hybrid Transactional/Analytical Processing)-by-composition and avoids one workload degrading the other. Mention CDC (binlog &rarr; Kafka &rarr; warehouse) to show how the sync stays near-real-time.</div>
+  </div>
+
+  <div class="qa">
+    <div class="q">Q: Interviewer says "1M writes/sec of telemetry." First move?</div>
+    <div class="a">Don't point that firehose straight at a database. Buffer it through a partitioned log (<strong>Kafka</strong>) to absorb spikes and decouple producers, then consume into a write-optimized store: a TSDB or Cassandra (LSM-tree, partitioned by series + time bucket) for recent queryable data, and batch into object storage / BigQuery for history. Apply TTL/retention and downsampling. The key insights: LSM over B+tree for write-heavy, time-bucketed partitioning to avoid hot/unbounded partitions, and a log as a shock absorber.</div>
+  </div>
+</div>
+
+<!-- ==================== TERMINOLOGY ==================== -->
+<div class="section" id="glossary">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>QPS / RPS</strong></td><td>Queries / Requests Per Second — the operation rate a store must sustain.</td></tr>
+<tr><td><strong>p50 / p99</strong></td><td>50th- and 99th-percentile latency — the median and tail response times of the latency budget.</td></tr>
+<tr><td><strong>OLTP</strong></td><td>Online Transaction Processing — many small, latency-sensitive point operations serving live traffic.</td></tr>
+<tr><td><strong>OLAP</strong></td><td>Online Analytical Processing — large scans that aggregate over historical data for dashboards and ML.</td></tr>
+<tr><td><strong>CAP theorem</strong></td><td>Consistency, Availability, Partition tolerance — during a partition a store must sacrifice C or A.</td></tr>
+<tr><td><strong>PACELC</strong></td><td>Extends CAP: if Partition, choose Availability or Consistency; Else (normal), choose Latency or Consistency.</td></tr>
+<tr><td><strong>B+tree</strong></td><td>Read-optimized index using in-place page writes; the engine behind InnoDB and WiredTiger.</td></tr>
+<tr><td><strong>LSM-tree</strong></td><td>Log-Structured Merge-tree — write-optimized engine turning random writes into sequential appends plus background compaction.</td></tr>
+<tr><td><strong>TPS</strong></td><td>Transactions Per Second — the write-transaction throughput a single primary can sustain.</td></tr>
+<tr><td><strong>Hot partition</strong></td><td>One partition taking disproportionate load, capping the cluster at a single node's throughput.</td></tr>
+<tr><td><strong>Consistent hashing</strong></td><td>Key-to-node mapping that minimizes data movement when nodes are added or removed.</td></tr>
+<tr><td><strong>2PC</strong></td><td>Two-Phase Commit — coordination protocol for atomic transactions spanning multiple shards or nodes.</td></tr>
+<tr><td><strong>ACID</strong></td><td>Atomicity, Consistency, Isolation, Durability — the guarantees of a full transactional store.</td></tr>
+<tr><td><strong>RF / quorum</strong></td><td>Replication Factor; when R + W &gt; RF the read and write quorums overlap, giving strong consistency.</td></tr>
+<tr><td><strong>LWT</strong></td><td>Lightweight Transaction — Cassandra's compare-and-set path for conditional (CAS) writes.</td></tr>
+<tr><td><strong>WAL</strong></td><td>Write-Ahead Log — durability mechanism that logs changes before applying them (e.g. InnoDB redo log).</td></tr>
+<tr><td><strong>MVCC</strong></td><td>Multi-Version Concurrency Control — readers see a consistent snapshot without blocking writers (PostgreSQL).</td></tr>
+<tr><td><strong>TTL</strong></td><td>Time To Live — per-key expiry that auto-deletes data, used for sessions and time-series retention.</td></tr>
+<tr><td><strong>CDC</strong></td><td>Change Data Capture — streaming a store's write log (e.g. binlog) to keep derived stores in sync.</td></tr>
+<tr><td><strong>SoR</strong></td><td>System of Record — the single source of truth from which all derived stores are fed.</td></tr>
+<tr><td><strong>Polyglot persistence</strong></td><td>Using multiple specialized stores, each for the access pattern it fits best.</td></tr>
+<tr><td><strong>HTAP</strong></td><td>Hybrid Transactional/Analytical Processing — serving OLTP and OLAP, here composed via CDC into a warehouse.</td></tr>
+</table>
+</div>
+
+</div> <!-- end .content -->
+
+<script>
+// Collapsible cards
+document.querySelectorAll('.collapsible-header').forEach(header => {
+  header.addEventListener('click', () => {
+    header.parentElement.classList.toggle('open');
+  });
+});
+
+// Nav active-state on scroll
+const navLinks = Array.from(document.querySelectorAll('.tab-btn'));
+const sections = navLinks
+  .map(l => document.querySelector(l.getAttribute('href')))
+  .filter(Boolean);
+const spy = () => {
+  const y = window.scrollY + 90;
+  let current = sections[0];
+  for (const s of sections) { if (s.offsetTop <= y) current = s; }
+  navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + current.id));
+};
+window.addEventListener('scroll', spy, { passive: true });
+spy();
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_three_papers.html">‹ The Google Papers: GFS · MapReduce · Bigtable</a><a class="bkc" href="index.html">📖 Contents</a><a href="mysql_deep_dive.html">MySQL / InnoDB Deep Dive ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design a URL Shortener — Classic System Design Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+  p code,li code,td code{overflow-wrap:anywhere;word-break:break-word;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XI · Chapter 6 — <b>Design a URL Shortener</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Design a URL Shortener</h1>
+  <div class="sub">A classic "warm-up" system-design problem — and a trap, because the easy version hides the real crux: generating short, unique, hard-to-guess keys at scale, and serving billions of redirects with single-digit-millisecond latency. Every number below is computed and re-checked so you can quote it verbatim.</div>
+</header>
+
+<div class="ins"><div class="insl">Read this like a story</div><p>Sections build from "what are we even building" through the estimation that fixes the key length, into the four ways to generate keys (the part interviewers actually grade), then the redirect path's famous 301-vs-302 decision, caching, cleanup, safety, and a probe-by-probe interview script. The math for the key-space and the base62 encode is boxed so you can find it fast on a re-read.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. Problem &amp; Requirements</h2>
+
+<p class="lead">A <strong>URL-shortening service</strong> takes a long URL and returns a short key that redirects to it. Paste in <code>https://www.example-store.com/products/winter-jacket?ref=spring-sale&amp;variant=42</code> and get back <code>https://sho.rt/k2Xr9</code>; anyone who opens the short link is redirected to the original. Short links fit in a text message, a printed QR code, or a character-limited post — and let the operator measure clicks.</p>
+
+<h3>Functional requirements</h3>
+<ul>
+  <li><strong>Shorten:</strong> given a long URL, return a unique short key (the whole point). The short URL is <code>base_domain + "/" + key</code>.</li>
+  <li><strong>Redirect:</strong> given a short key, redirect the browser to the original long URL. This is the overwhelmingly dominant operation.</li>
+  <li><strong>Custom alias (optional):</strong> let a user request a specific key, e.g. <code>/spring-sale</code>, instead of a generated one.</li>
+  <li><strong>Expiration (optional):</strong> a link may carry a time-to-live and stop resolving after it lapses; default to a long or infinite lifetime.</li>
+  <li><strong>Analytics (optional):</strong> count clicks per short link, with coarse breakdowns (time, referrer, geography) for the owner.</li>
+</ul>
+
+<h3>Non-functional requirements</h3>
+<ul>
+  <li><strong>High availability.</strong> A dead redirect breaks every link already printed on a billboard or embedded in an email. Redirect availability is close to sacred.</li>
+  <li><strong>Low-latency redirect.</strong> The redirect is on the hot path of a page load — budget a few milliseconds, ideally &lt; 10 ms end-to-end.</li>
+  <li><strong>Read-heavy.</strong> Reads (redirects) dwarf writes (creations) by roughly <strong>100:1</strong>; the whole design optimizes the read path.</li>
+  <li><strong>Unguessable (optional/depends).</strong> If links must not be enumerable (private content), keys should not be sequential; if public, sequential is fine and denser.</li>
+  <li><strong>At scale.</strong> Billions of stored links and over a hundred thousand redirects per second, growing for years.</li>
+</ul>
+
+<div class="note"><div class="notel">Clarify before you draw</div><p>Ask up front: <em>how many new URLs per day? what read:write ratio? are custom aliases required? must keys be unguessable? do links expire?</em> These four answers pin the key length, the store size, and whether you need a Key Generation Service. Stating them turns a vague warm-up into a scoped problem.</p></div>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. Estimation &amp; Scale</h2>
+<p>The estimation is what makes this problem interesting: it tells you the write QPS, the read QPS you must cache for, the storage bill over years, and — most importantly — <strong>how long the key must be</strong>. Assume <strong>100 million new URLs/day</strong> and a <strong>100:1</strong> read:write ratio.</p>
+
+<h3>Write and read QPS</h3>
+<div class="formula">
+new URLs/day = <b>100,000,000</b> (10<sup>8</sup>)<br>
+seconds/day  = 86,400 ≈ 10<sup>5</sup><br>
+write QPS    = 10<sup>8</sup> / 86,400 ≈ <b>1,157 QPS</b>   <span class="cm"># ≈1,000 with the ÷10⁵ shortcut</span><br>
+read QPS     = 100 × 1,157 ≈ <b>115,741 ≈ 116k QPS</b>     <span class="cm"># 100:1 read:write</span><br>
+peak read    = read × (peak factor ~2) ≈ <b>~230k QPS</b>
+</div>
+<p>So we write ~1.2k/s but must serve ~116k redirects/s (peaking ~2×). That gap is the reason the read path leans on caching and replicas while the write path can stay comparatively simple.</p>
+
+<h3>Storage per record, and over years</h3>
+<p>Each record stores the short key, the long URL, and a little metadata (creation time, expiry, owner, click counter). Long URLs vary; budget ~500 bytes per record including index and per-row overhead.</p>
+<div class="formula">
+bytes/record ≈ <b>500 B</b>   <span class="cm"># key(7) + long URL(~200–400) + metadata + overhead</span><br>
+per day  = 10<sup>8</sup> × 500 B = 5 × 10<sup>10</sup> B = <b>50 GB/day</b><br>
+per year = 50 GB × 365 = 18,250 GB ≈ <b>18.25 TB/year</b><br>
+5 years  = 18.25 TB × 5 = <b>≈ 91 TB</b>
+</div>
+<p>Tens of terabytes over five years: comfortably beyond one commodity node's disk, so the store must <strong>shard</strong> — but it is not so vast that anything exotic is required.</p>
+
+<h3>Key-space math — the length decision</h3>
+<p>Keys use <strong>base62</strong>: the characters <code>[0-9a-zA-Z]</code>, which is 10 + 26 + 26 = <strong>62</strong> symbols. A key of length <code>L</code> can encode <code>62<sup>L</sup></code> distinct values. We must have <code>62<sup>L</sup></code> ≥ the total number of links we will ever mint. Total over 5 years:</p>
+<div class="formula">
+total URLs (5 yr) = 10<sup>8</sup>/day × 365 × 5 = <b>1.825 × 10<sup>11</sup></b>  (≈ 182.5 billion)<br>
+<br>
+62<sup>5</sup> = 916,132,832            ≈ 9.2 × 10<sup>8</sup>   <span class="cm"># ~0.9 billion — far too few</span><br>
+62<sup>6</sup> = 56,800,235,584         ≈ 5.68 × 10<sup>10</sup>  <span class="cm"># ~57 billion — still &lt; 182.5B, insufficient</span><br>
+62<sup>7</sup> = 3,521,614,606,208      ≈ 3.52 × 10<sup>12</sup>  <span class="cm"># ~3.5 trillion — enough, big margin</span>
+</div>
+<p>Length 6 tops out at ~57 billion &lt; 182.5 billion, so it runs out inside the 5-year horizon. Length <strong>7</strong> gives ~3.5 trillion — plenty:</p>
+<div class="formula">
+headroom at L=7 = 62<sup>7</sup> / total = 3.52×10<sup>12</sup> / 1.825×10<sup>11</sup> ≈ <b>19×</b><br>
+key-space used  = 1.825×10<sup>11</sup> / 3.52×10<sup>12</sup> ≈ <b>5.2%</b>
+</div>
+<div class="tip"><div class="tipl">The answer to "how long is the key?"</div><p><strong>7 base62 characters.</strong> It encodes ~3.5 trillion links — ~19× our 5-year demand, using only ~5% of the space — while staying short enough to type. Length 6 (~57 B) is too small for this volume; 8 (~218 trillion) is overkill. Deriving this from the numbers, rather than guessing "6 or 7," is the senior signal.</p></div>
+
+<h3>Bandwidth and cache working set</h3>
+<div class="formula">
+write ingress = 1,157/s × 500 B ≈ <b>0.58 MB/s</b>   <span class="cm"># creations carry the long URL</span><br>
+read egress   = 116k/s × ~500 B ≈ <b>~58 MB/s</b>    <span class="cm"># redirect responses are small</span><br>
+daily reads   = 116k/s × 86,400 ≈ <b>~1.0 × 10<sup>10</sup></b>  (≈ 10 billion/day)
+</div>
+<p>Traffic follows an 80/20 shape — a small fraction of links (fresh, viral) draws most clicks. Caching the hot set is what keeps p99 low. A loose upper bound on cache memory (treating 20% of daily reads as if all-distinct):</p>
+<div class="formula">
+cache upper bound = 20% × 10<sup>10</sup> × 500 B = 2×10<sup>9</sup> × 500 B = 10<sup>12</sup> B = <b>~1 TB</b>  <span class="cm"># worst case, no dedup</span>
+</div>
+<p>That is an over-estimate because the same hot key is requested many times — after de-duplication the real hot set is far smaller, so a distributed cache of a few hundred GB (or less) absorbs the vast majority of reads. The point of the bound is to show a cache <em>cluster</em>, not one box, and that it need not hold all 91 TB.</p>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. High-Level Architecture</h2>
+<p>Two flows share the same components. <strong>Write (create):</strong> client sends a long URL → an app server asks the key-generation component for a unique short key → writes <code>{key → long URL}</code> to the KV store → returns the short URL. <strong>Read (redirect):</strong> client opens a short key → an app server checks the cache → on hit it redirects immediately; on miss it reads the KV store, backfills the cache, and redirects.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 880 300" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ha" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+  <!-- client -->
+  <rect x="24" y="120" width="118" height="56" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="83" y="144" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Client</text>
+  <text x="83" y="161" text-anchor="middle" font-size="9.5" fill="#526176">browser / app</text>
+  <line x1="142" y1="148" x2="192" y2="148" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#ha)"/>
+  <text x="167" y="140" text-anchor="middle" font-size="8.5" fill="#526176">shorten / resolve</text>
+  <!-- app servers -->
+  <rect x="196" y="112" width="150" height="72" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="271" y="140" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">App Servers</text>
+  <text x="271" y="157" text-anchor="middle" font-size="9.5" fill="#526176">stateless, behind LB</text>
+  <!-- key generation -->
+  <rect x="430" y="30" width="180" height="58" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="520" y="54" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6d28d9">Key Generation</text>
+  <text x="520" y="71" text-anchor="middle" font-size="9.5" fill="#526176">unique short keys (§4)</text>
+  <!-- cache -->
+  <rect x="430" y="120" width="180" height="56" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="520" y="144" text-anchor="middle" font-size="11.5" font-weight="700" fill="#166534">Cache (LRU)</text>
+  <text x="520" y="161" text-anchor="middle" font-size="9.5" fill="#526176">hot key → long URL</text>
+  <!-- kv store -->
+  <rect x="430" y="210" width="180" height="58" rx="9" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="520" y="234" text-anchor="middle" font-size="11.5" font-weight="700" fill="#991b1b">KV Store (sharded)</text>
+  <text x="520" y="251" text-anchor="middle" font-size="9.5" fill="#526176">key → long URL + meta</text>
+  <!-- app -> keygen (write) -->
+  <line x1="346" y1="138" x2="426" y2="66" stroke="#7c3aed" stroke-width="1.6" marker-end="url(#ha)"/>
+  <text x="392" y="96" text-anchor="middle" font-size="8.5" fill="#6d28d9">① get key (write)</text>
+  <!-- app <-> cache (read) -->
+  <line x1="346" y1="148" x2="426" y2="148" stroke="#16a34a" stroke-width="1.6" marker-end="url(#ha)"/>
+  <text x="388" y="140" text-anchor="middle" font-size="8.5" fill="#166534">② check cache (read)</text>
+  <!-- app <-> kv (miss / write) -->
+  <line x1="346" y1="158" x2="426" y2="232" stroke="#dc2626" stroke-width="1.6" marker-end="url(#ha)"/>
+  <text x="392" y="206" text-anchor="middle" font-size="8.5" fill="#991b1b">③ store / miss-read</text>
+  <!-- cache <-> kv backfill -->
+  <line x1="520" y1="176" x2="520" y2="208" stroke="#5b6b7f" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#ha)"/>
+  <text x="638" y="196" text-anchor="middle" font-size="8.5" fill="#526176">backfill on miss</text>
+</svg>
+<div class="svg-cap">Write path uses ①③ (key generation + store); read path uses ②③ (cache-aside: cache first, KV store on a miss, then backfill the cache).</div>
+</div>
+
+<ul>
+  <li><strong>App servers</strong> are stateless behind a load balancer, so they scale horizontally; all shared state lives in the store and cache.</li>
+  <li><strong>Key generation</strong> is the crux (§4) — the write path's job is to obtain a globally unique key.</li>
+  <li><strong>KV store</strong> holds the durable <code>key → long URL</code> mapping, sharded by key (§5).</li>
+  <li><strong>Cache</strong> fronts the store for reads (§7); most redirects never touch the database.</li>
+</ul>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. Key Generation — the Crux</h2>
+<p>Every candidate can draw boxes and arrows; the interview is won or lost on how you generate a <strong>short, unique</strong> key at scale (and, if required, an <strong>unguessable</strong> one). Four approaches, each with its failure mode.</p>
+
+<h3>4.1 Hash the long URL, take a prefix</h3>
+<p>Compute a hash of the long URL (e.g. a 128-bit digest), base62-encode it, and keep the first 7 characters as the key. Simple and stateless — the same URL naturally maps to the same key, which is a bonus for de-duplication.</p>
+<div class="trap"><div class="trapl">Collisions are the whole problem</div><p>Truncating a hash to 7 chars means two <em>different</em> long URLs can produce the <em>same</em> 7-char prefix. You must detect that: before committing, check whether the key already maps to a <em>different</em> URL; if so, perturb the input (append a counter/salt) and re-hash, retrying until the key is free. This adds an extra read on the write path, and under heavy fill the retry rate climbs. It also leaks nothing about ordering, but a raw hash key is still guessable in principle — a large, sparsely-filled keyspace is what keeps random probing impractical.</p></div>
+
+<h3>4.2 Auto-increment counter → base62 encode</h3>
+<p>Keep a single global counter. Each new URL gets the next integer <code>n</code>; the key is <code>base62(n)</code>. Uniqueness is <em>free</em> — distinct integers give distinct keys, with zero collision checks — and keys stay short because base62 is dense.</p>
+<div class="miniboxes">
+  <div class="mb con"><div class="mbh">Guessable</div><ul><li>Keys are sequential: <code>…, 4c91, 4c92, 4c93</code>. Anyone can enumerate every link — bad when links must be private.</li></ul></div>
+  <div class="mb con"><div class="mbh">Single point</div><ul><li>One global counter is a bottleneck and a single point of failure; every write must increment it.</li></ul></div>
+</div>
+<p>You can blunt guessability by encoding a <em>scrambled</em> counter (e.g. a reversible permutation of the integer) so keys look random while remaining unique, but the counter's centrality remains the real issue — addressed by 4.4.</p>
+
+<h4>The base62 encode / decode (with a hand-checked example)</h4>
+<p>Encoding turns the integer id into the shortest base62 string; decoding inverts it. Use a fixed 62-symbol alphabet — here <code>0-9</code>, then <code>a-z</code>, then <code>A-Z</code> (indices 0–61).</p>
+<pre><span class="cm"># alphabet index i -> character; 62 symbols total</span>
+ALPHABET = <span class="str">"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>
+BASE = <span class="num">62</span>
+
+<span class="kw">def</span> <span class="fn">encode</span>(n):              <span class="cm"># integer id -> short key</span>
+    <span class="kw">if</span> n == <span class="num">0</span>: <span class="kw">return</span> ALPHABET[<span class="num">0</span>]
+    key = <span class="str">""</span>
+    <span class="kw">while</span> n &gt; <span class="num">0</span>:
+        key = ALPHABET[n % BASE] + key   <span class="cm"># prepend least-significant digit</span>
+        n = n // BASE
+    <span class="kw">return</span> key
+
+<span class="kw">def</span> <span class="fn">decode</span>(key):            <span class="cm"># short key -> integer id</span>
+    n = <span class="num">0</span>
+    <span class="kw">for</span> ch <span class="kw">in</span> key:
+        n = n * BASE + ALPHABET.<span class="fn">index</span>(ch)
+    <span class="kw">return</span> n</pre>
+<p><strong>Worked by hand</strong> for <code>n = 1,000,000</code> (repeated division by 62, remainders read bottom-up):</p>
+<div class="formula">
+1,000,000 ÷ 62 = 16,129 r <b>2</b>   <span class="cm"># 16,129×62 = 999,998; remainder 2 → '2'</span><br>
+   16,129 ÷ 62 =    260 r <b>9</b>   <span class="cm"># 260×62 = 16,120; remainder 9 → '9'</span><br>
+      260 ÷ 62 =      4 r <b>12</b>  <span class="cm"># 4×62 = 248; remainder 12 → 'c'</span><br>
+        4 ÷ 62 =      0 r <b>4</b>   <span class="cm"># remainder 4 → '4'</span><br>
+read remainders bottom→top ⇒ encode(1,000,000) = <b>"4c92"</b><br>
+<br>
+<span class="cm"># decode check:</span> ((4×62 + 12)×62 + 9)×62 + 2 = ((260)×62 + 9)×62 + 2 = 16,129×62 + 2 = <b>1,000,000</b> ✓
+</div>
+<p>Index 12 maps to <code>'c'</code> because indices 0–9 are the digits <code>0-9</code> and index 10 is <code>'a'</code>, so 10→<code>a</code>, 11→<code>b</code>, 12→<code>c</code>. A million fits in four base62 chars; our 7-char keys cover up to <code>62<sup>7</sup>−1 ≈ 3.5 trillion</code>.</p>
+
+<h3>4.3 Key Generation Service (KGS) — pre-generate unique keys</h3>
+<p>Rather than derive keys at write time, a dedicated <strong>Key Generation Service</strong> generates all possible 7-char keys ahead of time (offline) and stores them in an <strong>available-keys</strong> pool. When an app server needs a key, it just pops one; the KGS moves that key to a <strong>used-keys</strong> pool so it is never handed out twice. No collisions, no hashing, no counter on the hot path — the write becomes a cheap "take a pre-made key."</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="hb" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+  <!-- batch generator -->
+  <rect x="90" y="34" width="160" height="46" rx="8" fill="#e2e8f0" stroke="#64748b" stroke-width="1.4"/>
+  <text x="170" y="53" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">Batch generator</text>
+  <text x="170" y="69" text-anchor="middle" font-size="9" fill="#526176">offline, pre-fills keys</text>
+  <line x1="170" y1="80" x2="170" y2="146" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#hb)"/>
+  <text x="170" y="118" text-anchor="middle" font-size="8.5" fill="#526176">pre-fill</text>
+  <!-- KGS -->
+  <rect x="325" y="30" width="180" height="56" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="415" y="54" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6d28d9">Key Generation Svc</text>
+  <text x="415" y="71" text-anchor="middle" font-size="9" fill="#526176">hands out one at a time</text>
+  <!-- available DB -->
+  <rect x="90" y="150" width="190" height="72" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="185" y="180" text-anchor="middle" font-size="11.5" font-weight="700" fill="#166534">Available Keys</text>
+  <text x="185" y="198" text-anchor="middle" font-size="9" fill="#526176">unused, pre-generated</text>
+  <!-- used DB -->
+  <rect x="540" y="150" width="190" height="72" rx="9" fill="#fee2e2" stroke="#dc2626" stroke-width="1.6"/>
+  <text x="635" y="180" text-anchor="middle" font-size="11.5" font-weight="700" fill="#991b1b">Used Keys</text>
+  <text x="635" y="198" text-anchor="middle" font-size="9" fill="#526176">already handed out</text>
+  <!-- app -->
+  <rect x="325" y="222" width="180" height="56" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="415" y="246" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400e">App Server</text>
+  <text x="415" y="263" text-anchor="middle" font-size="9" fill="#526176">wants a key</text>
+  <!-- app -> kgs (request, up) -->
+  <line x1="400" y1="222" x2="400" y2="88" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#hb)"/>
+  <text x="376" y="150" text-anchor="middle" font-size="8" fill="#526176">① ask</text>
+  <!-- kgs -> app (return key, down) -->
+  <line x1="432" y1="88" x2="432" y2="220" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#hb)"/>
+  <text x="456" y="150" text-anchor="middle" font-size="8" fill="#526176">④ key</text>
+  <!-- kgs -> available (pop) -->
+  <line x1="322" y1="62" x2="252" y2="150" stroke="#16a34a" stroke-width="1.6" marker-end="url(#hb)"/>
+  <text x="262" y="112" text-anchor="middle" font-size="8" fill="#166534">② pop unused</text>
+  <!-- kgs -> used (mark) -->
+  <line x1="508" y1="62" x2="576" y2="150" stroke="#dc2626" stroke-width="1.6" marker-end="url(#hb)"/>
+  <text x="560" y="112" text-anchor="middle" font-size="8" fill="#991b1b">③ mark used</text>
+</svg>
+<div class="svg-cap">A batch job pre-fills the Available pool. Per write: KGS pops an unused key, moves it to Used, and returns it — uniqueness by construction, no hashing or collision retry.</div>
+</div>
+
+<ul>
+  <li><strong>Concurrency:</strong> the pop-and-move must be atomic (or the KGS single-threads handing out) so two servers can't get the same key.</li>
+  <li><strong>Throughput:</strong> a KGS replica loads a block of keys into memory and serves them without a round-trip per request; when its block is low it fetches another.</li>
+  <li><strong>Single point of failure:</strong> run multiple KGS instances, each owning a disjoint block of pre-generated keys, so one dying loses only its unhanded block (a small, acceptable leak of key-space).</li>
+  <li><strong>Unguessability:</strong> because pre-generated keys can be pulled in random order (or the space filled randomly), they need not be sequential.</li>
+</ul>
+
+<h3>4.4 Distributed counter / per-server ranges</h3>
+<p>Keep the counter idea's collision-free uniqueness but remove the single bottleneck: a coordination service (for example, a strongly-consistent coordinator such as ZooKeeper) hands each app server a <strong>disjoint range</strong> of integers, e.g. server A owns 1–1,000,000, B owns 1,000,001–2,000,000, and so on. Each server then encodes locally with base62, coordinating with no one per key, and asks for a fresh range only when its current one is nearly exhausted.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 820 270" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="hc" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+  <!-- coordinator -->
+  <rect x="315" y="26" width="190" height="58" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="410" y="50" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6d28d9">Range Coordinator</text>
+  <text x="410" y="67" text-anchor="middle" font-size="9" fill="#526176">strongly consistent</text>
+  <!-- servers -->
+  <rect x="40" y="176" width="210" height="68" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="145" y="203" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Server A</text>
+  <text x="145" y="221" text-anchor="middle" font-size="9" fill="#526176">range 1 – 1,000,000</text>
+  <rect x="305" y="176" width="210" height="68" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="410" y="203" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Server B</text>
+  <text x="410" y="221" text-anchor="middle" font-size="9" fill="#526176">1,000,001 – 2,000,000</text>
+  <rect x="570" y="176" width="210" height="68" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="675" y="203" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Server C</text>
+  <text x="675" y="221" text-anchor="middle" font-size="9" fill="#526176">2,000,001 – 3,000,000</text>
+  <!-- fan-out to ALL three -->
+  <line x1="380" y1="84" x2="160" y2="172" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#hc)"/>
+  <line x1="410" y1="84" x2="410" y2="172" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#hc)"/>
+  <line x1="440" y1="84" x2="662" y2="172" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#hc)"/>
+  <text x="235" y="120" text-anchor="middle" font-size="8.5" fill="#526176">disjoint range</text>
+  <text x="588" y="120" text-anchor="middle" font-size="8.5" fill="#526176">disjoint range</text>
+</svg>
+<div class="svg-cap">The coordinator leases a non-overlapping integer range to every server; each encodes locally with no per-key coordination, refilling only when its range runs low.</div>
+</div>
+
+<div class="tip"><div class="tipl">Which one in the interview?</div><p>Lead with <strong>KGS (4.3)</strong> or <strong>ranged counters (4.4)</strong> — both give collision-free uniqueness without a hot-path collision check, and both scale past a single counter. Mention <strong>hashing (4.1)</strong> as the simple stateless option whose cost is collision handling, and the <strong>plain counter (4.2)</strong> as the teaching baseline whose flaws (guessable + single point) motivate the other three.</p></div>
+
+<table class="tbl">
+  <tr><th>Approach</th><th>Unique?</th><th>Guessable?</th><th>Bottleneck</th><th>Notes</th></tr>
+  <tr><td>Hash + prefix (4.1)</td><td>Needs collision check</td><td>Low</td><td>Extra read + retries</td><td>Stateless; natural de-dup</td></tr>
+  <tr><td>Counter → base62 (4.2)</td><td>Yes (free)</td><td>Yes (sequential)</td><td>Single global counter</td><td>Simplest, densest keys</td></tr>
+  <tr><td>KGS pool (4.3)</td><td>Yes (by construction)</td><td>No (can randomize)</td><td>KGS availability</td><td>No hot-path work; two pools</td></tr>
+  <tr><td>Ranged counters (4.4)</td><td>Yes (disjoint ranges)</td><td>Yes unless scrambled</td><td>Coordinator (rare calls)</td><td>Scales counter horizontally</td></tr>
+</table>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. Storage &amp; Data Model</h2>
+<p>The core record is tiny and the access pattern is a <strong>point lookup by key</strong> — exactly what a key-value / NoSQL store does best.</p>
+<table class="tbl">
+  <tr><th>Field</th><th>Example</th><th>Notes</th></tr>
+  <tr><td>short_key (PK)</td><td><code>k2Xr9</code></td><td>The partition key; lookups are <code>get(key)</code></td></tr>
+  <tr><td>long_url</td><td><code>https://www.example-store.com/products/winter-jacket?…</code></td><td>The redirect target</td></tr>
+  <tr><td>created_at</td><td><code>1737000000</code></td><td>Epoch seconds; for analytics + cleanup</td></tr>
+  <tr><td>expires_at</td><td><code>null</code> or epoch</td><td>Optional TTL; null = never expire</td></tr>
+  <tr><td>owner_id</td><td><code>u_88213</code></td><td>Who created it (quotas, dashboards)</td></tr>
+  <tr><td>click_count</td><td><code>0</code></td><td>Updated asynchronously (§9)</td></tr>
+</table>
+
+<h3>Why KV / NoSQL over a relational store</h3>
+<ul>
+  <li><strong>Access pattern is a single-key point lookup.</strong> There are no joins and no multi-row range scans on the hot path; a KV store's <code>get(key)</code> is O(1) and trivially cacheable.</li>
+  <li><strong>Read-heavy at huge scale.</strong> Wide-column / KV stores partition by key across many nodes and add read replicas easily, matching the 100:1 read:write shape.</li>
+  <li><strong>Schema is flat and stable.</strong> No relational modeling benefit; the flexibility and horizontal scale of NoSQL fit better than a single big SQL table that must be sharded by hand.</li>
+  <li><strong>Relational is still fine at small scale</strong> — a single indexed table works for millions of rows. The KV choice is about the billions-of-rows, hundreds-of-thousands-of-QPS target.</li>
+</ul>
+
+<h3>Sharding by key</h3>
+<p>Partition the data by a hash of the short key (or by a key prefix). Because the key is generated to be uniform across base62, hash-sharding spreads both storage and read load evenly — no natural hot shard from the key itself (hot <em>links</em> are handled by the cache, not by the shard map). This is why generating keys uniformly (§4) pays off twice: uniqueness <em>and</em> balanced shards.</p>
+<div class="note"><div class="notel">Consistency</div><p>A brand-new short link that isn't yet visible on every replica for a few milliseconds is harmless — the create response can return the key from the primary, and reads tolerate slight replication lag. So the store can favor availability/latency (eventual consistency on replicas) rather than strict global consistency, which suits a KV/NoSQL engine.</p></div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. The Redirect Path — 301 vs 302</h2>
+<p>The redirect looks trivial — return an HTTP redirect whose <code>Location</code> header is the long URL — but <em>which</em> redirect status you send is a genuine trade-off worth reasoning about aloud.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 880 330" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="hd" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+  <!-- browser -->
+  <rect x="30" y="110" width="120" height="58" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="90" y="134" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1d4ed8">Browser</text>
+  <text x="90" y="151" text-anchor="middle" font-size="9" fill="#526176">opens short link</text>
+  <!-- app -->
+  <rect x="210" y="104" width="150" height="70" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="285" y="132" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400e">App Server</text>
+  <text x="285" y="149" text-anchor="middle" font-size="9" fill="#526176">resolve key</text>
+  <!-- cache -->
+  <rect x="440" y="34" width="170" height="54" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="525" y="57" text-anchor="middle" font-size="11" font-weight="700" fill="#166534">Cache</text>
+  <text x="525" y="74" text-anchor="middle" font-size="9" fill="#526176">hot key → URL</text>
+  <!-- kv -->
+  <rect x="440" y="150" width="170" height="54" rx="9" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="525" y="173" text-anchor="middle" font-size="11" font-weight="700" fill="#991b1b">KV Store</text>
+  <text x="525" y="190" text-anchor="middle" font-size="9" fill="#526176">durable mapping</text>
+  <!-- origin -->
+  <rect x="700" y="104" width="150" height="70" rx="9" fill="#e2e8f0" stroke="#334155" stroke-width="1.5"/>
+  <text x="775" y="132" text-anchor="middle" font-size="11.5" font-weight="700" fill="#334155">Origin Site</text>
+  <text x="775" y="149" text-anchor="middle" font-size="9" fill="#526176">the long URL</text>
+  <!-- browser -> app -->
+  <line x1="150" y1="132" x2="206" y2="132" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#hd)"/>
+  <text x="178" y="124" text-anchor="middle" font-size="8" fill="#526176">GET /k2Xr9</text>
+  <!-- app -> cache lookup -->
+  <line x1="360" y1="120" x2="436" y2="60" stroke="#16a34a" stroke-width="1.5" marker-end="url(#hd)"/>
+  <text x="392" y="86" text-anchor="middle" font-size="8" fill="#166534">① lookup</text>
+  <!-- cache -> app hit (dashed) -->
+  <line x1="436" y1="76" x2="362" y2="134" stroke="#16a34a" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#hd)"/>
+  <text x="430" y="112" text-anchor="middle" font-size="8" fill="#166534">hit: URL</text>
+  <!-- app -> kv miss -->
+  <line x1="360" y1="150" x2="436" y2="168" stroke="#dc2626" stroke-width="1.5" marker-end="url(#hd)"/>
+  <text x="392" y="150" text-anchor="middle" font-size="8" fill="#991b1b">② on miss</text>
+  <!-- kv -> app backfill (dashed) -->
+  <line x1="436" y1="190" x2="362" y2="164" stroke="#dc2626" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#hd)"/>
+  <text x="410" y="204" text-anchor="middle" font-size="8" fill="#991b1b">URL → backfill</text>
+  <!-- app -> browser redirect -->
+  <line x1="206" y1="160" x2="152" y2="160" stroke="#2563eb" stroke-width="1.6" marker-end="url(#hd)"/>
+  <text x="180" y="174" text-anchor="middle" font-size="8" fill="#1d4ed8">302 + Location</text>
+  <!-- browser follows origin (L-shaped polyline) -->
+  <polyline points="90,168 90,300 775,300 775,174" fill="none" stroke="#334155" stroke-width="1.6" marker-end="url(#hd)"/>
+  <text x="432" y="294" text-anchor="middle" font-size="9" fill="#334155">browser follows Location → fetches the long URL from the origin</text>
+</svg>
+<div class="svg-cap">Cache-aside resolve: check cache (①), fall back to the KV store on a miss (②) and backfill, return a redirect to the browser, which then follows <code>Location</code> to the origin site.</div>
+</div>
+
+<h3>301 (permanent) vs 302/307 (temporary)</h3>
+<table class="tbl">
+  <tr><th>Aspect</th><th>301 Moved Permanently</th><th>302 Found / 307 Temporary</th></tr>
+  <tr><td>Browser caching</td><td>Cached aggressively — future clicks may skip your server entirely</td><td>Not cached — every click comes back to you</td></tr>
+  <tr><td>Server load</td><td>Lower (browser goes straight to the target)</td><td>Higher (you serve every redirect)</td></tr>
+  <tr><td>Analytics</td><td>You miss the cached clicks — undercounts</td><td>You see every click — accurate counts</td></tr>
+  <tr><td>Change target later</td><td>Hard — cached 301s keep hitting the old URL</td><td>Easy — you control every resolve</td></tr>
+</table>
+<div class="tip"><div class="tipl">Recommendation</div><p>For a shortener, prefer <strong>302 (temporary)</strong>. The point of a shortener is usually to <em>measure clicks</em> and <em>retain the ability to change or expire a target</em>; a 301 defeats both by letting the browser cache the mapping and bypass you. You pay more server traffic, but that's exactly what the cache and replicas (§7) are for. Choose 301 only if analytics and mutability truly don't matter and you want to shed load. (<code>307</code> behaves like 302 but forbids changing the HTTP method — for a plain GET redirect they're equivalent for our purposes.)</p></div>
+
+<h3>Cache-aside on the read path</h3>
+<pre><span class="cm"># resolve(key) — cache-aside (lazy-loading) pattern</span>
+url = cache.<span class="fn">get</span>(key)
+<span class="kw">if</span> url <span class="kw">is</span> <span class="kw">None</span>:                 <span class="cm"># cache miss</span>
+    url = store.<span class="fn">get</span>(key)          <span class="cm"># read the durable KV store</span>
+    <span class="kw">if</span> url <span class="kw">is</span> <span class="kw">None</span>:
+        <span class="kw">return</span> <span class="num">404</span>              <span class="cm"># unknown or expired key</span>
+    cache.<span class="fn">set</span>(key, url, ttl=<span class="num">3600</span>)  <span class="cm"># backfill so the next click is a hit</span>
+emit_click_event(key)             <span class="cm"># async, off the hot path (§9)</span>
+<span class="kw">return</span> redirect(url, status=<span class="num">302</span>)</pre>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Caching &amp; Read Scaling</h2>
+<p>With 116k reads/s (peaking ~230k) against a ~1.2k/s write rate, the read path must lean on caching and replication so the database is rarely the bottleneck.</p>
+
+<h3>The hot-key LRU cache</h3>
+<p>An in-memory cache (an LRU keyed by short key) fronts the KV store. Because clicks follow the 80/20 shape, a modest cache captures the vast majority of reads. The hit ratio governs how much load ever reaches the database:</p>
+<div class="formula">
+DB reads/s = read QPS × (1 − hit_ratio)<br>
+at 116k QPS, hit 0.90 ⇒ 116k × 0.10 = <b>11,600 DB reads/s</b><br>
+at 116k QPS, hit 0.99 ⇒ 116k × 0.01 = <b>1,160 DB reads/s</b>   <span class="cm"># 10× fewer with 9pp more hits</span>
+</div>
+<p>Going from a 90% to a 99% hit ratio cuts database read load ten-fold — which is why tuning the cache (size, TTL, eviction) matters more than adding database replicas. Entries are read-only mappings, so a moderate TTL (say an hour) plus LRU eviction keeps the freshest, hottest links resident; a changed or expired mapping simply falls out or is invalidated.</p>
+
+<h3>CDN / edge and read replicas</h3>
+<ul>
+  <li><strong>Edge / CDN:</strong> because most short links resolve to the same target for everyone, an edge tier close to users can cache the redirect response, cutting latency and offloading origin. (This interacts with the 301/302 choice: a 302 is still cacheable at your edge under your control, unlike an uncontrollable browser-cached 301.)</li>
+  <li><strong>Read replicas:</strong> the KV store runs replicas so the (already small) miss traffic spreads across many nodes; writes go to the primary/shard-owner, reads fan out.</li>
+  <li><strong>Stateless app tier:</strong> add app servers behind the load balancer to scale request handling independently of the data tier.</li>
+</ul>
+<div class="ins"><div class="insl">Layered reads</div><p>Browser/edge cache → distributed hot-key cache → read replicas → primary shard. Each layer absorbs a slice, so by the time a request could reach the primary it's a tiny trickle. The write path stays simple precisely because it isn't fighting the reads for the same resources.</p></div>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Custom Aliases, Expiration &amp; Cleanup</h2>
+
+<h3>Custom aliases</h3>
+<p>A custom alias lets a user pick the key (<code>/spring-sale</code>) instead of accepting a generated one. The wrinkle is <strong>collision with generated keys</strong> and with other aliases: the alias shares the same key namespace, so it must be reserved atomically.</p>
+<ul>
+  <li><strong>Reserve atomically:</strong> insert the alias only if the key is free — a conditional/compare-and-set write (insert-if-not-exists). If it already exists, reject with "alias taken."</li>
+  <li><strong>Avoid clashing with the generator:</strong> either carve custom aliases into a separate length/prefix range the generator never emits, or simply let the atomic insert be the single source of truth (first writer wins, generator retries on the rare clash).</li>
+  <li><strong>Validate:</strong> length bounds, allowed characters, and a denylist for reserved/abusive words.</li>
+</ul>
+
+<h3>Expiration &amp; cleanup</h3>
+<p>Expired links must stop resolving and, eventually, free storage. Two complementary mechanisms:</p>
+<div class="g2">
+<div class="card"><h4 style="margin-top:0">Lazy deletion (on read)</h4>
+<ul>
+  <li>On resolve, if <code>expires_at</code> is set and in the past, return <code>404</code> (or a "link expired" page) and optionally delete the row then.</li>
+  <li>Zero background cost; correctness is immediate for anyone who clicks.</li>
+  <li>But dead rows linger until touched — they still occupy storage.</li>
+</ul></div>
+<div class="card"><h4 style="margin-top:0">Active sweep (background)</h4>
+<ul>
+  <li>A low-priority job scans for <code>expires_at &lt; now</code> and reclaims those rows (and their cache entries), running off-peak.</li>
+  <li>Or lean on the store's native TTL to auto-evict expired rows with no custom job at all.</li>
+  <li>Reclaims space, but adds background load and must be rate-limited so it never competes with live traffic.</li>
+</ul></div>
+</div>
+<div class="tip"><div class="tipl">Use both</div><p>Lazy deletion guarantees an expired link never resolves (correctness on the hot path); the background sweep / native TTL reclaims the space (cost control). A recycled key can, in principle, be returned to the KGS available pool — but re-issuing old keys risks a stale bookmark landing on a new target, so many designs simply retire expired keys rather than recycle them.</p></div>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Analytics, Rate Limiting &amp; Safety</h2>
+
+<h3>Click analytics — asynchronous by default</h3>
+<p>Counting clicks must <strong>never</strong> slow the redirect. Instead of a synchronous <code>UPDATE … click_count+1</code> on the hot path (which would add a write to every read and contend on a hot row), emit a lightweight <strong>click event</strong> to a queue/stream and process it out of band.</p>
+<ul>
+  <li><strong>Fire-and-forget event:</strong> the resolve handler pushes <code>{key, ts, referrer, coarse geo}</code> onto a queue and returns the redirect immediately.</li>
+  <li><strong>Async aggregation:</strong> consumers batch-update counters and roll up time-series/geo breakdowns; the owner dashboard reads the aggregates.</li>
+  <li><strong>Sampling at extreme scale:</strong> for very hot links, count 1-in-N and multiply back, trading a little precision for a large drop in event volume — fine for analytics, which tolerate approximation.</li>
+</ul>
+<div class="formula">
+click events/day ≈ daily reads ≈ <b>10<sup>10</sup></b>  <span class="cm"># one per redirect if unsampled</span><br>
+with 1:100 sampling ⇒ 10<sup>10</sup> / 100 = <b>10<sup>8</sup> events/day</b> stored, counts ×100 to estimate
+</div>
+
+<h3>Rate limiting abusive shorteners</h3>
+<p>Creation is the abusable operation: a script could mint millions of links to exhaust key-space or power spam campaigns. Apply a <strong>rate limiter</strong> (see Part XI, Chapter 1) on the create endpoint, keyed per user/API key/IP, plus per-account quotas. The read/redirect path is generally left open (it must serve everyone), though an edge layer can throttle abusive clients hitting one key abnormally hard.</p>
+
+<h3>Malicious-URL safety (generic)</h3>
+<div class="warn"><div class="warnl">A shortener can hide a dangerous destination</div><p>Because the target is hidden behind an opaque key, shorteners are attractive for phishing and malware links. Generic mitigations: check submitted URLs against a reputable threat-intelligence/denylist feed at creation and asynchronously re-scan later; interstitial "you are leaving to &lt;domain&gt;" preview pages for untrusted targets; and takedown tooling to disable a key on report. This is defense-in-depth, framed generically — the point in an interview is to <em>acknowledge</em> the abuse surface, not to over-build it.</p></div>
+
+<!-- ══════════════ SECTION 10 ══════════════ -->
+<h2>10. Trade-offs &amp; Interview Framing</h2>
+<h3>How to drive the conversation</h3>
+<ol>
+  <li><strong>Clarify (1–2 min):</strong> new URLs/day? read:write ratio? custom aliases? unguessable? expiration? (§1)</li>
+  <li><strong>Estimate:</strong> write/read QPS, storage over years, and derive the key length from the base62 key-space (§2) — this is the differentiator.</li>
+  <li><strong>Sketch the architecture:</strong> client → app → keygen + KV + cache, write vs. read paths (§3).</li>
+  <li><strong>Nail key generation:</strong> KGS or ranged counters for uniqueness at scale; hashing and the plain counter as the contrast (§4).</li>
+  <li><strong>Redirect &amp; scale reads:</strong> 302 for analytics/control, cache-aside, edge + replicas (§6–§7).</li>
+  <li><strong>Round out:</strong> aliases/expiration/cleanup, async analytics, rate limiting, safety (§8–§9).</li>
+</ol>
+
+<h3>What interviewers probe (with one-liners)</h3>
+<div class="card">
+<p><strong>Q: Counter vs. hash vs. KGS — which and why?</strong><br>A plain counter gives free uniqueness but is sequential (guessable) and a single bottleneck. Hashing is stateless but needs a collision check and retry on every write. A KGS pre-generates unique keys into an available pool and hands them out with no hot-path collision work — my default — or ranged counters (a coordinator leases disjoint integer blocks per server) to keep the counter's simplicity while removing the single point.</p>
+<p><strong>Q: 301 or 302?</strong><br>302 (temporary). A 301 is cached by the browser, so future clicks skip my server — I lose analytics and can't change or expire the target. 302 keeps every resolve under my control at the cost of more traffic, which the cache and replicas absorb. Use 301 only if I explicitly want to shed load and don't need counts or mutability.</p>
+<p><strong>Q: How do you guarantee uniqueness at scale?</strong><br>Make uniqueness structural, not checked: KGS pops from a pool of pre-generated distinct keys (moving each to a used pool atomically), or ranged counters give each server a disjoint integer range to base62-encode. Both avoid the read-check-write race a naive "is this key taken?" would hit under concurrency.</p>
+<p><strong>Q: How did you pick the key length?</strong><br>From the key-space math: total links over 5 years ≈ 1.825×10¹¹. 62⁶ ≈ 5.7×10¹⁰ is too small; 62⁷ ≈ 3.5×10¹² gives ~19× headroom (~5% used). So 7 base62 characters — derived, not guessed.</p>
+<p><strong>Q: The counter is a single point of failure — fix it?</strong><br>Don't share one counter on the hot path. Either partition it (ranged counters via a consistent coordinator, each server owning a block and refilling rarely) or replace it with a KGS whose replicas each own disjoint pre-generated blocks — one dying loses only its unhanded block, an acceptable key-space leak.</p>
+<p><strong>Q: How do you make keys unguessable?</strong><br>Avoid raw sequential encoding: draw from a KGS pool filled in randomized order, or encode a scrambled/permuted counter (a reversible transform) so keys look random while staying unique. A longer key or a hash-based key also enlarges the space so enumeration is infeasible. Note the trade-off: unguessable keys can't exploit the counter's density as cheaply.</p>
+</div>
+
+<div class="note"><div class="notel">One-line summary</div><p>A URL shortener is a read-heavy key-value lookup: derive a 7-char base62 key from the scale math, generate keys uniquely without a hot-path race (KGS or ranged counters), store <code>key → URL</code> in a sharded KV store, serve redirects via a 302 behind an aggressive cache and replicas, and push analytics, expiration, rate limiting, and safety off the critical path.</p></div>
+
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Short key</strong></td><td>The compact identifier appended to the base domain that resolves to a long URL.</td></tr>
+<tr><td><strong>Custom alias</strong></td><td>A user-chosen short key instead of a generated one; shares the same key namespace.</td></tr>
+<tr><td><strong>TTL (Time-to-Live)</strong></td><td>Expiry duration after which a link or cache entry stops being valid.</td></tr>
+<tr><td><strong>QPS (Queries Per Second)</strong></td><td>Requests handled per second; here split into write QPS (creates) and read QPS (redirects).</td></tr>
+<tr><td><strong>Read:write ratio</strong></td><td>How much reads dominate writes — roughly 100:1 for this workload.</td></tr>
+<tr><td><strong>base62</strong></td><td>Encoding over the 62 symbols <code>[0-9a-zA-Z]</code>, used to make keys short and dense.</td></tr>
+<tr><td><strong>Key-space</strong></td><td>The total number of distinct keys a given length can encode (<code>62<sup>L</sup></code>).</td></tr>
+<tr><td><strong>KGS (Key Generation Service)</strong></td><td>A service that pre-generates unique keys into a pool and hands them out on demand.</td></tr>
+<tr><td><strong>Collision</strong></td><td>Two different long URLs producing the same key; must be detected and resolved.</td></tr>
+<tr><td><strong>Ranged counters</strong></td><td>Each server is leased a disjoint integer range to encode locally, avoiding one shared counter.</td></tr>
+<tr><td><strong>KV store (Key-Value store)</strong></td><td>A datastore optimized for point lookups by key — the durable <code>key → long URL</code> map.</td></tr>
+<tr><td><strong>NoSQL</strong></td><td>Non-relational store (here wide-column / key-value) that partitions by key and scales horizontally.</td></tr>
+<tr><td><strong>Sharding</strong></td><td>Splitting data across nodes — here by a hash of the short key — to spread storage and load.</td></tr>
+<tr><td><strong>Eventual consistency</strong></td><td>Replicas may lag briefly; a new link tolerates a few milliseconds before appearing everywhere.</td></tr>
+<tr><td><strong>HTTP 301 / 302 / 307</strong></td><td>Redirect statuses: 301 permanent (browser-cached); 302/307 temporary (each click returns to you).</td></tr>
+<tr><td><strong>Cache-aside</strong></td><td>Lazy-loading pattern: check cache, read the store on a miss, then backfill the cache.</td></tr>
+<tr><td><strong>LRU (Least Recently Used)</strong></td><td>Eviction policy that drops the least-recently-accessed entries first, keeping hot keys resident.</td></tr>
+<tr><td><strong>Hit ratio</strong></td><td>Fraction of reads served from cache; a higher ratio sharply cuts database read load.</td></tr>
+<tr><td><strong>CDN / edge</strong></td><td>Content Delivery Network — caches responses close to users, cutting latency and offloading origin.</td></tr>
+<tr><td><strong>Rate limiter</strong></td><td>Control that caps request rate per user/API key/IP to curb abusive link creation.</td></tr>
+</table>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="sd_code_judge.html">&lsaquo; Design a Code Judge (Online Judge)</a><a class="bkc" href="index.html">📖 Contents</a><a href="sd_unique_id.html">Design a Unique ID Generator &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

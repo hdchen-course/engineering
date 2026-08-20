@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design a Code Judge (Online Judge) — Classic System Design Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XI · Chapter 5 — <b>Design a Code Judge (Online Judge)</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Design a Code Judge (Online Judge)</h1>
+  <div class="sub">The system behind a competitive-programming platform: accept a code submission, run it against hidden test cases inside a locked-down sandbox, and return a verdict in seconds — safely, fairly, and under contest-scale spikes. The crux is running <em>untrusted code</em> without letting it escape, cheat the clock, or take down a neighbor.</div>
+</header>
+
+<div class="ins"><div class="insl">Read this like a story</div><p>Start at the top. The chapter builds from "what is a verdict" that a high-schooler can follow, up to the senior crux — isolating hostile code with seccomp, cgroups, and microVMs while enforcing CPU/memory limits deterministically. Every number and mechanism below is stated precisely so you can quote it in an interview.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. The Problem &amp; Requirements</h2>
+
+<p class="lead">A <strong>code judge</strong> (or <strong>online judge</strong>) is the engine behind an online-judge / competitive-programming platform. A user submits source code for a problem; the judge compiles it, runs it against a set of <strong>hidden test cases</strong>, checks each output, enforces strict time and memory limits, and returns a <strong>verdict</strong> — <code>Accepted</code>, <code>Wrong Answer</code>, and so on. Think of it as an automated exam grader that must also assume every exam paper might be trying to attack the grader.</p>
+
+<h3>Functional requirements</h3>
+<ul>
+  <li><strong>Accept a submission:</strong> {problem ID, language, source code, user, contest?}. Return a submission ID immediately.</li>
+  <li><strong>Compile &amp; run</strong> the code against the problem's hidden test cases (inputs the author wrote, never shown to the user).</li>
+  <li><strong>Return a verdict fast</strong> — ideally within a few seconds — plus per-test detail (which test failed, time/memory used).</li>
+  <li><strong>Support many languages</strong> (C, C++, Java, Python, Go, …), each with its own compile step, runtime, and limits.</li>
+  <li><strong>Scoring modes:</strong> all-or-nothing (ICPC-style) or partial credit via <strong>subtasks</strong> (IOI-style).</li>
+  <li><strong>Live status:</strong> the user sees <code>Pending → Running → &lt;verdict&gt;</code> update in near real time.</li>
+</ul>
+
+<h3>Non-functional requirements</h3>
+<div class="g2">
+<div class="card"><h4 style="margin-top:0">Must have</h4>
+<ul>
+  <li><strong>SECURE execution of untrusted code.</strong> This is the crux — the code is written by strangers and may be actively hostile. It must not escape the sandbox, read other users' data, touch the network, or harm the host.</li>
+  <li><strong>Fairness / consistent limits.</strong> The same submission must get the same verdict every time, and two users' limits must not interfere. A "1-second limit" must mean the same thing on every worker.</li>
+  <li><strong>Correctness of judging.</strong> Output comparison and limit enforcement must be exact — a false <code>Accepted</code> or false <code>Wrong Answer</code> destroys trust.</li>
+</ul></div>
+<div class="card"><h4 style="margin-top:0">Should have</h4>
+<ul>
+  <li><strong>Throughput under contest spikes.</strong> Traffic is extremely bursty: near-idle most of the time, then tens of thousands of submissions in the last minutes of a contest.</li>
+  <li><strong>Low latency</strong> from submit to verdict (queue wait + judging time), so contestants can iterate.</li>
+  <li><strong>Elasticity &amp; cost:</strong> scale workers up for a contest, back down afterward.</li>
+</ul></div>
+</div>
+
+<div class="note"><div class="notel">The one line that frames the whole design</div><p>"This is a system for running <strong>untrusted, potentially malicious code</strong> at scale, and returning a <strong>deterministic verdict</strong>." Say that early. It tells the interviewer you know security and determinism — not throughput — are the hard parts, and it shapes every later decision (sandbox choice, CPU-time vs. wall-time limits, retry policy).</p></div>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. Back-of-the-Envelope Estimation</h2>
+
+<p>Sizing here is unusual: the average load is tiny, but the <strong>contest peak</strong> is enormous and short. The whole scaling story flows from that gap, so quantify it.</p>
+
+<h3>Submission volume &amp; QPS</h3>
+<p>Suppose <strong>1,000,000 submissions/day</strong> across practice and contests.</p>
+<div class="formula">
+seconds/day   = 86,400 ≈ 10<sup>5</sup><br>
+average QPS   = 1,000,000 / 86,400 ≈ <b>12 submissions/sec</b><br>
+<br>
+<span class="cm"># Contest peak — the number that actually drives the design:</span><br>
+<span class="cm"># 30,000 contestants hammering a problem in the last ~5 min, ~2 tries each</span><br>
+peak load = (30,000 × 2) / 300 s = 60,000 / 300 = <b>~200 submissions/sec</b>  <span class="cm"># ≈ 17× average</span>
+</div>
+
+<h3>Worker count — apply Little's Law</h3>
+<p>A submission occupies a worker for the whole judging job: compile once, then run ~20–40 test cases. Say the average job holds a sandbox for <strong>~10 seconds</strong> of wall time (compile + all tests). The number of <em>concurrent</em> jobs in flight is arrival rate × service time:</p>
+<div class="formula">
+<span class="cm"># Little's Law:  L (in flight) = λ (arrival rate) × W (time in system)</span><br>
+steady concurrency = 12/s × 10 s = <b>120 concurrent jobs</b><br>
+peak  concurrency  = 200/s × 10 s = <b>2,000 concurrent jobs</b><br>
+<br>
+<span class="cm"># One sandbox runs one submission at a time (isolation). Pack ~16 sandboxes/host:</span><br>
+peak hosts  ≈ 2,000 / 16 = <b>~125 worker hosts</b><br>
+steady hosts ≈ 120 / 16 = <b>~8 worker hosts</b>
+</div>
+<div class="tip"><div class="tipl">Takeaway</div><p>Peak concurrency is <strong>~17×</strong> steady state. You cannot provision for peak 24/7 (wasteful) nor for average (contests would overwhelm it). That gap is exactly why the architecture is a <strong>queue + autoscaling worker pool</strong> — the queue absorbs the spike while workers scale out. Little's Law (<code>L = λ × W</code>) is the clean way to defend the worker count.</p></div>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. High-Level Architecture</h2>
+<p>The backbone is deliberately simple: a stateless API accepts submissions and drops them on a <strong>durable queue</strong>; a pool of <strong>sandboxed judge workers</strong> pulls jobs, runs them in isolation, writes the verdict to a result store, and a notifier pushes the update to the user. The queue is the shock absorber that decouples the spiky front end from the finite worker pool.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 360" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker>
+  </defs>
+  <!-- client -->
+  <rect x="16" y="150" width="104" height="52" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="68" y="172" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Client</text>
+  <text x="68" y="188" text-anchor="middle" font-size="9" fill="#526176">submit code</text>
+  <line x1="120" y1="176" x2="164" y2="176" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#ah)"/>
+  <!-- API -->
+  <rect x="168" y="146" width="118" height="60" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="227" y="170" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400e">API service</text>
+  <text x="227" y="186" text-anchor="middle" font-size="9" fill="#526176">validate · enqueue</text>
+  <text x="227" y="198" text-anchor="middle" font-size="9" fill="#526176">store metadata</text>
+  <line x1="286" y1="176" x2="332" y2="176" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#ah)"/>
+  <text x="309" y="168" text-anchor="middle" font-size="8.5" fill="#526176">enqueue</text>
+  <!-- queue -->
+  <rect x="336" y="140" width="120" height="72" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="396" y="163" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6d28d9">Submission</text>
+  <text x="396" y="178" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6d28d9">Queue</text>
+  <text x="396" y="196" text-anchor="middle" font-size="8.5" fill="#526176">absorbs spikes</text>
+  <!-- workers pull (queue -> each worker) -->
+  <line x1="456" y1="158" x2="506" y2="66" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="456" y1="176" x2="506" y2="176" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="456" y1="194" x2="506" y2="286" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="470" y="120" text-anchor="middle" font-size="8.5" fill="#526176">workers pull</text>
+  <!-- worker pool -->
+  <rect x="510" y="42" width="168" height="48" rx="8" fill="#ffffff" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="594" y="62" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0d7a6f">Sandboxed worker 1</text>
+  <text x="594" y="78" text-anchor="middle" font-size="8.5" fill="#526176">isolated run</text>
+  <rect x="510" y="152" width="168" height="48" rx="8" fill="#ffffff" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="594" y="172" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0d7a6f">Sandboxed worker 2</text>
+  <text x="594" y="188" text-anchor="middle" font-size="8.5" fill="#526176">isolated run</text>
+  <rect x="510" y="262" width="168" height="48" rx="8" fill="#ffffff" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="594" y="282" text-anchor="middle" font-size="10.5" font-weight="700" fill="#0d7a6f">Sandboxed worker N</text>
+  <text x="594" y="298" text-anchor="middle" font-size="8.5" fill="#526176">autoscaled pool</text>
+  <!-- workers write verdict -> result store (each worker -> store) -->
+  <line x1="678" y1="66" x2="742" y2="150" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#ah)"/>
+  <line x1="678" y1="176" x2="742" y2="176" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#ah)"/>
+  <line x1="678" y1="286" x2="742" y2="202" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#ah)"/>
+  <text x="726" y="120" text-anchor="middle" font-size="8.5" fill="#526176">write verdict</text>
+  <!-- result store -->
+  <rect x="746" y="150" width="100" height="56" rx="9" fill="#fee2e2" stroke="#dc2626" stroke-width="1.6"/>
+  <text x="796" y="172" text-anchor="middle" font-size="10.5" font-weight="700" fill="#991b1b">Result</text>
+  <text x="796" y="187" text-anchor="middle" font-size="10.5" font-weight="700" fill="#991b1b">Store</text>
+  <text x="796" y="200" text-anchor="middle" font-size="8" fill="#991b1b">verdicts</text>
+  <!-- notify path back to client -->
+  <line x1="746" y1="230" x2="120" y2="238" stroke="#0d9488" stroke-width="1.4" stroke-dasharray="5,3" marker-end="url(#ah)"/>
+  <rect x="360" y="248" width="150" height="34" rx="7" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="435" y="269" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0d7a6f">Notifier → push to client</text>
+  <text x="433" y="330" text-anchor="middle" font-size="9" fill="#526176">verdict is written to the store, then pushed back to the client (WebSocket / poll)</text>
+</svg>
+<div class="svg-cap">API enqueues; the autoscaled pool of sandboxed workers pulls jobs, runs each in isolation, writes the verdict to the store; the notifier pushes it back to the client. The queue decouples spiky submits from finite workers.</div>
+</div>
+
+<h3>What each component does</h3>
+<ul>
+  <li><strong>API service (stateless):</strong> authenticates, validates (size limit, allowed language), writes submission metadata as <code>Pending</code>, and enqueues a job. It returns instantly — judging is asynchronous.</li>
+  <li><strong>Submission queue (durable):</strong> the buffer between bursty submits and the finite worker pool. Durable so a submission is never lost if a worker dies. Supports priority (contest vs. practice) and backpressure.</li>
+  <li><strong>Judge workers (sandboxed):</strong> the heart of the system. Each pulls one job, spins up an <strong>ephemeral one-shot sandbox</strong>, compiles, runs every test case under strict limits, computes the verdict, and reports it. Stateless and horizontally scalable.</li>
+  <li><strong>Result store:</strong> persists verdicts and per-test detail (DB + object store for large logs/diffs).</li>
+  <li><strong>Notifier:</strong> pushes status changes to the client (WebSocket/SSE) or answers polls, so the UI shows <code>Pending → Running → verdict</code> live.</li>
+  <li><strong>Test-case store:</strong> hidden inputs/expected outputs in object storage, fetched (and cached) by workers.</li>
+</ul>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. Submission Lifecycle &amp; Verdicts</h2>
+<p>Every submission walks a small state machine: <code>Pending</code> (queued) → <code>Running</code> (a worker has it) → a <strong>terminal verdict</strong>. The verdict taxonomy below is the shared vocabulary of every competitive-programming platform.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 840 300" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ah2" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+  <!-- pending -->
+  <rect x="16" y="120" width="96" height="46" rx="9" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="64" y="141" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">Pending</text>
+  <text x="64" y="156" text-anchor="middle" font-size="8.5" fill="#526176">in queue</text>
+  <line x1="112" y1="143" x2="152" y2="143" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#ah2)"/>
+  <!-- compile -->
+  <rect x="156" y="118" width="104" height="50" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="208" y="139" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Compile</text>
+  <text x="208" y="154" text-anchor="middle" font-size="8.5" fill="#526176">build step</text>
+  <!-- CE branch -->
+  <line x1="208" y1="118" x2="208" y2="72" stroke="#dc2626" stroke-width="1.5" marker-end="url(#ah2)"/>
+  <rect x="150" y="30" width="116" height="42" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="208" y="49" text-anchor="middle" font-size="10.5" font-weight="700" fill="#991b1b">CE</text>
+  <text x="208" y="63" text-anchor="middle" font-size="8" fill="#991b1b">compiler exit ≠ 0</text>
+  <line x1="260" y1="143" x2="300" y2="143" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#ah2)"/>
+  <text x="280" y="135" text-anchor="middle" font-size="8" fill="#166534">ok</text>
+  <!-- running -->
+  <rect x="304" y="116" width="112" height="54" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="360" y="137" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">Running</text>
+  <text x="360" y="152" text-anchor="middle" font-size="8.5" fill="#526176">run each test</text>
+  <text x="360" y="164" text-anchor="middle" font-size="8.5" fill="#526176">in sandbox</text>
+  <!-- runtime failures (fan-out to a group) -->
+  <line x1="416" y1="130" x2="500" y2="58" stroke="#dc2626" stroke-width="1.5" marker-end="url(#ah2)"/>
+  <rect x="504" y="30" width="220" height="56" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="614" y="49" text-anchor="middle" font-size="10" font-weight="700" fill="#991b1b">TLE · MLE · RE · OLE</text>
+  <text x="614" y="64" text-anchor="middle" font-size="8" fill="#991b1b">limit exceeded / crashed</text>
+  <text x="614" y="77" text-anchor="middle" font-size="8" fill="#991b1b">detected during a run</text>
+  <!-- to checker -->
+  <line x1="416" y1="150" x2="500" y2="150" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#ah2)"/>
+  <text x="458" y="142" text-anchor="middle" font-size="8" fill="#526176">ran ok</text>
+  <rect x="504" y="122" width="112" height="56" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="560" y="143" text-anchor="middle" font-size="10.5" font-weight="700" fill="#6d28d9">Checker</text>
+  <text x="560" y="158" text-anchor="middle" font-size="8" fill="#526176">compare output</text>
+  <text x="560" y="170" text-anchor="middle" font-size="8" fill="#526176">to expected</text>
+  <!-- checker -> WA/PE -->
+  <line x1="560" y1="178" x2="560" y2="224" stroke="#dc2626" stroke-width="1.5" marker-end="url(#ah2)"/>
+  <rect x="500" y="226" width="120" height="42" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="560" y="245" text-anchor="middle" font-size="10.5" font-weight="700" fill="#991b1b">WA / PE</text>
+  <text x="560" y="259" text-anchor="middle" font-size="8" fill="#991b1b">mismatch</text>
+  <!-- checker -> AC -->
+  <line x1="616" y1="150" x2="700" y2="150" stroke="#16a34a" stroke-width="1.8" marker-end="url(#ah2)"/>
+  <text x="658" y="142" text-anchor="middle" font-size="8" fill="#166534">all tests pass</text>
+  <rect x="704" y="124" width="120" height="52" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1.8"/>
+  <text x="764" y="146" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">AC</text>
+  <text x="764" y="162" text-anchor="middle" font-size="8" fill="#166534">Accepted</text>
+</svg>
+<div class="svg-cap">Compile can short-circuit to CE. Otherwise each test runs in a sandbox: a limit/crash yields TLE/MLE/RE/OLE; a clean run goes to the checker, which yields WA/PE or, if every test passes, AC.</div>
+</div>
+
+<h3>The verdicts and how each is detected</h3>
+<table class="tbl">
+  <tr><th>Verdict</th><th>Meaning</th><th>How the judge detects it</th></tr>
+  <tr><td><strong>AC</strong> — Accepted</td><td>All tests pass within all limits</td><td>Every test's output matches the checker <em>and</em> stays under time/memory</td></tr>
+  <tr><td><strong>WA</strong> — Wrong Answer</td><td>Output is incorrect on some test</td><td>Checker reports a mismatch (after normalizing per the comparison mode)</td></tr>
+  <tr><td><strong>TLE</strong> — Time Limit Exceeded</td><td>Ran too long</td><td>CPU time &gt; limit (busy loop) <em>or</em> wall-clock watchdog fires (sleep/deadlock)</td></tr>
+  <tr><td><strong>MLE</strong> — Memory Limit Exceeded</td><td>Used too much memory</td><td>cgroup memory cap hit → the kernel OOM-kills the process (or an allocation fails)</td></tr>
+  <tr><td><strong>RE</strong> — Runtime Error</td><td>Crashed while running</td><td>Non-zero exit or fatal signal — SIGSEGV, SIGFPE (÷0), SIGABRT, uncaught exception</td></tr>
+  <tr><td><strong>CE</strong> — Compile Error</td><td>Did not build</td><td>Compiler process exits with a non-zero status; stderr returned to the user</td></tr>
+  <tr><td><strong>PE</strong> — Presentation Error</td><td>Right values, wrong formatting</td><td>Optional verdict: values match but whitespace/layout differs from expected</td></tr>
+  <tr><td><strong>OLE</strong> — Output Limit Exceeded</td><td>Printed far too much</td><td>Bytes written to stdout exceed a cap → killed (guards against disk/pipe flooding)</td></tr>
+</table>
+<div class="warn"><div class="warnl">Why TLE needs two clocks</div><p><strong>CPU time</strong> alone misses a program that <code>sleep()</code>s or blocks on I/O — it burns wall-clock time while using almost no CPU. <strong>Wall-clock time</strong> alone is unfair — it counts scheduler delays and noisy neighbors against the submission. So judges enforce <em>both</em>: a CPU-time limit (the fair primary limit, e.g. 1 s) and a larger wall-clock watchdog (e.g. 3–10 s) that kills hangs. TLE is declared when either is breached.</p></div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. Sandboxed Execution — the Crux</h2>
+<p>You are about to <code>exec()</code> a binary a stranger uploaded. It may try to read <code>/etc/passwd</code>, open a socket to steal (leak out) the hidden test data, <code>fork()</code>-bomb the host, spin forever, allocate all of RAM, or write another user's files. The sandbox's job is to make every one of those <em>impossible</em>, not merely discouraged. Isolation is built in <strong>layers</strong> (defense in depth): if one layer is bypassed, the next still contains the code.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 760 380" xmlns="http://www.w3.org/2000/svg">
+  <!-- outer: host kernel / hardware -->
+  <rect x="18" y="18" width="724" height="344" rx="12" fill="#f1f5f9" stroke="#64748b" stroke-width="1.6"/>
+  <text x="34" y="40" font-size="11.5" font-weight="700" fill="#334155">Host kernel + hardware  ·  optional KVM hypervisor for microVMs</text>
+  <!-- layer: isolation boundary -->
+  <rect x="52" y="54" width="656" height="290" rx="11" fill="#dbeafe" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="68" y="76" font-size="11" font-weight="700" fill="#1d4ed8">Isolation boundary — namespaces (pid · net · mount · user · ipc) or microVM</text>
+  <!-- layer: cgroups -->
+  <rect x="86" y="90" width="588" height="238" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="102" y="112" font-size="11" font-weight="700" fill="#166534">cgroups v2 — CPU quota + memory.max hard caps + pids.max (no fork bomb)</text>
+  <!-- layer: seccomp -->
+  <rect x="120" y="126" width="520" height="186" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.6"/>
+  <text x="136" y="148" font-size="11" font-weight="700" fill="#92400e">seccomp-bpf — syscall allowlist (block socket, ptrace, mount, clone flags…)</text>
+  <!-- layer: privileges / fs / net -->
+  <rect x="154" y="162" width="452" height="132" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.6"/>
+  <text x="170" y="184" font-size="10.5" font-weight="700" fill="#6d28d9">Dropped privileges · read-only root FS · no network · no-new-privs</text>
+  <!-- innermost: the process -->
+  <rect x="196" y="200" width="368" height="80" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="380" y="230" text-anchor="middle" font-size="13" font-weight="700" fill="#991b1b">Untrusted submission process</text>
+  <text x="380" y="250" text-anchor="middle" font-size="9.5" fill="#991b1b">non-root · CPU + wall time limits · ephemeral, one-shot</text>
+  <text x="380" y="266" text-anchor="middle" font-size="9.5" fill="#991b1b">writes only to a small tmp dir · destroyed after the run</text>
+</svg>
+<div class="svg-cap">Defense in depth: each layer wraps the one inside it. The untrusted process at the center can only touch what every layer permits; breaching one layer still leaves the rest.</div>
+</div>
+
+<h3>The isolation layers, one by one</h3>
+<ul>
+  <li><strong>Container or microVM boundary.</strong> A container uses Linux <strong>namespaces</strong> to give the process its own view of PIDs, mounts, network, users, and IPC — it can't even see other processes. A <strong>microVM</strong> (a lightweight VM booted by a KVM-based monitor) goes further: a real guest kernel behind hardware virtualization, so a kernel exploit hits the guest, not the host.</li>
+  <li><strong>seccomp-bpf syscall filtering.</strong> Install a BPF filter that <strong>allowlists</strong> only the syscalls a solution legitimately needs (read, write, mmap, exit…) and kills the process on anything else — <code>socket</code>, <code>ptrace</code>, <code>mount</code>, <code>clone</code> with dangerous flags. This shrinks the kernel attack surface enormously.</li>
+  <li><strong>cgroups for resource caps.</strong> Linux <strong>control groups (cgroups v2)</strong> enforce hard limits: <code>memory.max</code> caps RAM (over-allocate → the kernel OOM-kills → MLE), a CPU quota bounds CPU, and <code>pids.max</code> caps process count so a <strong>fork bomb</strong> can't exhaust the host.</li>
+  <li><strong>CPU + wall-clock time limits.</strong> A CPU-time cap (via <code>setrlimit(RLIMIT_CPU)</code> or cgroup accounting) is the fair primary limit; a wall-clock watchdog kills hangs and sleeps (see §4). Breach either → TLE.</li>
+  <li><strong>No network.</strong> Put the process in an empty network namespace with no interfaces (or drop all packets). Solutions never need the network; blocking it stops the code from stealing data or contacting an outside server.</li>
+  <li><strong>Read-only file system.</strong> Mount the root FS read-only; give the process only a tiny writable <code>tmpfs</code> scratch dir, size-capped. It can't read other submissions, the test data of <em>other</em> problems, or host secrets.</li>
+  <li><strong>Dropped privileges.</strong> Run as an unprivileged, per-run user (never root), drop all Linux capabilities, and set <code>no_new_privs</code> so it can't gain privileges via setuid binaries.</li>
+  <li><strong>Ephemeral, one-shot sandbox.</strong> Build a fresh sandbox per run and <strong>destroy it afterward</strong>. No state survives to the next submission, so one user's code can never observe or corrupt another's — and it guarantees a clean, identical starting environment every time (which feeds determinism, §8).</li>
+</ul>
+
+<h3>Compile step vs. run step</h3>
+<p>The two phases have different risk and limit profiles, so treat them separately:</p>
+<div class="g2">
+<div class="card"><h4 style="margin-top:0">Compile step</h4>
+<ul>
+  <li>Runs the <strong>compiler</strong> on untrusted source — itself sandboxed (a hostile program can abuse the compiler, e.g. <code>#include</code> tricks or infinite template expansion).</li>
+  <li>Gets its own generous-but-bounded time/memory limit and <strong>no network</strong> (so it can't fetch packages).</li>
+  <li>Failure → <strong>CE</strong>, with compiler stderr returned. Interpreted languages skip or do a syntax check.</li>
+</ul></div>
+<div class="card"><h4 style="margin-top:0">Run step</h4>
+<ul>
+  <li>Executes the <strong>compiled artifact</strong> once per test case under the <em>strict</em> problem limits (e.g. 1 s CPU, 256 MB).</li>
+  <li>Feeds the test input on stdin, captures stdout, enforces all sandbox layers above.</li>
+  <li>Failure modes map to TLE / MLE / RE / OLE; clean output goes to the checker.</li>
+</ul></div>
+</div>
+<div class="trap"><div class="trapl">Do not skip the sandbox on "trusted" languages</div><p>There is no trusted language. Python can <code>os.system</code>, Java can spawn threads and open sockets, C can do anything. Every language runs behind the <em>same</em> isolation layers; only the limits and the compile/interpret step differ. A judge that sandboxes C but runs Python "in-process" is one <code>import socket</code> away from a breach.</p></div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. Judging &amp; Test Cases</h2>
+<p>Once a program produces output for a test, the <strong>checker</strong> decides pass/fail. The subtlety is that "correct output" is not always a single string — many problems accept multiple valid answers.</p>
+
+<h3>Output comparison modes</h3>
+<ul>
+  <li><strong>Exact match:</strong> output must equal expected byte-for-byte. Strictest; brittle against trailing whitespace, so rarely the default.</li>
+  <li><strong>Token / whitespace-normalized:</strong> split both into tokens and compare token-by-token, ignoring trailing spaces and newline style. This is the <strong>common default</strong> — it accepts <code>"1 2 3\n"</code> vs. <code>"1 2 3"</code>.</li>
+  <li><strong>Special checker (custom judge):</strong> a problem-specific program that reads the input, the contestant's output, and the reference, then decides. Required when <strong>multiple answers are valid</strong> — e.g. "print <em>any</em> shortest path," or floating-point answers accepted within a tolerance (<code>|a − b| ≤ 1e-6</code>). The checker itself is trusted code written by the problem author and runs sandboxed too.</li>
+  <li><strong>Interactive problems:</strong> an <em>interactor</em> program exchanges messages with the solution over stdin/stdout in real time (e.g. a guessing game) and emits the verdict.</li>
+</ul>
+
+<div class="formula">
+<span class="cm"># token comparison (the usual default)</span><br>
+got = tokenize(stdout); exp = tokenize(expected)<br>
+<b>if got == exp: PASS  else: WA</b>   <span class="cm"># trailing whitespace/newlines ignored</span><br>
+<br>
+<span class="cm"># special checker (multiple valid answers)</span><br>
+verdict = checker(test_input, got, reference)   <span class="cm"># author-written, sandboxed</span><br>
+<b>PASS if checker says "ok", else WA</b>
+</div>
+
+<h3>Per-test limits &amp; scoring</h3>
+<ul>
+  <li><strong>Per-test time/memory:</strong> limits are enforced <em>per test case</em>, not per submission — a solution that is fast on small inputs but TLEs on a big one must fail that test.</li>
+  <li><strong>All-or-nothing (ICPC-style):</strong> the first failing test decides the whole verdict; the judge can stop early on the first failure to save resources.</li>
+  <li><strong>Partial scoring / subtasks (IOI-style):</strong> tests are grouped into <strong>subtasks</strong>, each worth points; a subtask scores its points only if <em>all</em> its tests pass. Total score is the sum, so a partial solution still earns partial credit.</li>
+</ul>
+<div class="tip"><div class="tipl">Early-exit vs. full run</div><p>For all-or-nothing scoring, stop at the first non-AC test — it can't change the verdict and it frees a worker sooner. For subtasks/partial scoring you generally run everything (or at least every subtask) to compute the score. State which mode you assume; it changes the average job time from §2.</p></div>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Scaling for Contest Spikes</h2>
+<p>Recall §2: peak is ~17× steady. The design must expand for a contest and contract afterward without dropping submissions or starving practice users.</p>
+
+<h3>Worker pool + autoscaling</h3>
+<ul>
+  <li><strong>Scale on queue depth, not CPU.</strong> The signal that you're behind is a growing queue / rising oldest-message age. Autoscale the worker pool on <em>queue backlog</em> so capacity tracks demand; scale in when the backlog drains.</li>
+  <li><strong>Pre-warm for scheduled contests.</strong> Contests have known start times — provision the peak worker fleet <em>before</em> the start so the first spike doesn't wait on cold-boot. This is the single biggest latency win.</li>
+  <li><strong>Pre-baked language-runtime images.</strong> Bake compilers/runtimes into the worker/sandbox image so no per-job install is needed; keep sandbox base images warm to shave startup time.</li>
+</ul>
+
+<h3>Backpressure &amp; priority</h3>
+<ul>
+  <li><strong>Priority queues:</strong> run <strong>contest</strong> submissions ahead of <strong>practice</strong> ones. During a spike, practice jobs wait (or route to a separate, smaller pool) so live contestants get fast feedback.</li>
+  <li><strong>Backpressure:</strong> the queue is bounded and durable. If the backlog exceeds a threshold you slow low-priority intake — return a "queued, results delayed" state or apply per-user submission rate limits — rather than overloading the fleet. The queue turns a spike into a (briefly) longer wait instead of an outage.</li>
+  <li><strong>Result caching / dedup:</strong> the exact same source for the same problem yields the same verdict, so an identical resubmission can be deduped; compile artifacts can be cached and reused across a submission's test runs. Cache carefully — cache by a hash of {problem version, language, source, limits}, and invalidate when test data changes.</li>
+</ul>
+<div class="note"><div class="notel">Why async judging wins here</div><p>Synchronous judging (hold the HTTP connection until the verdict) is simpler but couples front-end capacity to worker capacity and collapses under a spike — every slow judge ties up a connection. Asynchronous judging (enqueue, return a submission ID, push the verdict later) lets the queue absorb the burst and the workers drain it at their own pace. For a bursty, seconds-long workload, async is the right default.</p></div>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Reliability &amp; Fairness</h2>
+<p>Because a verdict affects rankings and pass/fail, the judge must be both <strong>deterministic</strong> (same input → same verdict) and <strong>robust</strong> to infrastructure hiccups — while never letting infra failures corrupt a legitimate verdict.</p>
+
+<h3>Deterministic, fair limits</h3>
+<ul>
+  <li><strong>Measure CPU time, not wall time, for the primary limit.</strong> Wall time varies with load; CPU time is (mostly) reproducible. Pair it with the wall watchdog only to catch hangs (§4).</li>
+  <li><strong>Pin resources &amp; a consistent hardware class.</strong> Run each sandbox on dedicated CPU cores, judge on one machine type, and consider disabling CPU frequency scaling / turbo so a "1-second" limit means the same thing on every worker and across re-judges.</li>
+  <li><strong>Isolate the noisy neighbor.</strong> cgroup CPU/memory caps plus core-pinning stop one submission from stealing cycles from another sharing the host — otherwise a heavy job could cause a light job to spuriously TLE.</li>
+</ul>
+
+<h3>Retries — the critical distinction</h3>
+<div class="trap"><div class="trapl">Retry infra failures, NEVER retry a real verdict</div><p>If a worker crashes, the host OOMs, or a job times out in the <em>queue</em> (infrastructure), the submission is still <code>Pending</code>/<code>Running</code> — safely re-enqueue and judge it again. But <strong>WA, TLE, MLE, RE, CE are correct verdicts about the code</strong> — retrying them would let a flaky submission "win" on a lucky retry and destroy fairness. The judge must clearly separate "the judge failed" (retry) from "the code failed" (final).</p></div>
+<ul>
+  <li><strong>Idempotent judging &amp; re-judge:</strong> judging a submission ID must be safe to run more than once and must produce the same result; a re-judge (e.g. after fixing test data) deterministically <em>replaces</em> the prior verdict rather than appending. Idempotency keys on the queue message prevent a redelivered job from being judged twice concurrently.</li>
+  <li><strong>At-least-once queue + dedup:</strong> durable queues deliver at least once, so guard against double-judging with a per-submission lock/idempotency key.</li>
+  <li><strong>Timeouts as a safety net:</strong> a job that exceeds a hard ceiling (stuck sandbox) is killed and either re-queued (infra) or marked with a system error for a human to inspect — never silently dropped.</li>
+</ul>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Plagiarism &amp; Anti-Cheat</h2>
+<p>Judges are graded competitions, so people try to cheat — by copying solutions or by gaming the judge. The defenses are worth a mention; keep them <strong>generic</strong> (the exact thresholds are policy, not architecture).</p>
+
+<h3>Structural similarity detection</h3>
+<p>Naïve text diffing is easily defeated by renaming variables or reformatting. The standard approach is <strong>structural fingerprinting</strong> (the idea behind MOSS-style detectors):</p>
+<ol>
+  <li><strong>Tokenize / normalize:</strong> lex the source into tokens, discarding whitespace, comments, and identifier names so that renaming or reformatting doesn't change the representation. Optionally compare <strong>AST</strong> structure for language-aware matching.</li>
+  <li><strong>Fingerprint:</strong> hash overlapping k-grams of tokens and select a stable subset of those hashes (a "winnowing"-style document fingerprint) so two files can be compared by how many fingerprints they share.</li>
+  <li><strong>Score &amp; review:</strong> pairs with high fingerprint overlap are flagged for <em>human</em> review — the tool surfaces suspicion, it doesn't convict.</li>
+</ol>
+
+<h3>Gaming the judge, and the guards</h3>
+<ul>
+  <li><strong>Hidden test cases</strong> stop hardcoding: a solution can't just <code>print</code> the expected answers if it never sees them. Rotating/randomized tests further reduce guessing.</li>
+  <li><strong>Submission rate limiting</strong> per user/problem blunts brute-forcing outputs by spamming submissions (this reuses the rate-limiter from Chapter 1).</li>
+  <li><strong>The sandbox itself</strong> is anti-cheat: no network and a read-only FS mean a submission can't fetch answers or read another user's data.</li>
+</ul>
+<div class="warn"><div class="warnl">Keep it generic in an interview</div><p>Describe the <em>shape</em> — tokenize, fingerprint, compare, human-review — not any proprietary detector's internals or tuned thresholds. Similarity is a <strong>signal for review</strong>, never an automatic penalty; false positives (common library code, standard templates) are real, so a human makes the final call.</p></div>
+
+<!-- ══════════════ SECTION 10 ══════════════ -->
+<h2>10. Trade-offs &amp; Interview Framing</h2>
+
+<h3>Isolation mechanism trade-offs</h3>
+<table class="tbl">
+  <tr><th>Mechanism</th><th>Isolation strength</th><th>Startup / overhead</th><th>Notes</th></tr>
+  <tr><td><strong>Process isolation</strong> (seccomp + rlimits + ptrace)</td><td>Weakest — shares the host kernel with only syscall filtering</td><td>Lowest — just fork/exec</td><td>Fast and simple, but a kernel bug = a host escape. OK only with tight seccomp and low trust budget.</td></tr>
+  <tr><td><strong>Container</strong> (namespaces + cgroups + seccomp)</td><td>Strong — isolated view + resource caps, still one shared kernel</td><td>Low–medium — ms to start</td><td>The common best balance: good isolation, cheap, elastic. Kernel remains the shared attack surface.</td></tr>
+  <tr><td><strong>microVM</strong> (KVM-based, e.g. lightweight VMMs)</td><td>Strongest — separate guest kernel behind hardware virtualization</td><td>Medium — ~100+ ms boot, more memory</td><td>Best for hostile multi-tenant code; a guest kernel exploit doesn't reach the host. Slightly heavier.</td></tr>
+</table>
+
+<h3>Other key trade-offs</h3>
+<div class="miniboxes">
+  <div class="mb pro"><div class="mbh">Async judging (queue + workers)</div><ul><li>Absorbs contest spikes; workers drain at their own pace</li><li>Front-end decoupled from worker capacity</li><li>Slightly more moving parts (queue, notifier)</li></ul></div>
+  <div class="mb con"><div class="mbh">Sync judging (hold the request)</div><ul><li>Simplest to build and reason about</li><li>Couples front-end to worker capacity; collapses under a spike</li><li>Only viable at tiny scale / no contests</li></ul></div>
+</div>
+<div class="ins"><div class="insl">The 30-second decision</div><p><strong>Hostile multi-tenant code, security first?</strong> → microVM. <strong>Elastic, cost-sensitive, strong-enough isolation?</strong> → container (namespaces + cgroups + seccomp) — the usual answer. <strong>Bursty contest load?</strong> → async, queue + autoscaling pool, priority for contest over practice. <strong>Fair limits?</strong> → CPU time primary, wall-clock watchdog, pinned cores.</p></div>
+
+<h3>How to drive the conversation</h3>
+<ol>
+  <li><strong>Clarify (1–2 min):</strong> Which languages? Contest or practice or both? All-or-nothing or partial scoring? Latency target? Trust model (public internet = fully hostile)?</li>
+  <li><strong>State the crux:</strong> "This is about running untrusted code safely and returning a deterministic verdict." Lead with security + determinism.</li>
+  <li><strong>Estimate:</strong> steady vs. contest-peak QPS and worker concurrency via Little's Law (§2) → motivates queue + autoscale.</li>
+  <li><strong>Architecture:</strong> API → queue → sandboxed worker pool → result store → notify; the queue as the spike absorber.</li>
+  <li><strong>Go deep on the sandbox:</strong> the layered isolation (§5) and how each verdict is detected (§4).</li>
+  <li><strong>Cover fairness &amp; failure:</strong> CPU-time limits, retry infra-not-verdicts, idempotent re-judge (§8); then anti-cheat (§9).</li>
+</ol>
+
+<h3>What interviewers probe (with one-liners)</h3>
+<div class="card">
+<p><strong>Q: How do you run untrusted code safely?</strong><br>Layered isolation: run the code in a container or microVM with an empty network namespace, a read-only FS, dropped privileges/capabilities and <code>no_new_privs</code>, a seccomp-bpf syscall allowlist, and cgroup CPU/memory/pids caps. Each run is an ephemeral, one-shot sandbox destroyed afterward. A microVM adds a separate guest kernel so even a kernel exploit doesn't reach the host.</p>
+<p><strong>Q: How do you detect TLE vs. MLE?</strong><br>TLE: enforce a CPU-time limit (the fair primary) <em>and</em> a larger wall-clock watchdog — CPU time catches busy loops, wall time catches sleeps/deadlocks; breach either → TLE. MLE: set a cgroup <code>memory.max</code>; exceeding it makes the kernel OOM-kill the process (or an allocation fails) → MLE.</p>
+<p><strong>Q: How do you handle a contest spike?</strong><br>Async, queue-backed judging: the API enqueues and returns instantly; an autoscaling worker pool scales on queue depth. Pre-warm workers before a scheduled contest, give contest submissions queue priority over practice, and apply backpressure (bounded queue + per-user rate limits) so a spike becomes a longer wait, not an outage.</p>
+<p><strong>Q: What if a problem has multiple correct outputs?</strong><br>Use a <strong>special checker</strong> — an author-written, sandboxed program that reads the input, the contestant's output, and a reference, and decides ok/WA. It handles "print any valid answer," floating-point tolerance, or interactive problems, which exact/token comparison can't.</p>
+<p><strong>Q: When do you retry a submission?</strong><br>Only on <em>infrastructure</em> failure — worker crash, host OOM, stuck sandbox — where no valid verdict was produced; re-enqueue and judge again. Never retry a real verdict (WA/TLE/MLE/RE/CE); a lucky retry would break fairness. Judging must be idempotent so a redelivered job isn't double-counted.</p>
+<p><strong>Q: How do you make verdicts fair and reproducible?</strong><br>Measure CPU time (not wall time) for the primary limit, pin sandboxes to dedicated cores on a consistent hardware class, cap resources with cgroups to kill noisy-neighbor interference, and start every run from an identical fresh sandbox. Same code + same tests → same verdict, every time.</p>
+<p><strong>Q: How do you detect plagiarism?</strong><br>Structural fingerprinting: tokenize/normalize the source (drop names, whitespace, comments), hash overlapping k-grams and select a stable fingerprint subset, then flag high-overlap pairs for human review. Combine with hidden tests, submission rate limits, and the no-network sandbox. It's a review signal, not an automatic penalty.</p>
+</div>
+
+<div class="note"><div class="notel">One-line summary</div><p>A code judge = accept a submission → enqueue → a pool of ephemeral, layered sandboxes (namespaces/microVM + seccomp + cgroups + no net + read-only FS + dropped privs) compiles and runs it against hidden tests under CPU-time and memory caps → a checker turns output into a verdict. Security and determinism are the hard parts; a durable priority queue with an autoscaling worker pool absorbs contest spikes; retry infra failures but never real verdicts.</p></div>
+
+<!-- ══════════════ GLOSSARY ══════════════ -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Online judge (code judge)</strong></td><td>System that compiles a code submission, runs it against hidden tests in a sandbox, and returns a verdict.</td></tr>
+<tr><td><strong>Verdict</strong></td><td>The judge's terminal result for a submission — e.g. Accepted or Wrong Answer.</td></tr>
+<tr><td><strong>Hidden test cases</strong></td><td>Author-written inputs and expected outputs never shown to the user, so answers can't be hardcoded.</td></tr>
+<tr><td><strong>ICPC-style scoring</strong></td><td>All-or-nothing grading — the first failing test decides the whole verdict.</td></tr>
+<tr><td><strong>IOI-style scoring / subtask</strong></td><td>Partial-credit grading; tests grouped into subtasks, each worth points only if all its tests pass.</td></tr>
+<tr><td><strong>Little's Law</strong></td><td>L = &lambda; &times; W — concurrent jobs equal arrival rate times time in system; used here to size the worker pool.</td></tr>
+<tr><td><strong>AC — Accepted</strong></td><td>All tests pass within all time and memory limits.</td></tr>
+<tr><td><strong>WA — Wrong Answer</strong></td><td>Output is incorrect on at least one test.</td></tr>
+<tr><td><strong>TLE — Time Limit Exceeded</strong></td><td>Breached the CPU-time limit or the wall-clock watchdog.</td></tr>
+<tr><td><strong>MLE — Memory Limit Exceeded</strong></td><td>Used more memory than the cap; the kernel OOM-kills the process.</td></tr>
+<tr><td><strong>RE — Runtime Error</strong></td><td>Crashed while running — non-zero exit or a fatal signal.</td></tr>
+<tr><td><strong>CE — Compile Error</strong></td><td>The compiler exited non-zero; the code never built.</td></tr>
+<tr><td><strong>PE — Presentation Error</strong></td><td>Right values but wrong formatting or whitespace.</td></tr>
+<tr><td><strong>OLE — Output Limit Exceeded</strong></td><td>Wrote more bytes to stdout than the allowed cap.</td></tr>
+<tr><td><strong>Sandbox</strong></td><td>The isolated, ephemeral, one-shot environment in which one untrusted submission runs.</td></tr>
+<tr><td><strong>Namespaces</strong></td><td>Linux feature giving a process its own view of PIDs, mounts, network, users, and IPC.</td></tr>
+<tr><td><strong>seccomp-bpf</strong></td><td>A BPF-based syscall filter that allowlists permitted syscalls and kills the process on any other.</td></tr>
+<tr><td><strong>cgroups (control groups)</strong></td><td>Linux mechanism (v2) enforcing hard CPU, memory, and process-count caps on a group of processes.</td></tr>
+<tr><td><strong>microVM (KVM)</strong></td><td>Lightweight virtual machine with its own guest kernel, run behind KVM hardware virtualization for stronger isolation.</td></tr>
+<tr><td><strong>OOM kill</strong></td><td>Out-of-memory kill — the kernel terminates a process that exceeds its memory cap.</td></tr>
+<tr><td><strong>Checker</strong></td><td>Program comparing a submission's output to the reference; a special checker handles multiple valid answers.</td></tr>
+<tr><td><strong>Idempotency</strong></td><td>Judging a submission more than once yields the same result and is never double-counted.</td></tr>
+<tr><td><strong>Backpressure</strong></td><td>Bounding the queue and slowing or limiting intake when the backlog grows, so a spike becomes a longer wait rather than an overload.</td></tr>
+</table>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="sd_payment_system.html">&lsaquo; Design a Payment System</a><a class="bkc" href="index.html">📖 Contents</a><a href="sd_url_shortener.html">Design a URL Shortener &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

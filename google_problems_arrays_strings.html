@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arrays &amp; Strings — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 1 — <b>Arrays &amp; Strings</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Arrays &amp; Strings &mdash; Google-style Problems</h1>
+  <div class="sub">Twelve classic big-tech array &amp; string problems &bull; original framing, execution-tested solutions, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+<!-- PROBLEM: Plus One -->
+<div class="card">
+<h2>Plus One</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>A non-negative integer is stored as an array of decimal digits, most-significant digit first, with no leading zeros (the number <code>0</code> is the single-element array <code>[0]</code>). Add one to this number and return the resulting digit array.</p>
+<ul>
+  <li>Digits are in the range <code>0..9</code>; the array has at least one element.</li>
+  <li>The result may be one digit longer than the input (for example, <code>999 + 1 = 1000</code>).</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>[2, 4, 9]</code> represents 249, so the answer is <code>[2, 5, 0]</code>. And <code>[9, 9]</code> becomes <code>[1, 0, 0]</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>This is primary-school addition with a single seeded carry. Start with <code>carry = 1</code> (that is the "+1") and sweep the digits from right to left. At each position add the carry, keep the ones digit in place, and push any tens digit left. If a carry survives past the leftmost digit, the number overflowed to a new power of ten (e.g. <code>99 &rarr; 100</code>), so allocate one extra slot and place the leading <code>1</code>.</p>
+
+<pre><span class="cm">// Treat the array as one big number, most-significant digit first.</span>
+<span class="cm">// Seed carry = 1 (the "+1"), then ripple it right-to-left.</span>
+<span class="kw">public</span> <span class="kw">int</span>[] <span class="fn">plusOne</span>(<span class="kw">int</span>[] digits) {
+    <span class="kw">int</span> n = digits.length, carry = <span class="num">1</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = n - <span class="num">1</span>; <span class="num">0</span> &lt;= i; --i) {   <span class="cm">// walk from the last digit backwards</span>
+        <span class="kw">int</span> sum = digits[i] + carry;
+        digits[i] = sum % <span class="num">10</span>;                 <span class="cm">// keep the ones digit in place</span>
+        carry = sum / <span class="num">10</span>;                     <span class="cm">// 0 or 1 propagates left</span>
+    }
+    <span class="kw">if</span> (<span class="num">0</span> == carry) <span class="kw">return</span> digits;         <span class="cm">// no overflow: array is already correct</span>
+    <span class="cm">// Overflow (e.g. 999 -&gt; 1000): need one extra leading slot.</span>
+    <span class="kw">int</span>[] res = <span class="kw">new</span> <span class="kw">int</span>[n + <span class="num">1</span>];
+    res[<span class="num">0</span>] = carry;                          <span class="cm">// the new leading 1</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; ++i) res[i + <span class="num">1</span>] = digits[i];
+    <span class="kw">return</span> res;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> (single pass, plus an <code>O(n)</code> copy only on overflow). Space <code>O(1)</code> extra when there is no carry-out, otherwise <code>O(n)</code> for the one-longer result array.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) Forgetting the all-nines overflow case, which is the only time the length changes. (2) Trying to convert the array to an <code>int</code>/<code>long</code> first — it overflows for large inputs; that is exactly why the problem uses a digit array. (3) Expect a follow-up on "add two big-integer arrays" or a different base — the same right-to-left carry loop generalizes directly.</p></div>
+</div>
+
+<!-- PROBLEM: Valid Parentheses -->
+<div class="card">
+<h2>Valid Parentheses</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a string containing only the six bracket characters <code>()</code>, <code>[]</code>, and <code>{}</code>, decide whether the brackets are balanced. A string is balanced when every closing bracket matches the most recently opened, still-unclosed bracket of the same type, and no bracket is left open.</p>
+<ul>
+  <li>The string may be empty (empty counts as valid).</li>
+  <li>Order matters: <code>([)]</code> is invalid even though counts match.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>"{[]}"</code> is valid, <code>"(]"</code> is invalid, and <code>"(("</code> is invalid (two openers never close).</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Bracket nesting is last-opened-first-closed, which is exactly a stack. Push every opener. On a closer, the top of the stack must be the matching opener — if the stack is empty or the top is the wrong type, fail fast. At the end the stack must be empty, otherwise some opener never closed.</p>
+
+<pre><span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">isValid</span>(<span class="type">String</span> s) {
+    <span class="type">Deque</span>&lt;<span class="type">Character</span>&gt; stack = <span class="kw">new</span> <span class="type">ArrayDeque</span>&lt;&gt;();   <span class="cm">// used as a LIFO stack</span>
+    <span class="kw">for</span> (<span class="kw">char</span> c : s.toCharArray()) {
+        <span class="kw">if</span> (c == <span class="str">')'</span>) { <span class="kw">if</span> (stack.isEmpty() || stack.pollLast() != <span class="str">'('</span>) <span class="kw">return</span> <span class="kw">false</span>; }
+        <span class="kw">else if</span> (c == <span class="str">']'</span>) { <span class="kw">if</span> (stack.isEmpty() || stack.pollLast() != <span class="str">'['</span>) <span class="kw">return</span> <span class="kw">false</span>; }
+        <span class="kw">else if</span> (c == <span class="str">'}'</span>) { <span class="kw">if</span> (stack.isEmpty() || stack.pollLast() != <span class="str">'{'</span>) <span class="kw">return</span> <span class="kw">false</span>; }
+        <span class="kw">else</span> stack.addLast(c);                       <span class="cm">// an opener: push it</span>
+    }
+    <span class="kw">return</span> stack.isEmpty();                          <span class="cm">// leftover openers =&gt; invalid</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code>, one pass over the string. Space <code>O(n)</code> for the stack in the worst case (all openers).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) Forgetting the empty-stack check on a closer — <code>pollLast()</code> on an empty deque returns <code>null</code> and the string like <code>")"</code> is misjudged. (2) Forgetting the final <code>isEmpty()</code> check, which is what rejects <code>"(("</code>. (3) Watch <code>Character</code> auto-unboxing: comparing a possibly-<code>null</code> boxed value with <code>==</code> against a <code>char</code> can NPE, so the empty check must come first (short-circuit <code>||</code> guarantees it). A common follow-up generalizes to arbitrary bracket pairs via a map, or asks for the count of characters to remove/insert to make it valid.</p></div>
+</div>
+
+<!-- PROBLEM: Container With Most Water -->
+<div class="card">
+<h2>Container With Most Water</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You are given an array of non-negative heights, where each value is a vertical line drawn at that index. Picking two lines and the x-axis forms a container. Its water capacity equals the shorter of the two lines multiplied by the horizontal distance between them. Return the maximum capacity over all pairs.</p>
+<ul>
+  <li>At least two lines are given.</li>
+  <li>The container is not slanted; only the two chosen lines bound the water — inner lines are ignored.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for heights <code>[3, 9, 2, 6, 7, 4, 8]</code> the best pair is the <code>9</code> at index 1 and the <code>8</code> at index 6: area = <code>min(9, 8) &times; (6 - 1) = 40</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Start with the widest possible container: one pointer at each end. The area is capped by the <em>shorter</em> wall, so the width is as large as it will ever be for that shorter wall — moving the taller wall inward can only reduce width without lifting the cap, so it can never help. Therefore always move the shorter wall inward, hunting for a taller one, and track the best area seen. This linear sweep provably examines the optimum.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">maxArea</span>(<span class="kw">int</span>[] h) {
+    <span class="kw">int</span> i = <span class="num">0</span>, j = h.length - <span class="num">1</span>, best = <span class="num">0</span>;   <span class="cm">// widest container first</span>
+    <span class="kw">while</span> (i &lt; j) {
+        <span class="cm">// Area is bounded by the shorter wall; move THAT wall inward.</span>
+        <span class="cm">// (j-- - i) and (j - i++) compute the width BEFORE the pointer moves.</span>
+        <span class="kw">if</span> (h[i] &gt;= h[j]) best = <span class="type">Math</span>.<span class="fn">max</span>(best, h[j] * (j-- - i));
+        <span class="kw">else</span>            best = <span class="type">Math</span>.<span class="fn">max</span>(best, h[i] * (j - i++));
+    }
+    <span class="kw">return</span> best;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> — the two pointers move toward each other and meet once. Space <code>O(1)</code>.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) The greedy move must be on the shorter wall; moving the taller one is the classic wrong choice — be ready to justify why the shorter wall can be safely discarded. (2) When the two walls are equal, moving either is fine (this code moves <code>j</code>); the discarded equal wall cannot be part of a strictly larger area. (3) Do not confuse this with Trapping Rain Water — here inner lines are ignored and you want one maximal container, not total trapped volume. (4) Watch the post-increment/decrement in the width expression; a common bug computes the width after the pointer already moved.</p></div>
+</div>
+
+<!-- PROBLEM: Trapping Rain Water -->
+<div class="card">
+<h2>Trapping Rain Water</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>An elevation map is given as an array of non-negative bar heights, each bar one unit wide. After rain, water pools in the valleys. Return the total units of water trapped between the bars.</p>
+<ul>
+  <li>Water above index <code>x</code> rises to <code>min(highest bar to its left, highest bar to its right)</code>, minus the bar's own height (never negative).</li>
+  <li>The array may be empty or have a single bar (both trap zero).</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>[2, 0, 3, 1, 0, 2, 1]</code> traps <code>5</code> units; <code>[5, 1, 0, 2, 4]</code> traps <code>9</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>The water level over any position is set by the lower of the tallest walls on its two sides. Use two pointers from the ends. Whichever side currently has the <em>lower</em> outer wall is the guaranteed bottleneck for that side, so fix that wall as the water level and advance inward, adding <code>level - height</code> for every shorter bar until a taller bar appears (which becomes the new limiter). Because the opposite wall is known to be at least as tall, the level is safe. This runs in one linear pass without precomputing prefix/suffix maxima.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">trap</span>(<span class="kw">int</span>[] h) {
+    <span class="kw">int</span> i = <span class="num">0</span>, j = h.length - <span class="num">1</span>, water = <span class="num">0</span>;
+    <span class="kw">while</span> (i &lt; j) {
+        <span class="cm">// The lower of the two outer walls fixes the water level on its side.</span>
+        <span class="kw">if</span> (h[i] &gt;= h[j]) {
+            <span class="kw">int</span> level = h[j];                          <span class="cm">// right wall is the limiter</span>
+            <span class="kw">while</span> (i &lt; j &amp;&amp; h[j] &lt;= level) water += level - h[j--];
+        } <span class="kw">else</span> {
+            <span class="kw">int</span> level = h[i];                          <span class="cm">// left wall is the limiter</span>
+            <span class="kw">while</span> (i &lt; j &amp;&amp; h[i] &lt;= level) water += level - h[i++];
+        }
+    }
+    <span class="kw">return</span> water;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> — every index is consumed by exactly one pointer. Space <code>O(1)</code>.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) The correctness hinges on always working from the shorter outer wall; if you fix the taller side you can over- or under-count. (2) Empty and single-element arrays must return 0 (the <code>i &lt; j</code> guard handles them). (3) Interviewers often ask for the trade-offs between this <code>O(1)</code>-space two-pointer method, the prefix/suffix-max arrays version (<code>O(n)</code> space, arguably easier to reason about), and a monotonic-stack solution that adds water layer by layer. (4) A frequent follow-up is the 2D version ("Trapping Rain Water II"), which needs a min-heap boundary sweep rather than two pointers.</p></div>
+</div>
+
+<!-- PROBLEM: 3Sum -->
+<div class="card">
+<h2>3Sum</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given an integer array, return every <em>distinct</em> triple of values that sums to zero. Two triples are the same if they contain the same three values regardless of order, and each distinct triple must appear only once in the output.</p>
+<ul>
+  <li>The array may contain duplicates and negative numbers.</li>
+  <li>Fewer than three elements yields an empty result.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[-3, 1, 2, -1, -1, 4, 0]</code> the answer is <code>[[-3, -1, 4], [-3, 1, 2], [-1, -1, 2], [-1, 0, 1]]</code>. For <code>[0, 0, 0, 0]</code> it is just <code>[[0, 0, 0]]</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Sort the array so that duplicates sit together and a two-pointer scan becomes possible. Fix each value as the anchor <code>i</code>, then find pairs in the suffix that sum to <code>-nums[i]</code> by walking a left pointer up and a right pointer down. The sum monotonically responds to pointer moves: too small &rarr; move left up, too big &rarr; move right down. Deduplicate at three levels — skip repeated anchors, and after recording a hit skip repeated left/right values — so each distinct triple is emitted exactly once.</p>
+
+<pre><span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">List</span>&lt;<span class="type">Integer</span>&gt;&gt; <span class="fn">threeSum</span>(<span class="kw">int</span>[] nums) {
+    <span class="type">List</span>&lt;<span class="type">List</span>&lt;<span class="type">Integer</span>&gt;&gt; res = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+    <span class="kw">if</span> (nums == <span class="kw">null</span> || nums.length &lt; <span class="num">3</span>) <span class="kw">return</span> res;
+    <span class="kw">int</span> n = nums.length;
+    <span class="type">Arrays</span>.<span class="fn">sort</span>(nums);                                <span class="cm">// enables two pointers + easy dedup</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i + <span class="num">2</span> &lt; n; ++i) {
+        <span class="kw">if</span> (i != <span class="num">0</span> &amp;&amp; nums[i] == nums[i - <span class="num">1</span>]) <span class="kw">continue</span>;   <span class="cm">// skip duplicate anchors</span>
+        <span class="kw">if</span> (nums[i] &gt; <span class="num">0</span>) <span class="kw">break</span>;                          <span class="cm">// smallest is positive: no zero-sum left</span>
+        <span class="kw">int</span> j = i + <span class="num">1</span>, k = n - <span class="num">1</span>;
+        <span class="kw">while</span> (j &lt; k) {
+            <span class="kw">int</span> sum = nums[i] + nums[j] + nums[k];
+            <span class="kw">if</span> (sum == <span class="num">0</span>) {
+                res.add(<span class="type">Arrays</span>.<span class="fn">asList</span>(nums[i], nums[j], nums[k]));
+                <span class="kw">while</span> (j &lt; k &amp;&amp; nums[j] == nums[j + <span class="num">1</span>]) j++;   <span class="cm">// skip dup left values</span>
+                <span class="kw">while</span> (j &lt; k &amp;&amp; nums[k] == nums[k - <span class="num">1</span>]) k--;   <span class="cm">// skip dup right values</span>
+                j++; k--;
+            } <span class="kw">else if</span> (sum &gt; <span class="num">0</span>) k--;                     <span class="cm">// too big: shrink from the right</span>
+            <span class="kw">else</span> j++;                                     <span class="cm">// too small: grow from the left</span>
+        }
+    }
+    <span class="kw">return</span> res;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n log n)</code> for the sort plus <code>O(n<sup>2</sup>)</code> for the anchored two-pointer scans &rarr; <code>O(n<sup>2</sup>)</code> overall. Space <code>O(1)</code> beyond the sort and the output list (<code>O(log n)</code>–<code>O(n)</code> for the sort's internals).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) The single most common bug is incomplete deduplication — you must skip duplicate anchors <em>and</em> skip duplicate left/right values after a hit; doing only one produces repeated triples. (2) A hash-set-of-triples approach also works but costs more memory and still needs care; the sorted two-pointer method is the expected answer. (3) The <code>nums[i] &gt; 0</code> early break is a safe optimization on sorted input, not required for correctness. (4) Interviewers commonly extend to 4Sum / kSum (recurse down to a two-pointer base case) or "3Sum Closest," which drops the dedup but tracks the sum nearest a target.</p></div>
+</div>
+
+<!-- PROBLEM: Next Permutation -->
+<div class="card">
+<h2>Next Permutation</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given an array of numbers representing one arrangement, rearrange it <em>in place</em> into the next arrangement in lexicographic (dictionary) order. If the array is already the largest arrangement (fully descending), wrap around to the smallest (fully ascending). Only constant extra memory may be used.</p>
+<ul>
+  <li>Values may repeat; ordering is by value.</li>
+  <li>A single element (or empty input) is its own next permutation.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>[2, 3, 1] &rarr; [3, 1, 2]</code>; <code>[1, 4, 4] &rarr; [4, 1, 4]</code>; and the largest, <code>[5, 4, 2] &rarr; [2, 4, 5]</code> (wrap-around).</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Scan from the right to find the first "pivot" — the last position where <code>nums[i-1] &lt; nums[i]</code>. Everything to its right is a non-increasing tail that is already at its maximum, so it cannot advance without raising the pivot. Swap the pivot with the smallest value to its right that is still larger than it (found by scanning the tail from the right). That makes the prefix the next-larger prefix; the tail is still descending, so reverse it to the smallest order. If no pivot exists, the whole array is descending — reverse it entirely to wrap to the smallest permutation.</p>
+
+<pre><span class="kw">public</span> <span class="kw">void</span> <span class="fn">nextPermutation</span>(<span class="kw">int</span>[] nums) {
+    <span class="kw">if</span> (nums == <span class="kw">null</span> || nums.length &lt;= <span class="num">1</span>) <span class="kw">return</span>;   <span class="cm">// empty or single element: already its own next permutation</span>
+    <span class="kw">int</span> n = nums.length, i = n - <span class="num">1</span>, j = i;
+    <span class="cm">// 1) find pivot: walk left while the tail is non-increasing</span>
+    <span class="kw">while</span> (<span class="num">0</span> &lt; i &amp;&amp; nums[i - <span class="num">1</span>] &gt;= nums[i]) i--;
+    <span class="kw">if</span> (<span class="num">0</span> == i) {                          <span class="cm">// whole array descending: wrap to ascending</span>
+        <span class="kw">while</span> (i &lt; j) swap(nums, i++, j--);
+        <span class="kw">return</span>;
+    }
+    i--;                                    <span class="cm">// i is now the pivot index (nums[i] &lt; nums[i+1])</span>
+    <span class="cm">// 2) find rightmost value greater than the pivot</span>
+    <span class="kw">while</span> (i &lt; j &amp;&amp; nums[i] &gt;= nums[j]) j--;
+    swap(nums, i++, j);                      <span class="cm">// 3) swap, then advance i to the tail start</span>
+    <span class="cm">// 4) reverse the (still descending) tail into ascending order</span>
+    j = n - <span class="num">1</span>;
+    <span class="kw">while</span> (i &lt; j) swap(nums, i++, j--);
+}
+
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">swap</span>(<span class="kw">int</span>[] a, <span class="kw">int</span> i, <span class="kw">int</span> j) {
+    <span class="kw">int</span> t = a[i]; a[i] = a[j]; a[j] = t;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> — at most three linear passes (find pivot, find successor, reverse tail). Space <code>O(1)</code>, fully in place.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) The pivot comparison must use <code>&gt;=</code> so that equal values in the tail are treated as non-increasing; using <code>&gt;</code> breaks on inputs with duplicates. (2) Do not forget the reverse step — after swapping, the tail is descending and must be flipped to ascending, otherwise you skip permutations. (3) The all-descending / wrap-around case is the classic missed edge; a single element must also be handled. (4) A tempting XOR-swap trick is a hidden trap: swapping an element with itself via XOR zeroes it out, so prefer the plain temp-variable swap shown here — interviewers read the plain temp as cleaner. Expect a follow-up asking for the k-th permutation or the previous permutation (mirror the comparisons).</p></div>
+</div>
+
+<!-- PROBLEM: Rotate Image -->
+<div class="card">
+<h2>Rotate Image</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You are given an <code>n &times; n</code> grid of integers. Turn the whole grid a quarter-turn <em>clockwise</em> so that the top row becomes the right-hand column, and do it <strong>in place</strong> &mdash; you may not allocate a second grid to copy into.</p>
+<ul>
+  <li>The matrix is square (<code>1 &le; n &le; 20</code> or so); cell values are arbitrary 32-bit integers, possibly negative or duplicated.</li>
+  <li>Extra memory must be <code>O(1)</code> beyond the input.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> starting from <code>[[2,7,1],[9,4,3],[6,8,5]]</code>, a clockwise quarter-turn yields <code>[[6,9,2],[8,4,7],[5,3,1]]</code> &mdash; the first row <code>6,9,2</code> is the old first column read bottom-up.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>A clockwise 90&deg; rotation factors into two cheap in-place passes. <strong>First transpose</strong> (mirror across the main diagonal, swapping <code>a[i][j]</code> with <code>a[j][i]</code>); this turns rows into columns. <strong>Then reverse every row</strong> left-to-right. The composition lands each element exactly where the rotation wants it, using only swaps &mdash; no scratch matrix.</p>
+
+<pre><span class="cm">// Rotate an n x n matrix 90 degrees clockwise, in place.</span>
+<span class="cm">// Step 1: transpose across the main diagonal.</span>
+<span class="cm">// Step 2: reverse each row.</span>
+<span class="kw">static</span> <span class="kw">void</span> <span class="fn">rotate</span>(<span class="kw">int</span>[][] matrix) {
+    <span class="kw">if</span> (matrix == <span class="kw">null</span> || matrix.length == <span class="num">0</span>) <span class="kw">return</span>;   <span class="cm">// defensive: empty / null</span>
+    <span class="kw">int</span> m = matrix.length;
+
+    <span class="cm">// --- transpose: swap the upper triangle with the lower triangle ---</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; m; ++i) {
+        <span class="kw">for</span> (<span class="kw">int</span> j = i + <span class="num">1</span>; j &lt; m; ++j) {   <span class="cm">// j starts at i+1, so we touch each pair once</span>
+            <span class="kw">int</span> tmp = matrix[i][j];
+            matrix[i][j] = matrix[j][i];
+            matrix[j][i] = tmp;
+        }
+    }
+
+    <span class="cm">// --- reverse every row in place with a two-pointer sweep ---</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; m; ++i) {
+        <span class="kw">int</span> j = <span class="num">0</span>, k = m - <span class="num">1</span>;
+        <span class="kw">while</span> (j &lt; k) {
+            <span class="cm">// plain temp swap: clear and has no aliasing hazard</span>
+            <span class="kw">int</span> tmp = matrix[i][j];
+            matrix[i][j] = matrix[i][k];
+            matrix[i][k] = tmp;
+            j++; k--;
+        }
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n&sup2;)</code> &mdash; each cell is touched a constant number of times. Space <code>O(1)</code> &mdash; only swaps, no auxiliary grid.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Direction confusion</strong> — transpose-then-reverse-<em>rows</em> gives <em>clockwise</em>; for counter-clockwise you transpose then reverse the <em>columns</em> (or reverse rows first). State which one you're building. <strong>Double-swap bug</strong> — if the transpose loop runs <code>j</code> from <code>0</code> instead of <code>i+1</code>, every pair is swapped twice and you get the original matrix back. <strong>Use a plain temp swap</strong> — a clever XOR swap (<code>a^=b;b^=a;a^=b;</code>) silently zeroes a cell when the two indices coincide, so the straightforward temp swap used here is both safe and clearer. A frequent follow-up: rotate a <em>rectangular</em> <code>m&times;n</code> matrix (no longer in place) or rotate by an arbitrary multiple of 90&deg;.</p></div>
+</div>
+
+<!-- PROBLEM: Multiply Strings -->
+<div class="card">
+<h2>Multiply Strings</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Two non-negative integers are given as decimal <em>strings</em> <code>num1</code> and <code>num2</code> (they may be far larger than any built-in integer type). Return their product, again as a string. You may not convert the inputs to a native integer or rely on a big-integer library.</p>
+<ul>
+  <li><code>1 &le; length &le; 200</code>; each string is digits only, with no leading zeros except the literal <code>"0"</code>.</li>
+  <li>The answer must likewise carry no extra leading zeros.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>"327" &times; "89" = "29103"</code>; and <code>"0" &times; "74" = "0"</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Multiplying an <code>m</code>-digit number by an <code>n</code>-digit number produces at most <code>m + n</code> digits. Allocate an <code>int[m+n]</code> accumulator. The product of <code>num1[i]</code> and <code>num2[j]</code> lands in exactly two buckets: the units digit at index <code>i+j+1</code> and the carry at index <code>i+j</code>. Add each partial product into those buckets and normalise the carry immediately. Finally, skip leading zero buckets and stitch the digits into a string.</p>
+
+<pre><span class="cm">// Multiply two non-negative decimal strings without native bignum.</span>
+<span class="kw">static</span> <span class="type">String</span> <span class="fn">multiply</span>(<span class="type">String</span> num1, <span class="type">String</span> num2) {
+    <span class="kw">char</span>[] cs1 = num1.toCharArray(), cs2 = num2.toCharArray();
+    <span class="kw">int</span> m = cs1.length, n = cs2.length;
+    <span class="kw">int</span>[] nums = <span class="kw">new</span> <span class="kw">int</span>[m + n];               <span class="cm">// product has at most m+n digits</span>
+
+    <span class="kw">for</span> (<span class="kw">int</span> i = m - <span class="num">1</span>; <span class="num">0</span> &lt;= i; --i) {
+        <span class="kw">for</span> (<span class="kw">int</span> j = n - <span class="num">1</span>; <span class="num">0</span> &lt;= j; --j) {
+            <span class="kw">int</span> prod = (cs1[i] - <span class="str">'0'</span>) * (cs2[j] - <span class="str">'0'</span>);
+            nums[i + j + <span class="num">1</span>] += prod;           <span class="cm">// add into the "units" slot for this pair</span>
+            nums[i + j]     += nums[i + j + <span class="num">1</span>] / <span class="num">10</span>;  <span class="cm">// spill the carry left</span>
+            nums[i + j + <span class="num">1</span>] %= <span class="num">10</span>;             <span class="cm">// keep only a single digit here</span>
+        }
+    }
+
+    <span class="cm">// skip leading zeros; if everything is zero the answer is "0"</span>
+    <span class="kw">int</span> i = <span class="num">0</span>;
+    <span class="kw">while</span> (i &lt; nums.length &amp;&amp; nums[i] == <span class="num">0</span>) i++;
+    <span class="kw">if</span> (i == nums.length) <span class="kw">return</span> <span class="str">"0"</span>;
+
+    <span class="type">StringBuilder</span> sb = <span class="kw">new</span> <span class="type">StringBuilder</span>();
+    <span class="kw">while</span> (i &lt; nums.length) sb.append(nums[i++]);
+    <span class="kw">return</span> sb.toString();
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(m&middot;n)</code> &mdash; every digit pair is multiplied once. Space <code>O(m+n)</code> for the accumulator.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>The index mapping is the whole trick</strong> — a pair <code>(i, j)</code> contributes its ones digit to position <code>i+j+1</code> and its carry to <code>i+j</code>. Off-by-one here is the #1 bug. <strong>Carry propagation</strong> — because <code>nums[i+j+1]</code> can exceed 9 <em>after</em> accumulation, you must divide-then-mod in the shown order; doing the carry before adding the partial product loses digits. <strong>Leading-zero cleanup</strong> — forgetting the skip leaves answers like <code>"056088"</code>, and forgetting the all-zero guard returns an empty string for <code>"0"&times;"0"</code>. <strong>Why no overflow</strong> — each bucket holds a single-digit product plus a bounded carry, so a 32-bit <code>int</code> never overflows even for 200-digit inputs (a common probe). Follow-ups: add two strings, or generalise to an arbitrary base.</p></div>
+</div>
+
+<!-- PROBLEM: Longest Substring Without Repeating Characters -->
+<div class="card">
+<h2>Longest Substring Without Repeating Characters</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a string <code>s</code>, find the length of the longest <em>contiguous</em> block that contains no repeated character.</p>
+<ul>
+  <li><code>0 &le; length &le; 10&#8309;</code>; characters may be letters, digits, symbols, or spaces.</li>
+  <li>Aim for a single linear pass.</li>
+  <li><strong>Charset note:</strong> the <code>int[256]</code> table assumes single-byte (extended-ASCII / Latin-1) code points; for arbitrary Unicode, swap it for a <code>HashMap&lt;Character,Integer&gt;</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> in <code>"abcadef"</code> the best window is <code>"bcadef"</code>, length 6. In <code>"kkkk"</code> it is just <code>"k"</code>, length 1.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Keep a window <code>(start, i]</code> that is always duplicate-free. Store, for each character code, the <em>last index</em> at which it appeared. When the current character was seen inside the window, jump <code>start</code> forward to just past that earlier occurrence. Because <code>start</code> is the index <em>before</em> the window begins, the current window length is simply <code>i - start</code>. We only ever move <code>start</code> forward, so it stays a true single-pass window.</p>
+
+<pre><span class="cm">// Longest run of distinct characters. 'start' is the index just LEFT of</span>
+<span class="cm">// the current window, so window length == i - start.</span>
+<span class="kw">static</span> <span class="kw">int</span> <span class="fn">lengthOfLongestSubstring</span>(<span class="type">String</span> s) {
+    <span class="kw">int</span>[] last = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">256</span>];      <span class="cm">// last[c] = last index where char c was seen</span>
+    java.util.<span class="type">Arrays</span>.<span class="fn">fill</span>(last, -<span class="num">1</span>);
+    <span class="kw">int</span> start = -<span class="num">1</span>, best = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; s.length(); ++i) {
+        <span class="kw">int</span> c = s.charAt(i);
+        <span class="kw">if</span> (last[c] != -<span class="num">1</span>) {
+            <span class="cm">// if the previous sighting is inside the window, shrink from the left.</span>
+            <span class="cm">// max() guards against an OLD sighting that is already left of start.</span>
+            start = <span class="type">Math</span>.<span class="fn">max</span>(start, last[c]);
+        }
+        best = <span class="type">Math</span>.<span class="fn">max</span>(best, i - start);
+        last[c] = i;                <span class="cm">// record current position</span>
+    }
+    <span class="kw">return</span> best;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(length)</code> &mdash; one pass, each index visited once. Space <code>O(1)</code> for a fixed 256-entry table (independent of input size).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>The <code>max()</code> is essential</strong> — for input like <code>"abba"</code>, when the second <code>a</code> arrives its last-seen index sits <em>behind</em> the already-advanced <code>start</code>; without <code>start = max(start, last[c])</code> you would wrongly pull the window backward and count a duplicate <code>b</code>. <strong>Charset size</strong> — a 256-slot array covers extended ASCII; if the interviewer says "full Unicode," switch to a <code>HashMap&lt;Character,Integer&gt;</code>. <strong>Length formula</strong> — tracking <code>start</code> as the slot before the window keeps it <code>i - start</code> (no <code>+1</code>); mixing this up with the "start = first index of window" convention causes off-by-one errors. Probes: return the substring itself, or the count of distinct-char substrings.</p></div>
+</div>
+
+<!-- PROBLEM: Longest Substring with At Most Two Distinct Characters -->
+<div class="card">
+<h2>Longest Substring with At Most Two Distinct Characters</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a string <code>s</code>, return the length of the longest contiguous block that uses <em>at most two</em> distinct characters.</p>
+<ul>
+  <li><code>0 &le; length &le; 10&#8309;</code>; input is ASCII.</li>
+  <li>Linear time is expected.</li>
+  <li><strong>Charset note:</strong> the <code>int[128]</code> frequency table assumes ASCII code points; for arbitrary Unicode, swap it for a <code>HashMap&lt;Character,Integer&gt;</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> in <code>"abaccc"</code> the best window is <code>"accc"</code> (only <code>a</code> and <code>c</code>), length 4. In <code>"xxyyzzz"</code> it is <code>"yyzzz"</code>, length 5.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Expand the right edge one character at a time, maintaining a frequency table and a live count of how many <em>distinct</em> characters the window holds. The moment that count reaches three, shrink from the left &mdash; decrementing frequencies &mdash; until it drops back to two. After each step the window is valid, so record its length. Each index enters and leaves the window at most once, giving a linear scan.</p>
+
+<pre><span class="cm">// Longest window containing at most two distinct characters.</span>
+<span class="kw">static</span> <span class="kw">int</span> <span class="fn">lengthOfLongestSubstringTwoDistinct</span>(<span class="type">String</span> s) {
+    <span class="kw">char</span>[] cs = s.toCharArray();
+    <span class="kw">int</span>[] freq = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">128</span>];      <span class="cm">// frequency of each char inside the window</span>
+    <span class="kw">int</span> max = <span class="num">0</span>, start = <span class="num">0</span>, n = cs.length, distinct = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; ++i) {
+        <span class="kw">if</span> (freq[cs[i]]++ == <span class="num">0</span>) distinct++;   <span class="cm">// a brand-new character entered</span>
+        <span class="kw">while</span> (distinct == <span class="num">3</span>) {               <span class="cm">// too many kinds: shrink from left</span>
+            <span class="kw">if</span> (--freq[cs[start++]] == <span class="num">0</span>) distinct--;
+        }
+        max = <span class="type">Math</span>.<span class="fn">max</span>(max, i - start + <span class="num">1</span>);
+    }
+    <span class="kw">return</span> max;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(length)</code> &mdash; left and right pointers each advance monotonically. Space <code>O(1)</code> (fixed 128-entry table).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Shrink on the RIGHT threshold</strong> — the window is legal at two distinct, so you only shrink once a <em>third</em> kind appears (<code>distinct == 3</code>); shrinking at <code>== 2</code> is a classic mistake. <strong>Track the count, not the map size, per step</strong> — incrementing <code>distinct</code> only when a frequency rises from 0, and decrementing only when it falls back to 0, avoids re-scanning the table. <strong>Empty string</strong> — the loop never runs and it correctly returns 0. <strong>The key follow-up is generalisation to <em>k</em> distinct</strong> — replace the constant 3 with <code>k+1</code> and, for large/unknown alphabets, swap the array for a <code>HashMap</code>; this is a common follow-up.</p></div>
+</div>
+
+<!-- PROBLEM: Minimum Window Substring -->
+<div class="card">
+<h2>Minimum Window Substring</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a string <code>s</code> and a pattern <code>t</code>, return the shortest contiguous slice of <code>s</code> that contains <em>every</em> character of <code>t</code> including duplicates (order does not matter). If no such slice exists, return the empty string.</p>
+<ul>
+  <li><code>1 &le; |s|, |t| &le; 10&#8309;</code>; the answer is guaranteed unique when it exists.</li>
+  <li>Target linear time.</li>
+  <li><strong>Charset note:</strong> the two <code>int[128]</code> tables assume ASCII code points; for arbitrary Unicode, swap them for a <code>HashMap&lt;Character,Integer&gt;</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>s = "ADCFEBA"</code>, <code>t = "ABC"</code>, the shortest covering window is <code>"CFEBA"</code> (uniquely &mdash; no other length-5 window covers <code>t</code>). If <code>t = "ABCC"</code> (two <code>C</code>s needed but only one exists), the answer is <code>""</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Tally how many of each character <code>t</code> requires, and a single integer <code>count</code> = how many still-unmet character slots remain. Advance the right edge; each time you consume a character the window genuinely still needed, decrement <code>count</code>. When <code>count</code> hits zero the window is a valid cover &mdash; now advance the left edge as far as possible, recording the smallest cover, and stop shrinking the instant removing a character breaks coverage (its need count climbs back above zero).</p>
+
+<pre><span class="cm">// Shortest window of s that contains all chars of t (with multiplicity).</span>
+<span class="kw">static</span> <span class="type">String</span> <span class="fn">minWindow</span>(<span class="type">String</span> s, <span class="type">String</span> t) {
+    <span class="kw">if</span> (s == <span class="kw">null</span> || t == <span class="kw">null</span> || t.length() == <span class="num">0</span>) <span class="kw">return</span> <span class="str">""</span>;
+    <span class="kw">boolean</span>[] needed = <span class="kw">new</span> <span class="kw">boolean</span>[<span class="num">128</span>];   <span class="cm">// is this char part of t?</span>
+    <span class="kw">int</span>[] need = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">128</span>];             <span class="cm">// how many of this char still required</span>
+    <span class="kw">int</span> best = <span class="type">Integer</span>.MAX_VALUE, i = <span class="num">0</span>, j = <span class="num">0</span>, start = <span class="num">0</span>, count = <span class="num">0</span>;
+
+    <span class="kw">for</span> (<span class="kw">char</span> c : t.toCharArray()) { needed[c] = <span class="kw">true</span>; need[c]++; count++; }
+
+    <span class="kw">char</span>[] cs = s.toCharArray();
+    <span class="kw">while</span> (i &lt; cs.length) {
+        <span class="kw">if</span> (count &gt; <span class="num">0</span>) {
+            need[cs[i]]--;
+            <span class="cm">// only chars t wants, while still "in deficit", reduce the count</span>
+            <span class="kw">if</span> (needed[cs[i]] &amp;&amp; need[cs[i]] &gt;= <span class="num">0</span>) count--;
+        }
+        <span class="kw">while</span> (count == <span class="num">0</span>) {                 <span class="cm">// window [j, i] covers t</span>
+            <span class="kw">if</span> (best &gt; i - j + <span class="num">1</span>) { best = i - j + <span class="num">1</span>; start = j; }
+            need[cs[j]]++;
+            <span class="cm">// if we just removed a NEEDED char below the requirement, break coverage</span>
+            <span class="kw">if</span> (needed[cs[j]] &amp;&amp; need[cs[j]] &gt; <span class="num">0</span>) count++;
+            j++;
+        }
+        i++;
+    }
+    <span class="kw">return</span> best == <span class="type">Integer</span>.MAX_VALUE ? <span class="str">""</span> : s.substring(start, start + best);
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(|s| + |t|)</code> &mdash; each pointer crosses <code>s</code> once. Space <code>O(1)</code> (two fixed 128-entry tables).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Duplicates in <code>t</code> matter</strong> — a <code>Set</code> is wrong; you must count multiplicities, so <code>t = "aa"</code> demands two <code>a</code>s. <strong>The <code>&gt;= 0</code> vs <code>&gt; 0</code> asymmetry</strong> — when expanding, a needed char reduces <code>count</code> only while its remaining need was still non-negative (surplus copies don't help); when contracting, coverage breaks only when a needed char's requirement goes back strictly positive. Getting these boundaries backwards is the most common bug. <strong>Characters outside <code>t</code></strong> get their <code>need</code> pushed negative and are freely shrunk away &mdash; that is intended. <strong>Empty/oversized <code>t</code></strong> — guard <code>t</code> empty, and any window can't be smaller than <code>|t|</code>. Follow-ups: window with <em>exactly</em> the multiset, or the same idea over a stream where you can't index backward.</p></div>
+</div>
+
+<!-- PROBLEM: Backspace String Compare -->
+<div class="card">
+<h2>Backspace String Compare</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Two strings <code>s</code> and <code>t</code> are typed into an editor where <code>'#'</code> means "backspace" (delete the character before it; on empty text it does nothing). Decide whether the two, once fully applied, produce the same final text.</p>
+<ul>
+  <li><code>1 &le; length &le; 200</code>; lowercase letters plus <code>'#'</code>.</li>
+  <li>The interesting version asks for <code>O(1)</code> extra space (no rebuilt strings).</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>s = "xy#z"</code> becomes <code>"xz"</code>; <code>t = "xw#z"</code> also becomes <code>"xz"</code> &rarr; equal. But <code>"m#n"</code> (&rarr; <code>"n"</code>) and <code>"p"</code> differ.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Rebuilding both strings costs <code>O(n)</code> space; instead walk <em>backwards</em> from both ends. A <code>'#'</code> seen while scanning right-to-left means "skip the next real character," so carry a <code>skip</code> tally: each <code>'#'</code> increments it, and each real character is consumed (not compared) while <code>skip &gt; 0</code>. When both scans land on a surviving character, compare them. Do this until both pointers fall off the left end.</p>
+
+<pre><span class="cm">// Compare two "typed" strings under '#' = backspace, using O(1) space.</span>
+<span class="kw">static</span> <span class="kw">boolean</span> <span class="fn">backspaceCompare</span>(<span class="type">String</span> s, <span class="type">String</span> t) {
+    <span class="kw">char</span>[] cs = s.toCharArray(), ct = t.toCharArray();
+    <span class="kw">int</span> i = cs.length - <span class="num">1</span>, j = ct.length - <span class="num">1</span>;
+
+    <span class="kw">while</span> (i &gt;= <span class="num">0</span> || j &gt;= <span class="num">0</span>) {
+        <span class="cm">// advance i to the next surviving character in s</span>
+        <span class="kw">int</span> skip = <span class="num">0</span>;
+        <span class="kw">while</span> (i &gt;= <span class="num">0</span>) {
+            <span class="kw">if</span> (cs[i] == <span class="str">'#'</span>) { i--; skip++; }        <span class="cm">// a backspace: owe one deletion</span>
+            <span class="kw">else if</span> (skip &gt; <span class="num">0</span>) { skip--; i--; }       <span class="cm">// this char is deleted</span>
+            <span class="kw">else</span> <span class="kw">break</span>;                               <span class="cm">// a genuine surviving char</span>
+        }
+        <span class="cm">// advance j to the next surviving character in t</span>
+        skip = <span class="num">0</span>;
+        <span class="kw">while</span> (j &gt;= <span class="num">0</span>) {
+            <span class="kw">if</span> (ct[j] == <span class="str">'#'</span>) { j--; skip++; }
+            <span class="kw">else if</span> (skip &gt; <span class="num">0</span>) { skip--; j--; }
+            <span class="kw">else</span> <span class="kw">break</span>;
+        }
+        <span class="cm">// compare the two survivors</span>
+        <span class="kw">if</span> (i &gt;= <span class="num">0</span> &amp;&amp; j &gt;= <span class="num">0</span> &amp;&amp; cs[i] != ct[j]) <span class="kw">return</span> <span class="kw">false</span>;
+        <span class="kw">if</span> ((i &gt;= <span class="num">0</span>) != (j &gt;= <span class="num">0</span>)) <span class="kw">return</span> <span class="kw">false</span>;        <span class="cm">// one ran out before the other</span>
+        i--; j--;
+    }
+    <span class="kw">return</span> <span class="kw">true</span>;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(|s| + |t|)</code> &mdash; each character visited once. Space <code>O(1)</code> &mdash; no rebuilt buffers, just two indices and a counter.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Why scan backwards</strong> — a backspace affects characters to its <em>left</em>, so a right-to-left walk lets you resolve deletions locally without a stack; the <code>O(n)</code>-space stack/rebuild solution is the easy warm-up and the reverse scan is the "can you do O(1) space?" follow-up. <strong>The length-mismatch check is easy to forget</strong> — <code>(i &gt;= 0) != (j &gt;= 0)</code> catches the case where one string has a surviving character while the other is exhausted; e.g. <code>"a#c"</code> vs <code>"c"</code> must stay equal, but <code>"ac"</code> vs <code>"c"</code> must not. <strong>Leading backspaces are no-ops</strong> — <code>"#"</code> and <code>""</code> both reduce to empty. <strong>Don't compare while <code>skip &gt; 0</code></strong> — consume first, compare only true survivors. Probe: report the resulting strings, or handle it as a live keystroke stream.</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="mobile_system_design.html">&lsaquo; Mobile System Design</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_string_simulation.html">String Simulation &amp; Scanning &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

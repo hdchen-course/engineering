@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sorting &amp; Searching — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 7 — <b>Sorting &amp; Searching</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Sorting &amp; Searching</h1>
+  <div class="sub">Seven Google-style sorting &amp; searching problems &bull; original framing, execution-tested solutions, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+<div class="tip" style="margin-bottom:24px;"><p><strong>How to read this chapter:</strong> every worked example uses inputs invented for this book, and each stated output was produced by <em>compiling and running</em> the accompanying Java. Beyond hand-picked edge cases (an absent search target, an empty input array, a single element, all-equal duplicates, touching and fully-nested intervals, and both the odd- and even-total median cases) each solution was cross-checked against an independent brute force over hundreds of thousands of random inputs. The recurring idea below is to <strong>impose or exploit order</strong> &mdash; either <strong>counting/sorting</strong> to normalise, or <strong>binary-searching a monotone predicate</strong> (on an index, a value, or a partition), and, when order must be built while counting inversions, a <strong>stable merge sort that carries original indices</strong>.</p></div>
+
+
+<!-- PROBLEM: Valid Anagram -->
+<div class="card">
+<h2>Valid Anagram</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given two strings, decide whether one is an anagram of the other &mdash; that is, whether they contain exactly the same characters with the same multiplicities, just possibly reordered.</p>
+<ul>
+  <li>Strings of different lengths can never be anagrams, so a length mismatch is an instant <code>false</code>.</li>
+  <li><strong>Assumptions:</strong> the solution shown treats input as <em>lowercase</em> ASCII letters <code>a&ndash;z</code> and is <em>case-sensitive</em> (so <code>"Rat"</code> and <code>"tar"</code> would not match). For mixed case, normalise first; for full Unicode, count code points in a hash map instead of a fixed 26-slot array.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>"garden"</code> and <code>"danger"</code> the answer is <code>true</code> (computed by running the code): both hold one each of <code>a, d, e, g, n, r</code>. For <code>"listen"</code> and <code>"stolen"</code> &mdash; same length, but <code>listen</code> has an <code>i</code> where <code>stolen</code> has an <code>o</code> &mdash; the code returns <code>false</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Two strings are anagrams exactly when their <strong>character frequency tables are identical</strong>. Rather than sort both (an <code>O(n log n)</code> route), tally counts in a single linear pass: <strong>increment</strong> for every character of the first string and <strong>decrement</strong> for every character of the second, into the same array. If the strings truly match, every count returns to zero; any non-zero slot at the end signals a surplus or deficit. Checking lengths first lets the paired increment/decrement loop run over one shared index.</p>
+
+<pre><span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">isAnagram</span>(<span class="type">String</span> s, <span class="type">String</span> t) {
+    <span class="kw">if</span> (s.length() != t.length()) <span class="kw">return</span> <span class="kw">false</span>;  <span class="cm">// different lengths can't match</span>
+    <span class="kw">int</span>[] count = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">26</span>];                    <span class="cm">// assume lowercase a-z</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; s.length(); i++) {
+        count[s.<span class="fn">charAt</span>(i) - <span class="str">'a'</span>]++;              <span class="cm">// tally s</span>
+        count[t.<span class="fn">charAt</span>(i) - <span class="str">'a'</span>]--;              <span class="cm">// untally t in the same pass</span>
+    }
+    <span class="kw">for</span> (<span class="kw">int</span> c : count) <span class="kw">if</span> (c != <span class="num">0</span>) <span class="kw">return</span> <span class="kw">false</span>;  <span class="cm">// any imbalance -&gt; not an anagram</span>
+    <span class="kw">return</span> <span class="kw">true</span>;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; one pass to tally plus a fixed 26-slot sweep. Space <code>O(1)</code> &mdash; the count array has constant size (or <code>O(k)</code> for an alphabet of <code>k</code> distinct symbols).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>State the character-set assumption out loud.</strong> The 26-slot array assumes lowercase <code>a&ndash;z</code>; interviewers routinely follow up with <em>&ldquo;what about uppercase, spaces, or Unicode?&rdquo;</em> &mdash; the clean answer is a <code>HashMap</code> keyed by code point (and <code>codePointAt</code>/surrogate handling for characters beyond the Basic Multilingual Plane). <strong>Case sensitivity.</strong> As written, <code>'A'</code> and <code>'a'</code> differ; if the definition should ignore case, lowercase both inputs first. <strong>Length check first.</strong> Comparing lengths up front is both a fast reject and what lets the single loop index both strings safely. <strong>Counting beats sorting.</strong> The two-string tally is <code>O(n)</code>; sorting both and comparing is <code>O(n log n)</code> &mdash; correct, but slower, and worth mentioning as the trade-off.</p></div>
+</div>
+
+
+<!-- PROBLEM: Peak Index in a Mountain Array -->
+<div class="card">
+<h2>Peak Index in a Mountain Array</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>An array is a <em>mountain</em>: it strictly increases to a single peak and then strictly decreases. Return the index of that peak.</p>
+<ul>
+  <li>The peak is the unique maximum, and it is neither the first nor the last element (there is at least one step up and one step down).</li>
+  <li>A linear scan finds it in <code>O(n)</code>, but the strict monotonicity on each side lets us do better with binary search.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[1, 4, 7, 9, 6, 3, 2]</code> the answer is <code>3</code> (computed by running the code) &mdash; the peak value <code>9</code> sits at index <code>3</code>. Left of it the values climb (<code>1&lt;4&lt;7&lt;9</code>); right of it they fall (<code>9&gt;6&gt;3&gt;2</code>), so index <code>3</code> is the turning point.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Binary-search the slope.</strong> At any middle index, compare it with its right neighbour. If <code>arr[mid] &lt; arr[mid + 1]</code> we are still on the <em>ascending</em> flank, so the peak must lie strictly to the right &mdash; move <code>lo</code> up. Otherwise we are on the <em>descending</em> flank (or exactly at the peak), so the peak is at <code>mid</code> or to its left &mdash; keep <code>mid</code> by setting <code>hi = mid</code>. The window shrinks every step and converges on the single index where the slope flips. Reading <code>arr[mid + 1]</code> is always safe because the loop condition <code>lo &lt; hi</code> guarantees <code>mid &lt; hi &le; arr.length - 1</code>.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">peakIndexInMountainArray</span>(<span class="kw">int</span>[] arr) {
+    <span class="kw">int</span> lo = <span class="num">0</span>, hi = arr.length - <span class="num">1</span>;
+    <span class="kw">while</span> (lo &lt; hi) {
+        <span class="kw">int</span> mid = lo + (hi - lo) / <span class="num">2</span>;
+        <span class="kw">if</span> (arr[mid] &lt; arr[mid + <span class="num">1</span>]) lo = mid + <span class="num">1</span>;  <span class="cm">// still ascending -&gt; peak is to the right</span>
+        <span class="kw">else</span> hi = mid;                               <span class="cm">// descending (or at peak) -&gt; keep mid</span>
+    }
+    <span class="kw">return</span> lo;                                       <span class="cm">// lo == hi == peak index</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(log n)</code> &mdash; the search window halves each step. Space <code>O(1)</code>.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Compare against the neighbour, not against both sides.</strong> The whole trick is the single comparison <code>arr[mid]</code> vs <code>arr[mid + 1]</code>; it tells you which flank you are on without needing <code>arr[mid - 1]</code>. <strong>The <code>mid + 1</code> read is in-bounds.</strong> Because the loop runs only while <code>lo &lt; hi</code>, <code>mid</code> is at most <code>hi - 1</code>, so <code>mid + 1</code> never exceeds the last index &mdash; no guard needed. <strong>Use <code>hi = mid</code>, not <code>hi = mid - 1</code>, on the descending side.</strong> <code>mid</code> itself may be the peak, so discarding it would skip the answer. <strong>Converge to a single index.</strong> The <code>lo &lt; hi</code> / return-<code>lo</code> shape leaves exactly one candidate; a <code>lo &lt;= hi</code> loop needs a separate stored answer. <strong>Follow-up: a general &ldquo;find any peak&rdquo; array</strong> (not guaranteed unimodal) uses the same neighbour-comparison binary search and still runs in <code>O(log n)</code>.</p></div>
+</div>
+
+
+<!-- PROBLEM: Find First and Last Position -->
+<div class="card">
+<h2>Find First and Last Position of Element in Sorted Array</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a non-decreasing sorted array and a target value, return the first and last indices at which the target appears, as <code>[first, last]</code>. If the target is absent, return <code>[-1, -1]</code>. The whole thing must run in <code>O(log n)</code>.</p>
+<ul>
+  <li>Duplicates form a contiguous block, so the answer is the inclusive index range of that block.</li>
+  <li>A single occurrence yields <code>first == last</code>; a missing target yields <code>[-1, -1]</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[2, 4, 4, 4, 4, 7, 9]</code> and target <code>4</code> the answer is <code>[1, 4]</code> (computed by running the code): the run of <code>4</code>s starts at index <code>1</code> and ends at index <code>4</code>. Searching the same array for <code>5</code> returns <code>[-1, -1]</code> &mdash; <code>5</code> never appears.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Two lower-bound searches.</strong> Define <code>lowerBound(key)</code> as the smallest index whose value is <code>&ge; key</code> (or <code>length</code> if none) &mdash; the classic half-open binary search. The <strong>first</strong> occurrence of the target is simply <code>lowerBound(target)</code>; if that index is off the end or the value there is not the target, the target is absent. The <strong>last</strong> occurrence is <code>lowerBound(target + 1) - 1</code>: the position just before the first element strictly greater than the target. One reusable primitive answers both ends without a separate &ldquo;upper bound&rdquo; variant.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span>[] <span class="fn">searchRange</span>(<span class="kw">int</span>[] nums, <span class="kw">int</span> target) {
+    <span class="kw">int</span> first = <span class="fn">lowerBound</span>(nums, target);
+    <span class="kw">if</span> (first == nums.length || nums[first] != target)
+        <span class="kw">return</span> <span class="kw">new</span> <span class="kw">int</span>[]{-<span class="num">1</span>, -<span class="num">1</span>};             <span class="cm">// target absent</span>
+    <span class="kw">int</span> last = <span class="fn">lowerBound</span>(nums, target + <span class="num">1</span>) - <span class="num">1</span>;  <span class="cm">// one before first value &gt; target</span>
+    <span class="kw">return</span> <span class="kw">new</span> <span class="kw">int</span>[]{first, last};
+}
+<span class="cm">// Smallest index i with nums[i] &gt;= key, or nums.length if none exists.</span>
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">lowerBound</span>(<span class="kw">int</span>[] nums, <span class="kw">int</span> key) {
+    <span class="kw">int</span> lo = <span class="num">0</span>, hi = nums.length;             <span class="cm">// half-open [lo, hi)</span>
+    <span class="kw">while</span> (lo &lt; hi) {
+        <span class="kw">int</span> mid = lo + (hi - lo) / <span class="num">2</span>;
+        <span class="kw">if</span> (nums[mid] &lt; key) lo = mid + <span class="num">1</span>;    <span class="cm">// key is further right</span>
+        <span class="kw">else</span> hi = mid;                          <span class="cm">// mid could be the boundary</span>
+    }
+    <span class="kw">return</span> lo;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(log n)</code> &mdash; two binary searches, each halving the window. Space <code>O(1)</code>.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Handle the absent target explicitly.</strong> After the first search you must check both <code>first == nums.length</code> (ran off the end) <em>and</em> <code>nums[first] != target</code> (landed on a larger value) before indexing &mdash; skipping the first guard throws on an out-of-range access. <strong>Derive the last index without a second search variant.</strong> <code>lowerBound(target + 1) - 1</code> reuses the same primitive; writing a separate upper-bound search is a common source of off-by-one bugs. <strong>Use a half-open <code>[lo, hi)</code> with <code>hi = nums.length</code>.</strong> This lets <code>lowerBound</code> legitimately return <code>length</code> (target bigger than everything) instead of clamping. <strong>Don&rsquo;t linear-scan to the ends.</strong> Finding one occurrence then walking outward is <code>O(n)</code> on a long run of duplicates &mdash; the interviewer&rsquo;s <code>O(log n)</code> requirement forbids it. <strong><code>target + 1</code> overflow.</strong> If the target can equal <code>Integer.MAX_VALUE</code>, compute the upper bound with a <code>long</code> key or a strict-greater search instead.</p></div>
+</div>
+
+
+<!-- PROBLEM: Merge Intervals -->
+<div class="card">
+<h2>Merge Intervals</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a list of intervals <code>[start, end]</code> in arbitrary order, merge every set of overlapping intervals and return the resulting non-overlapping intervals.</p>
+<ul>
+  <li>Intervals that merely <em>touch</em> at an endpoint (like <code>[1, 4]</code> and <code>[4, 5]</code>) count as overlapping here and combine into <code>[1, 5]</code>.</li>
+  <li>An interval can be fully <em>nested</em> inside another (<code>[2, 3]</code> inside <code>[1, 10]</code>), so the merged end must be the running <em>maximum</em>, not just the latest end.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[[1, 4], [2, 5], [7, 9], [8, 8], [11, 13]]</code> the answer is <code>[[1, 5], [7, 9], [11, 13]]</code> (computed by running the code). After sorting by start, <code>[1, 4]</code> and <code>[2, 5]</code> overlap into <code>[1, 5]</code>; <code>[8, 8]</code> is nested inside <code>[7, 9]</code> so it leaves <code>[7, 9]</code> unchanged; <code>[11, 13]</code> stands alone.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Sort by start, then sweep once.</strong> Once intervals are ordered by their start, any interval that overlaps the one we are currently building must begin at or before that interval&rsquo;s current end &mdash; overlaps can only come from the immediate neighbour in sorted order. Carry a running <code>cur</code>; for each next interval, if its start is <code>&le; cur[1]</code> it overlaps, so <strong>extend</strong> <code>cur</code>&rsquo;s end to <code>max(cur[1], next[1])</code> (crucial for nested intervals); otherwise there is a gap, so <strong>commit</strong> <code>cur</code> to the output and start a fresh one. Commit the final <code>cur</code> after the loop.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span>[][] <span class="fn">merge</span>(<span class="kw">int</span>[][] intervals) {
+    <span class="kw">if</span> (intervals.length == <span class="num">0</span>) <span class="kw">return</span> <span class="kw">new</span> <span class="kw">int</span>[<span class="num">0</span>][];
+    <span class="type">Arrays</span>.<span class="fn">sort</span>(intervals, (a, b) -&gt; <span class="type">Integer</span>.<span class="fn">compare</span>(a[<span class="num">0</span>], b[<span class="num">0</span>]));  <span class="cm">// by start</span>
+    <span class="type">List</span>&lt;<span class="kw">int</span>[]&gt; out = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+    <span class="kw">int</span>[] cur = intervals[<span class="num">0</span>].<span class="fn">clone</span>();                     <span class="cm">// running merged interval</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt; intervals.length; i++) {
+        <span class="kw">if</span> (intervals[i][<span class="num">0</span>] &lt;= cur[<span class="num">1</span>])                    <span class="cm">// overlaps (or touches) cur</span>
+            cur[<span class="num">1</span>] = <span class="type">Math</span>.<span class="fn">max</span>(cur[<span class="num">1</span>], intervals[i][<span class="num">1</span>]);   <span class="cm">// extend end (handles nesting)</span>
+        <span class="kw">else</span> { out.<span class="fn">add</span>(cur); cur = intervals[i].<span class="fn">clone</span>(); }   <span class="cm">// gap -&gt; commit, start new</span>
+    }
+    out.<span class="fn">add</span>(cur);                                        <span class="cm">// commit the last one</span>
+    <span class="kw">return</span> out.<span class="fn">toArray</span>(<span class="kw">new</span> <span class="kw">int</span>[<span class="num">0</span>][]);
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n log n)</code> &mdash; dominated by the sort; the sweep is <code>O(n)</code>. Space <code>O(n)</code> for the output (plus <code>O(log n)</code> to <code>O(n)</code> sort overhead).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Sort first.</strong> Without ordering by start, overlaps are not confined to adjacent intervals and the single-pass sweep is invalid. <strong>Extend the end with <code>max</code>, not assignment.</strong> A nested interval such as <code>[8, 8]</code> inside <code>[7, 9]</code> would <em>shrink</em> the end if you blindly wrote <code>cur[1] = next[1]</code>; taking the max keeps the widest reach. <strong>Decide whether touching merges.</strong> This solution treats <code>[1, 4]</code> and <code>[4, 5]</code> as overlapping (<code>&lt;=</code>); if the problem says touching intervals stay separate, use strict <code>&lt;</code> &mdash; clarify with the interviewer. <strong>Don&rsquo;t forget the final commit.</strong> The last <code>cur</code> is still open when the loop ends and must be appended. <strong>Clone before mutating.</strong> Writing into <code>intervals[i]</code> directly can corrupt the caller&rsquo;s data; copy the endpoints into <code>cur</code>.</p></div>
+</div>
+
+
+<!-- PROBLEM: Insert Interval -->
+<div class="card">
+<h2>Insert Interval</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You are given a list of non-overlapping intervals <em>already sorted by start</em>, plus one new interval. Insert the new interval so the list stays sorted and non-overlapping, merging where necessary. Do it in a single <code>O(n)</code> pass &mdash; no re-sort.</p>
+<ul>
+  <li>Because the existing intervals are already sorted and disjoint, you can walk them once in three phases: those strictly before the new interval, those that overlap it, and those strictly after.</li>
+  <li>The new interval may overlap zero, some, or all existing intervals &mdash; or slot cleanly into a gap.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> inserting <code>[4, 8]</code> into <code>[[1, 3], [6, 9], [11, 14]]</code> gives <code>[[1, 3], [4, 9], [11, 14]]</code> (computed by running the code). <code>[1, 3]</code> ends before <code>4</code>, so it is emitted untouched; <code>[4, 8]</code> overlaps <code>[6, 9]</code> and merges into <code>[4, 9]</code>; <code>[11, 14]</code> starts after <code>9</code>, so it follows unchanged.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Three sequential phases over the sorted list.</strong> First, copy every interval that ends <em>strictly before</em> the new interval starts (<code>intervals[i][1] &lt; newStart</code>) &mdash; these cannot overlap. Second, absorb every interval that <em>does</em> overlap (its start <code>&le;</code> the running merged end): widen the merged interval&rsquo;s start to the smaller start and its end to the larger end. Third, append the finished merged block, then copy the remaining tail unchanged. Because the input is pre-sorted and disjoint, each interval is visited once &mdash; no sorting needed, so it beats the <code>O(n log n)</code> of a merge-from-scratch.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span>[][] <span class="fn">insert</span>(<span class="kw">int</span>[][] intervals, <span class="kw">int</span>[] newInterval) {
+    <span class="type">List</span>&lt;<span class="kw">int</span>[]&gt; out = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+    <span class="kw">int</span> i = <span class="num">0</span>, n = intervals.length;
+    <span class="kw">while</span> (i &lt; n &amp;&amp; intervals[i][<span class="num">1</span>] &lt; newInterval[<span class="num">0</span>])   <span class="cm">// ends before new starts: no overlap</span>
+        out.<span class="fn">add</span>(intervals[i++]);
+    <span class="kw">int</span> s = newInterval[<span class="num">0</span>], e = newInterval[<span class="num">1</span>];
+    <span class="kw">while</span> (i &lt; n &amp;&amp; intervals[i][<span class="num">0</span>] &lt;= e) {          <span class="cm">// overlaps the new interval</span>
+        s = <span class="type">Math</span>.<span class="fn">min</span>(s, intervals[i][<span class="num">0</span>]);
+        e = <span class="type">Math</span>.<span class="fn">max</span>(e, intervals[i][<span class="num">1</span>]);
+        i++;
+    }
+    out.<span class="fn">add</span>(<span class="kw">new</span> <span class="kw">int</span>[]{s, e});                        <span class="cm">// the merged block</span>
+    <span class="kw">while</span> (i &lt; n) out.<span class="fn">add</span>(intervals[i++]);            <span class="cm">// everything strictly after</span>
+    <span class="kw">return</span> out.<span class="fn">toArray</span>(<span class="kw">new</span> <span class="kw">int</span>[<span class="num">0</span>][]);
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; a single pass, since the list is already sorted. Space <code>O(n)</code> for the output.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Get the phase boundaries right.</strong> The &ldquo;before&rdquo; test is <code>intervals[i][1] &lt; newStart</code> (ends strictly before) and the &ldquo;overlap&rdquo; test is <code>intervals[i][0] &lt;= e</code> (starts at or before the growing end) &mdash; mixing up which endpoint each compares is the classic bug. <strong>Grow both ends of the merged block.</strong> The new interval can extend left of the first overlap (so take <code>min</code> of starts) and right of the last (so take <code>max</code> of ends). <strong>Compare against the <em>updated</em> <code>e</code>.</strong> As the merged interval grows it can reach intervals that did not overlap the original new interval; the loop must test against the current <code>e</code>, which is why it grows inside the loop. <strong>Handle the extremes.</strong> A new interval before everything, after everything, or spanning the whole list all fall out of the same three phases &mdash; no special cases. <strong>Don&rsquo;t re-sort.</strong> Concatenating and calling Merge Intervals works but is <code>O(n log n)</code>; the interviewer wants the linear insert that exploits the existing order.</p></div>
+</div>
+
+
+<!-- PROBLEM: Median of Two Sorted Arrays -->
+<div class="card">
+<h2>Median of Two Sorted Arrays</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given two sorted arrays, return the median of the combined set of all their elements, in <code>O(log(min(m, n)))</code> time. Do not actually merge them.</p>
+<ul>
+  <li>If the total count is <em>odd</em>, the median is the single middle element; if <em>even</em>, it is the average of the two middle elements.</li>
+  <li>Either array may be empty, so the answer can come entirely from one side.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[1, 3, 8]</code> and <code>[2, 4, 5, 6]</code> the answer is <code>4.0</code> (computed by running the code): the merged order is <code>1, 2, 3, 4, 5, 6, 8</code> &mdash; seven elements, odd, so the middle one is <code>4</code>. For <code>[1, 2]</code> and <code>[3, 4, 5, 6]</code> the merged order is <code>1, 2, 3, 4, 5, 6</code> (even total), so the median is <code>(3 + 4) / 2 = 3.5</code>. And for <code>[]</code> and <code>[5]</code> the answer is <code>5.0</code> &mdash; the lone element.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Binary-search a partition of the shorter array.</strong> Imagine cutting each array into a left part and a right part so that all <code>(m + n + 1) / 2</code> elements of the combined left half are <code>&le;</code> every element of the combined right half. Choosing how many come from the shorter array <code>a</code> (call it <code>i</code>) forces how many come from <code>b</code> (<code>j = half - i</code>), so there is only one degree of freedom to search. The partition is correct when the last left element of each array does not exceed the first right element of the <em>other</em> (<code>aL &le; bR</code> and <code>bL &le; aR</code>). Use <code>&plusmn;&infin;</code> sentinels when a cut lands at an array&rsquo;s edge so the boundary comparisons just work. Always binary-search the <em>smaller</em> array so <code>j</code> can never go negative and the range stays <code>O(log(min(m, n)))</code>.</p>
+
+<pre><span class="kw">public</span> <span class="kw">double</span> <span class="fn">findMedianSortedArrays</span>(<span class="kw">int</span>[] a, <span class="kw">int</span>[] b) {
+    <span class="kw">if</span> (a.length &gt; b.length) <span class="kw">return</span> <span class="fn">findMedianSortedArrays</span>(b, a);  <span class="cm">// search the shorter one</span>
+    <span class="kw">int</span> m = a.length, n = b.length;
+    <span class="kw">int</span> lo = <span class="num">0</span>, hi = m, half = (m + n + <span class="num">1</span>) / <span class="num">2</span>;   <span class="cm">// left side holds ceil(total/2)</span>
+    <span class="kw">while</span> (lo &lt;= hi) {
+        <span class="kw">int</span> i = lo + (hi - lo) / <span class="num">2</span>;              <span class="cm">// take i from a ...</span>
+        <span class="kw">int</span> j = half - i;                        <span class="cm">// ... and the rest from b</span>
+        <span class="kw">int</span> aL = (i == <span class="num">0</span>) ? <span class="type">Integer</span>.MIN_VALUE : a[i - <span class="num">1</span>];
+        <span class="kw">int</span> aR = (i == m) ? <span class="type">Integer</span>.MAX_VALUE : a[i];
+        <span class="kw">int</span> bL = (j == <span class="num">0</span>) ? <span class="type">Integer</span>.MIN_VALUE : b[j - <span class="num">1</span>];
+        <span class="kw">int</span> bR = (j == n) ? <span class="type">Integer</span>.MAX_VALUE : b[j];
+        <span class="kw">if</span> (aL &lt;= bR &amp;&amp; bL &lt;= aR) {              <span class="cm">// correct partition</span>
+            <span class="kw">if</span> (((m + n) &amp; <span class="num">1</span>) == <span class="num">1</span>) <span class="kw">return</span> <span class="type">Math</span>.<span class="fn">max</span>(aL, bL);  <span class="cm">// odd total</span>
+            <span class="kw">return</span> (<span class="type">Math</span>.<span class="fn">max</span>(aL, bL) + (<span class="kw">double</span>) <span class="type">Math</span>.<span class="fn">min</span>(aR, bR)) / <span class="num">2.0</span>;
+        } <span class="kw">else if</span> (aL &gt; bR) hi = i - <span class="num">1</span>;      <span class="cm">// took too many from a</span>
+        <span class="kw">else</span> lo = i + <span class="num">1</span>;                       <span class="cm">// took too few from a</span>
+    }
+    <span class="kw">throw new</span> <span class="type">IllegalArgumentException</span>(<span class="str">"inputs not sorted"</span>);
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(log(min(m, n)))</code> &mdash; the search runs over the shorter array only. Space <code>O(1)</code> (the tail recursion just swaps arguments once).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Binary-search the smaller array.</strong> If you search the longer one, <code>j = half - i</code> can go negative and the index math breaks; the leading swap guarantees <code>0 &le; j &le; n</code>. <strong>Use <code>&plusmn;&infin;</code> at the edges.</strong> When a cut is at position <code>0</code> or the array&rsquo;s length there is no left/right neighbour; substituting <code>Integer.MIN_VALUE</code>/<code>MAX_VALUE</code> makes the boundary comparisons pass without special-casing empty sides. <strong>Odd vs. even with the right <code>half</code>.</strong> Using <code>half = (m + n + 1) / 2</code> puts the extra element on the left for odd totals, so the odd-case median is <code>max(aL, bL)</code> and the even-case median averages <code>max(aL, bL)</code> with <code>min(aR, bR)</code>. <strong>Cast to <code>double</code> before averaging.</strong> <code>(max(aL, bL) + min(aR, bR))</code> can overflow or truncate; average as <code>double</code>. <strong>Empty array.</strong> With <code>a</code> empty, <code>m = 0</code>, <code>i = 0</code>, and every value comes from <code>b</code> &mdash; the sentinels make this fall out correctly.</p></div>
+</div>
+
+
+<!-- PROBLEM: Count of Smaller Numbers After Self -->
+<div class="card">
+<h2>Count of Smaller Numbers After Self</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given an integer array, return a new array <code>counts</code> where <code>counts[i]</code> is the number of elements to the <em>right</em> of index <code>i</code> that are strictly smaller than <code>nums[i]</code>.</p>
+<ul>
+  <li>The last element always has <code>0</code>, since nothing is to its right.</li>
+  <li>The brute-force double loop is <code>O(n&sup2;)</code>; the challenge is to reach <code>O(n log n)</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[6, 3, 8, 3, 1]</code> the answer is <code>[3, 1, 2, 1, 0]</code> (computed by running the code). To the right of the leading <code>6</code> sit <code>3, 3, 1</code> &mdash; all smaller, so <code>3</code>; the first <code>3</code> has only <code>1</code> to its right; <code>8</code> has <code>3, 1</code> &mdash; two smaller; the second <code>3</code> has just <code>1</code>; the final <code>1</code> has nothing after it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>This is a disguised <strong>inversion-counting</strong> problem, and a stable <strong>merge sort that carries original indices</strong> solves it in <code>O(n log n)</code>. Sort an array of <em>indices</em> (never the values themselves) by their values. During each merge, the left half holds elements that were originally to the <em>left</em> of the right half. When you pull an element from the <em>right</em> half because it is strictly smaller than the current left element, it has &ldquo;jumped ahead of&rdquo; every left element still waiting &mdash; so keep a running <code>moved</code> counter of right elements already placed, and whenever you finally place a left element, credit it with the current <code>moved</code>. Stability matters: on ties, take from the <em>left</em> first so equal values are not miscounted as smaller.</p>
+
+<pre><span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">Integer</span>&gt; <span class="fn">countSmaller</span>(<span class="kw">int</span>[] nums) {
+    <span class="kw">int</span> n = nums.length;
+    <span class="kw">int</span>[] count = <span class="kw">new</span> <span class="kw">int</span>[n];
+    <span class="kw">int</span>[] idx = <span class="kw">new</span> <span class="kw">int</span>[n];                     <span class="cm">// sort indices, not values</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) idx[i] = i;
+    <span class="fn">sort</span>(nums, idx, <span class="kw">new</span> <span class="kw">int</span>[n], <span class="num">0</span>, n - <span class="num">1</span>, count);
+    <span class="type">List</span>&lt;<span class="type">Integer</span>&gt; out = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;(n);
+    <span class="kw">for</span> (<span class="kw">int</span> c : count) out.<span class="fn">add</span>(c);
+    <span class="kw">return</span> out;
+}
+<span class="cm">// Stable merge sort on idx keyed by nums[idx]; tally right-half elements that pass each left element.</span>
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">sort</span>(<span class="kw">int</span>[] nums, <span class="kw">int</span>[] idx, <span class="kw">int</span>[] tmp, <span class="kw">int</span> lo, <span class="kw">int</span> hi, <span class="kw">int</span>[] count) {
+    <span class="kw">if</span> (lo &gt;= hi) <span class="kw">return</span>;
+    <span class="kw">int</span> mid = lo + (hi - lo) / <span class="num">2</span>;
+    <span class="fn">sort</span>(nums, idx, tmp, lo, mid, count);
+    <span class="fn">sort</span>(nums, idx, tmp, mid + <span class="num">1</span>, hi, count);
+    <span class="kw">int</span> i = lo, j = mid + <span class="num">1</span>, k = lo, moved = <span class="num">0</span>;   <span class="cm">// moved = right elems already placed</span>
+    <span class="kw">while</span> (i &lt;= mid &amp;&amp; j &lt;= hi) {
+        <span class="kw">if</span> (nums[idx[j]] &lt; nums[idx[i]]) {         <span class="cm">// right value smaller -&gt; it passed left[i..mid]</span>
+            moved++;
+            tmp[k++] = idx[j++];
+        } <span class="kw">else</span> {                                   <span class="cm">// left &lt;= right (stable): credit moved</span>
+            count[idx[i]] += moved;
+            tmp[k++] = idx[i++];
+        }
+    }
+    <span class="kw">while</span> (i &lt;= mid) { count[idx[i]] += moved; tmp[k++] = idx[i++]; }  <span class="cm">// remaining left keep the tally</span>
+    <span class="kw">while</span> (j &lt;= hi)  { tmp[k++] = idx[j++]; }
+    <span class="type">System</span>.<span class="fn">arraycopy</span>(tmp, lo, idx, lo, hi - lo + <span class="num">1</span>);      <span class="cm">// write the merged order back</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n log n)</code> &mdash; standard merge-sort recursion. Space <code>O(n)</code> for the index, temp, and count arrays.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Sort indices, carry the original position.</strong> The counts are indexed by each element&rsquo;s <em>original</em> location, so you must move indices through the merge and write into <code>count[idx[i]]</code>, not into a positional slot. <strong>Stability &mdash; take left on ties.</strong> The comparison must be strict (<code>nums[idx[j]] &lt; nums[idx[i]]</code>); using <code>&lt;=</code> would count equal values as &ldquo;smaller&rdquo; and over-report. Equivalently, on a tie the left element is emitted first. <strong>Credit the remaining left elements when the right half drains.</strong> After the right half is exhausted, every left element still queued must still receive the full <code>moved</code> count &mdash; the <code>while (i &lt;= mid)</code> drain loop does this; dropping it under-counts. <strong>Copy the merged order back.</strong> Forgetting the <code>arraycopy</code> leaves <code>idx</code> unsorted for the parent merge and corrupts later counts. <strong>Alternative: a Fenwick/BIT over compressed values.</strong> Coordinate-compress the values, then scan right to left querying the prefix count of strictly-smaller values &mdash; also <code>O(n log n)</code> and a common follow-up.</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_problems_dp.html">&lsaquo; Dynamic Programming</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_recursion.html">Recursion &amp; Backtracking &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

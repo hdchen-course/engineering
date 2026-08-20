@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Device Provisioning &amp; Identity — Part VII · Chapter 9</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --teal: #0c8599; --teal-l: #c5f6fa;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 24px; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.crumb { text-align:center; margin-bottom: 24px; font-size: 13px; color: var(--text3); }
+.crumb a { color: var(--blue); text-decoration: none; }
+.nav { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 40px; position: sticky; top: 44px; background: var(--bg); padding: 16px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 10px 18px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; white-space: pre-wrap; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+pre .kw { color: #cba6f7; } pre .cm { color: #7f849c; font-style: italic; } pre .num { color: #fab387; } pre .str { color: #a6e3a1; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.iv { background: var(--purple-l); border-left: 3px solid var(--purple); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.iv p { color: #4a2fa8; margin: 0; }
+.iv .lbl { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--purple); display:block; margin-bottom:4px; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.statgrid { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0; }
+.stat { flex:1 1 150px; background:var(--bg3); border-radius:10px; padding:14px 16px; text-align:center; }
+.stat .n { font-size:22px; font-weight:800; color:var(--blue); }
+.stat .l { font-size:12px; color:var(--text3); }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 18px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius: 20px; background: var(--purple-l); color: var(--purple); margin-left:6px; }
+.svg-wrap { margin: 18px 0; text-align: center; overflow-x: auto; }
+.svg-wrap svg { max-width: 100%; height: auto; }
+/* replayable step player */
+.player { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 18px 20px; margin: 18px 0; box-shadow: var(--shadow); }
+.player-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.player-btn { padding: 8px 18px; border-radius: 8px; border: 1px solid var(--blue); background: var(--blue); color: #fff; cursor: pointer; font-size: 13px; font-weight: 700; font-family: 'Inter', sans-serif; transition: all .15s; }
+.player-btn:hover { background: #145a9e; }
+.player-btn.ghost { background: var(--bg2); color: var(--blue); }
+.player-btn.ghost:hover { background: var(--blue-l); }
+.player-btn:disabled { opacity: .4; cursor: not-allowed; }
+.player-step { font-size: 12px; font-weight: 700; color: var(--text3); margin-left: auto; }
+.player-caption { background: var(--bg3); border-radius: 8px; padding: 12px 16px; font-size: 14px; color: var(--text2); min-height: 52px; }
+.player-caption b { color: var(--text); }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .statgrid,.player-controls{flex-wrap:wrap !important;}
+  .nav{position:static !important;flex-wrap:wrap !important;padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;display:inline-flex;align-items:center;}
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VII · Chapter 9 — <b>Device Provisioning &amp; Identity</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Device Provisioning &amp; Identity</h1>
+  <div class="sub">How a device earns a trusted identity and secret keys at the factory — before it is ever allowed to talk to the cloud</div>
+</header>
+<div class="crumb">📚 <a href="google_security_index.html">Google Security Systems — Overview</a> &nbsp;›&nbsp; Part VII · Chapter 9 — Device Provisioning &amp; Identity</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'what')">What &amp; Why</button>
+  <button class="nav-btn" onclick="showSection(event,'identity')">Identity &amp; Root of Trust</button>
+  <button class="nav-btn" onclick="showSection(event,'pki')">PKI &amp; Certificates</button>
+  <button class="nav-btn" onclick="showSection(event,'flow')">The Handshake</button>
+  <button class="nav-btn" onclick="showSection(event,'attest')">Attestation</button>
+  <button class="nav-btn" onclick="showSection(event,'models')">Factory Models</button>
+  <button class="nav-btn" onclick="showSection(event,'protect')">Protection &amp; Revocation</button>
+</div>
+
+<!-- ═══════ WHAT & WHY ═══════ -->
+<div class="section active" id="what">
+<div class="card">
+<h2>What "provisioning" means</h2>
+<p><strong>Analogy first.</strong> Think of a brand-new smart doorbell rolling off a factory line. Right now it is a blank stranger — nothing about it proves it is a real, genuine device rather than a fake someone built in a garage. <em>Provisioning</em> is the moment we give that device its <strong>passport and its private signature</strong>: a unique identity, plus secret keys that only it holds. From then on it can prove "I am genuinely device #A7F3, made by this company," and nobody can convincingly pretend to be it.</p>
+<p><strong>Tiny concrete example.</strong> When your doorbell later connects to the cloud, the cloud asks: "Prove who you are." The doorbell signs a random challenge with its secret key and presents its certificate. The cloud checks the signature and the certificate — like a border officer checking a passport and a live signature — and only then lets it in. All of that is possible <em>only because</em> provisioning happened first.</p>
+<div class="insight"><p><strong>The one-sentence model:</strong> provisioning is the birth certificate step — each device gets a unique key pair and a certificate signed by a trusted authority, recorded centrally, so that later <em>anyone</em> can verify the device is genuine without having to trust the factory or phone home to a secret master key.</p></div>
+
+<h3>Why trust must be established <em>before</em> the device talks to the cloud</h3>
+<p>The cloud has a circular problem: it should only accept data from real devices, but how does it recognize a real device the very first time it connects? If the answer were "anyone who connects is trusted," an attacker could spin up a million fake doorbells and flood, spoof, or poison the system. So the trust has to be built in <em>earlier</em> — at manufacture — when we can control the environment. The device shows up to the cloud already carrying proof of identity.</p>
+<div class="warning"><p><strong>The factory is a threat surface, not a safe zone.</strong> Devices are often built by contract manufacturers we don't fully control. The assembly line is exactly where keys are most exposed. A good provisioning design assumes the factory is <em>semi-trusted</em> and makes sure that even someone watching the factory network learns nothing useful.</p></div>
+
+<h3>The whole lifecycle (not just "issue a key")</h3>
+<ul>
+  <li><strong>Provision</strong> — mint a unique identity + keys at manufacture / first boot.</li>
+  <li><strong>Attest</strong> — later, the device proves "I am genuine and un-tampered."</li>
+  <li><strong>Protect</strong> — keys stay locked in hardware and never travel.</li>
+  <li><strong>Revoke &amp; renew</strong> — stop trusting a device whose key leaked; refresh expiring certs.</li>
+</ul>
+
+<div class="iv"><span class="lbl">Interview angle</span><p>Weak answers stop at "generate a key and store it." Strong answers say the sentence: <em>"per-device identity, signed by a hardware-protected authority, verifiable offline, with revocation designed in from day one — and I treat the factory as untrusted."</em> Naming the full lifecycle (provision → attest → revoke) in the first minute signals seniority.</p></div>
+</div>
+</div>
+
+<!-- ═══════ IDENTITY & ROOT OF TRUST ═══════ -->
+<div class="section" id="identity">
+<div class="card">
+<h2>Per-device identity &amp; the hardware root of trust</h2>
+<p><strong>Analogy.</strong> Imagine a school issuing every student a locker with a key. Two ways to do it: give every student the <em>same</em> master key (easy, but if one copy leaks, every locker in the school is open), or give each student a <em>unique</em> key (a bit more bookkeeping, but a stolen key opens exactly one locker). Device identity works the same way — and the industry chose unique keys per device for a very good reason.</p>
+
+<h3>Why per-device keys, not one shared key</h3>
+<table>
+  <tr><th></th><th>One shared key (per model)</th><th>Per-device key (the modern default)</th></tr>
+  <tr><td><strong>Blast radius</strong></td><td>Extract it once → <em>every</em> unit in the world is forgeable.</td><td>Extract it → exactly <em>one</em> unit is affected.</td></tr>
+  <tr><td><strong>Revocation</strong></td><td>You'd have to kill the whole product line.</td><td>Revoke just that one device; everyone else is fine.</td></tr>
+  <tr><td><strong>Cost</strong></td><td>Simple, tiny registry.</td><td>Needs on-device key generation + a registry of many identities.</td></tr>
+</table>
+<div class="tip"><p><strong>Say this:</strong> "Per-device keys bound the blast radius to a single unit and make targeted revocation possible. A shared secret built into every unit is the classic mistake — one extraction breaks everything."</p></div>
+
+<h3>Hardware root of trust &amp; the secure element (conceptual)</h3>
+<p>A <strong>secure element</strong> is a tiny, tamper-resistant vault built into the device — a chip (or a protected region of a chip) whose whole job is to <em>generate and guard secret keys</em>. Its superpower: the private key can be created <em>inside</em> the vault and <strong>never comes out</strong>. The device can ask the vault to "sign this" and get a signature back, but it can never read the raw key. Even someone who pries the device open and probes the circuit board is designed to come away with nothing.</p>
+<p>This vault is the device's <strong>root of trust</strong>: the one small piece we anchor everything else on. If you trust that the private key was born inside genuine hardware and never escaped, then a valid signature from that key is convincing proof of "this specific genuine device."</p>
+<div class="insight"><p><strong>Two secrets, protected differently.</strong> The <em>device's</em> private key lives in the device's secure element. The <em>authority's</em> signing key (next section) lives in the factory's HSM. Neither is ever transmitted over the wire — which is exactly why tapping the factory network is useless to an attacker.</p></div>
+<div class="warning"><p>We stay at the <em>system/protocol</em> layer here: what the secure element guarantees, not how the silicon fuses or firmware implement it. That's deliberate — the design reasoning doesn't need the transistor-level detail.</p></div>
+
+<div class="iv"><span class="lbl">Interview angle</span><p>If asked "where does the key come from?", the best answer is "generated on-device inside a secure element, so the private key never exists anywhere else." Contrast it with injecting a key from outside (weaker, because the key exists off-device for a moment). A strong answer ties <em>root of trust</em> → <em>never-exported private key</em> → <em>a signature = proof of genuine hardware</em>.</p></div>
+</div>
+</div>
+
+<!-- ═══════ PKI & CERTIFICATES ═══════ -->
+<div class="section" id="pki">
+<div class="card">
+<h2>Certificate issuance: a lightweight PKI story</h2>
+<p><strong>Analogy.</strong> A passport is only useful because a <em>government</em> you already trust issued it. You don't personally verify every citizen — you trust the issuing authority, and the passport's anti-forgery features tie back to that authority. A <strong>certificate</strong> is a device's passport, and a <strong>Certificate Authority (CA)</strong> is the government that signs it.</p>
+
+<h3>What a certificate actually is</h3>
+<p>A certificate is just: <em>the device's public key + some identity info (like a serial number), wrapped up and digitally signed by the CA.</em> Anyone can check the CA's signature. If it's valid, they know the CA vouched for "this public key belongs to this device" — without contacting the CA at all.</p>
+<pre><span class="cm"># A per-device certificate, conceptually</span>
+certificate {
+  subject:    <span class="str">"device A7F3, product = doorbell-v2"</span>
+  public_key: <span class="str">"04a9f1…"</span>        <span class="cm"># the device's PUBLIC half only</span>
+  issuer:     <span class="str">"Doorbell Product CA"</span>
+  valid:      2026-01-01 .. 2028-01-01
+  signature:  <span class="str">"3045022…"</span>        <span class="cm"># the CA's signature over all of the above</span>
+}</pre>
+
+<h3>The chain of trust (why we don't just have one CA)</h3>
+<p>Real systems use a <em>tree</em>, so a single compromise is contained:</p>
+<div class="svg-wrap">
+<svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif" role="img" aria-label="Chain of trust from an offline root CA down to per-device certificates">
+  <rect x="240" y="14" width="200" height="52" rx="10" fill="#212529"/>
+  <text x="340" y="37" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">Root CA</text>
+  <text x="340" y="55" text-anchor="middle" fill="#adb5bd" font-size="10.5">offline · rarely used · the trust anchor</text>
+  <line x1="340" y1="66" x2="340" y2="96" stroke="#868e96" stroke-width="2" marker-end="url(#dpk_a)"/>
+  <text x="352" y="86" fill="#5c636a" font-size="10">signs (rarely)</text>
+
+  <rect x="205" y="98" width="270" height="56" rx="10" fill="#5a3fc0"/>
+  <text x="340" y="121" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">Product / Intermediate CA</text>
+  <text x="340" y="139" text-anchor="middle" fill="#e5dbff" font-size="10.5">one per product line · key sealed in an HSM 🔒</text>
+  <line x1="340" y1="154" x2="340" y2="184" stroke="#868e96" stroke-width="2" marker-end="url(#dpk_a)"/>
+  <text x="352" y="174" fill="#5c636a" font-size="10">signs each device</text>
+
+  <rect x="70" y="188" width="180" height="54" rx="10" fill="#1d6b2e"/>
+  <text x="160" y="210" text-anchor="middle" fill="#fff" font-size="12.5" font-weight="bold">Device A7F3 cert</text>
+  <text x="160" y="228" text-anchor="middle" fill="#d3f9d8" font-size="10">unique per unit</text>
+  <rect x="270" y="188" width="180" height="54" rx="10" fill="#1d6b2e"/>
+  <text x="360" y="210" text-anchor="middle" fill="#fff" font-size="12.5" font-weight="bold">Device B2C8 cert</text>
+  <text x="360" y="228" text-anchor="middle" fill="#d3f9d8" font-size="10">unique per unit</text>
+  <rect x="470" y="188" width="140" height="54" rx="10" fill="#1d6b2e"/>
+  <text x="540" y="210" text-anchor="middle" fill="#fff" font-size="12.5" font-weight="bold">… millions more</text>
+  <line x1="300" y1="154" x2="180" y2="185" stroke="#868e96" stroke-width="1.5" marker-end="url(#dpk_a)"/>
+  <line x1="345" y1="154" x2="358" y2="185" stroke="#868e96" stroke-width="1.5" marker-end="url(#dpk_a)"/>
+  <line x1="385" y1="154" x2="520" y2="185" stroke="#868e96" stroke-width="1.5" marker-end="url(#dpk_a)"/>
+
+  <rect x="50" y="262" width="580" height="28" rx="8" fill="none" stroke="#adb5bd" stroke-dasharray="4"/>
+  <text x="340" y="280" text-anchor="middle" fill="#495057" font-size="10">Trust flows DOWN (signing). Verification flows UP (validate the chain to the root). The root is never contacted at verify time.</text>
+  <defs><marker id="dpk_a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#868e96"/></marker></defs>
+</svg>
+</div>
+<table>
+  <tr><th>Layer</th><th>Where it lives</th><th>Why</th></tr>
+  <tr><td><strong>Root CA</strong></td><td>Offline, air-gapped, quorum-controlled (its key is split into shares so no single person can use it).</td><td>Ultimate anchor. Kept offline so a network breach can't reach it.</td></tr>
+  <tr><td><strong>Product / Intermediate CA</strong></td><td>One per product line; key sealed in an HSM on the factory signing server.</td><td>This is what actually signs devices. If a line is compromised, revoke <em>one</em> intermediate, not the root.</td></tr>
+  <tr><td><strong>Per-device cert</strong></td><td>Unique per unit; the device keeps the matching private key.</td><td>Every device provable individually; one leaked key = one revoked device.</td></tr>
+</table>
+<div class="insight"><p><strong>The magic of offline verification:</strong> because a certificate carries the CA's signature, any relying party can verify a device by checking the chain up to the root's public key it <em>already</em> has — without ever calling the root or the CA. That's what lets billions of verifications happen in the field cheaply. The one caveat: <em>chain and signature</em> validation is fully offline, but confirming a cert hasn't been <em>revoked</em> may need fresh status — which is exactly why the revocation section below leans on cached CRLs or short-lived certs as the offline-friendly answer.</p></div>
+
+<div class="iv"><span class="lbl">Interview angle</span><p>Expect: "Why an intermediate CA and not just the root?" Answer: <em>blast-radius and availability</em> — the root stays offline and pristine, intermediates do the day-to-day signing and can be rotated or revoked per product line. Bonus point: "verification never contacts the root; it validates the chain locally."</p></div>
+</div>
+</div>
+
+<!-- ═══════ THE HANDSHAKE (SVG + REPLAYABLE PLAYER) ═══════ -->
+<div class="section" id="flow">
+<div class="card">
+<h2>The provisioning handshake — step by step</h2>
+<p><strong>Analogy.</strong> A new employee getting a badge: they show up, prove who they are to the security desk, the desk checks with HR and prints a badge signed by the company, and HR records that the badge exists. The device version is almost identical — <em>device ↔ provisioning service ↔ CA</em> — and the key detail is that the device's secret never leaves its pocket. Only its public half travels.</p>
+<p>Press <b>Step</b> to watch one message move at a time; <b>Reset</b> to replay.</p>
+
+<div class="player" id="dpflow">
+  <div class="player-controls">
+    <button class="player-btn" id="dpflow_step" type="button">▶ Step</button>
+    <button class="player-btn ghost" id="dpflow_reset" type="button">⟲ Reset</button>
+    <span class="player-step" id="dpflow_counter">Step 0 / 6</span>
+  </div>
+  <div class="svg-wrap">
+  <svg viewBox="0 0 700 470" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif" role="img" aria-label="Provisioning handshake between device, provisioning service, and certificate authority">
+    <!-- actor headers -->
+    <rect x="40" y="14" width="150" height="46" rx="9" fill="#d0ebff" stroke="#1971c2"/>
+    <text x="115" y="34" text-anchor="middle" fill="#155fa0" font-size="13" font-weight="bold">Device</text>
+    <text x="115" y="50" text-anchor="middle" fill="#1864ab" font-size="10">🔒 secure element</text>
+    <rect x="275" y="14" width="150" height="46" rx="9" fill="#fff3bf" stroke="#e67700"/>
+    <text x="350" y="34" text-anchor="middle" fill="#b45309" font-size="13" font-weight="bold">Provisioning</text>
+    <text x="350" y="50" text-anchor="middle" fill="#a85700" font-size="10">service (line)</text>
+    <rect x="510" y="14" width="150" height="46" rx="9" fill="#e5dbff" stroke="#7048e8"/>
+    <text x="585" y="34" text-anchor="middle" fill="#5b21b6" font-size="13" font-weight="bold">CA 🔒 HSM</text>
+    <text x="585" y="50" text-anchor="middle" fill="#4a2fa8" font-size="10">product signing key</text>
+    <!-- lifelines -->
+    <line x1="115" y1="60" x2="115" y2="440" stroke="#ced4da" stroke-width="2" stroke-dasharray="4"/>
+    <line x1="350" y1="60" x2="350" y2="440" stroke="#ced4da" stroke-width="2" stroke-dasharray="4"/>
+    <line x1="585" y1="60" x2="585" y2="440" stroke="#ced4da" stroke-width="2" stroke-dasharray="4"/>
+
+    <!-- step 1: device self-generates keypair -->
+    <g id="dpflow_s1" opacity="0">
+      <path d="M115 92 h48 v26 h-48" fill="none" stroke="#1971c2" stroke-width="2" marker-end="url(#dpf_b)"/>
+      <text x="170" y="100" fill="#1971c2" font-size="11" font-weight="600">1. generate key pair</text>
+      <text x="170" y="114" fill="#495057" font-size="10">private key stays inside 🔒</text>
+    </g>
+    <!-- step 2: device -> provisioning CSR -->
+    <g id="dpflow_s2" opacity="0">
+      <line x1="115" y1="150" x2="348" y2="150" stroke="#1971c2" stroke-width="2" marker-end="url(#dpf_b)"/>
+      <text x="232" y="142" text-anchor="middle" fill="#1971c2" font-size="11" font-weight="600">2. CSR (public key + serial)</text>
+      <text x="232" y="164" text-anchor="middle" fill="#495057" font-size="10">signed by device to prove it holds the private key</text>
+    </g>
+    <!-- step 3: provisioning validates + forwards to CA -->
+    <g id="dpflow_s3" opacity="0">
+      <line x1="350" y1="198" x2="583" y2="198" stroke="#cc6a00" stroke-width="2" marker-end="url(#dpf_o)"/>
+      <text x="467" y="190" text-anchor="middle" fill="#b45309" font-size="11" font-weight="600">3. validate + forward CSR</text>
+      <text x="467" y="212" text-anchor="middle" fill="#495057" font-size="10">mutual-TLS: the line is only semi-trusted</text>
+    </g>
+    <!-- step 4: CA signs -->
+    <g id="dpflow_s4" opacity="0">
+      <path d="M585 240 h48 v26 h-48" fill="none" stroke="#7048e8" stroke-width="2" marker-end="url(#dpf_p)"/>
+      <text x="640" y="248" fill="#7048e8" font-size="11" font-weight="600" text-anchor="end">4. sign</text>
+      <text x="583" y="262" fill="#495057" font-size="10" text-anchor="end">CA key never leaves the HSM →</text>
+    </g>
+    <!-- step 5: CA -> provisioning cert -->
+    <g id="dpflow_s5" opacity="0">
+      <line x1="585" y1="300" x2="352" y2="300" stroke="#2f9e44" stroke-width="2" marker-end="url(#dpf_g)"/>
+      <text x="467" y="292" text-anchor="middle" fill="#237a35" font-size="11" font-weight="600">5. device certificate (chain)</text>
+    </g>
+    <!-- step 6: provisioning -> device install + record -->
+    <g id="dpflow_s6" opacity="0">
+      <line x1="350" y1="348" x2="117" y2="348" stroke="#2f9e44" stroke-width="2" marker-end="url(#dpf_g)"/>
+      <text x="232" y="340" text-anchor="middle" fill="#237a35" font-size="11" font-weight="600">6. install cert on device</text>
+      <line x1="350" y1="372" x2="350" y2="398" stroke="#495057" stroke-width="1.5" stroke-dasharray="3" marker-end="url(#dpf_d)"/>
+      <text x="360" y="392" fill="#495057" font-size="10">record public identity in registry</text>
+      <rect x="140" y="404" width="420" height="30" rx="8" fill="#d3f9d8" stroke="#2f9e44"/>
+      <text x="350" y="423" text-anchor="middle" fill="#0e4a1e" font-size="11" font-weight="700">✓ Device now has a trusted identity — ready to authenticate to the cloud</text>
+    </g>
+    <defs>
+      <marker id="dpf_b" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#1971c2"/></marker>
+      <marker id="dpf_o" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#cc6a00"/></marker>
+      <marker id="dpf_p" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#7048e8"/></marker>
+      <marker id="dpf_g" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#2f9e44"/></marker>
+      <marker id="dpf_d" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#495057"/></marker>
+    </defs>
+  </svg>
+  </div>
+  <div class="player-caption" id="dpflow_caption">Press <b>Step</b> to begin. The device starts with no identity at all.</div>
+</div>
+
+<h3>The steps in words</h3>
+<ol>
+  <li><strong>Generate key pair on-device.</strong> The secure element creates a fresh private/public pair. The private key never leaves.</li>
+  <li><strong>Emit a CSR</strong> (Certificate Signing Request) — the public key + identity info, signed by the device itself to prove it holds the matching private key.</li>
+  <li><strong>Provisioning service validates &amp; forwards.</strong> The line talks to the signing service over <em>mutual TLS</em> (both sides authenticate, because the line is only semi-trusted).</li>
+  <li><strong>CA signs the CSR</strong> using the product CA key <em>inside the HSM</em>. The key never comes out — only a signature does.</li>
+  <li><strong>Certificate chain returns</strong> to the provisioning service.</li>
+  <li><strong>Install &amp; record.</strong> The cert is written to the device; the device's public identity is logged to a central registry so the cloud recognizes it later.</li>
+</ol>
+<div class="warning"><p><strong>Factory realities.</strong> A line runs in <em>seconds per unit</em>, so signing is a <em>synchronous</em> call with immediate pass/fail — a bad unit must be flagged now. Buffer the registry upload if the network blips, and support an <em>offline</em> signing fallback (HSM on-prem) for air-gapped contract manufacturers, reconciling the log later.</p></div>
+
+<div class="iv"><span class="lbl">Interview angle</span><p>Draw exactly these three actors and walk the arrows. The line that earns points: <em>"Only the CSR — the public half — ever travels. The device private key and the CA private key each stay locked in their own hardware, so intercepting the factory network gets an attacker nothing."</em> Mention synchronous signing + offline fallback and you've shown you understand real manufacturing.</p></div>
+</div>
+</div>
+
+<!-- ═══════ ATTESTATION ═══════ -->
+<div class="section" id="attest">
+<div class="card">
+<h2>Attestation — proving "I am genuine and un-tampered"</h2>
+<p><strong>Analogy.</strong> Provisioning gives you the passport. <em>Attestation</em> is showing it at the border <em>and</em> giving a live signature so the officer knows the passport belongs to <em>you</em>, right now — not to someone who photocopied it. A photo of a passport isn't enough; you have to sign a fresh challenge on the spot.</p>
+
+<h3>The challenge–response, step by step</h3>
+<ol>
+  <li>The cloud (or any relying party) sends a random <strong>nonce</strong> — a fresh, one-time number.</li>
+  <li>The device signs the nonce with its private key (inside the secure element).</li>
+  <li>The relying party <strong>verifies the signature</strong> against the device's certificate, <strong>validates the cert chain</strong> up to the trusted root, and <strong>checks it isn't revoked</strong>.</li>
+</ol>
+<pre><span class="cm"># Why the random nonce matters</span>
+cloud  → device:  nonce = <span class="num">0x9f3c…</span>          <span class="cm"># fresh each time</span>
+device → cloud:   sign(private_key, nonce)     <span class="cm"># only the real device can do this</span>
+cloud:            verify(cert.public_key, nonce, signature)
+                  &amp;&amp; chain_valid(cert → root)
+                  &amp;&amp; not_revoked(cert)</pre>
+<div class="insight"><p><strong>Why a fresh nonce?</strong> If the challenge were fixed, an attacker could record one valid response and <em>replay</em> it forever. A random per-session nonce means a captured signature is worthless next time — the device must sign the <em>new</em> challenge live, which only the real private key can do.</p></div>
+
+<h3>Attesting software state, not just hardware</h3>
+<p>Stronger attestation proves not only "genuine hardware" but "running <em>expected, un-tampered</em> software." Conceptually, the device's identity/attestation can be <em>bound to a measurement of its firmware</em> (a hash of the code it booted). If the code was modified, the measurement changes and attestation reflects it. This is what lets a fleet operator say "only devices running an approved build may connect" — and it's the hook that pairs with <a href="secdesign_secure_ota.html">Secure OTA Updates</a> (Ch 10): after a patch, devices re-attest with the new measurement.</p>
+<div class="tip"><p><strong>Say this:</strong> "Attestation = signature over a fresh nonce + chain validation + revocation check, optionally bound to a firmware measurement so it proves software integrity too — not just hardware genuineness."</p></div>
+
+<div class="iv"><span class="lbl">Interview angle</span><p>The classic follow-up is "how do you stop replay?" — answer <em>fresh nonce</em>. The senior follow-up is "can you prove the device isn't running tampered code?" — answer <em>bind a firmware measurement into the attestation</em>, and connect it to remediation after an OTA update. That link across chapters is exactly the kind of systems thinking interviewers reward.</p></div>
+</div>
+</div>
+
+<!-- ═══════ FACTORY MODELS ═══════ -->
+<div class="section" id="models">
+<div class="card">
+<h2>Where provisioning happens: injection vs zero-touch</h2>
+<p><strong>Analogy.</strong> Two ways a new hire can get their laptop set up: IT images it fully at headquarters before shipping (everything built in up front), or the laptop arrives blank and configures itself securely the first time the employee logs in on the corporate network (set up "just in time"). Devices have the same two philosophies.</p>
+
+<h3>Factory injection (provision fully at manufacture)</h3>
+<p>The complete identity — keys and certificate — is created and installed <em>on the line</em>. When the device ships, it already has everything. This is the classic model and pairs naturally with on-device key generation described earlier.</p>
+
+<h3>Zero-touch / late binding (provision at first boot)</h3>
+<p>The factory installs only a minimal <strong>bootstrap credential</strong> — a birth token that says "I'm a blank genuine unit from this batch." The <em>real</em> per-device identity is issued later, the first time the device powers on and reaches the provisioning service (often over the customer's network). The device trades its bootstrap credential for its true operational certificate.</p>
+<table>
+  <tr><th></th><th>Factory injection</th><th>Zero-touch / late binding</th></tr>
+  <tr><td><strong>When identity is minted</strong></td><td>On the line, at manufacture.</td><td>At first boot, in the field.</td></tr>
+  <tr><td><strong>Factory trust needed</strong></td><td>Higher — full keys handled on the line.</td><td>Lower — factory only installs a bootstrap token.</td></tr>
+  <tr><td><strong>Flexibility</strong></td><td>Identity fixed early; binding to an owner/region is harder.</td><td>Can bind device to its actual owner/account/region at activation.</td></tr>
+  <tr><td><strong>Connectivity</strong></td><td>Works even if the line is air-gapped.</td><td>Needs the device online at first boot.</td></tr>
+</table>
+<div class="insight"><p><strong>Key idea:</strong> "late binding" defers the sensitive step out of the untrusted factory and into a moment you control better (first boot on a known network). The trade is that it depends on connectivity and a solid bootstrap-credential story.</p></div>
+
+<h3>On-device keygen vs injected keys (either model)</h3>
+<table>
+  <tr><th>Approach</th><th>How</th><th>Trade-off</th></tr>
+  <tr><td><strong>On-device keygen</strong> (preferred)</td><td>Device's secure element makes the key pair; only the CSR leaves.</td><td>Best security — private key never exists anywhere but the device.</td></tr>
+  <tr><td><strong>Injected keys</strong></td><td>A trusted server generates the pair and loads it in.</td><td>Works for constrained, low-capability devices, but the private key exists off-device for a moment — needs a very trusted, HSM-backed injection environment.</td></tr>
+</table>
+
+<div class="iv"><span class="lbl">Interview angle</span><p>Naming <em>zero-touch / late binding</em> unprompted signals you've seen real IoT fleets. The crisp position: "on-device keygen whenever the hardware can do crypto; late binding to keep the sensitive step out of an untrusted factory; injection only for constrained devices in an HSM-backed environment." Give a <em>pick</em>, not just a list.</p></div>
+</div>
+</div>
+
+<!-- ═══════ PROTECTION & REVOCATION ═══════ -->
+<div class="section" id="protect">
+<div class="card">
+<h2>Key protection &amp; revocation</h2>
+<p><strong>Analogy.</strong> Two jobs: keep the master key-cutting machine in a bank vault (protect the CA key), and be able to cancel a lost badge without re-issuing everyone's badge (revocation). A security design that can't <em>cancel</em> trust is only half a design.</p>
+
+<h3>Protecting the CA key (the crown jewel)</h3>
+<ul>
+  <li><strong>Root: offline + quorum.</strong> Air-gapped; the key is split into shares so several admins must combine them to use it — not a vote, actual cryptographic shares.</li>
+  <li><strong>Intermediate: HSM-resident, auth-gated.</strong> Used on the line but never exported; its access secret is delivered separately from the HSM.</li>
+  <li><strong>Rotation:</strong> intermediates are rotated periodically so any undetected compromise has a bounded window.</li>
+</ul>
+
+<h3>Revocation — stop trusting a device, going forward</h3>
+<p>Assume some keys <em>will</em> leak (a device cloned, a contract manufacturer compromised). You need to stop trusting those <em>without</em> breaking everyone else.</p>
+<table>
+  <tr><th>Mechanism</th><th>How it works</th><th>Trade-off</th></tr>
+  <tr><td><strong>CRL</strong> (revocation list)</td><td>A signed list of revoked IDs, distributed to relying parties.</td><td>Simple; can grow large. Compress + CDN + cache. Not instant (cache TTL).</td></tr>
+  <tr><td><strong>OCSP / status service</strong></td><td>Ask online: "is this cert still valid?"</td><td>Fresher, but adds a network call &amp; a dependency. <em>Stapling</em> avoids the per-verify call.</td></tr>
+  <tr><td><strong>Short-lived certs</strong></td><td>Certs expire fast; devices renew often.</td><td>"Revocation by expiry" — a leaked key dies on its own soon. Needs a renewal path + connectivity.</td></tr>
+  <tr><td><strong>Intermediate revocation</strong></td><td>Revoke a whole product-CA / batch at once.</td><td>Blast-radius control: kill one compromised line without touching the root or other products.</td></tr>
+</table>
+<div class="insight"><p><strong>The elegant framing:</strong> "Revocation is just 'exclude the bad ones going forward.' Whether it's a CRL, short-lived certs, or re-issuing so only good units get a fresh cert — the principle is identical." Store <em>provenance</em> (line, batch, date) in the registry so you can scope a recall precisely.</p></div>
+
+<h3>The registry stores public material only</h3>
+<ul>
+  <li><strong>Never store a private key</strong> centrally — only public certs + provenance. If the DB leaks, no identity can be forged.</li>
+  <li><strong>Integrity &gt; secrecy here</strong> — protect the registry against <em>tampering</em> (signed/hash-chained rows), because faking a row = faking a genuine device.</li>
+  <li><strong>Keep owner/account mapping <em>separate</em></strong> — don't co-locate the owner/account/region binding (PII) with the device-identity registry. Retain only the minimum provenance a recall actually needs, and remember that a persistent, unique per-device identifier is a tracking/linkability vector: it's a privacy trade-off to be managed, segregated, and minimized, not ignored.</li>
+</ul>
+
+<div class="iv"><span class="lbl">Interview angle</span><p>Forgetting revocation is an easy way to fail this question. Bring it up unprompted. Then handle the classic tricky follow-ups: <em>"a contract manufacturer is compromised"</em> → revoke that line's intermediate CA, rotate, root untouched; <em>"a single device key is extracted"</em> → blast radius is one device, revoke that ID; <em>"how do devices verify offline"</em> → local chain validation + a cached CRL or short-lived certs so staleness self-heals.</p></div>
+</div>
+
+<div class="card">
+<h2>Recap</h2>
+<div class="statgrid">
+  <div class="stat"><div class="n">Per-device</div><div class="l">unique keys → tiny blast radius</div></div>
+  <div class="stat"><div class="n">In hardware</div><div class="l">private keys never leave the vault</div></div>
+  <div class="stat"><div class="n">Offline root</div><div class="l">verify locally, never phone home</div></div>
+  <div class="stat"><div class="n">Revocable</div><div class="l">contain a compromise from day one</div></div>
+</div>
+<p><strong>The through-line:</strong> mint a hardware-rooted identity once — ideally where you control trust most (on-device keygen, late binding out of an untrusted factory) — keep every private key where it's born, let anyone verify it offline against a trusted root, and design revocation in from the start so a compromise is always contained.</p>
+</div>
+</div>
+
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Provisioning</strong></td><td>Factory step that gives a device a unique identity and secret keys before it ever contacts the cloud.</td></tr>
+<tr><td><strong>Attestation</strong></td><td>A device proving live that it is genuine and un-tampered, typically by signing a fresh challenge.</td></tr>
+<tr><td><strong>Root of trust</strong></td><td>The one small hardware-protected anchor (the secure element) that all other trust is built on.</td></tr>
+<tr><td><strong>Secure element</strong></td><td>Tamper-resistant chip that generates and guards private keys so they never leave the device.</td></tr>
+<tr><td><strong>HSM</strong> (Hardware Security Module)</td><td>Dedicated hardware that stores a CA's signing key and signs without ever exporting the key.</td></tr>
+<tr><td><strong>Blast radius</strong></td><td>How many units one compromised key can forge; per-device keys hold it to a single unit.</td></tr>
+<tr><td><strong>PKI</strong> (Public Key Infrastructure)</td><td>The system of CAs, keys, and certificates used to issue and verify device identities.</td></tr>
+<tr><td><strong>Certificate</strong></td><td>A device's public key plus identity info, digitally signed by a CA that vouches for it.</td></tr>
+<tr><td><strong>CA</strong> (Certificate Authority)</td><td>Trusted issuer that signs certificates — like a government issuing passports.</td></tr>
+<tr><td><strong>Root CA</strong></td><td>Offline, air-gapped top-level authority; the ultimate trust anchor, rarely used to sign.</td></tr>
+<tr><td><strong>Intermediate / Product CA</strong></td><td>HSM-resident authority (one per product line) that does the day-to-day device signing.</td></tr>
+<tr><td><strong>Chain of trust</strong></td><td>The signed path from a device certificate up to the root, validated to prove authenticity.</td></tr>
+<tr><td><strong>CSR</strong> (Certificate Signing Request)</td><td>Self-signed bundle of a device's public key and identity, sent to the CA to be signed.</td></tr>
+<tr><td><strong>Mutual TLS</strong> (mTLS)</td><td>TLS in which both sides authenticate; used because the factory line is only semi-trusted.</td></tr>
+<tr><td><strong>Nonce</strong></td><td>A fresh, one-time random number a device signs to prevent replay of captured signatures.</td></tr>
+<tr><td><strong>Factory injection</strong></td><td>Model where the full keys and certificate are created and installed on the line at manufacture.</td></tr>
+<tr><td><strong>Zero-touch / late binding</strong></td><td>Model that defers real identity issuance to first boot, keeping the sensitive step out of the factory.</td></tr>
+<tr><td><strong>Bootstrap credential</strong></td><td>Minimal birth token proving a blank unit is genuine, later traded for its operational certificate.</td></tr>
+<tr><td><strong>CRL</strong> (Certificate Revocation List)</td><td>Signed, distributed list of revoked certificate IDs that relying parties check.</td></tr>
+<tr><td><strong>OCSP</strong> (Online Certificate Status Protocol)</td><td>Online query asking whether a certificate is still valid; stapling avoids a per-verify call.</td></tr>
+<tr><td><strong>Short-lived certificate</strong></td><td>Cert that expires quickly and renews often, so a leaked key dies on its own ("revocation by expiry").</td></tr>
+<tr><td><strong>Registry</strong></td><td>Central store of devices' public certificates and provenance (line/batch/date) — never private keys — that the cloud checks to recognize a device and scope recalls.</td></tr>
+</table>
+</div>
+
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<script>
+/* Namespaced replayable step player for the provisioning handshake (no globals) */
+(function () {
+  var TOTAL = 6;
+  var captions = [
+    'Press <b>Step</b> to begin. The device starts with no identity at all.',
+    '<b>Step 1 — Generate key pair.</b> The secure element creates a fresh private/public pair. The private key never leaves the chip.',
+    '<b>Step 2 — CSR.</b> The device sends a Certificate Signing Request: its public key + serial, self-signed to prove it holds the matching private key.',
+    '<b>Step 3 — Validate &amp; forward.</b> The provisioning service checks the request and forwards it to the CA over mutual TLS (the line is only semi-trusted).',
+    '<b>Step 4 — Sign.</b> The CA signs the CSR using the product key <em>inside the HSM</em>. The key never comes out — only a signature does.',
+    '<b>Step 5 — Certificate returns.</b> The signed device certificate (with its chain) travels back to the provisioning service.',
+    '<b>Step 6 — Install &amp; record.</b> The cert is written to the device and its public identity is logged in the registry. The device now has a trusted identity.'
+  ];
+  var step = 0;
+  var stepBtn = document.getElementById('dpflow_step');
+  var resetBtn = document.getElementById('dpflow_reset');
+  var counter = document.getElementById('dpflow_counter');
+  var caption = document.getElementById('dpflow_caption');
+  if (!stepBtn) return;
+
+  function render() {
+    for (var i = 1; i <= TOTAL; i++) {
+      var g = document.getElementById('dpflow_s' + i);
+      if (g) g.setAttribute('opacity', i <= step ? '1' : '0');
+    }
+    counter.textContent = 'Step ' + step + ' / ' + TOTAL;
+    caption.innerHTML = captions[step];
+    stepBtn.disabled = (step >= TOTAL);
+    stepBtn.textContent = (step >= TOTAL) ? '✓ Done' : '▶ Step';
+  }
+  stepBtn.addEventListener('click', function () { if (step < TOTAL) { step++; render(); } });
+  resetBtn.addEventListener('click', function () { step = 0; render(); });
+  render();
+})();
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="security_memory_safety.html">‹ Memory-Safe Languages</a><a class="bkc" href="index.html">📖 Contents</a><a href="secdesign_secure_ota.html">Secure OTA Updates ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

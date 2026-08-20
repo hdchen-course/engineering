@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graph Theory &amp; Topological Sort — Training Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+.nav { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 40px;  position: sticky; top: 0; background: var(--bg); padding: 16px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #6c7086; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+
+.problem-list { list-style: none; padding: 0; margin: 12px 0; }
+.problem-list li { padding: 10px 14px; border-left: 3px solid var(--blue); margin-bottom: 8px; background: var(--bg3); border-radius: 0 8px 8px 0; display: flex; justify-content: flex-start; align-items: center; gap: 8px; }
+.problem-list .title { color: var(--text); font-weight: 500; font-size: 14px; flex: 1; }
+.problem-list .title a { color: var(--text); text-decoration: none; border-bottom: 1px dashed var(--border); transition: all .2s; }
+.problem-list .title a:hover { color: var(--blue); border-bottom-color: var(--blue); }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; } pre { font-size: 11px; } }
+
+/* ===== Tarjan bridges interactive visualizer ===== */
+.viz { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
+@media (max-width: 820px) { .viz { grid-template-columns: 1fr; } }
+.viz-panel { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; }
+.viz svg { width: 100%; height: 340px; display: block; }
+.viz .edge { stroke: #7d848d; stroke-width: 3; transition: all .3s; }
+.viz .edge.tree { stroke: var(--blue); }
+.viz .edge.back { stroke: var(--purple); stroke-dasharray: 6 4; }
+.viz .edge.bridge { stroke: var(--red); stroke-width: 5; }
+.viz .edge.active { stroke: var(--yellow); stroke-width: 5; }
+.viz .node circle { fill: var(--bg2); stroke: #7d848d; stroke-width: 2.5; transition: all .3s; }
+.viz .node.visited circle { fill: var(--blue-l); stroke: var(--blue); }
+.viz .node.current circle { fill: var(--yellow-l); stroke: var(--yellow); stroke-width: 3.5; }
+.viz .node text.id { fill: var(--text); font-size: 18px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+.viz .node text.dl { fill: var(--green); font-size: 12px; text-anchor: middle; font-family: 'JetBrains Mono', monospace; }
+.viz-controls { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+.viz-controls button { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-family: 'Inter', sans-serif; font-weight: 600; transition: all .15s; }
+.viz-controls button:hover:not(:disabled) { background: var(--bg4); border-color: var(--blue); }
+.viz-controls button:disabled { opacity: .4; cursor: not-allowed; }
+.viz-controls button.primary { background: var(--blue); color: #fff; border-color: var(--blue); }
+.viz-step { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; min-height: 130px; font-size: 14px; color: var(--text2); }
+.viz-step .snum { color: var(--yellow); font-weight: 700; margin-bottom: 6px; display: block; }
+.viz-step code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; color: var(--purple); }
+.viz-step .vb { color: var(--red); font-weight: 700; }
+.viz-step .vn { color: var(--green); font-weight: 700; }
+.viz-dl { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+.viz-dl th, .viz-dl td { border: 1px solid var(--border); padding: 5px 8px; text-align: center; font-family: 'JetBrains Mono', monospace; }
+.viz-dl th { background: var(--bg4); color: var(--text2); }
+.viz-dl td.hl { background: var(--yellow-l); color: var(--yellow); font-weight: 700; }
+.viz-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; margin-top: 10px; color: var(--text3); }
+.viz-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.viz-sw { width: 20px; height: 4px; border-radius: 2px; display: inline-block; }
+.viz-out { margin-top: 10px; font-size: 14px; color: var(--text2); }
+.viz-out .b { color: var(--red); font-weight: 700; }
+
+/* ===== Topological sort visualizers (directed edges + queue/stack lanes) ===== */
+.viz .edge.relax { stroke: var(--yellow); stroke-width: 5; }
+.viz .edge.done  { stroke: var(--green); }
+.viz .edge.cyc   { stroke: var(--red); stroke-width: 5; stroke-dasharray: 6 4; }
+.viz .node.done  circle { fill: var(--green-l); stroke: var(--green); }
+.viz .node.inq   circle { fill: var(--blue-l); stroke: var(--blue); }
+.viz .node.stack circle { fill: var(--purple-l); stroke: var(--purple); }
+.viz .node.cyc   circle { fill: var(--red-l); stroke: var(--red); stroke-width: 3.5; }
+.topo-lane { margin: 10px 0; }
+.topo-lane .lab { font-size: 11px; color: var(--text3); font-weight: 700; margin-bottom: 4px; display: block; text-transform: uppercase; letter-spacing: .05em; }
+.topo-chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-height: 32px; }
+.topo-chips .arrow { color: var(--text3); font-size: 12px; }
+.topo-chip { min-width: 30px; height: 30px; padding: 0 9px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; background: var(--bg2); border: 1px solid var(--border); color: var(--text); }
+.topo-chip.q   { background: var(--blue-l);   border-color: var(--blue);   color: var(--blue); }
+.topo-chip.out { background: var(--green-l);  border-color: var(--green);  color: var(--green); }
+.topo-chip.stk { background: var(--purple-l); border-color: var(--purple); color: var(--purple); }
+.topo-chip.cyc { background: var(--red-l);    border-color: var(--red);    color: var(--red); }
+.topo-chip.empty { background: transparent; border-style: dashed; color: var(--text3); font-weight: 400; }
+.topo-anno { margin: 12px 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.topo-anno table { margin: 0; font-size: 13px; }
+.topo-anno td.ln { font-family: 'JetBrains Mono', monospace; color: var(--purple); white-space: nowrap; width: 1%; background: var(--bg3); font-size: 12px; }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part II · Chapter 6 — <b>Graphs &amp; Topological Sort</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Graph Theory &amp; Topological Sort</h1>
+  <div class="sub">Representations &bull; Traversals &bull; Topo Sort &bull; Shortest Path &bull; Union-Find &bull; Advanced</div>
+</header>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection('fundamentals')">Fundamentals</button>
+  <button class="nav-btn" onclick="showSection('bfsdfs')">BFS / DFS</button>
+  <button class="nav-btn" onclick="showSection('topo')">Topological Sort</button>
+  <button class="nav-btn" onclick="showSection('shortest')">Shortest Path</button>
+  <button class="nav-btn" onclick="showSection('unionfind')">Union-Find</button>
+  <button class="nav-btn" onclick="showSection('mst')">MST</button>
+  <button class="nav-btn" onclick="showSection('cycle')">Cycle Detection</button>
+  <button class="nav-btn" onclick="showSection('bipartite')">Bipartite</button>
+  <button class="nav-btn" onclick="showSection('scc')">SCC / Bridges</button>
+  <button class="nav-btn" onclick="showSection('advanced')">Advanced</button>
+</div>
+
+<!-- ===== Fundamentals ===== -->
+<div class="section active" id="fundamentals">
+<div class="card">
+<h2>Graph Fundamentals</h2>
+
+<h3>Representations</h3>
+<table>
+  <tr><th>Method</th><th>Space</th><th>Edge Lookup</th><th>When to Use</th></tr>
+  <tr><td>Adjacency List</td><td>O(V+E)</td><td>O(degree)</td><td>Sparse graphs (most problems)</td></tr>
+  <tr><td>Adjacency Matrix</td><td>O(V&sup2;)</td><td>O(1)</td><td>Dense graphs, Floyd-Warshall</td></tr>
+  <tr><td>Edge List</td><td>O(E)</td><td>O(E)</td><td>Kruskal's MST, Bellman-Ford</td></tr>
+</table>
+
+<h3>Adjacency List Template</h3>
+<pre><span class="cm">// Build graph from edge list</span>
+List&lt;List&lt;<span class="kw">int</span>[]&gt;&gt; graph = <span class="kw">new</span> ArrayList&lt;&gt;();
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) graph.add(<span class="kw">new</span> ArrayList&lt;&gt;());
+
+<span class="kw">for</span> (<span class="kw">int</span>[] edge : edges) {
+    <span class="kw">int</span> u = edge[<span class="num">0</span>], v = edge[<span class="num">1</span>], w = edge[<span class="num">2</span>];
+    graph.get(u).add(<span class="kw">new int</span>[]{v, w});
+    graph.get(v).add(<span class="kw">new int</span>[]{u, w});  <span class="cm">// undirected</span>
+}
+</pre>
+
+<h3>Key Terminology</h3>
+<div class="insight">
+  <p><strong>DAG:</strong> Directed Acyclic Graph &mdash; prerequisite for topological sort<br>
+  <strong>In-degree:</strong> number of incoming edges (critical for Kahn's algorithm)<br>
+  <strong>Connected component:</strong> maximal set of vertices reachable from each other<br>
+  <strong>Strongly connected:</strong> in directed graph, every vertex reachable from every other</p>
+</div>
+</div>
+</div>
+
+<!-- ===== BFS / DFS ===== -->
+<div class="section" id="bfsdfs">
+<div class="card">
+<h2>BFS &amp; DFS</h2>
+
+<h3>BFS Template (Level-order, shortest path in unweighted)</h3>
+<pre>Queue&lt;Integer&gt; queue = <span class="kw">new</span> LinkedList&lt;&gt;();
+<span class="kw">boolean</span>[] visited = <span class="kw">new boolean</span>[n];
+<span class="kw">int</span>[] dist = <span class="kw">new int</span>[n];        <span class="cm">// dist[i] = edges from start to i</span>
+queue.offer(start);
+visited[start] = <span class="kw">true</span>;
+dist[start] = <span class="num">0</span>;
+<span class="kw">int</span> level = <span class="num">0</span>;
+
+<span class="kw">while</span> (!queue.isEmpty()) {
+    <span class="kw">int</span> size = queue.size();
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; size; i++) {
+        <span class="kw">int</span> node = queue.poll();
+        <span class="kw">for</span> (<span class="kw">int</span> neighbor : graph.get(node)) {
+            <span class="kw">if</span> (!visited[neighbor]) {
+                visited[neighbor] = <span class="kw">true</span>;
+                dist[neighbor] = dist[node] + <span class="num">1</span>;   <span class="cm">// = level + 1: shortest hop count</span>
+                queue.offer(neighbor);
+            }
+        }
+    }
+    level++;                       <span class="cm">// dist[] now holds shortest distances from start</span>
+}
+</pre>
+
+<h3>DFS Template (Iterative)</h3>
+<pre>Deque&lt;Integer&gt; stack = <span class="kw">new</span> ArrayDeque&lt;&gt;();
+<span class="kw">boolean</span>[] visited = <span class="kw">new boolean</span>[n];
+stack.push(start);
+
+<span class="kw">while</span> (!stack.isEmpty()) {
+    <span class="kw">int</span> node = stack.pop();
+    <span class="kw">if</span> (visited[node]) <span class="kw">continue</span>;
+    visited[node] = <span class="kw">true</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> neighbor : graph.get(node))
+        <span class="kw">if</span> (!visited[neighbor])
+            stack.push(neighbor);
+}
+</pre>
+
+<h3>Multi-Source BFS</h3>
+<div class="insight">
+  <p>Start BFS from ALL sources simultaneously (add all to queue at level 0). Used for: "minimum distance from any source" problems like 01-Matrix, Rotting Oranges.</p>
+</div>
+
+<h3>LeetCode Problems</h3>
+<ul class="problem-list">
+  <li><span class="title"><a href="https://leetcode.com/problems/number-of-islands/" target="_blank">200. Number of Islands (DFS/BFS)</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Google</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/rotting-oranges/" target="_blank">994. Rotting Oranges (Multi-source BFS)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/01-matrix/" target="_blank">542. 01 Matrix (Multi-source BFS)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/word-ladder/" target="_blank">127. Word Ladder (BFS shortest path)</a></span><span class="tag tag-hard">Hard</span><span class="tag tag-freq">Google</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/max-area-of-island/" target="_blank">695. Max Area of Island</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/shortest-path-in-binary-matrix/" target="_blank">1091. Shortest Path in Binary Matrix</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/flood-fill/" target="_blank">733. Flood Fill</a></span><span class="tag tag-easy">Easy</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/keys-and-rooms/" target="_blank">841. Keys and Rooms</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/find-if-path-exists-in-graph/" target="_blank">1971. Find if Path Exists in Graph</a></span><span class="tag tag-easy">Easy</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/all-paths-from-source-to-target/" target="_blank">797. All Paths From Source to Target</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/all-paths-from-source-lead-to-destination/" target="_blank">1059. All Paths from Source Lead to Destination</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Premium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/clone-graph/" target="_blank">133. Clone Graph</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/reconstruct-itinerary/" target="_blank">332. Reconstruct Itinerary (DFS + Euler)</a></span><span class="tag tag-hard">Hard</span></li>
+</ul>
+</div>
+</div>
+
+<!-- ===== Topological Sort ===== -->
+<div class="section" id="topo">
+<div class="card">
+<h2>Topological Sort</h2>
+<p>Linear ordering of vertices in a DAG such that for every edge u&rarr;v, u comes before v. Only exists if graph has <strong>no cycles</strong>.</p>
+
+<h3>Intuition First: Just Keep Peeling Off the "Ready" Tasks</h3>
+<p>Forget algorithms for a second. Imagine getting dressed. Some rules are fixed: socks <strong>before</strong> shoes, shirt <strong>before</strong> jacket, underwear <strong>before</strong> pants. Nobody hands you the full order. So how do you actually <em>do</em> it? You look for anything with <strong>no unmet prerequisite</strong> &mdash; something you can put on <em>right now</em> &mdash; and you put it on. Socks? Nothing needed first, put them on. Underwear? Same, put it on. Now shoes and pants just became "ready" because their blockers are gone. Repeat until you're dressed. <strong>The order you peel things off is a valid topological order.</strong></p>
+<p>That is the entire idea, and it maps perfectly onto <strong>course prerequisites</strong>: a course is "takeable" the moment every prerequisite is already taken. Keep taking takeable courses; the sequence you take them in is a topo order.</p>
+<div class="insight">
+  <p><strong>The one mechanical rule:</strong> repeatedly remove any node whose <strong>in-degree is 0</strong> (no arrows pointing <em>into</em> it = no unmet prerequisites). When you remove it, erase its outgoing arrows &mdash; that may drop <em>other</em> nodes to in-degree 0, making them ready next. The removal order <strong>is</strong> the answer. That mechanical rule is literally Kahn's algorithm below.</p>
+</div>
+<div class="tip">
+  <p><strong>Tiny worked example (do it by hand in 15 seconds).</strong> Tasks with arrows meaning "must come first": <code>A&rarr;C</code>, <code>B&rarr;C</code>, <code>C&rarr;D</code>. In-degrees: A=0, B=0, C=2, D=1. Ready now: {A, B}. Peel A &rarr; erase A&rarr;C, now C=1. Peel B &rarr; erase B&rarr;C, now C=0 (ready!). Peel C &rarr; erase C&rarr;D, now D=0. Peel D. Order peeled: <strong>A, B, C, D</strong> &mdash; a valid topo order. (A, B were interchangeable, so B, A, C, D is equally valid.)</p>
+</div>
+
+<h3>When to Use</h3>
+<div class="insight">
+  <p><strong>Signal words:</strong> "prerequisite", "dependency", "ordering", "schedule", "before/after"<br>
+  <strong>Key insight:</strong> If the problem involves ordering with constraints (A must come before B), it's topological sort.</p>
+</div>
+
+<h3>Method 1: Kahn's Algorithm (BFS-based) &mdash; PREFERRED</h3>
+<pre><span class="cm">// O(V + E) — also detects cycles (if result.size() < n, cycle exists)</span>
+<span class="kw">int</span>[] <span class="fn">topoSort</span>(<span class="kw">int</span> n, List&lt;List&lt;Integer&gt;&gt; graph) {
+    <span class="kw">int</span>[] indegree = <span class="kw">new int</span>[n];
+    <span class="kw">for</span> (<span class="kw">int</span> u = <span class="num">0</span>; u &lt; n; u++)
+        <span class="kw">for</span> (<span class="kw">int</span> v : graph.get(u))
+            indegree[v]++;
+
+    Queue&lt;Integer&gt; queue = <span class="kw">new</span> LinkedList&lt;&gt;();
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        <span class="kw">if</span> (indegree[i] == <span class="num">0</span>) queue.offer(i);
+
+    <span class="kw">int</span>[] order = <span class="kw">new int</span>[n];
+    <span class="kw">int</span> idx = <span class="num">0</span>;
+
+    <span class="kw">while</span> (!queue.isEmpty()) {
+        <span class="kw">int</span> u = queue.poll();
+        order[idx++] = u;
+        <span class="kw">for</span> (<span class="kw">int</span> v : graph.get(u)) {
+            indegree[v]--;
+            <span class="kw">if</span> (indegree[v] == <span class="num">0</span>) queue.offer(v);
+        }
+    }
+
+    <span class="kw">return</span> idx == n ? order : <span class="kw">new int</span>[<span class="num">0</span>];  <span class="cm">// empty = cycle</span>
+}
+</pre>
+
+<h4>The code, mapped to the "peeling" picture</h4>
+<div class="topo-anno">
+<table>
+  <tr><td class="ln">indegree[v]++</td><td>Count arrows pointing <em>into</em> each node = how many prerequisites it still has.</td></tr>
+  <tr><td class="ln">if (indegree[i]==0) queue.offer(i)</td><td><strong>Seed:</strong> every node that starts "ready" (no prereqs) goes into the queue.</td></tr>
+  <tr><td class="ln">u = queue.poll(); order[idx++]=u</td><td><strong>Peel</strong> a ready node and append it to the output order.</td></tr>
+  <tr><td class="ln">indegree[v]--</td><td><strong>Erase u's outgoing arrows:</strong> each neighbor loses one prerequisite.</td></tr>
+  <tr><td class="ln">if (indegree[v]==0) queue.offer(v)</td><td>A neighbor just became ready &mdash; it can be peeled next.</td></tr>
+  <tr><td class="ln">return idx==n ? order : ...</td><td>If we peeled fewer than <code>n</code> nodes, some nodes were <strong>never ready</strong> &rarr; a cycle exists (see below).</td></tr>
+</table>
+</div>
+
+<h3>Watch Kahn's Algorithm Run</h3>
+<p>Fixed DAG of 6 "courses" <code>A&hellip;F</code> with edges <code>A&rarr;C, B&rarr;C, C&rarr;D, C&rarr;E, D&rarr;F, E&rarr;F</code> (an arrow <code>X&rarr;Y</code> means "X is a prerequisite of Y"). Click <strong>Next</strong> to peel one node / process one batch of edges at a time. Watch the <strong>in-degree row</strong>, the <strong>queue</strong>, and the growing <strong>output</strong>.</p>
+<div class="viz">
+  <div class="viz-panel">
+    <svg id="khn-svg" viewBox="0 0 470 320"></svg>
+    <div class="viz-legend">
+      <span><span class="viz-sw" style="background:#7d848d"></span>Edge</span>
+      <span><span class="viz-sw" style="background:var(--yellow)"></span>Processing edge</span>
+      <span><span class="viz-sw" style="background:var(--green)"></span>Consumed / done</span>
+      <span><span class="viz-sw" style="background:var(--blue)"></span>In queue</span>
+      <span><span class="viz-sw" style="width:12px;height:12px;border-radius:50%;background:var(--yellow-l);border:2px solid var(--yellow)"></span>Node being peeled / current</span>
+    </div>
+  </div>
+  <div class="viz-panel">
+    <div class="viz-step" id="khn-step"></div>
+    <div class="viz-controls">
+      <button id="khn-prev" onclick="khnPrev()">&larr; Prev</button>
+      <button class="primary" id="khn-next" onclick="khnNext()">Next &rarr;</button>
+      <button onclick="khnReset()">Reset</button>
+    </div>
+    <table class="viz-dl">
+      <thead><tr><th>node</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th></tr></thead>
+      <tbody>
+        <tr><td>in-degree</td><td id="khn-i0">-</td><td id="khn-i1">-</td><td id="khn-i2">-</td><td id="khn-i3">-</td><td id="khn-i4">-</td><td id="khn-i5">-</td></tr>
+      </tbody>
+    </table>
+    <div class="topo-lane"><span class="lab">Queue (front &rarr; back)</span><div class="topo-chips" id="khn-queue"></div></div>
+    <div class="topo-lane"><span class="lab">Output order</span><div class="topo-chips" id="khn-out"></div></div>
+  </div>
+</div>
+
+<h3>Method 2: DFS-based (Post-order reverse)</h3>
+<pre><span class="kw">boolean</span>[] visited = <span class="kw">new boolean</span>[n];
+<span class="kw">boolean</span>[] inStack = <span class="kw">new boolean</span>[n];  <span class="cm">// for cycle detection</span>
+Deque&lt;Integer&gt; stack = <span class="kw">new</span> ArrayDeque&lt;&gt;();
+<span class="kw">boolean</span> hasCycle = <span class="kw">false</span>;
+
+<span class="kw">void</span> <span class="fn">dfs</span>(<span class="kw">int</span> u) {
+    visited[u] = <span class="kw">true</span>;
+    inStack[u] = <span class="kw">true</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> v : graph.get(u)) {
+        <span class="kw">if</span> (inStack[v]) { hasCycle = <span class="kw">true</span>; <span class="kw">return</span>; }
+        <span class="kw">if</span> (!visited[v]) <span class="fn">dfs</span>(v);
+        <span class="kw">if</span> (hasCycle) <span class="kw">return</span>;  <span class="cm">// abort: propagate the cycle up, discard partial stack</span>
+    }
+    inStack[u] = <span class="kw">false</span>;
+    stack.push(u);  <span class="cm">// post-order</span>
+}
+
+<span class="cm">// Call dfs for all unvisited nodes, then stack = topo order</span>
+</pre>
+
+<h4>Why reversing finish-times works (the key "aha")</h4>
+<p>DFS explores as deep as it can, then <strong>backtracks</strong>. A node <strong>finishes</strong> (we run out of edges to explore from it) only <em>after</em> every node it can reach has already finished. So if <code>u&rarr;v</code>, then <code>v</code> always finishes <strong>before</strong> <code>u</code>. Push each node onto a stack the moment it finishes, and the last-finished (which must be a "source") ends up on <strong>top</strong>. Popping the stack &mdash; i.e. reading finish-times in <strong>reverse</strong> &mdash; therefore emits every <code>u</code> before its descendants: a valid topo order.</p>
+<div class="topo-anno">
+<table>
+  <tr><td class="ln">visited[u]=true; inStack[u]=true</td><td>Mark u seen, and mark it <strong>on the current recursion path</strong> (for cycle detection).</td></tr>
+  <tr><td class="ln">if (inStack[v]) hasCycle=true</td><td>An edge back to a node still on the path = <strong>back edge</strong> = cycle.</td></tr>
+  <tr><td class="ln">if (!visited[v]) dfs(v)</td><td>Recurse into unexplored children first (go deep).</td></tr>
+  <tr><td class="ln">inStack[u]=false; stack.push(u)</td><td>u is <strong>finished</strong> (all descendants done) &rarr; push it. Later pops give reverse-finish = topo order.</td></tr>
+</table>
+</div>
+
+<h3>Watch DFS Topo Sort Run</h3>
+<p>Same DAG as before. Follow the <strong>recursion stack</strong> grow as we dive deeper, and the <strong>output stack</strong> gain a node each time one <em>finishes</em>. At the end we pop the output stack (reverse finish order) to read off the topo order.</p>
+<div class="viz">
+  <div class="viz-panel">
+    <svg id="tdf-svg" viewBox="0 0 470 320"></svg>
+    <div class="viz-legend">
+      <span><span class="viz-sw" style="background:var(--purple)"></span>On recursion stack</span>
+      <span><span class="viz-sw" style="background:var(--yellow)"></span>Current (top of stack)</span>
+      <span><span class="viz-sw" style="background:var(--green)"></span>Finished</span>
+    </div>
+  </div>
+  <div class="viz-panel">
+    <div class="viz-step" id="tdf-step"></div>
+    <div class="viz-controls">
+      <button id="tdf-prev" onclick="tdfPrev()">&larr; Prev</button>
+      <button class="primary" id="tdf-next" onclick="tdfNext()">Next &rarr;</button>
+      <button onclick="tdfReset()">Reset</button>
+    </div>
+    <div class="topo-lane"><span class="lab">Recursion stack (bottom &rarr; top)</span><div class="topo-chips" id="tdf-rstack"></div></div>
+    <div class="topo-lane"><span class="lab">Output stack &mdash; pushed on finish (bottom &rarr; top)</span><div class="topo-chips" id="tdf-finish"></div></div>
+    <div class="topo-lane"><span class="lab">Topo order = pop the stack (reverse of finish)</span><div class="topo-chips" id="tdf-order"></div></div>
+  </div>
+</div>
+
+<h3>Comparison: Kahn's vs DFS</h3>
+<table>
+  <tr><th>Aspect</th><th>Kahn's (BFS)</th><th>DFS Post-order</th></tr>
+  <tr><td>Cycle detection</td><td>result.size() &lt; n</td><td>back edge (inStack[v] = true)</td></tr>
+  <tr><td>Lexicographic order</td><td>Use PriorityQueue instead</td><td>Harder to guarantee</td></tr>
+  <tr><td>Level info</td><td>Natural (process level by level)</td><td>Not directly available</td></tr>
+  <tr><td>When to use</td><td>Most problems, parallel scheduling</td><td>When you need DFS anyway</td></tr>
+</table>
+
+<h3>Cycle Detection Falls Out for Free</h3>
+<p>Topo sort and cycle detection are the <strong>same computation</strong>. A cycle is a set of tasks that all wait on each other &mdash; a deadlock &mdash; so no valid ordering can exist. Both methods notice this automatically:</p>
+<ul>
+  <li><strong>Kahn's:</strong> if you finish the loop but peeled <strong>fewer than <code>n</code></strong> nodes (<code>idx &lt; n</code>), the leftovers are the nodes on a cycle <em>together with any node reachable from one</em> &mdash; their in-degree <strong>never reached 0</strong> because each is directly or transitively waiting on a cycle member.</li>
+  <li><strong>DFS:</strong> if you ever hit an edge <code>u&rarr;v</code> where <code>v</code> is <strong>still on the current recursion stack</strong> (<code>inStack[v] == true</code>, the "GRAY" state), that's a <strong>back edge</strong> &mdash; you've looped back onto your own path, which <em>is</em> a cycle.</li>
+</ul>
+
+<h3>Watch a Cycle Get Detected</h3>
+<p>Broken prerequisites: <code>W&rarr;X, X&rarr;Y, Y&rarr;Z, Z&rarr;X</code>. The triangle <code>X&rarr;Y&rarr;Z&rarr;X</code> is a circular dependency. Step through and see Kahn's stall with nodes left over.</p>
+<div class="viz">
+  <div class="viz-panel">
+    <svg id="cyc-svg" viewBox="0 0 420 320"></svg>
+    <div class="viz-legend">
+      <span><span class="viz-sw" style="background:#7d848d"></span>Edge</span>
+      <span><span class="viz-sw" style="background:var(--yellow)"></span>Processing edge</span>
+      <span><span class="viz-sw" style="background:var(--red)"></span>Stuck in cycle / back edge</span>
+      <span><span class="viz-sw" style="width:12px;height:12px;border-radius:50%;background:var(--yellow-l);border:2px solid var(--yellow)"></span>Node being peeled / current</span>
+    </div>
+  </div>
+  <div class="viz-panel">
+    <div class="viz-step" id="cyc-step"></div>
+    <div class="viz-controls">
+      <button id="cyc-prev" onclick="cycPrev()">&larr; Prev</button>
+      <button class="primary" id="cyc-next" onclick="cycNext()">Next &rarr;</button>
+      <button onclick="cycReset()">Reset</button>
+    </div>
+    <table class="viz-dl">
+      <thead><tr><th>node</th><th>W</th><th>X</th><th>Y</th><th>Z</th></tr></thead>
+      <tbody>
+        <tr><td>in-degree</td><td id="cyc-i0">-</td><td id="cyc-i1">-</td><td id="cyc-i2">-</td><td id="cyc-i3">-</td></tr>
+      </tbody>
+    </table>
+    <div class="topo-lane"><span class="lab">Queue</span><div class="topo-chips" id="cyc-queue"></div></div>
+    <div class="topo-lane"><span class="lab">Output order</span><div class="topo-chips" id="cyc-out"></div></div>
+  </div>
+</div>
+
+<h3>Variant: Detect if Unique Topo Order Exists</h3>
+<div class="warning">
+  <p>In Kahn's algorithm, if at any point the queue has more than one element, multiple valid orderings exist (the order is NOT unique).</p>
+</div>
+
+<h3>Variant: Longest Path in DAG</h3>
+<pre><span class="cm">// Process nodes in topological order, relax edges</span>
+<span class="kw">int</span>[] dist = <span class="kw">new int</span>[n];
+Arrays.<span class="fn">fill</span>(dist, Integer.MIN_VALUE);
+dist[source] = <span class="num">0</span>;
+
+<span class="kw">for</span> (<span class="kw">int</span> u : topoOrder) {
+    <span class="kw">if</span> (dist[u] == Integer.MIN_VALUE) <span class="kw">continue</span>;
+    <span class="kw">for</span> (<span class="kw">int</span>[] edge : graph.get(u)) {
+        <span class="kw">int</span> v = edge[<span class="num">0</span>], w = edge[<span class="num">1</span>];
+        dist[v] = Math.<span class="fn">max</span>(dist[v], dist[u] + w);
+    }
+}
+</pre>
+
+<h3>Variant: All Topological Orders (Backtracking)</h3>
+<pre><span class="cm">// Used when problem asks "all valid orderings"</span>
+<span class="kw">void</span> <span class="fn">allTopoSort</span>(List&lt;Integer&gt; current) {
+    <span class="kw">if</span> (current.size() == n) { result.add(<span class="kw">new</span> ArrayList&lt;&gt;(current)); <span class="kw">return</span>; }
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="kw">if</span> (!visited[i] &amp;&amp; indegree[i] == <span class="num">0</span>) {
+            visited[i] = <span class="kw">true</span>;
+            current.add(i);
+            <span class="kw">for</span> (<span class="kw">int</span> v : graph.get(i)) indegree[v]--;
+            <span class="fn">allTopoSort</span>(current);
+            <span class="kw">for</span> (<span class="kw">int</span> v : graph.get(i)) indegree[v]++;
+            current.remove(current.size() - <span class="num">1</span>);
+            visited[i] = <span class="kw">false</span>;
+        }
+    }
+}
+</pre>
+
+<h3>Interview Framing</h3>
+<div class="insight">
+  <p><strong>How to recognize it in ~20 seconds:</strong> the problem gives you <em>pairwise "must-come-before" constraints</em> and asks for a valid <em>total order</em> (or just "is one possible?"). Reword any such problem as "build a DAG where an edge <code>A&rarr;B</code> means A must precede B, then topo-sort." If the answer is "impossible / can't be done," they're really asking you to <strong>detect a cycle</strong>.</p>
+</div>
+<p><strong>What to say out loud:</strong> (1) "I'll model this as a directed graph." (2) "The ordering constraint makes it a topo-sort." (3) "I'll use Kahn's / BFS in-degree &mdash; <code>O(V+E)</code>, and it doubles as cycle detection since a leftover node means a cycle." (4) State whether the ordering must be <strong>unique</strong> or <strong>lexicographically smallest</strong> (swap the queue for a <code>PriorityQueue</code>).</p>
+
+<h3>Classic Application 1: Course Schedule (LC 207 / 210)</h3>
+<pre><span class="cm">// prerequisites[i] = [course, prereq] means prereq -> course</span>
+<span class="cm">// 1. Build adjacency list + indegree from the pairs.</span>
+<span class="cm">// 2. Run Kahn's from all indegree-0 courses.</span>
+<span class="cm">// 3. LC 207 (can finish?): return order.size() == numCourses.</span>
+<span class="cm">// 4. LC 210 (which order?): return the order array, or [] if a cycle.</span>
+</pre>
+<p><strong>Recognize it:</strong> "finish all courses given prerequisites" is the textbook topo-sort. "Can you finish?" &rarr; cycle check. "Return an order to finish" &rarr; emit the topo order.</p>
+
+<h3>Classic Application 2: Alien Dictionary (LC 269)</h3>
+<p>Given words sorted in an unknown alphabet's order, recover a valid letter order. The twist that trips people up: <strong>the edges aren't given &mdash; you derive them.</strong> Compare each adjacent pair of words; the <em>first differing character</em> gives one ordering edge <code>c1&rarr;c2</code>. Then it's a plain topo sort over the letters.</p>
+<pre><span class="cm">// For adjacent words w1, w2: find first index where they differ.</span>
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; Math.<span class="fn">min</span>(w1.length(), w2.length()); i++) {
+    <span class="kw">char</span> a = w1.charAt(i), b = w2.charAt(i);
+    <span class="cm">// graph.get(a) is a Set: only count the edge if it's newly added (avoid double-counting indegree).</span>
+    <span class="kw">if</span> (a != b) { <span class="kw">if</span> (graph.get(a).add(b)) indegree[b]++; <span class="kw">break</span>; }  <span class="cm">// a -> b, then STOP</span>
+}
+<span class="cm">// Edge case: w2 is a PREFIX of w1 but w1 is LONGER (e.g. "abc" before "ab") -> invalid input.</span>
+<span class="cm">// Then run Kahn's over the 26 letters; a cycle means "no valid order".</span>
+</pre>
+<div class="warning">
+  <p><strong>Two classic Alien Dictionary traps:</strong> (1) only the <em>first</em> differing char yields an edge &mdash; break immediately after adding it. (2) If <code>w1</code> is longer than <code>w2</code> but <code>w2</code> is a prefix of <code>w1</code> ("abc" then "ab"), the input is <strong>invalid</strong> &mdash; return "".</p>
+</div>
+
+<h3>LeetCode Problems</h3>
+<ul class="problem-list">
+  <li><span class="title"><a href="https://leetcode.com/problems/course-schedule/" target="_blank">207. Course Schedule (cycle detection)</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Google</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/course-schedule-ii/" target="_blank">210. Course Schedule II (topo order)</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Google</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/alien-dictionary/" target="_blank">269. Alien Dictionary (build graph + topo)</a></span><span class="tag tag-hard">Hard</span><span class="tag tag-freq">Google</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/minimum-height-trees/" target="_blank">310. Minimum Height Trees (peel leaves)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/find-eventual-safe-states/" target="_blank">802. Find Eventual Safe States</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/parallel-courses-iii/" target="_blank">2050. Parallel Courses III (longest path DAG)</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/largest-color-value-in-a-directed-graph/" target="_blank">1857. Largest Color Value in Directed Graph</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/longest-increasing-path-in-a-matrix/" target="_blank">329. Longest Increasing Path in a Matrix</a></span><span class="tag tag-hard">Hard</span><span class="tag tag-freq">Google</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/find-all-possible-recipes-from-given-supplies/" target="_blank">2115. Find All Possible Recipes</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/course-schedule-iv/" target="_blank">1462. Course Schedule IV (reachability)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/sequence-reconstruction/" target="_blank">444. Sequence Reconstruction (unique topo)</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Premium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/parallel-courses/" target="_blank">1136. Parallel Courses</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Premium</span></li>
+</ul>
+</div>
+</div>
+
+<!-- ===== Shortest Path ===== -->
+<div class="section" id="shortest">
+<div class="card">
+<h2>Shortest Path Algorithms</h2>
+
+<h3>Algorithm Selection Guide</h3>
+<table>
+  <tr><th>Algorithm</th><th>Graph Type</th><th>Time</th><th>When to Use</th></tr>
+  <tr><td>BFS</td><td>Unweighted</td><td>O(V+E)</td><td>All edges weight 1</td></tr>
+  <tr><td>Dijkstra</td><td>Non-negative weights</td><td>O((V+E)logV)</td><td>Most weighted problems</td></tr>
+  <tr><td>Bellman-Ford</td><td>Any (negative ok)</td><td>O(VE)</td><td>Negative edges, K-stop limit</td></tr>
+  <tr><td>Floyd-Warshall</td><td>All-pairs</td><td>O(V&sup3;)</td><td>Dense, small V (&le;400)</td></tr>
+  <tr><td>0-1 BFS</td><td>Weights 0 or 1</td><td>O(V+E)</td><td>Grid with free/cost moves</td></tr>
+  <tr><td>Topo + DP</td><td>DAG</td><td>O(V+E)</td><td>DAG with any weights</td></tr>
+</table>
+
+<h3>Dijkstra Template</h3>
+<pre><span class="kw">int</span>[] <span class="fn">dijkstra</span>(<span class="kw">int</span> n, List&lt;List&lt;<span class="kw">int</span>[]&gt;&gt; graph, <span class="kw">int</span> src) {
+    <span class="kw">int</span>[] dist = <span class="kw">new int</span>[n];
+    Arrays.<span class="fn">fill</span>(dist, Integer.MAX_VALUE);
+    dist[src] = <span class="num">0</span>;
+
+    <span class="cm">// {distance, node}</span>
+    PriorityQueue&lt;<span class="kw">int</span>[]&gt; pq = <span class="kw">new</span> PriorityQueue&lt;&gt;((a,b) -&gt; Integer.compare(a[<span class="num">0</span>], b[<span class="num">0</span>]));
+    pq.offer(<span class="kw">new int</span>[]{<span class="num">0</span>, src});
+
+    <span class="kw">while</span> (!pq.isEmpty()) {
+        <span class="kw">int</span>[] curr = pq.poll();
+        <span class="kw">int</span> d = curr[<span class="num">0</span>], u = curr[<span class="num">1</span>];
+        <span class="kw">if</span> (d &gt; dist[u]) <span class="kw">continue</span>;  <span class="cm">// stale entry</span>
+        <span class="kw">for</span> (<span class="kw">int</span>[] edge : graph.get(u)) {
+            <span class="kw">int</span> v = edge[<span class="num">0</span>], w = edge[<span class="num">1</span>];
+            <span class="kw">if</span> (dist[u] + w &lt; dist[v]) {
+                dist[v] = dist[u] + w;
+                pq.offer(<span class="kw">new int</span>[]{dist[v], v});
+            }
+        }
+    }
+    <span class="kw">return</span> dist;
+}
+</pre>
+
+<h3>Bellman-Ford (handles negative edges, K-stop limit)</h3>
+<pre><span class="cm">// LC 787 Cheapest Flights Within K Stops</span>
+<span class="kw">int</span>[] dist = <span class="kw">new int</span>[n];
+Arrays.<span class="fn">fill</span>(dist, Integer.MAX_VALUE);
+dist[src] = <span class="num">0</span>;
+
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt;= k; i++) {
+    <span class="kw">int</span>[] prev = dist.clone();  <span class="cm">// prevent using current round</span>
+    <span class="kw">for</span> (<span class="kw">int</span>[] edge : edges) {
+        <span class="kw">int</span> u = edge[<span class="num">0</span>], v = edge[<span class="num">1</span>], w = edge[<span class="num">2</span>];
+        <span class="kw">if</span> (prev[u] != Integer.MAX_VALUE)
+            dist[v] = Math.<span class="fn">min</span>(dist[v], prev[u] + w);
+    }
+}
+</pre>
+
+<div class="tip">
+  <p><strong>Two flavors, don't confuse them:</strong> the <code>prev = dist.clone()</code> per round is <em>only</em> needed for the K-stop constraint (LC 787) — it stops a value updated this round from cascading through more than one extra edge. Plain shortest-path Bellman-Ford drops the clone and relaxes all edges in place for exactly <code>V-1</code> rounds; if any edge still relaxes on round <code>V</code>, a <strong>negative cycle</strong> is reachable. For K stops, allowing at most K intermediate stops means at most K+1 edges, hence the loop runs <code>k+1</code> times (<code>i = 0..k</code>).</p>
+</div>
+
+<h3>Floyd-Warshall (All-Pairs Shortest Paths)</h3>
+<p>Computes shortest paths between ALL pairs of nodes. O(V&sup3;) — only use when V &le; 400 and you need all-pairs distances.</p>
+
+<div class="insight">
+  <p><strong>Key idea:</strong> "Can going through node k improve the shortest path from i to j?" Try every intermediate node k in the outer loop. The loop order MUST be k → i → j (not i → j → k).</p>
+</div>
+
+<pre><span class="cm">// Floyd-Warshall: dist[i][j] = shortest path from i to j</span>
+<span class="kw">int</span> INF = Integer.MAX_VALUE / <span class="num">2</span>;
+<span class="kw">int</span>[][] dist = <span class="kw">new int</span>[n][n];
+<span class="kw">for</span> (<span class="kw">int</span>[] row : dist) Arrays.<span class="fn">fill</span>(row, INF);
+<span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) dist[i][i] = <span class="num">0</span>;
+<span class="kw">for</span> (<span class="kw">int</span>[] e : edges) dist[e[<span class="num">0</span>]][e[<span class="num">1</span>]] = e[<span class="num">2</span>]; <span class="cm">// or min if multiple edges</span>
+
+<span class="cm">// THE core triple loop — k MUST be outermost</span>
+<span class="kw">for</span> (<span class="kw">int</span> k = <span class="num">0</span>; k &lt; n; k++)
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; n; j++)
+            dist[i][j] = Math.<span class="fn">min</span>(dist[i][j], dist[i][k] + dist[k][j]);</pre>
+
+<div class="warning">
+  <p><strong>Common bug:</strong> Using <code>Integer.MAX_VALUE</code> directly causes overflow when adding <code>dist[i][k] + dist[k][j]</code>. Use <code>MAX_VALUE / 2</code> or check for INF before adding.</p>
+</div>
+
+<h4>When to Use Floyd vs Dijkstra</h4>
+<table>
+  <tr><th>Scenario</th><th>Choose</th></tr>
+  <tr><td>Single source, non-negative weights</td><td>Dijkstra O((V+E)logV)</td></tr>
+  <tr><td>Single source, negative weights</td><td>Bellman-Ford O(VE)</td></tr>
+  <tr><td>All pairs, V &le; 400</td><td>Floyd-Warshall O(V&sup3;)</td></tr>
+  <tr><td>All pairs, V &gt; 400, non-negative</td><td>Run Dijkstra from each node O(V(V+E)logV)</td></tr>
+  <tr><td>Detect negative cycle</td><td>Check dist[i][i] &lt; 0 after Floyd</td></tr>
+</table>
+
+<h4>Floyd Variants</h4>
+<ul>
+  <li><strong>Transitive closure:</strong> Replace min with OR, weights with boolean reachability. <code>reach[i][j] |= reach[i][k] &amp;&amp; reach[k][j]</code></li>
+  <li><strong>Minimax path:</strong> Replace <code>min(dist[i][j], dist[i][k] + dist[k][j])</code> with <code>min(dist[i][j], max(dist[i][k], dist[k][j]))</code></li>
+  <li><strong>Count shortest paths:</strong> Maintain parallel <code>count[i][j]</code> array</li>
+  <li><strong>Path reconstruction:</strong> Store <code>next[i][j] = k</code> when improving, trace recursively</li>
+</ul>
+
+<h3>LeetCode Problems</h3>
+<ul class="problem-list">
+  <li><span class="title"><a href="https://leetcode.com/problems/network-delay-time/" target="_blank">743. Network Delay Time (Dijkstra)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/cheapest-flights-within-k-stops/" target="_blank">787. Cheapest Flights Within K Stops (Bellman-Ford)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/path-with-minimum-effort/" target="_blank">1631. Path With Minimum Effort (Dijkstra/BinarySearch)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/find-the-city-with-the-smallest-number-of-neighbors-at-a-threshold-distance/" target="_blank">1334. Find City With Smallest Neighbors (Floyd-Warshall)</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Classic Floyd</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/course-schedule-iv/" target="_blank">1462. Course Schedule IV (Floyd transitive closure)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/shortest-path-visiting-all-nodes/" target="_blank">847. Shortest Path Visiting All Nodes (Floyd + bitmask BFS)</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/swim-in-rising-water/" target="_blank">778. Swim in Rising Water (Dijkstra on grid)</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/path-with-maximum-probability/" target="_blank">1514. Path with Maximum Probability</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/minimum-obstacle-removal/" target="_blank">2290. Minimum Obstacle Removal (0-1 BFS)</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/reachable-nodes-in-subdivided-graph/" target="_blank">882. Reachable Nodes In Subdivided Graph</a></span><span class="tag tag-hard">Hard</span></li>
+</ul>
+</div>
+</div>
+
+<!-- ===== Union-Find ===== -->
+<div class="section" id="unionfind">
+<div class="card">
+<h2>Union-Find (Disjoint Set Union)</h2>
+
+<h3>Template with Path Compression + Union by Rank</h3>
+<pre><span class="kw">class</span> <span class="type">UnionFind</span> {
+    <span class="kw">int</span>[] parent, rank;
+    <span class="kw">int</span> components;
+
+    <span class="fn">UnionFind</span>(<span class="kw">int</span> n) {
+        parent = <span class="kw">new int</span>[n];
+        rank = <span class="kw">new int</span>[n];
+        components = n;
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) parent[i] = i;
+    }
+
+    <span class="kw">int</span> <span class="fn">find</span>(<span class="kw">int</span> x) {
+        <span class="kw">if</span> (parent[x] != x)
+            parent[x] = <span class="fn">find</span>(parent[x]);  <span class="cm">// path compression</span>
+        <span class="kw">return</span> parent[x];
+    }
+
+    <span class="kw">boolean</span> <span class="fn">union</span>(<span class="kw">int</span> x, <span class="kw">int</span> y) {
+        <span class="kw">int</span> px = <span class="fn">find</span>(x), py = <span class="fn">find</span>(y);
+        <span class="kw">if</span> (px == py) <span class="kw">return false</span>;
+        <span class="kw">if</span> (rank[px] &lt; rank[py]) { <span class="kw">int</span> t = px; px = py; py = t; }
+        parent[py] = px;
+        <span class="kw">if</span> (rank[px] == rank[py]) rank[px]++;
+        components--;
+        <span class="kw">return true</span>;
+    }
+}
+</pre>
+
+<h3>When to Use</h3>
+<div class="insight">
+  <p><strong>Dynamic connectivity:</strong> "are x and y connected?"<br>
+  <strong>Count components</strong> as edges are added<br>
+  <strong>Detect cycle in undirected graph:</strong> if union returns false<br>
+  <strong>Kruskal's MST:</strong> sort edges + union-find</p>
+</div>
+
+<h3>LeetCode Problems</h3>
+<ul class="problem-list">
+  <li><span class="title"><a href="https://leetcode.com/problems/number-of-provinces/" target="_blank">547. Number of Provinces</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/redundant-connection/" target="_blank">684. Redundant Connection</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/accounts-merge/" target="_blank">721. Accounts Merge</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Google</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/number-of-operations-to-make-network-connected/" target="_blank">1319. Number of Operations to Make Network Connected</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/satisfiability-of-equality-equations/" target="_blank">990. Satisfiability of Equality Equations</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/number-of-good-paths/" target="_blank">2421. Number of Good Paths</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/min-cost-to-connect-all-points/" target="_blank">1584. Min Cost to Connect All Points (MST)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/largest-component-size-by-common-factor/" target="_blank">952. Largest Component by Common Factor</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/number-of-connected-components-in-undirected-graph/" target="_blank">323. Number of Connected Components in Undirected Graph</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Premium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/graph-valid-tree/" target="_blank">261. Graph Valid Tree</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Premium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/the-earliest-moment-when-everyone-become-friends/" target="_blank">1101. The Earliest Moment When Everyone Become Friends</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Premium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/evaluate-division/" target="_blank">399. Evaluate Division</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/smallest-string-with-swaps/" target="_blank">1202. Smallest String With Swaps</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/optimize-water-distribution-in-a-village/" target="_blank">1168. Optimize Water Distribution in a Village</a></span><span class="tag tag-hard">Hard</span><span class="tag tag-freq">Premium</span></li>
+</ul>
+</div>
+</div>
+
+<!-- ===== MST ===== -->
+<div class="section" id="mst">
+<div class="card">
+<h2>Minimum Spanning Tree</h2>
+
+<h3>Kruskal's (Edge-based): O(E log E)</h3>
+<pre><span class="cm">// Sort edges by weight, greedily add if no cycle</span>
+Arrays.<span class="fn">sort</span>(edges, (a, b) -&gt; Integer.compare(a[<span class="num">2</span>], b[<span class="num">2</span>]));
+UnionFind uf = <span class="kw">new</span> <span class="fn">UnionFind</span>(n);
+<span class="kw">int</span> mstWeight = <span class="num">0</span>, edgeCount = <span class="num">0</span>;
+
+<span class="kw">for</span> (<span class="kw">int</span>[] edge : edges) {
+    <span class="kw">if</span> (uf.<span class="fn">union</span>(edge[<span class="num">0</span>], edge[<span class="num">1</span>])) {
+        mstWeight += edge[<span class="num">2</span>];
+        <span class="kw">if</span> (++edgeCount == n - <span class="num">1</span>) <span class="kw">break</span>;
+    }
+}
+</pre>
+
+<h3>Prim's (Vertex-based): O((V+E) log V)</h3>
+<pre><span class="cm">// Start from any vertex, greedily pick cheapest edge to new vertex</span>
+PriorityQueue&lt;<span class="kw">int</span>[]&gt; pq = <span class="kw">new</span> PriorityQueue&lt;&gt;((a,b) -&gt; Integer.compare(a[<span class="num">1</span>], b[<span class="num">1</span>]));
+<span class="kw">boolean</span>[] inMST = <span class="kw">new boolean</span>[n];
+pq.offer(<span class="kw">new int</span>[]{<span class="num">0</span>, <span class="num">0</span>});  <span class="cm">// {node, weight}</span>
+
+<span class="kw">while</span> (!pq.isEmpty()) {
+    <span class="kw">int</span>[] curr = pq.poll();
+    <span class="kw">int</span> u = curr[<span class="num">0</span>], w = curr[<span class="num">1</span>];
+    <span class="kw">if</span> (inMST[u]) <span class="kw">continue</span>;
+    inMST[u] = <span class="kw">true</span>;
+    mstWeight += w;
+    <span class="kw">for</span> (<span class="kw">int</span>[] edge : graph.get(u))
+        <span class="kw">if</span> (!inMST[edge[<span class="num">0</span>]])
+            pq.offer(<span class="kw">new int</span>[]{edge[<span class="num">0</span>], edge[<span class="num">1</span>]});
+}
+</pre>
+
+<h3>LeetCode Problems</h3>
+<ul class="problem-list">
+  <li><span class="title"><a href="https://leetcode.com/problems/min-cost-to-connect-all-points/" target="_blank">1584. Min Cost to Connect All Points</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/connecting-cities-with-minimum-cost/" target="_blank">1135. Connecting Cities With Minimum Cost</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/optimize-water-distribution-in-a-village/" target="_blank">1168. Optimize Water Distribution in a Village</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/find-critical-and-pseudo-critical-edges/" target="_blank">1489. Find Critical and Pseudo-Critical Edges</a></span><span class="tag tag-hard">Hard</span></li>
+</ul>
+</div>
+</div>
+
+<!-- ===== Cycle Detection ===== -->
+<div class="section" id="cycle">
+<div class="card">
+<h2>Cycle Detection</h2>
+
+<h3>Directed Graph: DFS with 3-color marking</h3>
+<pre><span class="cm">// WHITE=0 (unvisited), GRAY=1 (in current path), BLACK=2 (done)</span>
+<span class="kw">int</span>[] color = <span class="kw">new int</span>[n];
+
+<span class="kw">boolean</span> <span class="fn">hasCycle</span>(<span class="kw">int</span> u) {
+    color[u] = <span class="num">1</span>;  <span class="cm">// GRAY</span>
+    <span class="kw">for</span> (<span class="kw">int</span> v : graph.get(u)) {
+        <span class="kw">if</span> (color[v] == <span class="num">1</span>) <span class="kw">return true</span>;  <span class="cm">// back edge!</span>
+        <span class="kw">if</span> (color[v] == <span class="num">0</span> &amp;&amp; <span class="fn">hasCycle</span>(v)) <span class="kw">return true</span>;
+    }
+    color[u] = <span class="num">2</span>;  <span class="cm">// BLACK</span>
+    <span class="kw">return false</span>;
+}
+</pre>
+
+<h3>Undirected Graph: Union-Find or DFS with parent tracking</h3>
+<pre><span class="cm">// Union-Find: if union(u, v) returns false, edge creates cycle</span>
+<span class="kw">for</span> (<span class="kw">int</span>[] edge : edges) {
+    <span class="kw">if</span> (!uf.<span class="fn">union</span>(edge[<span class="num">0</span>], edge[<span class="num">1</span>]))
+        <span class="kw">return</span> edge;  <span class="cm">// this edge creates cycle</span>
+}
+</pre>
+
+<h3>LeetCode Problems</h3>
+<ul class="problem-list">
+  <li><span class="title"><a href="https://leetcode.com/problems/course-schedule/" target="_blank">207. Course Schedule (directed cycle)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/redundant-connection/" target="_blank">684. Redundant Connection (undirected cycle)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/redundant-connection-ii/" target="_blank">685. Redundant Connection II (directed)</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/find-eventual-safe-states/" target="_blank">802. Find Eventual Safe States</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/graph-valid-tree/" target="_blank">261. Graph Valid Tree (no cycle + connected)</a></span><span class="tag tag-medium">Medium</span></li>
+</ul>
+</div>
+</div>
+
+<!-- ===== Bipartite ===== -->
+<div class="section" id="bipartite">
+<div class="card">
+<h2>Bipartite Graph</h2>
+<p>A graph whose vertices can be divided into two disjoint sets such that every edge connects a vertex in one set to a vertex in the other.</p>
+
+<h3>Check Bipartite: BFS 2-coloring</h3>
+<pre><span class="kw">boolean</span> <span class="fn">isBipartite</span>(<span class="kw">int</span>[][] graph) {
+    <span class="kw">int</span> n = graph.length;
+    <span class="kw">int</span>[] color = <span class="kw">new int</span>[n];  <span class="cm">// 0=unvisited, 1=red, -1=blue</span>
+
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) {
+        <span class="kw">if</span> (color[i] != <span class="num">0</span>) <span class="kw">continue</span>;
+        Queue&lt;Integer&gt; queue = <span class="kw">new</span> LinkedList&lt;&gt;();
+        queue.offer(i);
+        color[i] = <span class="num">1</span>;
+        <span class="kw">while</span> (!queue.isEmpty()) {
+            <span class="kw">int</span> u = queue.poll();
+            <span class="kw">for</span> (<span class="kw">int</span> v : graph[u]) {
+                <span class="kw">if</span> (color[v] == <span class="num">0</span>) {
+                    color[v] = -color[u];
+                    queue.offer(v);
+                } <span class="kw">else if</span> (color[v] == color[u]) {
+                    <span class="kw">return false</span>;  <span class="cm">// odd cycle</span>
+                }
+            }
+        }
+    }
+    <span class="kw">return true</span>;
+}
+</pre>
+
+<h3>Key Insight</h3>
+<div class="insight">
+  <p>A graph is bipartite <strong>if and only if</strong> it contains no odd-length cycle. 2-coloring BFS is the standard check.</p>
+</div>
+
+<h3>LeetCode Problems</h3>
+<ul class="problem-list">
+  <li><span class="title"><a href="https://leetcode.com/problems/is-graph-bipartite/" target="_blank">785. Is Graph Bipartite?</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/possible-bipartition/" target="_blank">886. Possible Bipartition</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/flower-planting-with-no-adjacent/" target="_blank">1042. Flower Planting With No Adjacent</a></span><span class="tag tag-medium">Medium</span></li>
+</ul>
+</div>
+</div>
+
+<!-- ===== SCC / Bridges ===== -->
+<div class="section" id="scc">
+<div class="card">
+<h2>Strongly Connected Components &amp; Bridges</h2>
+
+<h3>Tarjan's Algorithm for Bridges (Cut Edges)</h3>
+<pre><span class="kw">int</span> timer = <span class="num">0</span>;
+<span class="kw">int</span>[] disc, low;  <span class="cm">// disc = new int[n]; Arrays.fill(disc, -1) BEFORE dfs — Java's default 0 would look "visited"</span>
+List&lt;<span class="kw">int</span>[]&gt; bridges = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+<span class="cm">// Run dfs(i, -1) for every i with disc[i] == -1 to cover disconnected graphs.</span>
+<span class="kw">void</span> <span class="fn">dfs</span>(<span class="kw">int</span> u, <span class="kw">int</span> parent) {
+    disc[u] = low[u] = timer++;
+    <span class="kw">for</span> (<span class="kw">int</span> v : graph.get(u)) {
+        <span class="kw">if</span> (v == parent) <span class="kw">continue</span>;
+        <span class="kw">if</span> (disc[v] == -<span class="num">1</span>) {
+            <span class="fn">dfs</span>(v, u);
+            low[u] = Math.<span class="fn">min</span>(low[u], low[v]);
+            <span class="kw">if</span> (low[v] &gt; disc[u])
+                bridges.add(<span class="kw">new int</span>[]{u, v});  <span class="cm">// bridge!</span>
+        } <span class="kw">else</span> {
+            low[u] = Math.<span class="fn">min</span>(low[u], disc[v]);
+        }
+    }
+}
+</pre>
+
+<div class="insight">
+  <p><strong>disc vs low:</strong> <code>disc[u]</code> = when u was discovered (its DFS order); <code>low[u]</code> = the disc of the earliest ancestor this subtree can climb back to. The bridge test <code>low[v] &gt; disc[u]</code> means: v's entire subtree, apart from the edge u→v, has no back edge that loops back to u or any ancestor above u → removing that edge disconnects the graph. Use <code>disc[v]</code> for a back edge (its landing point), because a back edge jumps to an ancestor in one step and stops there — it cannot climb further up.</p>
+</div>
+
+<div class="warning">
+  <p><strong>Parallel-edge trap:</strong> the <code>if (v == parent) continue;</code> shortcut skips <em>all</em> edges back to the parent, so it is wrong when the graph has a multi-edge (two edges between the same pair) — that pair is never a bridge, yet this code would report one. To be safe, skip by edge id (pass the id used to arrive, and <code>continue</code> only on that exact edge) instead of by vertex. LC 1192 guarantees no duplicate edges, so the vertex check is fine there, but state this assumption out loud in an interview.</p>
+</div>
+
+<h3>Step-by-Step Visualizer</h3>
+<p>Graph: <code>n=4, edges=[[0,1],[1,2],[2,0],[1,3]]</code> — a triangle 0-1-2 with a tail 1-3. Start the DFS from node 0. Click "Next" to step through and watch how disc/low change and how bridges are detected.</p>
+<div class="viz">
+  <div class="viz-panel">
+    <svg id="brg-svg" viewBox="0 0 400 340"></svg>
+    <div class="viz-legend">
+      <span><span class="viz-sw" style="background:var(--blue)"></span>Tree edge</span>
+      <span><span class="viz-sw" style="background:var(--purple)"></span>Back edge</span>
+      <span><span class="viz-sw" style="background:var(--yellow)"></span>Processing</span>
+      <span><span class="viz-sw" style="background:var(--red)"></span>Bridge</span>
+    </div>
+  </div>
+  <div class="viz-panel">
+    <div class="viz-step" id="brg-step"><span class="snum">Ready to start</span>Click "Next" to run Tarjan's bridge-finding.</div>
+    <div class="viz-controls">
+      <button id="brg-prev" onclick="brgPrev()">← Prev</button>
+      <button class="primary" id="brg-next" onclick="brgNext()">Next →</button>
+      <button onclick="brgReset()">Reset</button>
+    </div>
+    <table class="viz-dl">
+      <thead><tr><th>node</th><th>0</th><th>1</th><th>2</th><th>3</th></tr></thead>
+      <tbody>
+        <tr><td>disc</td><td id="brg-d0">-</td><td id="brg-d1">-</td><td id="brg-d2">-</td><td id="brg-d3">-</td></tr>
+        <tr><td>low</td><td id="brg-l0">-</td><td id="brg-l1">-</td><td id="brg-l2">-</td><td id="brg-l3">-</td></tr>
+      </tbody>
+    </table>
+    <div class="viz-out" id="brg-out">Bridges found: <span class="b">(none yet)</span></div>
+  </div>
+</div>
+
+<h3>Kosaraju's SCC (2-pass DFS)</h3>
+<div class="insight">
+  <p><strong>Intuition:</strong> If we process nodes in reverse finish-time order on the reversed graph, each DFS tree we encounter is exactly one SCC. This works because a node finished late in pass 1 is a "root" of its SCC — reversing edges ensures its SCC members are only reachable from it, not from other SCCs.</p>
+</div>
+
+<pre><span class="cm">// Kosaraju's Algorithm — returns list of SCCs</span>
+<span class="kw">List</span>&lt;List&lt;Integer&gt;&gt; <span class="fn">kosaraju</span>(<span class="kw">int</span> n, List&lt;List&lt;Integer&gt;&gt; graph) {
+    <span class="cm">// Pass 1: DFS on original graph, record finish order</span>
+    <span class="kw">boolean</span>[] visited = <span class="kw">new boolean</span>[n];
+    Deque&lt;Integer&gt; finishOrder = <span class="kw">new</span> ArrayDeque&lt;&gt;();
+
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++)
+        <span class="kw">if</span> (!visited[i]) dfs1(i, graph, visited, finishOrder);
+
+    <span class="cm">// Build reversed graph</span>
+    List&lt;List&lt;Integer&gt;&gt; rev = <span class="kw">new</span> ArrayList&lt;&gt;();
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) rev.add(<span class="kw">new</span> ArrayList&lt;&gt;());
+    <span class="kw">for</span> (<span class="kw">int</span> u = <span class="num">0</span>; u &lt; n; u++)
+        <span class="kw">for</span> (<span class="kw">int</span> v : graph.get(u)) rev.get(v).add(u);
+
+    <span class="cm">// Pass 2: DFS on reversed graph in reverse finish order</span>
+    Arrays.<span class="fn">fill</span>(visited, <span class="kw">false</span>);
+    List&lt;List&lt;Integer&gt;&gt; sccs = <span class="kw">new</span> ArrayList&lt;&gt;();
+    <span class="kw">while</span> (!finishOrder.isEmpty()) {
+        <span class="kw">int</span> node = finishOrder.pop();
+        <span class="kw">if</span> (!visited[node]) {
+            List&lt;Integer&gt; scc = <span class="kw">new</span> ArrayList&lt;&gt;();
+            dfs2(node, rev, visited, scc);
+            sccs.add(scc);
+        }
+    }
+    <span class="kw">return</span> sccs;
+}
+
+<span class="kw">void</span> <span class="fn">dfs1</span>(<span class="kw">int</span> u, List&lt;List&lt;Integer&gt;&gt; g, <span class="kw">boolean</span>[] vis, Deque&lt;Integer&gt; order) {
+    vis[u] = <span class="kw">true</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> v : g.get(u)) <span class="kw">if</span> (!vis[v]) dfs1(v, g, vis, order);
+    order.push(u); <span class="cm">// record finish time</span>
+}
+
+<span class="kw">void</span> <span class="fn">dfs2</span>(<span class="kw">int</span> u, List&lt;List&lt;Integer&gt;&gt; g, <span class="kw">boolean</span>[] vis, List&lt;Integer&gt; scc) {
+    vis[u] = <span class="kw">true</span>;
+    scc.add(u);
+    <span class="kw">for</span> (<span class="kw">int</span> v : g.get(u)) <span class="kw">if</span> (!vis[v]) dfs2(v, g, vis, scc);
+}</pre>
+
+<h3>Tarjan's SCC (single-pass, stack-based)</h3>
+<div class="insight">
+  <p><strong>Intuition:</strong> Maintain a stack of "currently in progress" nodes. A node is the root of its SCC if <code>low[u] == disc[u]</code> — meaning no node in its subtree can reach anything earlier. Pop everything above it from the stack = one SCC.</p>
+</div>
+
+<pre><span class="cm">// Tarjan's SCC Algorithm</span>
+<span class="kw">int</span> timer = <span class="num">0</span>;
+<span class="kw">int</span>[] disc, low, comp; <span class="cm">// comp[u] = which SCC node u belongs to</span>
+<span class="kw">boolean</span>[] onStack;
+Deque&lt;Integer&gt; stack = <span class="kw">new</span> ArrayDeque&lt;&gt;();
+<span class="kw">int</span> numSCC = <span class="num">0</span>;
+
+<span class="kw">void</span> <span class="fn">tarjanSCC</span>(<span class="kw">int</span> u) {
+    disc[u] = low[u] = timer++;
+    stack.push(u);
+    onStack[u] = <span class="kw">true</span>;
+
+    <span class="kw">for</span> (<span class="kw">int</span> v : graph.get(u)) {
+        <span class="kw">if</span> (disc[v] == -<span class="num">1</span>) {
+            tarjanSCC(v);
+            low[u] = Math.<span class="fn">min</span>(low[u], low[v]);
+        } <span class="kw">else if</span> (onStack[v]) {
+            low[u] = Math.<span class="fn">min</span>(low[u], disc[v]);
+        }
+    }
+
+    <span class="cm">// If u is root of an SCC</span>
+    <span class="kw">if</span> (low[u] == disc[u]) {
+        <span class="kw">while</span> (<span class="kw">true</span>) {
+            <span class="kw">int</span> v = stack.pop();
+            onStack[v] = <span class="kw">false</span>;
+            comp[v] = numSCC;
+            <span class="kw">if</span> (v == u) <span class="kw">break</span>;
+        }
+        numSCC++;
+    }
+}</pre>
+
+<h3>Kosaraju vs Tarjan</h3>
+<table>
+  <tr><th>Aspect</th><th>Kosaraju</th><th>Tarjan</th></tr>
+  <tr><td>Passes</td><td>2 DFS passes</td><td>1 DFS pass</td></tr>
+  <tr><td>Extra structure</td><td>Reversed graph (2x memory)</td><td>Stack + onStack array</td></tr>
+  <tr><td>Ease of understanding</td><td>Easier (clear 2-step logic)</td><td>Harder (low-link subtlety)</td></tr>
+  <tr><td>Output order</td><td>SCCs in topological order (source SCC first)</td><td>SCCs in reverse topological order (sink SCC first)</td></tr>
+  <tr><td>Interview recommendation</td><td>Use this one (easier to explain)</td><td>Use if memory is tight</td></tr>
+</table>
+
+<div class="warning">
+  <p><strong>Interview tip:</strong> SCC problems rarely appear directly in senior-level (L5/L6) interviews. More common: "Can all nodes reach each other?" → just check if SCC count == 1. Or the problem reduces to DAG after condensation. Know Kosaraju well enough to code it; mention Tarjan for bonus points.</p>
+</div>
+
+<h3>LeetCode Problems</h3>
+<ul class="problem-list">
+  <li><span class="title"><a href="https://leetcode.com/problems/critical-connections-in-a-network/" target="_blank">1192. Critical Connections in a Network (Bridges)</a></span><span class="tag tag-hard">Hard</span><span class="tag tag-freq">Google</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/min-number-of-days-to-disconnect-island/" target="_blank">1568. Min Number of Days to Disconnect Island</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/minimize-malware-spread-ii/" target="_blank">928. Minimize Malware Spread II</a></span><span class="tag tag-hard">Hard</span></li>
+</ul>
+</div>
+</div>
+
+<!-- ===== Advanced ===== -->
+<div class="section" id="advanced">
+<div class="card">
+<h2>Advanced Graph Topics</h2>
+
+<h3>Euler Path / Circuit</h3>
+
+<h4>What is it?</h4>
+<p>An <strong>Euler path</strong> visits every EDGE exactly once. An <strong>Euler circuit</strong> is an Euler path that starts and ends at the same vertex. (Contrast with Hamiltonian path which visits every VERTEX once — that's NP-hard.)</p>
+
+<h4>Existence Conditions</h4>
+<table>
+  <tr><th>Graph type</th><th>Euler Circuit exists if</th><th>Euler Path exists if</th></tr>
+  <tr><td>Undirected</td><td>All vertices have even degree AND graph is connected</td><td>Exactly 0 or 2 vertices have odd degree AND graph is connected</td></tr>
+  <tr><td>Directed</td><td>Every vertex has in-degree = out-degree AND graph is strongly connected</td><td>At most one vertex has out-in=1 (start), at most one has in-out=1 (end) AND connected ignoring edge direction</td></tr>
+</table>
+
+<h4>Hierholzer's Algorithm (Euler Circuit/Path)</h4>
+<div class="insight">
+  <p><strong>Key idea:</strong> DFS but remove edges as you traverse them. When you get stuck (no more edges from current node), add current node to the result and backtrack. The result (reversed) is the Euler path. This is NOT regular DFS — you must delete edges to avoid reuse.</p>
+</div>
+
+<pre><span class="cm">// Hierholzer's for DIRECTED graph (LC 332 Reconstruct Itinerary)</span>
+Map&lt;String, PriorityQueue&lt;String&gt;&gt; graph = <span class="kw">new</span> HashMap&lt;&gt;();
+List&lt;String&gt; result = <span class="kw">new</span> ArrayList&lt;&gt;();
+
+<span class="kw">void</span> <span class="fn">dfs</span>(String node) {
+    PriorityQueue&lt;String&gt; neighbors = graph.get(node);
+    <span class="kw">while</span> (neighbors != <span class="kw">null</span> &amp;&amp; !neighbors.isEmpty()) {
+        String next = neighbors.poll();  <span class="cm">// remove edge (use it up)</span>
+        dfs(next);
+    }
+    result.add(node);  <span class="cm">// add to front when "stuck"</span>
+}
+
+<span class="cm">// Call: dfs(startNode); Collections.reverse(result);</span>
+
+<span class="cm">// For UNDIRECTED graph — mark edges as used (need edge IDs)</span>
+<span class="kw">void</span> <span class="fn">hierholzerUndirected</span>(<span class="kw">int</span> start) {
+    Deque&lt;Integer&gt; stack = <span class="kw">new</span> ArrayDeque&lt;&gt;();
+    List&lt;Integer&gt; path = <span class="kw">new</span> ArrayList&lt;&gt;();
+    stack.push(start);
+    <span class="kw">while</span> (!stack.isEmpty()) {
+        <span class="kw">int</span> u = stack.peek();
+        <span class="kw">if</span> (hasUnusedEdge(u)) {
+            <span class="kw">int</span>[] edge = getNextUnusedEdge(u);
+            markUsed(edge);
+            stack.push(edge[<span class="num">1</span>]); <span class="cm">// go to other endpoint</span>
+        } <span class="kw">else</span> {
+            path.add(stack.pop()); <span class="cm">// backtrack: add to result</span>
+        }
+    }
+    Collections.reverse(path);
+}</pre>
+
+<div class="warning">
+  <p><strong>Common interview disguise:</strong> "Reconstruct Itinerary" (LC 332) = Euler path on directed multigraph. "Cracking the Safe" (LC 753) = Euler circuit on de Bruijn graph. Recognize these as Euler problems and Hierholzer's follows naturally.</p>
+</div>
+
+<h4>Real-world uses</h4>
+<ul>
+  <li>Chinese Postman Problem (mail delivery visiting every street)</li>
+  <li>DNA sequencing (Euler path on de Bruijn graph of k-mers)</li>
+  <li>Drawing puzzles ("draw without lifting your pen")</li>
+</ul>
+
+<h3>A* Search</h3>
+
+<h4>What is it?</h4>
+<p>Informed search that uses a heuristic to guide exploration. Like Dijkstra, but instead of expanding the node with smallest <code>g(n)</code> (cost so far), it expands the node with smallest <code>f(n) = g(n) + h(n)</code> where <code>h(n)</code> estimates remaining cost to goal.</p>
+
+<h4>When is it useful?</h4>
+<ul>
+  <li><strong>Games:</strong> pathfinding on maps (characters navigating obstacles)</li>
+  <li><strong>Grid problems:</strong> when BFS is too slow and you have a natural distance heuristic</li>
+  <li><strong>State-space search:</strong> sliding puzzles, Rubik's cube</li>
+  <li><strong>Interviews:</strong> rare, but LC 1197 (Minimum Knight Moves) can use it</li>
+</ul>
+
+<h4>Key Property: Admissibility</h4>
+<div class="insight">
+  <p><strong>h(n) must be admissible:</strong> it never OVERestimates the true remaining cost. If admissible, A* finds the optimal path. Common heuristics: Manhattan distance (grid, 4-directional), Euclidean distance (continuous), Chebyshev distance (8-directional).</p>
+</div>
+
+<pre><span class="cm">// A* Search Template</span>
+<span class="kw">int</span> <span class="fn">aStar</span>(<span class="kw">int</span>[][] grid, <span class="kw">int</span>[] start, <span class="kw">int</span>[] goal) {
+    <span class="kw">int</span> n = grid.length, m = grid[<span class="num">0</span>].length;
+    <span class="kw">int</span>[][] dist = <span class="kw">new int</span>[n][m];
+    <span class="kw">for</span> (<span class="kw">int</span>[] row : dist) Arrays.<span class="fn">fill</span>(row, Integer.MAX_VALUE);
+    dist[start[<span class="num">0</span>]][start[<span class="num">1</span>]] = <span class="num">0</span>;
+
+    <span class="cm">// PQ ordered by f = g + h</span>
+    PriorityQueue&lt;<span class="kw">int</span>[]&gt; pq = <span class="kw">new</span> PriorityQueue&lt;&gt;((a, b) -&gt; Integer.compare(a[<span class="num">2</span>], b[<span class="num">2</span>]));
+    <span class="kw">int</span> h = heuristic(start, goal);
+    pq.offer(<span class="kw">new int</span>[]{start[<span class="num">0</span>], start[<span class="num">1</span>], h}); <span class="cm">// {row, col, f}</span>
+
+    <span class="kw">int</span>[][] dirs = {{<span class="num">0</span>,<span class="num">1</span>},{<span class="num">0</span>,-<span class="num">1</span>},{<span class="num">1</span>,<span class="num">0</span>},{-<span class="num">1</span>,<span class="num">0</span>}};
+    <span class="kw">while</span> (!pq.isEmpty()) {
+        <span class="kw">int</span>[] curr = pq.poll();
+        <span class="kw">int</span> r = curr[<span class="num">0</span>], c = curr[<span class="num">1</span>];
+        <span class="kw">if</span> (r == goal[<span class="num">0</span>] &amp;&amp; c == goal[<span class="num">1</span>]) <span class="kw">return</span> dist[r][c];
+        <span class="kw">if</span> (curr[<span class="num">2</span>] &gt; dist[r][c] + heuristic(<span class="kw">new int</span>[]{r,c}, goal)) <span class="kw">continue</span>;
+
+        <span class="kw">for</span> (<span class="kw">int</span>[] d : dirs) {
+            <span class="kw">int</span> nr = r + d[<span class="num">0</span>], nc = c + d[<span class="num">1</span>];
+            <span class="kw">if</span> (nr &lt; <span class="num">0</span> || nr &gt;= n || nc &lt; <span class="num">0</span> || nc &gt;= m) <span class="kw">continue</span>;
+            <span class="kw">int</span> newDist = dist[r][c] + grid[nr][nc]; <span class="cm">// edge cost</span>
+            <span class="kw">if</span> (newDist &lt; dist[nr][nc]) {
+                dist[nr][nc] = newDist;
+                pq.offer(<span class="kw">new int</span>[]{nr, nc, newDist + heuristic(<span class="kw">new int</span>[]{nr,nc}, goal)});
+            }
+        }
+    }
+    <span class="kw">return</span> -<span class="num">1</span>;
+}
+
+<span class="kw">int</span> <span class="fn">heuristic</span>(<span class="kw">int</span>[] a, <span class="kw">int</span>[] b) {
+    <span class="kw">return</span> Math.<span class="fn">abs</span>(a[<span class="num">0</span>] - b[<span class="num">0</span>]) + Math.<span class="fn">abs</span>(a[<span class="num">1</span>] - b[<span class="num">1</span>]); <span class="cm">// Manhattan</span>
+}</pre>
+
+<h4>A* vs Dijkstra vs BFS</h4>
+<table>
+  <tr><th>Algorithm</th><th>When to use</th><th>Explores</th></tr>
+  <tr><td>BFS</td><td>Unweighted, guaranteed shortest</td><td>All nodes at distance d before d+1</td></tr>
+  <tr><td>Dijkstra</td><td>Weighted, no heuristic available</td><td>Expands by cheapest g(n)</td></tr>
+  <tr><td>A*</td><td>Weighted, good heuristic available</td><td>Expands by cheapest g(n) + h(n) → fewer nodes explored</td></tr>
+</table>
+
+<div class="tip">
+  <p><strong>Interview context:</strong> If asked "how to speed up Dijkstra on a grid?", mention A* with Manhattan heuristic. In practice, A* explores far fewer nodes when the heuristic is tight. For LC problems, BFS/Dijkstra usually suffice — A* is more of a system design / game dev topic.</p>
+</div>
+
+<h3>Network Flow (rarely in interviews)</h3>
+<p>Max Flow = Min Cut (Ford-Fulkerson). Sometimes disguised as bipartite matching. See <a href="advanced_algorithms_training.html">Advanced Algorithms</a> for full templates.</p>
+
+<h3>LeetCode Problems</h3>
+<ul class="problem-list">
+  <li><span class="title"><a href="https://leetcode.com/problems/reconstruct-itinerary/" target="_blank">332. Reconstruct Itinerary (Euler path)</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/cracking-the-safe/" target="_blank">753. Cracking the Safe (de Bruijn / Euler)</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/minimum-knight-moves/" target="_blank">1197. Minimum Knight Moves (BFS/A*)</a></span><span class="tag tag-medium">Medium</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/minimum-moves-to-move-a-box/" target="_blank">1263. Minimum Moves to Move a Box (BFS state)</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/minimum-weighted-subgraph-with-the-required-paths/" target="_blank">2203. Minimum Weighted Subgraph With Required Paths</a></span><span class="tag tag-hard">Hard</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/bus-routes/" target="_blank">815. Bus Routes</a></span><span class="tag tag-hard">Hard</span><span class="tag tag-freq">BFS on route graph</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/divide-nodes-into-the-maximum-number-of-groups/" target="_blank">2493. Divide Nodes Into Max Groups</a></span><span class="tag tag-hard">Hard</span><span class="tag tag-freq">BFS + Bipartite</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/maximum-path-quality-of-a-graph/" target="_blank">2065. Max Path Quality</a></span><span class="tag tag-hard">Hard</span><span class="tag tag-freq">DFS + backtrack</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/find-all-possible-recipes-from-given-supplies/" target="_blank">2115. Find All Possible Recipes</a></span><span class="tag tag-medium">Medium</span><span class="tag tag-freq">Topo Sort</span></li>
+  <li><span class="title"><a href="https://leetcode.com/problems/minimum-edge-weight-equilibrium-queries-in-a-tree/" target="_blank">2846. Min Edge Weight Equilibrium Queries</a></span><span class="tag tag-hard">Hard</span><span class="tag tag-freq">LCA + freq</span></li>
+</ul>
+</div>
+</div>
+
+</div>
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+
+// ===== Tarjan bridges visualizer =====
+(function(){
+  const pos = { 0:{x:90,y:100}, 1:{x:230,y:170}, 2:{x:90,y:250}, 3:{x:355,y:100} };
+  const edges = [[0,1],[1,2],[2,0],[1,3]];
+  const E = (a,b)=> a<b ? a+'-'+b : b+'-'+a;
+  const steps = [];
+  function snap(desc, disc, low, current, visited, es, bridges){
+    steps.push({ desc, disc:{...disc}, low:{...low}, current,
+      visited:[...visited], es:{...es}, bridges:bridges.map(b=>[...b]) });
+  }
+  let disc={0:-1,1:-1,2:-1,3:-1}, low={0:-1,1:-1,2:-1,3:-1}, visited=[], es={}, bridges=[];
+  snap('<span class="snum">Step 0 · Initialize</span>Set disc / low to -1 for all nodes (unvisited). Start the DFS from node <code>0</code>, timer=0.', disc,low,null,visited,es,bridges);
+  disc[0]=0; low[0]=0; visited.push(0);
+  snap('<span class="snum">Step 1 · Visit node 0</span><code>disc[0]=low[0]=0</code>. Node 0 is the root of the DFS tree.', disc,low,0,visited,es,bridges);
+  es[E(0,1)]='active';
+  snap('<span class="snum">Step 2 · Edge 0→1 (tree edge)</span>0\'s neighbor 1 is unvisited → <b>tree edge</b>; recurse down into 1.', disc,low,0,visited,es,bridges);
+  es[E(0,1)]='tree'; disc[1]=1; low[1]=1; visited.push(1);
+  snap('<span class="snum">Step 3 · Visit node 1</span><code>disc[1]=low[1]=1</code>.', disc,low,1,visited,es,bridges);
+  es[E(1,2)]='active';
+  snap('<span class="snum">Step 4 · Edge 1→2 (tree edge)</span>1\'s neighbor 2 is unvisited → <b>tree edge</b>; recurse into 2.', disc,low,1,visited,es,bridges);
+  es[E(1,2)]='tree'; disc[2]=2; low[2]=2; visited.push(2);
+  snap('<span class="snum">Step 5 · Visit node 2</span><code>disc[2]=low[2]=2</code>.', disc,low,2,visited,es,bridges);
+  snap('<span class="snum">Step 6 · Edge 2→0 (back edge!)</span>2\'s neighbor 0 is <b>already visited and not the parent</b> → <b>back edge</b>. Update <code>low[2]=min(2, disc[0]=0)=0</code>. Use disc[0], not low[0]: a back edge jumps to 0 in one step and stops.', disc,low,2,visited,{...es,[E(2,0)]:'back'},bridges);
+  low[2]=0; es[E(2,0)]='back';
+  snap('<span class="snum">Step 7 · Node 2 finished</span><code>low[2]=0</code> → node 2 can climb back to node 0 via the back edge. All of 2\'s neighbors are done; backtrack to 1.', disc,low,2,visited,es,bridges);
+  low[1]=Math.min(low[1],low[2]); es[E(1,2)]='active';
+  snap('<span class="snum">Step 8 · Backtrack 2→1, check edge (1,2)</span>Tree-edge propagation: <code>low[1]=min(1, low[2]=0)=0</code>. <b>Bridge test:</b> <code>low[2]=0 &gt; disc[1]=1</code>? <span class="vn">No → not a bridge</span> (2 loops back to 0 via a back edge).', disc,low,1,visited,es,bridges);
+  es[E(1,2)]='tree'; es[E(1,3)]='active';
+  snap('<span class="snum">Step 9 · Edge 1→3 (tree edge)</span>1\'s neighbor 3 is unvisited → <b>tree edge</b>; recurse into 3.', disc,low,1,visited,es,bridges);
+  es[E(1,3)]='tree'; disc[3]=3; low[3]=3; visited.push(3);
+  snap('<span class="snum">Step 10 · Visit node 3</span><code>disc[3]=low[3]=3</code>. Node 3\'s only neighbor is its parent 1 → skip. <b>No back edge</b>, so low[3] stays at 3.', disc,low,3,visited,es,bridges);
+  low[1]=Math.min(low[1],low[3]); es[E(1,3)]='active'; bridges.push([1,3]);
+  snap('<span class="snum">Step 11 · Backtrack 3→1, check edge (1,3)</span><code>low[1]=min(0, low[3]=3)=0</code>. <b>Bridge test:</b> <code>low[3]=3 &gt; disc[1]=1</code>? <span class="vb">Yes → this is a bridge!</span> (3 has no back edge bypassing 1-3).', disc,low,1,visited,{...es,[E(1,3)]:'bridge'},bridges);
+  es[E(1,3)]='bridge'; low[0]=Math.min(low[0],low[1]); es[E(0,1)]='active';
+  snap('<span class="snum">Step 12 · Backtrack 1→0, check edge (0,1)</span><code>low[0]=min(0, low[1]=0)=0</code>. <b>Bridge test:</b> <code>low[1]=0 &gt; disc[0]=0</code>? <span class="vn">No → not a bridge</span>.', disc,low,0,visited,es,bridges);
+  es[E(0,1)]='tree';
+  snap('<span class="snum">✓ Done</span>The DFS is complete. The only bridge is <span class="vb">[1,3]</span>. Every edge inside the triangle 0-1-2 has an alternative path (not a bridge); the tail 1-3 is the only connection (a bridge).', disc,low,null,visited,es,bridges);
+
+  let cur = 0;
+  const svg = document.getElementById('brg-svg');
+  function render(){
+    const s = steps[cur];
+    let html = '';
+    for (const [a,b] of edges){
+      const t = s.es[E(a,b)] || '';
+      const p1=pos[a], p2=pos[b];
+      html += '<line class="edge '+t+'" x1="'+p1.x+'" y1="'+p1.y+'" x2="'+p2.x+'" y2="'+p2.y+'"/>';
+    }
+    for (const id of [0,1,2,3]){
+      const p = pos[id];
+      let cls = 'node';
+      if (s.current===id) cls+=' current';
+      else if (s.visited.includes(id)) cls+=' visited';
+      const d = s.disc[id]<0?'·':s.disc[id], l = s.low[id]<0?'·':s.low[id];
+      const dlx = p.x + (id===0 ? -38 : 0); // node 0's label nudged left, off the vertical 2->0 edge
+      html += '<g class="'+cls+'"><circle cx="'+p.x+'" cy="'+p.y+'" r="22"/><text class="id" x="'+p.x+'" y="'+p.y+'">'+id+'</text><text class="dl" x="'+dlx+'" y="'+(p.y+38)+'">d='+d+' l='+l+'</text></g>';
+    }
+    svg.innerHTML = html;
+    document.getElementById('brg-step').innerHTML = s.desc;
+    for (const id of [0,1,2,3]){
+      const dc = document.getElementById('brg-d'+id), lc = document.getElementById('brg-l'+id);
+      dc.textContent = s.disc[id]<0?'-':s.disc[id]; lc.textContent = s.low[id]<0?'-':s.low[id];
+      dc.className = (s.current===id)?'hl':''; lc.className = (s.current===id)?'hl':'';
+    }
+    const out = document.getElementById('brg-out');
+    out.innerHTML = s.bridges.length===0 ? 'Bridges found: <span class="b">(none yet)</span>'
+      : 'Bridges found: ' + s.bridges.map(b=>'<span class="b">['+b[0]+','+b[1]+']</span>').join(' ');
+    document.getElementById('brg-prev').disabled = (cur===0);
+    document.getElementById('brg-next').disabled = (cur===steps.length-1);
+  }
+  window.brgNext = ()=>{ if(cur<steps.length-1){cur++;render();} };
+  window.brgPrev = ()=>{ if(cur>0){cur--;render();} };
+  window.brgReset = ()=>{ cur=0; render(); };
+  render();
+})();
+
+// ===== Kahn's algorithm (BFS / in-degree) topo-sort visualizer =====
+(function(){
+  const R = 22;
+  const pos = {0:{x:55,y:70}, 1:{x:55,y:250}, 2:{x:175,y:160}, 3:{x:300,y:75}, 4:{x:300,y:245}, 5:{x:415,y:160}};
+  const label = ['A','B','C','D','E','F'];
+  const edges = [[0,2],[1,2],[2,3],[2,4],[3,5],[4,5]];
+  const K = (a,b)=> a+'>'+b;
+  const steps = [];
+  function snap(desc, indeg, queue, output, current, done, es, hot){
+    steps.push({ desc, indeg:{...indeg}, queue:[...queue], output:[...output],
+      current, done:[...done], es:{...es}, hot: hot?[...hot]:[] });
+  }
+  let indeg={0:0,1:0,2:2,3:1,4:1,5:2}, queue=[], output=[], done=[], es={};
+  snap('<span class="snum">Step 0 · Count in-degrees</span>For each node, count arrows pointing <em>in</em>: <code>A=0, B=0, C=2, D=1, E=1, F=2</code>. The two 0-in-degree nodes are ready right away.', indeg,queue,output,null,done,es);
+  queue=[0,1];
+  snap('<span class="snum">Step 1 · Seed the queue</span><code>A</code> and <code>B</code> have in-degree 0 (no prerequisites) → enqueue both.', indeg,queue,output,null,done,es,[0,1]);
+  queue=[1]; output=[0]; done=[0]; es={[K(0,2)]:'relax'};
+  snap('<span class="snum">Step 2 · Peel A</span>Dequeue <code>A</code> and append it to the order. Highlight its outgoing edge <code>A→C</code>, about to be processed.', indeg,queue,output,0,done,es);
+  indeg={...indeg,2:1}; es={[K(0,2)]:'done'};
+  snap('<span class="snum">Step 3 · Process A→C</span>C loses one prerequisite: <code>indeg[C] 2→1</code>. Still &gt; 0, so C keeps waiting (B not taken yet).', indeg,queue,output,0,done,es,[2]);
+  queue=[]; output=[0,1]; done=[0,1]; es={[K(0,2)]:'done',[K(1,2)]:'relax'};
+  snap('<span class="snum">Step 4 · Peel B</span>Dequeue <code>B</code>, append it. Process edge <code>B→C</code>.', indeg,queue,output,1,done,es);
+  indeg={...indeg,2:0}; queue=[2]; es={[K(0,2)]:'done',[K(1,2)]:'done'};
+  snap('<span class="snum">Step 5 · Process B→C</span><code>indeg[C] 1→0</code> → all of C\'s prerequisites are met → enqueue <code>C</code>.', indeg,queue,output,1,done,es,[2]);
+  queue=[]; output=[0,1,2]; done=[0,1,2];
+  es={[K(0,2)]:'done',[K(1,2)]:'done',[K(2,3)]:'relax',[K(2,4)]:'relax'};
+  snap('<span class="snum">Step 6 · Peel C</span>Dequeue <code>C</code>, append. It has two outgoing edges <code>C→D</code> and <code>C→E</code> to process.', indeg,queue,output,2,done,es);
+  indeg={...indeg,3:0,4:0}; queue=[3,4];
+  es={[K(0,2)]:'done',[K(1,2)]:'done',[K(2,3)]:'done',[K(2,4)]:'done'};
+  snap('<span class="snum">Step 7 · Process C→D, C→E</span>Both drop to 0: <code>indeg[D]=0, indeg[E]=0</code> → enqueue <code>D</code> and <code>E</code>.', indeg,queue,output,2,done,es,[3,4]);
+  queue=[4]; output=[0,1,2,3]; done=[0,1,2,3]; es={...es,[K(3,5)]:'relax'};
+  snap('<span class="snum">Step 8 · Peel D</span>Dequeue <code>D</code> (front of queue), append. Process <code>D→F</code>.', indeg,queue,output,3,done,es);
+  indeg={...indeg,5:1}; es={...es,[K(3,5)]:'done'};
+  snap('<span class="snum">Step 9 · Process D→F</span><code>indeg[F] 2→1</code>. Still waiting on E.', indeg,queue,output,3,done,es,[5]);
+  queue=[]; output=[0,1,2,3,4]; done=[0,1,2,3,4]; es={...es,[K(4,5)]:'relax'};
+  snap('<span class="snum">Step 10 · Peel E</span>Dequeue <code>E</code>, append. Process <code>E→F</code>.', indeg,queue,output,4,done,es);
+  indeg={...indeg,5:0}; queue=[5]; es={...es,[K(4,5)]:'done'};
+  snap('<span class="snum">Step 11 · Process E→F</span><code>indeg[F] 1→0</code> → enqueue <code>F</code>.', indeg,queue,output,4,done,es,[5]);
+  queue=[]; output=[0,1,2,3,4,5]; done=[0,1,2,3,4,5];
+  snap('<span class="snum">Step 12 · Peel F</span>Dequeue <code>F</code>, append. No outgoing edges to process.', indeg,queue,output,5,done,es);
+  snap('<span class="snum">✓ Done</span>Peeled all 6 nodes → valid topological order <code>A B C D E F</code>. (A/B are interchangeable and D/E are interchangeable, so e.g. <code>B A C E D F</code> is equally valid — and is exactly what the DFS method below produces.)', indeg,queue,output,null,done,es);
+
+  const svg = document.getElementById('khn-svg');
+  function mk(id,c){ return '<marker id="'+id+'" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,3 L0,6 Z" fill="'+c+'"/></marker>'; }
+  function mrk(st){ return st==='relax'?'khnAy':st==='done'?'khnAg':'khnA'; }
+  function drawEdge(a,b,st){
+    const p1=pos[a], p2=pos[b], dx=p2.x-p1.x, dy=p2.y-p1.y, L=Math.hypot(dx,dy), ux=dx/L, uy=dy/L;
+    const x1=p1.x+ux*R, y1=p1.y+uy*R, x2=p2.x-ux*(R+8), y2=p2.y-uy*(R+8);
+    return '<line class="edge '+(st||'')+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" marker-end="url(#'+mrk(st)+')"/>';
+  }
+  function chip(t,c){ return '<span class="topo-chip '+c+'">'+t+'</span>'; }
+  let cur=0;
+  function render(){
+    const s = steps[cur];
+    let h = '<defs>'+mk('khnA','#7d848d')+mk('khnAy','#8a5a06')+mk('khnAg','#0f7434')+'</defs>';
+    for (const [a,b] of edges) h += drawEdge(a,b,s.es[K(a,b)]);
+    for (let id=0; id<6; id++){
+      const p = pos[id]; let cls='node';
+      if (s.current===id) cls+=' current';
+      else if (s.done.includes(id)) cls+=' done';
+      else if (s.queue.includes(id)) cls+=' inq';
+      h += '<g class="'+cls+'"><circle cx="'+p.x+'" cy="'+p.y+'" r="'+R+'"/><text class="id" x="'+p.x+'" y="'+p.y+'">'+label[id]+'</text><text class="dl" x="'+p.x+'" y="'+(p.y+37)+'">in='+s.indeg[id]+'</text></g>';
+    }
+    svg.innerHTML = h;
+    document.getElementById('khn-step').innerHTML = s.desc;
+    for (let id=0; id<6; id++){ const c=document.getElementById('khn-i'+id); c.textContent=s.indeg[id]; c.className=s.hot.includes(id)?'hl':''; }
+    document.getElementById('khn-queue').innerHTML = s.queue.length ? s.queue.map(n=>chip(label[n],'q')).join('') : chip('empty','empty');
+    document.getElementById('khn-out').innerHTML = s.output.length ? s.output.map(n=>chip(label[n],'out')).join('') : chip('&empty;','empty');
+    document.getElementById('khn-prev').disabled = (cur===0);
+    document.getElementById('khn-next').disabled = (cur===steps.length-1);
+  }
+  window.khnNext = ()=>{ if(cur<steps.length-1){cur++;render();} };
+  window.khnPrev = ()=>{ if(cur>0){cur--;render();} };
+  window.khnReset = ()=>{ cur=0; render(); };
+  render();
+})();
+
+// ===== DFS post-order topo-sort visualizer =====
+(function(){
+  const R = 22;
+  const pos = {0:{x:55,y:70}, 1:{x:55,y:250}, 2:{x:175,y:160}, 3:{x:300,y:75}, 4:{x:300,y:245}, 5:{x:415,y:160}};
+  const label = ['A','B','C','D','E','F'];
+  const edges = [[0,2],[1,2],[2,3],[2,4],[3,5],[4,5]];
+  const D = (a,b)=> a+'>'+b;
+  const steps = [];
+  let rstack=[], finish=[], done=[], es={};
+  function snap(desc, current, order){
+    steps.push({ desc, rstack:[...rstack], finish:[...finish], done:[...done], current, es:{...es}, order: order||null });
+  }
+  snap('<span class="snum">Step 0 · The plan</span>Run DFS from each unvisited node. <strong>Push a node onto the output stack only when it FINISHES</strong> (all its descendants are done). Start with <code>A</code>.', null);
+  rstack=[0]; es={[D(0,2)]:'relax'};
+  snap('<span class="snum">Step 1 · dfs(A) — enter</span>Push <code>A</code> onto the recursion stack. Explore neighbor <code>C</code>.', 0);
+  rstack=[0,2]; es={[D(0,2)]:'done',[D(2,3)]:'relax'};
+  snap('<span class="snum">Step 2 · A→C, dfs(C)</span><code>C</code> is unvisited → recurse. Recursion stack <code>[A, C]</code>.', 2);
+  rstack=[0,2,3]; es={[D(0,2)]:'done',[D(2,3)]:'done',[D(3,5)]:'relax'};
+  snap('<span class="snum">Step 3 · C→D, dfs(D)</span>C\'s first neighbor <code>D</code> is unvisited → recurse. Stack <code>[A, C, D]</code>.', 3);
+  rstack=[0,2,3,5]; es={[D(0,2)]:'done',[D(2,3)]:'done',[D(3,5)]:'done'};
+  snap('<span class="snum">Step 4 · D→F, dfs(F)</span>D\'s neighbor <code>F</code> is unvisited → recurse. Stack <code>[A, C, D, F]</code>.', 5);
+  rstack=[0,2,3]; finish=[5]; done=[5];
+  snap('<span class="snum">Step 5 · F finishes</span><code>F</code> has no outgoing edges → nothing to wait on → <strong>push F</strong> onto the output stack. Pop it off recursion, back to D.', 3);
+  rstack=[0,2]; finish=[5,3]; done=[5,3];
+  snap('<span class="snum">Step 6 · D finishes</span>All of D\'s descendants are placed → <strong>push D</strong>. Back to C.', 2);
+  rstack=[0,2,4]; es={...es,[D(2,4)]:'relax'};
+  snap('<span class="snum">Step 7 · C→E, dfs(E)</span>C\'s second neighbor <code>E</code> is unvisited → recurse. Stack <code>[A, C, E]</code>.', 4);
+  rstack=[0,2]; finish=[5,3,4]; done=[5,3,4]; es={...es,[D(2,4)]:'done'};
+  snap('<span class="snum">Step 8 · E finishes</span>Edge <code>E→F</code>, but F is already finished → skip it. <strong>Push E</strong>. Back to C.', 2);
+  rstack=[0]; finish=[5,3,4,2]; done=[5,3,4,2];
+  snap('<span class="snum">Step 9 · C finishes</span>Both of C\'s children are done → <strong>push C</strong>. Back to A.', 0);
+  rstack=[]; finish=[5,3,4,2,0]; done=[5,3,4,2,0];
+  snap('<span class="snum">Step 10 · A finishes</span>A\'s subtree is complete → <strong>push A</strong>. This DFS tree is done.', null);
+  rstack=[1]; es={...es,[D(1,2)]:'relax'};
+  snap('<span class="snum">Step 11 · dfs(B)</span>B is still unvisited → a new DFS root. Its neighbor <code>C</code> is already finished → skip.', 1);
+  rstack=[]; finish=[5,3,4,2,0,1]; done=[5,3,4,2,0,1]; es={...es,[D(1,2)]:'done'};
+  snap('<span class="snum">Step 12 · B finishes</span><strong>Push B</strong>. Output stack (bottom→top): <code>F D E C A B</code>.', null);
+  snap('<span class="snum">✓ Reverse the stack</span>Pop the output stack (= read finish order in reverse) → topological order <code>B A C E D F</code>. Check: every arrow points left→right in this list. ✓', null, [1,0,2,4,3,5]);
+
+  const svg = document.getElementById('tdf-svg');
+  function mk(id,c){ return '<marker id="'+id+'" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,3 L0,6 Z" fill="'+c+'"/></marker>'; }
+  function mrk(st){ return st==='relax'?'tdfAy':st==='done'?'tdfAg':'tdfA'; }
+  function drawEdge(a,b,st){
+    const p1=pos[a], p2=pos[b], dx=p2.x-p1.x, dy=p2.y-p1.y, L=Math.hypot(dx,dy), ux=dx/L, uy=dy/L;
+    const x1=p1.x+ux*R, y1=p1.y+uy*R, x2=p2.x-ux*(R+8), y2=p2.y-uy*(R+8);
+    return '<line class="edge '+(st||'')+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" marker-end="url(#'+mrk(st)+')"/>';
+  }
+  function chip(t,c){ return '<span class="topo-chip '+c+'">'+t+'</span>'; }
+  let cur=0;
+  function render(){
+    const s = steps[cur];
+    let h = '<defs>'+mk('tdfA','#7d848d')+mk('tdfAy','#8a5a06')+mk('tdfAg','#0f7434')+'</defs>';
+    for (const [a,b] of edges) h += drawEdge(a,b,s.es[D(a,b)]);
+    for (let id=0; id<6; id++){
+      const p = pos[id]; let cls='node';
+      if (s.current===id) cls+=' current';
+      else if (s.rstack.includes(id)) cls+=' stack';
+      else if (s.done.includes(id)) cls+=' done';
+      h += '<g class="'+cls+'"><circle cx="'+p.x+'" cy="'+p.y+'" r="'+R+'"/><text class="id" x="'+p.x+'" y="'+p.y+'">'+label[id]+'</text></g>';
+    }
+    svg.innerHTML = h;
+    document.getElementById('tdf-step').innerHTML = s.desc;
+    document.getElementById('tdf-rstack').innerHTML = s.rstack.length ? s.rstack.map(n=>chip(label[n],'stk')).join('') : chip('empty','empty');
+    document.getElementById('tdf-finish').innerHTML = s.finish.length ? s.finish.map(n=>chip(label[n],'out')).join('') : chip('empty','empty');
+    document.getElementById('tdf-order').innerHTML = s.order ? s.order.map(n=>chip(label[n],'out')).join('<span class="arrow">→</span>') : chip('(finish first)','empty');
+    document.getElementById('tdf-prev').disabled = (cur===0);
+    document.getElementById('tdf-next').disabled = (cur===steps.length-1);
+  }
+  window.tdfNext = ()=>{ if(cur<steps.length-1){cur++;render();} };
+  window.tdfPrev = ()=>{ if(cur>0){cur--;render();} };
+  window.tdfReset = ()=>{ cur=0; render(); };
+  render();
+})();
+
+// ===== Cycle-detection (Kahn stalls) visualizer =====
+(function(){
+  const R = 22;
+  const pos = {0:{x:55,y:160}, 1:{x:175,y:160}, 2:{x:335,y:75}, 3:{x:335,y:245}};
+  const label = ['W','X','Y','Z'];
+  const edges = [[0,1],[1,2],[2,3],[3,1]];
+  const C = (a,b)=> a+'>'+b;
+  const steps = [];
+  function snap(desc, indeg, queue, output, current, done, es, hot, cyc){
+    steps.push({ desc, indeg:{...indeg}, queue:[...queue], output:[...output],
+      current, done:[...done], es:{...es}, hot: hot?[...hot]:[], cyc: cyc?[...cyc]:[] });
+  }
+  let indeg={0:0,1:2,2:1,3:1};
+  snap('<span class="snum">Step 0 · Count in-degrees</span><code>W=0, X=2 (from W and Z), Y=1, Z=1</code>. Only W is ready.', indeg,[],[],null,[],{});
+  snap('<span class="snum">Step 1 · Seed the queue</span>Only <code>W</code> has in-degree 0 → enqueue it.', indeg,[0],[],null,[],{},[0]);
+  snap('<span class="snum">Step 2 · Peel W</span>Dequeue <code>W</code>, append to order. Process edge <code>W→X</code>.', indeg,[],[0],0,[0],{[C(0,1)]:'relax'});
+  indeg={...indeg,1:1};
+  snap('<span class="snum">Step 3 · Process W→X</span><code>indeg[X] 2→1</code>. Still &gt; 0 → NOT enqueued. The queue is now <strong>empty</strong>.', indeg,[],[0],0,[0],{[C(0,1)]:'done'},[1]);
+  snap('<span class="snum">Step 4 · Stuck! Cycle detected</span>Queue is empty but we peeled only <strong>1 of 4</strong> nodes (<code>idx &lt; n</code>). The leftovers <code>X, Y, Z</code> still have in-degree &gt; 0 → they form a cycle.', indeg,[],[0],null,[0],{[C(0,1)]:'done'},[],[1,2,3]);
+  snap('<span class="snum">Step 5 · Why they stall</span>Circular wait: <code>X</code> waits on <code>Z</code>, <code>Z</code> waits on <code>Y</code>, <code>Y</code> waits on <code>X</code> (<code>X→Y→Z→X</code>). No member can ever reach in-degree 0.', indeg,[],[0],null,[0],{[C(0,1)]:'done',[C(1,2)]:'cyc',[C(2,3)]:'cyc',[C(3,1)]:'cyc'},[],[1,2,3]);
+  snap('<span class="snum">Step 6 · DFS sees the same cycle</span>DFS would go <code>W→X→Y→Z</code>, then edge <code>Z→X</code> lands on <code>X</code> which is <strong>still on the recursion stack</strong> (GRAY) → that is a <strong>back edge</strong> → cycle.', indeg,[],[0],null,[0],{[C(0,1)]:'done',[C(3,1)]:'cyc'},[],[1,2,3]);
+
+  const svg = document.getElementById('cyc-svg');
+  function mk(id,c){ return '<marker id="'+id+'" markerWidth="9" markerHeight="9" refX="7.5" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L8,3 L0,6 Z" fill="'+c+'"/></marker>'; }
+  function mrk(st){ return st==='relax'?'cycAy':st==='done'?'cycAg':st==='cyc'?'cycAr':'cycA'; }
+  function drawEdge(a,b,st){
+    const p1=pos[a], p2=pos[b], dx=p2.x-p1.x, dy=p2.y-p1.y, L=Math.hypot(dx,dy), ux=dx/L, uy=dy/L;
+    const x1=p1.x+ux*R, y1=p1.y+uy*R, x2=p2.x-ux*(R+8), y2=p2.y-uy*(R+8);
+    return '<line class="edge '+(st||'')+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" marker-end="url(#'+mrk(st)+')"/>';
+  }
+  function chip(t,c){ return '<span class="topo-chip '+c+'">'+t+'</span>'; }
+  let cur=0;
+  function render(){
+    const s = steps[cur];
+    let h = '<defs>'+mk('cycA','#7d848d')+mk('cycAy','#8a5a06')+mk('cycAg','#0f7434')+mk('cycAr','#c92a2a')+'</defs>';
+    for (const [a,b] of edges) h += drawEdge(a,b,s.es[C(a,b)]);
+    for (let id=0; id<4; id++){
+      const p = pos[id]; let cls='node';
+      if (s.cyc.includes(id)) cls+=' cyc';
+      else if (s.current===id) cls+=' current';
+      else if (s.done.includes(id)) cls+=' done';
+      else if (s.queue.includes(id)) cls+=' inq';
+      const dlx = p.x + (id===2 ? 34 : 0); // Y's label nudged right, off the vertical Y->Z edge
+      h += '<g class="'+cls+'"><circle cx="'+p.x+'" cy="'+p.y+'" r="'+R+'"/><text class="id" x="'+p.x+'" y="'+p.y+'">'+label[id]+'</text><text class="dl" x="'+dlx+'" y="'+(p.y+37)+'">in='+s.indeg[id]+'</text></g>';
+    }
+    svg.innerHTML = h;
+    document.getElementById('cyc-step').innerHTML = s.desc;
+    for (let id=0; id<4; id++){ const c=document.getElementById('cyc-i'+id); c.textContent=s.indeg[id]; c.className=s.hot.includes(id)?'hl':''; }
+    document.getElementById('cyc-queue').innerHTML = s.queue.length ? s.queue.map(n=>chip(label[n],'q')).join('') : chip('empty','empty');
+    document.getElementById('cyc-out').innerHTML = s.output.length ? s.output.map(n=>chip(label[n],'out')).join('') : chip('&empty;','empty');
+    document.getElementById('cyc-prev').disabled = (cur===0);
+    document.getElementById('cyc-next').disabled = (cur===steps.length-1);
+  }
+  window.cycNext = ()=>{ if(cur<steps.length-1){cur++;render();} };
+  window.cycPrev = ()=>{ if(cur>0){cur--;render();} };
+  window.cycReset = ()=>{ cur=0; render(); };
+  render();
+})();
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="tree_ds_training.html">‹ Tree Data Structures</a><a class="bkc" href="index.html">📖 Contents</a><a href="sorting_training.html">Sorting-Based Problem Solving ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design a Payment System — Classic System Design Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XI · Chapter 4 — <b>Design a Payment System</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Design a Payment System</h1>
+  <div class="sub">The system-design problem where <em>correctness beats every other quality</em>: money must never be lost, never created out of thin air, and never charged twice. We build up from a high-schooler's "charge a card" API to a senior engineer's idempotent, double-entry, reconciled money mover — every invariant stated precisely and every number verified so you can quote it in an interview. Card handling is kept generic (tokenize, never store the raw number) — no real processor internals.</div>
+</header>
+
+<div class="ins"><div class="insl">Read this like a story</div><p>Start at the top. Payments look like "call an API and move money," but the entire chapter exists to answer two questions an interviewer often presses on: <strong>how do you never double-charge</strong> (idempotency, §4) and <strong>how do you never lose or invent money</strong> (the double-entry ledger, §5). Everything else — sagas, reconciliation, PCI — hangs off those two invariants.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. The Problem &amp; Requirements</h2>
+
+<p class="lead">A <strong>payment system</strong> moves money on behalf of a business: it <strong>charges</strong> a customer, <strong>refunds</strong> them when needed, and <strong>pays out</strong> to a merchant or seller. It sits between the customer's funding source (a card, a bank account, a wallet) and the parties who ultimately receive the money, orchestrating external processors while keeping its own perfectly accurate books. If a rate limiter can drop a request with no lasting harm, a payment system cannot: a lost or duplicated write here is <em>real money</em>.</p>
+
+<h3>What "correctness above all" actually means</h3>
+<p>Before any diagram, internalize the non-negotiable invariants — the interviewer is listening for these words:</p>
+<ul>
+  <li><strong>No money is ever lost.</strong> Every cent that enters the system is accounted for somewhere; nothing silently disappears on a crash or timeout.</li>
+  <li><strong>No money is ever created.</strong> You cannot invent a balance; every credit has a matching debit (the double-entry law in §5).</li>
+  <li><strong>No customer is ever double-charged.</strong> A client retry, a network timeout, or a duplicate webhook must never result in two charges (idempotency, §4).</li>
+  <li><strong>Every movement is auditable.</strong> Given any balance, you can reconstruct exactly which events produced it — an immutable, append-only history (§5).</li>
+</ul>
+
+<h3>Scope: charge, refund, payout</h3>
+<p>We keep the surface deliberately small so we can go deep on correctness. Three flows cover most of the interview:</p>
+<div class="g2">
+<div class="card"><h4 style="margin-top:0">In scope</h4>
+<ul>
+  <li><strong>Charge</strong> — collect money from a customer's funding source (authorize + capture).</li>
+  <li><strong>Refund</strong> — return money for a prior capture, fully or partially.</li>
+  <li><strong>Payout</strong> — move settled funds out to a merchant/seller bank account.</li>
+  <li><strong>Ledger &amp; balances</strong> — the internal books that record all of the above.</li>
+</ul></div>
+<div class="card"><h4 style="margin-top:0">Explicitly out of scope</h4>
+<ul>
+  <li><strong>Storing raw card data (PAN).</strong> We tokenize via a vault/PSP and keep the sensitive data out of our systems entirely (§8).</li>
+  <li>Fraud/risk scoring, chargeback dispute UX, tax, FX pricing — mention them, don't build them.</li>
+  <li>The card network's internal clearing — we treat the <strong>PSP / acquiring bank</strong> as an external dependency.</li>
+</ul></div>
+</div>
+
+<h3>Functional vs. non-functional requirements</h3>
+<div class="g2">
+<div class="card"><h4 style="margin-top:0">Functional</h4>
+<ul>
+  <li>Create a <strong>charge</strong> for an amount + currency against a tokenized funding source.</li>
+  <li>Support the <strong>authorize → capture → settle</strong> lifecycle (§3), plus <strong>void</strong> and <strong>refund</strong>.</li>
+  <li>Every request carries a client-supplied <strong>idempotency key</strong>; a retry returns the original result.</li>
+  <li>Record every movement in a <strong>double-entry ledger</strong> and expose derived balances.</li>
+  <li><strong>Reconcile</strong> internal records against processor/bank statements (§7).</li>
+</ul></div>
+<div class="card"><h4 style="margin-top:0">Non-functional</h4>
+<ul>
+  <li><strong>Strong consistency for the ledger.</strong> Balances and journal writes are transactional and exact — no eventual-consistency guesses on money.</li>
+  <li><strong>Auditability &amp; immutability.</strong> The journal is append-only; you correct by appending a reversal, never by editing.</li>
+  <li><strong>Idempotency &amp; exactly-once effect</strong> on every mutating call.</li>
+  <li><strong>High availability</strong> for the charge path (revenue), but <strong>correctness wins ties</strong> — prefer failing a charge to double-charging.</li>
+  <li><strong>Security &amp; compliance</strong> — tokenization, least privilege, and a tamper-evident audit log (§8).</li>
+</ul></div>
+</div>
+<div class="note"><div class="notel">The one-liner that sets you apart</div><p>"For most systems I'd trade consistency for availability; for the <strong>ledger</strong> I do the opposite — it is strongly consistent and append-only, and I'd rather reject a payment than record it twice. Availability I recover with idempotent retries, not by relaxing correctness." Saying this in the first two minutes signals seniority.</p></div>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. Back-of-the-Envelope Estimation</h2>
+<p>Sizing tells you whether one relational primary suffices for the ledger or you must shard, and how much the append-only history costs to retain for compliance.</p>
+
+<h3>Transactions per day and peak QPS</h3>
+<p>Assume a mid-size platform: <strong>10,000,000 payment transactions/day</strong> (charges, refunds, payouts combined).</p>
+<div class="formula">
+txns/day     = <b>10,000,000</b> (10<sup>7</sup>)<br>
+seconds/day  = 86,400 ≈ 10<sup>5</sup><br>
+average QPS  = 10<sup>7</sup> / 86,400 ≈ <b>116 QPS</b>   <span class="cm"># ≈100 with the ÷10⁵ shortcut</span><br>
+peak QPS     = average × (peak factor ~10, e.g. a flash sale) ≈ <b>~1,160 QPS</b>
+</div>
+<p>Writes are modest — ~100–1,200 QPS — which is <em>tiny</em> for a database. That is deliberate: payments are <strong>write-light but correctness-heavy</strong>. You are not fighting throughput; you are fighting duplicates, partial failures, and lost updates. Reads (status checks, balance lookups, dashboards) run perhaps 10× the writes and are served from read replicas / read models (§10).</p>
+
+<h3>Ledger write volume</h3>
+<p>The load that actually matters is <strong>ledger postings</strong>, because double-entry multiplies each business transaction into several journal lines. A single capture is <strong>~3 postings</strong> (see the worked example in §5); averaged across the charge/refund/payout flows — some of which add reversal and settlement lines — budget <strong>~4 postings</strong> per transaction.</p>
+<div class="formula">
+postings/day = 10<sup>7</sup> txns × <b>4 lines</b> = <b>40,000,000</b> ledger rows/day<br>
+postings/sec (avg) = 4 × 116 ≈ <b>~464 rows/sec</b>  (peak ~4,600/sec)
+</div>
+
+<h3>Storage &amp; retention</h3>
+<p>Each ledger row stores account ids, a signed amount, currency, a transaction id, references, and timestamps — call it <strong>~300 bytes</strong> once indexed. Financial records are commonly retained for <strong>~7 years</strong> for compliance.</p>
+<div class="formula">
+per day   = 40,000,000 × 300 B = 12,000,000,000 B = <b>12 GB/day</b><br>
+7 years   ≈ 7 × 365 = <b>2,555 days</b><br>
+total     = 12 GB × 2,555 ≈ <b>30,660 GB ≈ ~30 TB</b>   <span class="cm"># raw journal, pre-compression</span>
+</div>
+<div class="tip"><div class="tipl">Takeaway</div><p>~30 TB over seven years is comfortably in single-cluster relational territory (with partitioning by time/account and cold-tiering old years to cheaper storage). The scaling story here is <strong>durability, integrity, and retention</strong> — not QPS. Lead with that and you have framed the problem correctly.</p></div>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. Core Flow &amp; Entities</h2>
+<p>Before optimizing, nail the vocabulary. Interviewers reward precise terms, because sloppy naming here is where double-charges hide.</p>
+
+<h3>The core entities</h3>
+<table class="tbl">
+  <tr><th>Entity</th><th>What it is</th><th>Why it exists</th></tr>
+  <tr><td><strong>Order</strong></td><td>The business intent: "customer C owes $100 for cart X."</td><td>Belongs to the product domain; a payment is attached to it.</td></tr>
+  <tr><td><strong>Payment intent</strong></td><td>A durable object representing "we intend to collect $100 from this funding source," created before we touch any processor.</td><td>Anchors the idempotency key and the state machine; one intent, many attempts.</td></tr>
+  <tr><td><strong>Payment attempt</strong></td><td>One try at moving money via the PSP (an auth/capture call).</td><td>Retries create new <em>attempts</em> under the <em>same</em> intent — never a new intent.</td></tr>
+  <tr><td><strong>Ledger account</strong></td><td>A named bucket of money (customer clearing, merchant payable, fee revenue, cash).</td><td>Debits/credits post against accounts; balances are derived from them (§5).</td></tr>
+  <tr><td><strong>Journal entry</strong></td><td>An atomic, balanced set of postings recording one movement.</td><td>The immutable unit of truth; debits must equal credits (§5).</td></tr>
+</table>
+<div class="note"><div class="notel">Intent vs. attempt — the key distinction</div><p>The <strong>payment intent</strong> is created and persisted <em>first</em>, keyed by the client's idempotency key. Every retry, timeout recovery, or webhook re-delivery maps back to the same intent and produces (at most) additional <strong>attempts</strong>. This one modeling choice is what makes "at-most-one successful charge per intent" enforceable.</p></div>
+
+<h3>The authorize → capture → settle lifecycle</h3>
+<p>Card payments are not a single atomic "charge." They are a two-step hold-then-collect, followed by out-of-band bank settlement. Knowing these three words cold is a core signal:</p>
+<ul>
+  <li><strong>Authorize</strong> — ask the bank to place a <em>hold</em> on the funds and confirm they exist. No money moves yet; the hold can expire or be voided.</li>
+  <li><strong>Capture</strong> — tell the bank to actually collect the authorized amount (often at ship time). This is when we owe the merchant and recognize the movement in our ledger.</li>
+  <li><strong>Settle</strong> — the bank/network transfers real funds into the acquiring account, typically hours-to-days later, in <em>batches</em>. This is asynchronous and is what §7 reconciles against.</li>
+</ul>
+
+<h3>The charge API</h3>
+<p>A minimal, idempotent charge endpoint. The <code>Idempotency-Key</code> header is mandatory — it is the heart of §4.</p>
+<pre><span class="cm"># Request — the key is client-generated and stable across retries</span>
+POST /v1/charges
+Idempotency-Key: <span class="str">"a1b2c3-d4e5-6789"</span>
+{
+  <span class="str">"amount"</span>: <span class="num">10000</span>,            <span class="cm"># minor units (cents) — NEVER floats for money</span>
+  <span class="str">"currency"</span>: <span class="str">"usd"</span>,
+  <span class="str">"source_token"</span>: <span class="str">"tok_9f..."</span>,  <span class="cm"># tokenized card from the vault/PSP — no raw PAN</span>
+  <span class="str">"order_id"</span>: <span class="str">"ord_5521"</span>,
+  <span class="str">"capture"</span>: <span class="kw">true</span>            <span class="cm"># true = auth+capture now; false = auth only</span>
+}
+
+<span class="cm"># Response — the same body is returned for the original and every retry</span>
+HTTP/1.1 <span class="num">201</span> Created
+{
+  <span class="str">"id"</span>: <span class="str">"pi_88a2"</span>,
+  <span class="str">"status"</span>: <span class="str">"captured"</span>,      <span class="cm"># see the state machine in §6</span>
+  <span class="str">"amount"</span>: <span class="num">10000</span>,
+  <span class="str">"currency"</span>: <span class="str">"usd"</span>
+}</pre>
+<div class="warn"><div class="warnl">Money is integers, never floats</div><p>Store amounts in <strong>minor units</strong> (cents) as integers, or a fixed-precision decimal. Binary floating point cannot represent <code>0.10</code> exactly, so <code>0.1 + 0.2 ≠ 0.3</code> — an unacceptable rounding error when it compounds across millions of postings. Every serious ledger uses integer minor units or arbitrary-precision decimals. Mentioning this unprompted is an easy senior signal.</p></div>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. Idempotency — Never Double-Charge</h2>
+<p>This is the crux of the whole problem. The network is unreliable: a client sends <code>POST /charges</code>, the charge succeeds, but the response is lost to a timeout. The client, seeing no answer, <strong>retries</strong>. Without protection, that is a second, real charge. Idempotency guarantees that a retried request produces <strong>exactly one</strong> effect and returns the <strong>same result</strong> as the first.</p>
+
+<h3>The mechanism: a client key mapped to a stored result</h3>
+<p>The client generates a unique <strong>idempotency key</strong> for each <em>logical</em> operation (not each network attempt) and sends it on every retry of that operation. The server keeps a durable <strong>idempotency store</strong>: <code>key → (request fingerprint, response, status)</code>. On each request it does an atomic check:</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="pa" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker>
+    <marker id="pag" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#16a34a"/></marker>
+  </defs>
+  <!-- client -->
+  <rect x="16" y="112" width="128" height="72" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="80" y="138" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1d4ed8">Client</text>
+  <text x="80" y="155" text-anchor="middle" font-size="9" fill="#334155">POST /charges</text>
+  <text x="80" y="170" text-anchor="middle" font-size="9" fill="#334155">Key: K (stable)</text>
+  <!-- payment service -->
+  <line x1="144" y1="148" x2="186" y2="148" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#pa)"/>
+  <text x="165" y="140" text-anchor="middle" font-size="8.5" fill="#526176">charge + K</text>
+  <rect x="190" y="118" width="150" height="60" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="265" y="143" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Payment Service</text>
+  <text x="265" y="160" text-anchor="middle" font-size="9" fill="#526176">atomic check on K</text>
+  <!-- idempotency store -->
+  <line x1="340" y1="134" x2="400" y2="80" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#pa)"/>
+  <text x="356" y="98" text-anchor="middle" font-size="8.5" fill="#526176">lookup K</text>
+  <rect x="404" y="40" width="176" height="66" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="492" y="66" text-anchor="middle" font-size="11" font-weight="700" fill="#6d28d9">Idempotency Store</text>
+  <text x="492" y="83" text-anchor="middle" font-size="9" fill="#526176">key → stored result</text>
+  <text x="492" y="97" text-anchor="middle" font-size="9" fill="#526176">unique index on key</text>
+  <!-- HIT path -->
+  <line x1="580" y1="66" x2="632" y2="60" stroke="#16a34a" stroke-width="1.7" marker-end="url(#pag)"/>
+  <text x="606" y="52" text-anchor="middle" font-size="8.5" fill="#166534">HIT</text>
+  <rect x="636" y="34" width="208" height="60" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="740" y="58" text-anchor="middle" font-size="10.5" font-weight="700" fill="#166534">Return stored result</text>
+  <text x="740" y="75" text-anchor="middle" font-size="9" fill="#166534">no new charge · same body</text>
+  <!-- MISS path -->
+  <line x1="340" y1="162" x2="400" y2="212" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#pa)"/>
+  <text x="356" y="205" text-anchor="middle" font-size="8.5" fill="#526176">MISS</text>
+  <rect x="404" y="188" width="176" height="66" rx="9" fill="#ffffff" stroke="#334155" stroke-width="1.5"/>
+  <text x="492" y="212" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">Reserve K, then charge</text>
+  <text x="492" y="229" text-anchor="middle" font-size="9" fill="#526176">authorize/capture via PSP</text>
+  <text x="492" y="243" text-anchor="middle" font-size="9" fill="#526176">post ledger entry</text>
+  <line x1="580" y1="221" x2="632" y2="221" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#pa)"/>
+  <rect x="636" y="188" width="208" height="66" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="740" y="212" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">Persist result under K</text>
+  <text x="740" y="229" text-anchor="middle" font-size="9" fill="#526176">commit in one txn,</text>
+  <text x="740" y="243" text-anchor="middle" font-size="9" fill="#526176">then return same body</text>
+  <!-- retry note -->
+  <text x="430" y="284" text-anchor="middle" font-size="9.5" fill="#526176">A retry with the same key K takes the HIT path → identical response, exactly one charge.</text>
+</svg>
+<div class="svg-cap">First call: MISS → reserve key, charge once, persist the result. Any retry with the same key K: HIT → return the stored result without charging again.</div>
+</div>
+
+<h3>The critical ordering rules</h3>
+<p>Idempotency is only correct if you get the <em>ordering and atomicity</em> right. The subtle bugs live here:</p>
+<pre><span class="cm"># Idempotent charge — the ordering is what makes it safe</span>
+<span class="kw">def</span> <span class="fn">charge</span>(key, request):
+    <span class="cm"># 1. Atomically reserve the key BEFORE doing external work.</span>
+    <span class="cm">#    A unique index on `key` makes a concurrent duplicate fail here.</span>
+    row = <span class="fn">insert_if_absent</span>(key, status=<span class="str">"in_progress"</span>,
+                          fingerprint=<span class="fn">hash</span>(request))
+
+    <span class="kw">if</span> row.existed:                       <span class="cm"># key seen before</span>
+        <span class="kw">if</span> row.fingerprint != <span class="fn">hash</span>(request):
+            <span class="kw">return</span> <span class="num">422</span>                    <span class="cm"># SAME key, DIFFERENT body → reject</span>
+        <span class="kw">if</span> row.status == <span class="str">"in_progress"</span>:
+            <span class="kw">return</span> <span class="num">409</span>                    <span class="cm"># a concurrent original is still running</span>
+        <span class="kw">return</span> row.stored_response         <span class="cm"># HIT → replay the exact result</span>
+
+    <span class="cm"># 2. First time only: do the real work, keyed so the PSP is idempotent too.</span>
+    result = psp.<span class="fn">charge</span>(request, idempotency_key=key)
+
+    <span class="cm"># 3. Persist ledger entry AND the stored response in ONE transaction.</span>
+    <span class="kw">with</span> db.<span class="fn">transaction</span>():
+        <span class="fn">post_journal_entry</span>(result)       <span class="cm"># double-entry write (§5)</span>
+        <span class="fn">save_response</span>(key, result, status=<span class="str">"done"</span>)
+    <span class="kw">return</span> result</pre>
+<div class="trap"><div class="trapl">The three classic idempotency bugs</div><p><strong>(1) Reserving the key after the external call</strong> — two concurrent requests both miss, both charge. Fix: insert the key first, under a unique constraint. <strong>(2) Not binding the key to the request body</strong> — a client reuses a key for a <em>different</em> amount and gets the wrong cached answer. Fix: store a fingerprint and reject mismatches (<code>422</code>). <strong>(3) Persisting the ledger write and the stored response in separate transactions</strong> — a crash between them leaves you charged with no recorded result, so the retry charges again. Fix: one atomic transaction.</p></div>
+
+<h3>Push idempotency all the way down</h3>
+<p>Your service being idempotent is not enough if the PSP is not. Pass the same key (or a derived one) to the processor so <em>their</em> side also dedups — most payment processors accept an idempotency key exactly for this. The chain "client key → your service → PSP key" is what makes the whole path exactly-once in <em>effect</em>, even though the network delivers <em>at-least-once</em>.</p>
+<div class="iq">"Every mutating call takes a client idempotency key. I reserve it under a unique index before any external work, bind it to a hash of the request body, and persist the ledger entry and the stored response in a single transaction. Retries replay the stored result, and I forward the key to the PSP so the processor dedups too — so at-least-once delivery becomes exactly-once effect."</div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. The Double-Entry Ledger</h2>
+<p>The ledger is the system's source of truth for money. It uses <strong>double-entry accounting</strong>, a 700-year-old discipline that makes "money lost or invented" structurally impossible: every movement is recorded as equal and opposite <strong>debits</strong> and <strong>credits</strong> across accounts. Money is never destroyed — only moved from one account to another.</p>
+
+<h3>The invariant: sum(debits) = sum(credits)</h3>
+<p>A <strong>journal entry</strong> is an atomic set of postings (lines). Its ironclad rule:</p>
+<div class="formula">
+<b>for every journal entry:  Σ debits  =  Σ credits</b><br>
+<span class="cm"># and therefore, summed across the whole immutable journal:</span><br>
+<b>Σ all debits  =  Σ all credits</b>   <span class="cm"># the books always balance — checkable at any time</span>
+</div>
+<p>If a proposed entry does not balance, it is <strong>rejected before it is written</strong> — a bug can never even persist an unbalanced state. This single constraint is why double-entry is so powerful here: it turns "don't lose money" from a hope into an enforced invariant you can assert on every write and audit continuously.</p>
+
+<h3>A balanced worked example: a $100 capture with a $3 fee</h3>
+<p>A customer pays <strong>$100.00</strong>. The processor will owe us that $100; we will owe the merchant <strong>$97.00</strong> and keep <strong>$3.00</strong> as fee revenue. One balanced journal entry records it — note debits and credits each total exactly 100.00:</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 720 246" xmlns="http://www.w3.org/2000/svg">
+  <rect x="24" y="14" width="672" height="222" rx="10" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.4"/>
+  <rect x="24" y="14" width="672" height="34" rx="10" fill="#eef2ff" stroke="#cbd5e1" stroke-width="1.4"/>
+  <text x="40" y="36" font-size="12" font-weight="700" fill="#1d4ed8">Journal entry #4471 — capture $100.00 card payment</text>
+  <!-- column headers -->
+  <text x="46" y="74" font-size="10.5" font-weight="700" fill="#334155" letter-spacing="0.5">ACCOUNT</text>
+  <text x="470" y="74" text-anchor="end" font-size="10.5" font-weight="700" fill="#166534" letter-spacing="0.5">DEBIT</text>
+  <text x="660" y="74" text-anchor="end" font-size="10.5" font-weight="700" fill="#991b1b" letter-spacing="0.5">CREDIT</text>
+  <line x1="40" y1="82" x2="680" y2="82" stroke="#e2e8f0" stroke-width="1.2"/>
+  <!-- row 1 -->
+  <text x="46" y="106" font-size="11" fill="#334155">Processor Receivable  <tspan fill="#64748b" font-size="9">(asset)</tspan></text>
+  <text x="470" y="106" text-anchor="end" font-size="11" font-weight="600" fill="#166534">100.00</text>
+  <text x="660" y="106" text-anchor="end" font-size="11" fill="#94a3b8">—</text>
+  <!-- row 2 -->
+  <text x="46" y="130" font-size="11" fill="#334155">Merchant Payable  <tspan fill="#64748b" font-size="9">(liability)</tspan></text>
+  <text x="470" y="130" text-anchor="end" font-size="11" fill="#94a3b8">—</text>
+  <text x="660" y="130" text-anchor="end" font-size="11" font-weight="600" fill="#991b1b">97.00</text>
+  <!-- row 3 -->
+  <text x="46" y="154" font-size="11" fill="#334155">Fee Revenue  <tspan fill="#64748b" font-size="9">(income)</tspan></text>
+  <text x="470" y="154" text-anchor="end" font-size="11" fill="#94a3b8">—</text>
+  <text x="660" y="154" text-anchor="end" font-size="11" font-weight="600" fill="#991b1b">3.00</text>
+  <!-- totals -->
+  <line x1="40" y1="168" x2="680" y2="168" stroke="#334155" stroke-width="1.3"/>
+  <text x="46" y="192" font-size="11" font-weight="700" fill="#0f172a">TOTALS</text>
+  <text x="470" y="192" text-anchor="end" font-size="11.5" font-weight="800" fill="#166534">100.00</text>
+  <text x="660" y="192" text-anchor="end" font-size="11.5" font-weight="800" fill="#991b1b">100.00</text>
+  <!-- invariant -->
+  <rect x="40" y="204" width="640" height="24" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="360" y="220" text-anchor="middle" font-size="10.5" font-weight="700" fill="#166534">Σ debits (100.00)  =  Σ credits (97.00 + 3.00 = 100.00)  ✓  balanced — entry is accepted</text>
+</svg>
+<div class="svg-cap">One balanced journal entry for a $100 capture: a $100 debit to Processor Receivable, offset by $97 owed to the merchant and $3 of fee revenue. Debits equal credits, so the entry is valid.</div>
+</div>
+
+<p>A <strong>refund</strong> is simply the reverse entry — debit Merchant Payable and Fee Revenue, credit Processor Receivable (reducing the asset) — again balanced. You never delete the original; you append a compensating entry, preserving the full audit trail.</p>
+
+<h3>Deriving balances from the journal</h3>
+<p>An account's balance is not a field you edit — it is a <strong>derived</strong> quantity: the sum of its postings.</p>
+<div class="formula">
+balance(account) = Σ debits(account) − Σ credits(account)   <span class="cm"># sign convention per account type</span>
+</div>
+<p>Because balances are derived, they can always be recomputed from first principles and checked against any cached value. For performance you keep a <strong>materialized balance</strong> (a running total, or periodic snapshots you sum forward from), but that cache is an optimization — the journal remains the truth.</p>
+
+<h3>Why not just mutate a balance column?</h3>
+<p>The tempting shortcut is a single <code>accounts(balance)</code> row you <code>UPDATE</code> on each payment. It is wrong for money:</p>
+<div class="miniboxes">
+  <div class="mb con"><div class="mbh">Mutable balance column — why it fails</div><ul>
+    <li>No history: you can't answer "why is the balance this?" or audit a dispute.</li>
+    <li>Lost updates: concurrent <code>UPDATE</code>s race; a crash mid-update corrupts the number with no way to detect it.</li>
+    <li>No cross-check: a wrong value is indistinguishable from a right one — nothing to reconcile against.</li>
+    <li>Can silently violate conservation (money appears/vanishes).</li>
+  </ul></div>
+  <div class="mb pro"><div class="mbh">Append-only double-entry — why it wins</div><ul>
+    <li>Immutable history: every balance is fully reconstructable and auditable.</li>
+    <li>The <code>Σdebits = Σcredits</code> invariant is checkable on every write and continuously.</li>
+    <li>Corrections are reversing entries, not edits — the trail is preserved.</li>
+    <li>Reconciliation (§7) has something concrete to compare against.</li>
+  </ul></div>
+</div>
+<div class="tip"><div class="tipl">The interview soundbite</div><p>"I don't store a mutable balance; I store an <strong>immutable, append-only journal</strong> of balanced double-entry postings and <em>derive</em> balances by summing. Corrections are reversing entries. That gives me a provable <code>debits = credits</code> invariant, a full audit trail, and something to reconcile against — none of which a mutable balance column can offer."</p></div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. Consistency &amp; Distributed Transactions</h2>
+<p>Real payments touch several services — a payment service, a ledger, a wallet, a notifier — and external processors. Coordinating a money movement across them, correctly, under partial failure, is the hard distributed-systems core of this problem.</p>
+
+<h3>Exactly-once is a goal, achieved via idempotency + dedup</h3>
+<p>State it plainly, because interviewers push on it: <strong>true exactly-once <em>delivery</em> is impossible</strong> over an unreliable network — you cannot guarantee a message is delivered once and only once. What you engineer instead is <strong>exactly-once <em>effect</em></strong>: messages are delivered <em>at-least-once</em>, and <strong>idempotency + deduplication</strong> (§4) collapse the duplicates so the observable result is as if each operation happened exactly once. "Exactly-once" is an outcome you build, not a transport you buy.</p>
+
+<h3>Saga vs. 2PC for multi-service money movement</h3>
+<p>Two ways to make a change span multiple services atomically-ish:</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="sa" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker>
+    <marker id="sar" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#dc2626"/></marker>
+  </defs>
+  <!-- divider -->
+  <line x1="430" y1="20" x2="430" y2="284" stroke="#e2e8f0" stroke-width="1.4" stroke-dasharray="4,4"/>
+  <!-- ===== 2PC (left) ===== -->
+  <text x="224" y="34" text-anchor="middle" font-size="12.5" font-weight="800" fill="#991b1b">2PC — every phase reaches ALL participants</text>
+  <!-- phase bands (background) -->
+  <rect x="24" y="86" width="400" height="46" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <rect x="24" y="136" width="400" height="40" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <rect x="24" y="180" width="400" height="46" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <!-- lifeline heads -->
+  <rect x="26" y="42" width="104" height="36" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="78" y="64" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Coordinator (TC)</text>
+  <rect x="176" y="42" width="104" height="36" rx="8" fill="#ffffff" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="228" y="64" text-anchor="middle" font-size="10" font-weight="700" fill="#0d7a6f">Payment svc</text>
+  <rect x="320" y="42" width="104" height="36" rx="8" fill="#ffffff" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="372" y="64" text-anchor="middle" font-size="10" font-weight="700" fill="#0d7a6f">Ledger svc</text>
+  <!-- lifelines -->
+  <line x1="78" y1="78" x2="78" y2="236" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="3,3"/>
+  <line x1="228" y1="78" x2="228" y2="236" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="3,3"/>
+  <line x1="372" y1="78" x2="372" y2="236" stroke="#cbd5e1" stroke-width="1.2" stroke-dasharray="3,3"/>
+  <!-- Phase 1: PREPARE fans out to BOTH participants -->
+  <text x="224" y="100" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1e40af">① PREPARE → all participants</text>
+  <line x1="80" y1="116" x2="225" y2="116" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#sa)"/>
+  <line x1="80" y1="128" x2="369" y2="128" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#sa)"/>
+  <!-- vote / ack back from BOTH participants -->
+  <text x="224" y="150" text-anchor="middle" font-size="9" font-weight="600" fill="#475569">participants vote yes / no  ↩</text>
+  <line x1="225" y1="162" x2="81" y2="162" stroke="#64748b" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#sa)"/>
+  <line x1="369" y1="172" x2="81" y2="172" stroke="#64748b" stroke-width="1.3" stroke-dasharray="4,3" marker-end="url(#sa)"/>
+  <!-- Phase 2: COMMIT fans out to BOTH participants -->
+  <text x="224" y="194" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1e40af">② COMMIT (or ABORT) → all participants</text>
+  <line x1="80" y1="210" x2="225" y2="210" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#sa)"/>
+  <line x1="80" y1="222" x2="369" y2="222" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#sa)"/>
+  <!-- notes -->
+  <text x="224" y="250" text-anchor="middle" font-size="9" fill="#991b1b">all vote yes → commit; anyone fails → all abort</text>
+  <text x="224" y="266" text-anchor="middle" font-size="9" font-weight="700" fill="#991b1b">participants BLOCK holding locks until the coordinator decides</text>
+  <!-- ===== SAGA (right) ===== -->
+  <text x="648" y="34" text-anchor="middle" font-size="12.5" font-weight="800" fill="#166534">Saga — local txns + compensation</text>
+  <rect x="452" y="70" width="112" height="44" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="508" y="90" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">T1 Reserve</text>
+  <text x="508" y="104" text-anchor="middle" font-size="8" fill="#166534">local commit</text>
+  <rect x="592" y="70" width="112" height="44" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="648" y="90" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">T2 Post ledger</text>
+  <text x="648" y="104" text-anchor="middle" font-size="8" fill="#166534">local commit</text>
+  <rect x="732" y="70" width="104" height="44" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="784" y="90" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">T3 Notify</text>
+  <text x="784" y="104" text-anchor="middle" font-size="8" fill="#166534">local commit</text>
+  <line x1="564" y1="92" x2="590" y2="92" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#sa)"/>
+  <line x1="704" y1="92" x2="730" y2="92" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#sa)"/>
+  <!-- compensation -->
+  <rect x="452" y="170" width="112" height="40" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.4"/>
+  <text x="508" y="188" text-anchor="middle" font-size="9.5" font-weight="700" fill="#991b1b">C1 Release</text>
+  <text x="508" y="201" text-anchor="middle" font-size="8" fill="#991b1b">undo T1</text>
+  <rect x="592" y="170" width="112" height="40" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.4"/>
+  <text x="648" y="188" text-anchor="middle" font-size="9.5" font-weight="700" fill="#991b1b">C2 Reverse</text>
+  <text x="648" y="201" text-anchor="middle" font-size="8" fill="#991b1b">undo T2</text>
+  <!-- if T3 fails, run C2 then C1 -->
+  <line x1="648" y1="114" x2="648" y2="168" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#sar)"/>
+  <line x1="592" y1="190" x2="566" y2="190" stroke="#dc2626" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#sar)"/>
+  <text x="784" y="180" text-anchor="middle" font-size="8.5" fill="#991b1b">on failure, run</text>
+  <text x="784" y="194" text-anchor="middle" font-size="8.5" font-weight="700" fill="#991b1b">compensations</text>
+  <text x="784" y="208" text-anchor="middle" font-size="8.5" fill="#991b1b">in reverse order</text>
+  <text x="648" y="240" text-anchor="middle" font-size="9" fill="#166534">no global locks — each step commits locally; failures are undone by compensating txns</text>
+  <text x="648" y="266" text-anchor="middle" font-size="9" font-weight="700" fill="#166534">eventually consistent, non-blocking, resilient to partial failure</text>
+</svg>
+<div class="svg-cap">2PC (left): the coordinator runs two phases — ① PREPARE and ② COMMIT — and <em>each</em> phase is sent to <em>all</em> participants; participants vote/ack back and hold locks, blocking until the decision (all vote yes → commit, anyone fails → all abort). Saga (right): each step commits locally, and failures trigger compensating transactions run in reverse order.</div>
+</div>
+
+<div class="miniboxes">
+  <div class="mb con"><div class="mbh">2PC (two-phase commit)</div><ul>
+    <li>Strong atomicity across services in one logical commit.</li>
+    <li><strong>Blocking:</strong> participants hold locks through the prepare phase; a slow/dead coordinator stalls everyone.</li>
+    <li>Coordinator is a failure point; poor availability and latency at scale.</li>
+    <li>Rarely used across service/PSP boundaries in modern payments.</li>
+  </ul></div>
+  <div class="mb pro"><div class="mbh">Saga (compensating transactions)</div><ul>
+    <li>Each step is a local transaction; no distributed locks, no blocking.</li>
+    <li>Failure is handled by running <strong>compensations</strong> in reverse (release hold, post reversal).</li>
+    <li>Eventually consistent, highly available, partial-failure resilient.</li>
+    <li>The pragmatic default for multi-service money movement — <em>compensations must be idempotent</em>.</li>
+  </ul></div>
+</div>
+<div class="warn"><div class="warnl">Compensation isn't a rollback</div><p>A saga cannot "undo" a committed local step — it can only <strong>compensate</strong> with a new, semantically-reversing action (a captured charge is compensated by a <em>refund</em>, not by pretending it never happened). Because a compensation may itself be retried, it must be <strong>idempotent</strong>, and some effects (an email already sent) are not reversible — design steps so the irreversible ones come last.</p></div>
+
+<h3>The outbox pattern for reliable events</h3>
+<p>Sagas and downstream consumers depend on events ("payment captured"). But writing to your database <em>and</em> publishing to a message broker are two systems — a crash between them means the ledger records a capture that the rest of the system never hears about (or a published event for a write that rolled back). The <strong>transactional outbox</strong> fixes this:</p>
+<ul>
+  <li>In the <em>same</em> local transaction as the ledger write, insert the event into an <code>outbox</code> table. Either both commit or neither does.</li>
+  <li>A separate relay polls the outbox (or tails the DB change log) and publishes to the broker, marking rows sent.</li>
+  <li>Delivery is at-least-once, so consumers dedup by event id — exactly-once <em>effect</em> again.</li>
+</ul>
+<div class="tip"><div class="tipl">Why it matters here</div><p>The outbox guarantees "if the ledger recorded it, the event will eventually be published, and if it rolled back, no event escapes." That atomic coupling of state change and event is what keeps a saga from getting stuck half-done — the single most common source of stuck/duplicated payments without it.</p></div>
+
+<h3>The payment state machine</h3>
+<p>A payment intent moves through a small set of states with <strong>only legal transitions</strong>. Enforcing this machine — rejecting any illegal transition (e.g. capturing something already refunded) — is a primary correctness guard.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 264" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="sm" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker></defs>
+  <!-- top row states -->
+  <rect x="20" y="100" width="120" height="48" rx="9" fill="#e2e8f0" stroke="#64748b" stroke-width="1.5"/>
+  <text x="80" y="122" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">pending</text>
+  <text x="80" y="138" text-anchor="middle" font-size="8.5" fill="#526176">intent created</text>
+  <rect x="190" y="100" width="120" height="48" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="250" y="122" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">authorized</text>
+  <text x="250" y="138" text-anchor="middle" font-size="8.5" fill="#526176">funds held</text>
+  <rect x="370" y="100" width="120" height="48" rx="9" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="430" y="122" text-anchor="middle" font-size="11" font-weight="700" fill="#0d7a6f">captured</text>
+  <text x="430" y="138" text-anchor="middle" font-size="8.5" fill="#526176">money collected</text>
+  <rect x="550" y="100" width="130" height="48" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="615" y="122" text-anchor="middle" font-size="11" font-weight="700" fill="#166534">settled</text>
+  <text x="615" y="138" text-anchor="middle" font-size="8.5" fill="#526176">funds transferred</text>
+  <!-- horizontal transitions -->
+  <line x1="140" y1="124" x2="188" y2="124" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#sm)"/>
+  <text x="164" y="116" text-anchor="middle" font-size="8" fill="#526176">auth OK</text>
+  <line x1="310" y1="124" x2="368" y2="124" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#sm)"/>
+  <text x="339" y="116" text-anchor="middle" font-size="8" fill="#526176">capture</text>
+  <line x1="490" y1="124" x2="548" y2="124" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#sm)"/>
+  <text x="519" y="116" text-anchor="middle" font-size="8" fill="#526176">settle</text>
+  <!-- bottom terminal states -->
+  <rect x="20" y="200" width="120" height="44" rx="9" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="80" y="220" text-anchor="middle" font-size="11" font-weight="700" fill="#991b1b">failed</text>
+  <text x="80" y="234" text-anchor="middle" font-size="8.5" fill="#991b1b">terminal</text>
+  <rect x="190" y="200" width="120" height="44" rx="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="250" y="220" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">voided</text>
+  <text x="250" y="234" text-anchor="middle" font-size="8.5" fill="#92400e">hold released</text>
+  <rect x="370" y="200" width="310" height="44" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="525" y="220" text-anchor="middle" font-size="11" font-weight="700" fill="#6d28d9">refunded (full or partial)</text>
+  <text x="525" y="234" text-anchor="middle" font-size="8.5" fill="#6d28d9">reversing entry appended</text>
+  <!-- vertical transitions -->
+  <line x1="80" y1="148" x2="80" y2="198" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#sm)"/>
+  <text x="98" y="176" text-anchor="start" font-size="8" fill="#991b1b">decline</text>
+  <line x1="250" y1="148" x2="250" y2="198" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#sm)"/>
+  <text x="268" y="176" text-anchor="start" font-size="8" fill="#92400e">void / expire</text>
+  <line x1="430" y1="148" x2="430" y2="198" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#sm)"/>
+  <text x="448" y="176" text-anchor="start" font-size="8" fill="#6d28d9">refund</text>
+  <line x1="615" y1="148" x2="615" y2="198" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#sm)"/>
+  <text x="633" y="176" text-anchor="start" font-size="8" fill="#6d28d9">refund</text>
+</svg>
+<div class="svg-cap">Legal transitions only: pending→authorized→captured→settled along the top; pending→failed, authorized→voided, and captured/settled→refunded downward. Any other transition (e.g. capture after refund) is rejected.</div>
+</div>
+<div class="trap"><div class="trapl">Illegal transitions are money bugs</div><p>Guard the machine in the database (a status column with a check, or a transition table), not just in app code. "Capture an already-refunded intent," "refund more than was captured," or "authorize twice" are exactly the paths that create phantom money — and they are trivial to block with an explicit legal-transition check plus the amount constraints (refunded ≤ captured).</p></div>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Reconciliation</h2>
+<p>Your ledger is <em>your</em> version of the truth. The PSP, the card network, and the bank each keep their own. Because settlement is asynchronous and batched, and because messages get lost, these versions <strong>drift</strong>. <strong>Reconciliation</strong> is the periodic process that compares your internal ledger against external statements, detects discrepancies, and repairs them — the safety net that catches whatever slipped past idempotency and sagas.</p>
+
+<h3>The reconciliation loop</h3>
+<ol>
+  <li><strong>Ingest external statements.</strong> Pull the processor/bank settlement report for a period (a daily file or API export of every movement they recorded).</li>
+  <li><strong>Match.</strong> Join external records to internal journal entries on a shared key (a transaction reference the PSP echoes back). Most will match exactly.</li>
+  <li><strong>Classify discrepancies.</strong> The mismatches fall into a few buckets (below).</li>
+  <li><strong>Repair.</strong> Append correcting journal entries (never edit history) and/or re-drive the stuck operation with its original idempotency key so the retry is safe.</li>
+</ol>
+
+<h3>The discrepancy types</h3>
+<table class="tbl">
+  <tr><th>Case</th><th>What it means</th><th>Repair</th></tr>
+  <tr><td>In ledger, not in statement</td><td>We recorded a capture the processor has no record of (or it hasn't settled yet).</td><td>If just timing → wait for the next batch. If truly missing → investigate; re-drive with the same idempotency key, or reverse.</td></tr>
+  <tr><td>In statement, not in ledger</td><td>The processor moved money we never recorded (e.g. a webhook we missed).</td><td>Append the missing journal entry from the authoritative statement; ingest the dropped event.</td></tr>
+  <tr><td>Amount mismatch</td><td>Both sides have it, but the amounts differ (fee applied differently, partial capture).</td><td>Append an adjusting entry for the delta; flag for review if unexplained.</td></tr>
+  <tr><td>Status mismatch</td><td>We think "captured," they show "refunded/failed."</td><td>Reconcile the state machine to the external source of truth; append the reversing entry.</td></tr>
+</table>
+
+<h3>Eventual settlement and safe retries</h3>
+<p>Settlement lands hours-to-days after capture, so a "missing" record is usually just <strong>not settled yet</strong> — reconciliation must tolerate timing lag and only escalate after a grace window. When it does re-drive a stuck operation, it reuses the <strong>original idempotency key</strong> (§4): re-driving is safe precisely because a duplicate collapses to a no-op. Idempotency and reconciliation are complementary — idempotency prevents duplicates in the moment; reconciliation catches the residue and repairs it after the fact.</p>
+<div class="tip"><div class="tipl">Why interviewers ask about it</div><p>Reconciliation is the honest admission that <em>at scale, something always drifts</em>. A candidate who says "idempotency guarantees perfection" is naive; a candidate who adds "…and I reconcile against the processor/bank daily, classify the discrepancies, and repair with appended entries and idempotent re-drives" is describing how real money systems actually stay correct.</p></div>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Security &amp; Compliance (PCI, generically)</h2>
+<p>Handling card data brings compliance obligations (the PCI-DSS family of standards). The single most powerful design move is to <strong>keep sensitive card data out of your systems entirely</strong> — you cannot leak what you never hold. Everything below is generic best practice; no real processor internals.</p>
+
+<h3>Tokenize — never store the raw card number (PAN)</h3>
+<ul>
+  <li>The customer's card number (the <strong>PAN</strong>, primary account number) is captured directly by a <strong>vault / PSP</strong> — often via a hosted field or SDK so the raw digits never transit your servers.</li>
+  <li>The vault returns an opaque <strong>token</strong>; your systems store and pass only the token. A token is useless if stolen — it cannot be turned back into a card number outside the vault.</li>
+  <li>This pulls the bulk of your infrastructure <strong>out of PCI scope</strong>: the sensitive data lives in the vault's certified environment, drastically shrinking what you must audit and secure.</li>
+</ul>
+<div class="trap"><div class="trapl">Never do this</div><p>Do not log, cache, store in analytics, or pass through your own databases a raw PAN, CVV, or full track data. The CVV in particular must <strong>never be stored</strong> after authorization. If a raw card number ever lands in your logs, you have a compliance incident and a breach waiting to happen. The token is the only card reference your code should ever see.</p></div>
+
+<h3>Least privilege and defense in depth</h3>
+<ul>
+  <li><strong>Least privilege:</strong> the ledger-writing service can append journal entries but cannot read tokens; the charge service can request a charge with a token but cannot read the ledger's raw tables. Scope every credential to the minimum it needs.</li>
+  <li><strong>Encryption everywhere:</strong> TLS in transit; encryption at rest for any stored data; secrets in a managed secret store, rotated regularly.</li>
+  <li><strong>Segmentation:</strong> the payment path runs in its own isolated environment with tight network controls, separate from general application services.</li>
+</ul>
+
+<h3>The audit log</h3>
+<p>Every sensitive action — a charge, a refund, a config change, an access to a token — writes to an <strong>append-only, tamper-evident audit log</strong> (who, what, when, from where). Combined with the immutable ledger, this gives you the two records auditors and incident responders need: <em>what money moved</em> (ledger) and <em>who did what</em> (audit log). Both are append-only for the same reason — history you can edit is history you cannot trust.</p>
+<div class="iq">"I keep card data out of scope: the PAN is captured straight into a vault/PSP that returns a token, and my services only ever handle the token — I never store the raw number or the CVV. Add least-privilege credentials per service, encryption in transit and at rest, and an append-only audit log alongside the immutable ledger, and most of my infrastructure falls outside PCI scope."</div>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Scaling &amp; Failure Handling</h2>
+<p>Payments are write-light (§2), so scaling is less about raw QPS and more about <strong>partitioning the ledger without breaking its invariants</strong> and <strong>handling partial failure without losing or duplicating money</strong>.</p>
+
+<h3>Sharding the ledger by account</h3>
+<ul>
+  <li><strong>Shard by account id</strong> (or customer/merchant id). Most journal entries touch accounts that hash to the same shard, so they stay within a single-shard transaction where the <code>debits = credits</code> invariant is trivially enforced.</li>
+  <li><strong>Cross-shard entries</strong> (a payout moving money between accounts on different shards) become a mini-saga or a 2PC across shards — kept rare by co-locating related accounts.</li>
+  <li>Reads (balances, dashboards) scale on <strong>read replicas</strong> and read models (§10); the write primary stays authoritative and strongly consistent.</li>
+</ul>
+
+<h3>Hot accounts</h3>
+<div class="warn"><div class="warnl">The hot-account bottleneck</div><p>A few accounts are enormous write hotspots — a platform-wide <strong>fee revenue</strong> or <strong>cash</strong> account touched by <em>every</em> transaction. Serializing all writes on one row throttles the whole system. Mitigations: <strong>sub-account sharding</strong> (split the hot account into N shadow accounts that sum to the real balance), <strong>batching/aggregating</strong> postings to the hot account periodically instead of per-transaction, and keeping per-customer accounts (which are naturally spread) on the hot path.</p></div>
+
+<h3>Partial failures: the "authorized but capture failed" case</h3>
+<p>The canonical payment failure: you successfully <strong>authorized</strong> (funds are held on the customer's card) but the <strong>capture</strong> call failed or timed out. Now what?</p>
+<ul>
+  <li><strong>You genuinely don't know</strong> whether the capture succeeded — a timeout is ambiguous. Never assume; <strong>query the PSP</strong> for the definitive status, or safely retry the capture with the <em>same idempotency key</em> so a duplicate collapses to a no-op.</li>
+  <li>If the capture truly failed and won't be retried, <strong>void the authorization</strong> so the hold is released and the customer isn't left with money frozen.</li>
+  <li>Reconciliation (§7) is the backstop: a dangling auth with no matching capture/void surfaces in the daily match and gets resolved.</li>
+</ul>
+
+<h3>Timeouts + idempotent retry — the universal pattern</h3>
+<p>Every external money call follows the same discipline: <strong>timeout → don't assume → retry with the original idempotency key</strong> (with exponential backoff + jitter). Because the key makes the retry a no-op if the first call actually landed, you can retry aggressively without fear of double-charging. This is the operational payoff of §4 — idempotency is what lets you retry <em>at all</em> in a money system.</p>
+<div class="trap"><div class="trapl">A timeout is not a failure</div><p>The most dangerous assumption in payments is "the call timed out, so it didn't happen." A timeout means <strong>unknown</strong> — the charge may well have succeeded and only the response was lost. Treating unknown as failure (and re-charging) is exactly how double-charges happen. Resolve unknowns by querying status or retrying idempotently — never by guessing.</p></div>
+
+<!-- ══════════════ SECTION 10 ══════════════ -->
+<h2>10. Trade-offs &amp; Interview Framing</h2>
+
+<h3>The trade-offs table</h3>
+<table class="tbl">
+  <tr><th>Decision</th><th>Option A</th><th>Option B</th><th>Choose based on</th></tr>
+  <tr><td>Multi-service atomicity</td><td><strong>Saga</strong> — local txns + compensations; non-blocking, eventually consistent</td><td><strong>2PC</strong> — coordinator; strong atomicity but blocking, poor availability</td><td>Almost always saga across services/PSP; 2PC only inside one tightly-coupled store where blocking is tolerable.</td></tr>
+  <tr><td>Ledger consistency</td><td><strong>Strong</strong> — synchronous, transactional, exact</td><td><strong>Eventual</strong> — async, may lag</td><td>Ledger writes are <em>strong, always</em>. Eventual consistency on money = the wrong answer.</td></tr>
+  <tr><td>Balances / read side</td><td><strong>Read models</strong> — materialized balances, replicas; eventually consistent, fast</td><td>Recompute from journal every read — exact but slow</td><td>Serve reads from eventually-consistent read models; keep the journal as the strong source of truth. Split reads (soft) from writes (strict).</td></tr>
+  <tr><td>Delivery guarantee</td><td><strong>At-least-once + idempotency</strong> → exactly-once <em>effect</em></td><td>Chase exactly-once <em>delivery</em></td><td>Always A — exactly-once delivery is unachievable; build the effect with dedup.</td></tr>
+  <tr><td>Store the balance</td><td><strong>Derive</strong> from an append-only journal</td><td><strong>Mutate</strong> a balance column</td><td>Always derive — mutation loses history, races, and can't be reconciled (§5).</td></tr>
+</table>
+<div class="ins"><div class="insl">Strong where it counts, eventual where it's safe</div><p>The unifying principle: apply <strong>strong consistency to the ledger write path</strong> (money) and accept <strong>eventual consistency on the read/derived side</strong> (balances, dashboards, notifications). Knowing exactly <em>where</em> to draw that line — strict on the journal, relaxed on read models — is the senior judgment call this problem tests.</p></div>
+
+<h3>How to drive the conversation</h3>
+<ol>
+  <li><strong>Clarify (1–2 min):</strong> Which flows — charge, refund, payout? Custodial (we hold funds) or pass-through? Single currency? Who's the funding source (card via a PSP)? State that correctness &gt; availability up front.</li>
+  <li><strong>Estimate (§2):</strong> txns/day → QPS (write-light), then ledger postings and 7-year retention → the real story is durability, not throughput.</li>
+  <li><strong>Model the entities &amp; lifecycle (§3):</strong> intent vs. attempt, authorize→capture→settle, integer minor units.</li>
+  <li><strong>Lead with the two invariants:</strong> idempotency (§4) so you never double-charge, and the double-entry ledger (§5) so you never lose/invent money.</li>
+  <li><strong>Go distributed (§6):</strong> exactly-once effect via idempotency+dedup, saga over 2PC, outbox for reliable events, an enforced state machine.</li>
+  <li><strong>Close the loop (§7–§9):</strong> reconciliation against the processor/bank, tokenization/PCI, sharding + hot accounts, and the "authorized-but-capture-failed" timeout-retry story.</li>
+</ol>
+
+<h3>What interviewers probe (with one-liners)</h3>
+<div class="card">
+<p><strong>Q: How do you avoid double-charging on a retry?</strong><br>A client idempotency key per logical operation. I reserve it under a unique index <em>before</em> any external call, bind it to a hash of the request body, and persist the ledger write and the stored response in one transaction. Retries replay the stored result, and I forward the key to the PSP so it dedups too.</p>
+<p><strong>Q: What if money moved but a downstream step failed?</strong><br>That's a saga: each step commits locally and failures run <strong>compensating</strong> transactions in reverse (a captured charge is compensated by a refund, not an "undo"). I make compensations idempotent, order irreversible steps last, and use a transactional outbox so the state change and its event commit atomically — no half-done, stuck payments.</p>
+<p><strong>Q: Why double-entry instead of a balance column?</strong><br>Because it makes "money lost or invented" impossible: every entry has <code>debits = credits</code>, checkable on every write. The journal is immutable and append-only, so balances are <em>derived</em> and fully auditable, corrections are reversing entries, and I have something concrete to reconcile against. A mutable balance loses history and races.</p>
+<p><strong>Q: Can you really guarantee exactly-once?</strong><br>Not exactly-once <em>delivery</em> — that's impossible over an unreliable network. I guarantee exactly-once <em>effect</em>: messages are at-least-once, and idempotency + dedup (keyed operations, event ids) collapse duplicates so the observable result is as if each op ran once.</p>
+<p><strong>Q: You authorized but the capture call timed out — now what?</strong><br>A timeout is <em>unknown</em>, not failed. I query the PSP for the definitive status or retry the capture with the original idempotency key (a no-op if it already landed). If it truly failed, I void the auth to release the hold. Reconciliation catches any dangling auth.</p>
+<p><strong>Q: How do you keep the ledger correct while sharding it?</strong><br>Shard by account so most entries stay single-shard, where <code>debits = credits</code> is a local transaction. Rare cross-shard entries become a mini-saga. Hot accounts (fee/cash) get sub-account sharding or batched postings so one row isn't a global bottleneck.</p>
+<p><strong>Q: How do you keep card data safe / in PCI scope control?</strong><br>Tokenize: the PAN goes straight into a vault/PSP that returns a token; my services only ever handle the token, never the raw number or CVV. Add least-privilege credentials, encryption in transit and at rest, and an append-only audit log — which pulls most infrastructure out of PCI scope.</p>
+</div>
+
+<div class="note"><div class="notel">One-line summary</div><p>A payment system is a correctness machine: an <strong>immutable double-entry ledger</strong> (<code>debits = credits</code>, balances derived, never mutated) so money is never lost or invented, guarded by <strong>client idempotency keys</strong> so a retry never double-charges, coordinated across services by <strong>sagas + an outbox</strong> for exactly-once <em>effect</em>, kept honest by <strong>reconciliation</strong> against the processor/bank, and kept safe by <strong>tokenizing</strong> cards out of scope. Strong consistency on the money, eventual on the read models — and when in doubt, a timeout is <em>unknown</em>, so retry idempotently, never guess.</p></div>
+
+<!-- ══════════════ GLOSSARY ══════════════ -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>PSP</strong></td><td>Payment Service Provider — the external processor that authorizes, captures, and settles card payments on your behalf.</td></tr>
+<tr><td><strong>Acquiring bank</strong></td><td>The bank that receives settled funds into a merchant account; treated here as an external dependency behind the PSP.</td></tr>
+<tr><td><strong>PAN</strong></td><td>Primary Account Number — the raw card number; kept out of your systems entirely via tokenization.</td></tr>
+<tr><td><strong>CVV</strong></td><td>Card Verification Value — the card security code; must never be stored after authorization.</td></tr>
+<tr><td><strong>Tokenization</strong></td><td>Replacing a raw card number with an opaque token issued by a vault/PSP; the token is useless if stolen.</td></tr>
+<tr><td><strong>Idempotency key</strong></td><td>A client-generated key per logical operation so that retries produce exactly one effect and replay the same result.</td></tr>
+<tr><td><strong>QPS</strong></td><td>Queries per second — the request-rate unit used for back-of-the-envelope sizing.</td></tr>
+<tr><td><strong>Payment intent</strong></td><td>A durable object representing the intent to collect a specific amount; anchors the idempotency key and state machine.</td></tr>
+<tr><td><strong>Payment attempt</strong></td><td>One try at moving money via the PSP; retries create new attempts under the same intent.</td></tr>
+<tr><td><strong>Authorize</strong></td><td>Ask the bank to place a hold confirming funds exist; no money moves and the hold can expire or be voided.</td></tr>
+<tr><td><strong>Capture</strong></td><td>Instruct the bank to actually collect the authorized amount; when the ledger records the movement.</td></tr>
+<tr><td><strong>Settle</strong></td><td>The asynchronous, batched transfer of real funds into the acquiring account, typically hours to days later.</td></tr>
+<tr><td><strong>Void</strong></td><td>Cancel an authorization before capture, releasing the hold so funds are no longer frozen.</td></tr>
+<tr><td><strong>Double-entry ledger</strong></td><td>An append-only journal where every movement is recorded as equal debits and credits, so money is never lost or invented.</td></tr>
+<tr><td><strong>Debit / Credit</strong></td><td>The two equal-and-opposite sides of every posting; within each journal entry, debits must equal credits.</td></tr>
+<tr><td><strong>Journal entry</strong></td><td>An atomic, balanced set of postings recording one money movement; the immutable unit of truth.</td></tr>
+<tr><td><strong>Saga</strong></td><td>A multi-service transaction of local commits where failures are undone by compensating actions in reverse order.</td></tr>
+<tr><td><strong>2PC</strong></td><td>Two-phase commit — a coordinator-driven prepare-then-commit protocol giving strong atomicity but blocking on held locks.</td></tr>
+<tr><td><strong>Compensating transaction</strong></td><td>A new, semantically-reversing action that undoes a committed saga step (e.g. a refund undoes a capture); must be idempotent.</td></tr>
+<tr><td><strong>Transactional outbox</strong></td><td>Writing an event into an <code>outbox</code> table in the same transaction as the state change, then relaying it to a broker.</td></tr>
+<tr><td><strong>Exactly-once effect</strong></td><td>The observable result of at-least-once delivery plus idempotency and dedup — as if each operation ran exactly once.</td></tr>
+<tr><td><strong>Reconciliation</strong></td><td>The periodic process that compares your ledger against processor/bank statements, classifies drift, and repairs it.</td></tr>
+<tr><td><strong>PCI-DSS</strong></td><td>Payment Card Industry Data Security Standard — the compliance family governing how card data must be handled.</td></tr>
+</table>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="sd_notification_service.html">&lsaquo; Design a Notification Service</a><a class="bkc" href="index.html">📖 Contents</a><a href="sd_code_judge.html">Design a Code Judge (Online Judge) &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

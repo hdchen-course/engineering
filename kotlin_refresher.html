@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kotlin Refresher — Null Safety, Data Classes, Coroutines &amp; Java Interop for Interviews</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #114f8c; --blue-l: #d0ebff; --green: #1d6b2e; --green-l: #d3f9d8;
+  --yellow: #a85700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #4a2fa8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1050px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.nav { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin: 18px 0 32px; position: sticky; top: 0; background: var(--bg); padding: 14px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 23px; font-weight: 700; margin: 28px 0 14px; color: var(--blue); }
+h3 { font-size: 17px; font-weight: 600; margin: 22px 0 10px; }
+h4 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 14px 18px; overflow-x: auto; margin: 10px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #cdd6f4; white-space: pre; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.warn p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.old { background: var(--red-l); border-left: 3px solid var(--red); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.old p { color: #8a1c1c; margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 18px; padding: 22px 26px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th, td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 16px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--purple-l); color:var(--purple); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VIII · Chapter 10 — <b>Kotlin Refresher</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Kotlin Refresher</h1>
+  <div class="sub">Kotlin's distinctive model and the syntax around it — null safety, <code>val</code>/<code>var</code> and expressions, data and sealed classes, extension functions, the functional collection ops, scope functions, coroutines, and seamless Java interop — a tight brush-up for a JVM developer coming from Java</div>
+</header>
+
+<style id="kt-code-hl">
+.container pre .kw{color:#cba6f7}
+.container pre .cm{color:#9aa0bd;font-style:italic}
+.container pre .str{color:#a6e3a1}
+.container pre .num{color:#fab387}
+.container pre .fn{color:#89b4fa}
+.container pre .type{color:#f9e2af}
+</style>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'basics')">Basics</button>
+  <button class="nav-btn" onclick="showSection(event,'nullsafety')">Null safety</button>
+  <button class="nav-btn" onclick="showSection(event,'functions')">Functions</button>
+  <button class="nav-btn" onclick="showSection(event,'classes')">Classes</button>
+  <button class="nav-btn" onclick="showSection(event,'collections')">Collections</button>
+  <button class="nav-btn" onclick="showSection(event,'scope')">Scope functions</button>
+  <button class="nav-btn" onclick="showSection(event,'coroutines')">Coroutines</button>
+  <button class="nav-btn" onclick="showSection(event,'interop')">Java interop</button>
+  <button class="nav-btn" onclick="showSection(event,'pitfalls')">Pitfalls</button>
+  <button class="nav-btn" onclick="showSection(event,'tooling')">Tooling</button>
+</div>
+
+<!-- BASICS -->
+<div class="section active" id="basics">
+<div class="card">
+<h2>Basics — <code>val</code>/<code>var</code>, type inference &amp; expressions</h2>
+<p>Kotlin flips Java's default: <code>val</code> declares a read-only binding (like a <code>final</code> local), and you reach for <code>var</code> only when you genuinely need to reassign. Types are inferred from the initializer, so you write them only when you want to. The bigger shift for a Java developer is that <strong>control flow is made of expressions</strong>: <code>if</code>, <code>when</code>, and even <code>try</code> return values, so there is no ternary operator and far fewer throwaway mutable variables. <strong>String templates</strong> (<code>$var</code>, <code>${expr}</code>) replace concatenation.</p>
+<pre><span class="kw">val</span> name = <span class="str">"Kotlin"</span>          <span class="cm">// read-only (like final); type inferred as String</span>
+<span class="kw">var</span> count = <span class="num">0</span>                <span class="cm">// mutable</span>
+count += <span class="num">1</span>
+
+<span class="kw">val</span> pi: <span class="type">Double</span> = <span class="num">3.14159</span>     <span class="cm">// explicit type when you want it</span>
+
+<span class="cm">// if is an EXPRESSION — it yields a value (no ternary needed)</span>
+<span class="kw">val</span> max = <span class="kw">if</span> (count &gt; <span class="num">0</span>) count <span class="kw">else</span> <span class="num">0</span>
+
+<span class="cm">// when is an expression too</span>
+<span class="kw">val</span> label = <span class="kw">when</span> {
+    count &lt; <span class="num">0</span>  -&gt; <span class="str">"negative"</span>
+    count == <span class="num">0</span> -&gt; <span class="str">"zero"</span>
+    <span class="kw">else</span>       -&gt; <span class="str">"positive"</span>
+}
+
+<span class="fn">println</span>(<span class="str">"name=$name, max=$max, label=$label, len=${name.length}"</span>)</pre>
+<pre><span class="cm">// → output:</span>
+name=Kotlin, max=1, label=positive, len=6</pre>
+<div class="insight"><p>Because <code>if</code>/<code>when</code> are expressions, the last expression of the chosen branch is its value — note there is no <code>return</code> inside them. This is why idiomatic Kotlin has so few reassignable <code>var</code>s: you compute a value <em>into</em> a <code>val</code> instead of declaring it uninitialized and mutating it. Prefer <code>val</code> by default and let the compiler flag the ones that must change.</p></div>
+</div>
+</div>
+
+<!-- NULL SAFETY -->
+<div class="section" id="nullsafety">
+<div class="card">
+<h2>Null safety — the headline feature</h2>
+<p>Kotlin's type system tracks nullability. <code>String</code> can <strong>never</strong> hold <code>null</code>; only the distinct type <code>String?</code> can. That single distinction moves the entire class of <code>NullPointerException</code>s from run time to compile time. To touch a nullable value you must acknowledge the null case — with the <strong>safe call</strong> <code>?.</code> (returns <code>null</code> instead of throwing), the <strong>Elvis operator</strong> <code>?:</code> (supply a fallback), or a null check that the compiler turns into a <strong>smart cast</strong>.</p>
+<pre><span class="kw">var</span> s: <span class="type">String</span> = <span class="str">"hi"</span>
+<span class="cm">// s = null                       // compile error: String is not nullable</span>
+
+<span class="kw">var</span> maybe: <span class="type">String</span>? = <span class="str">"text"</span>       <span class="cm">// nullable type</span>
+maybe = <span class="kw">null</span>                        <span class="cm">// ok</span>
+
+<span class="kw">val</span> len:  <span class="type">Int</span>? = maybe?.length      <span class="cm">// safe call → null when maybe is null</span>
+<span class="kw">val</span> len2: <span class="type">Int</span>  = maybe?.length ?: -<span class="num">1</span> <span class="cm">// Elvis → fallback of -1</span>
+
+<span class="kw">fun</span> <span class="fn">describe</span>(x: <span class="type">String</span>?): <span class="type">String</span> {
+    <span class="kw">if</span> (x == <span class="kw">null</span>) <span class="kw">return</span> <span class="str">"none"</span>
+    <span class="kw">return</span> <span class="str">"len=${x.length}"</span>          <span class="cm">// x is smart-cast to non-null String here</span>
+}
+
+<span class="fn">println</span>(<span class="str">"$len $len2 ${describe(null)} ${describe("abc")}"</span>)</pre>
+<pre><span class="cm">// → output:</span>
+null -1 none len=3</pre>
+<div class="insight"><p>The smart cast works because Kotlin <em>flow-analyzes</em>: after <code>if (x == null) return</code>, the only way to reach the next line is with <code>x</code> non-null, so <code>x</code> has type <code>String</code> (not <code>String?</code>) from there on — no cast, no re-check. The same applies after <code>x != null</code> guards and inside <code>is</code> checks.</p></div>
+
+<h3><code>lateinit</code>: a non-null property initialized later</h3>
+<p>Some non-null properties can't be set at construction (dependency injection, lifecycle callbacks). <code>lateinit var</code> promises to assign before first read; touching it early throws <code>UninitializedPropertyAccessException</code>. Guard with <code>::prop.isInitialized</code> when unsure.</p>
+<pre><span class="kw">class</span> <span class="type">Session</span> {
+    <span class="kw">lateinit</span> <span class="kw">var</span> token: <span class="type">String</span>       <span class="cm">// non-null, set later (not at construction)</span>
+    <span class="kw">fun</span> <span class="fn">login</span>() { token = <span class="str">"abc123"</span> }
+    <span class="kw">fun</span> <span class="fn">status</span>() =
+        <span class="kw">if</span> (::token.<span class="fn">isInitialized</span>) token <span class="kw">else</span> <span class="str">"&lt;none&gt;"</span>
+}
+
+<span class="kw">fun</span> <span class="fn">main</span>() {
+    <span class="kw">val</span> sess = <span class="type">Session</span>()
+    <span class="fn">println</span>(sess.<span class="fn">status</span>())   <span class="cm">// not initialized yet</span>
+    sess.<span class="fn">login</span>()
+    <span class="fn">println</span>(sess.<span class="fn">status</span>())   <span class="cm">// now set</span>
+}</pre>
+<pre><span class="cm">// → output:</span>
+&lt;none&gt;
+abc123</pre>
+<div class="warn"><p>The <strong>not-null assertion</strong> <code>x!!</code> converts <code>T?</code> to <code>T</code> and throws <code>NullPointerException</code> if <code>x</code> is null — it re-introduces exactly the failure Kotlin was designed to prevent. Treat every <code>!!</code> as a code smell: prefer <code>?.</code>, <code>?:</code>, a smart-casting <code>if</code>/<code>?.let</code>, or <code>requireNotNull(x)</code> (which throws a <em>meaningful</em> message) when you truly must fail on null.</p></div>
+</div>
+</div>
+
+<!-- FUNCTIONS -->
+<div class="section" id="functions">
+<div class="card">
+<h2>Functions — defaults, extensions &amp; lambdas</h2>
+<p>Functions are declared with <code>fun</code> and can live at the <strong>top level</strong> (no enclosing class needed). Two features remove a lot of Java boilerplate: <strong>default and named arguments</strong> (one function instead of a pile of overloads) and <strong>extension functions</strong> (add methods to a type you don't own). Lambdas are first-class, and when a lambda is the last argument it can move <em>outside</em> the parentheses — the <strong>trailing-lambda</strong> syntax that makes Kotlin DSLs read so cleanly.</p>
+<pre><span class="cm">// single-expression function; return type inferred from the body</span>
+<span class="kw">fun</span> <span class="fn">square</span>(n: <span class="type">Int</span>) = n * n
+
+<span class="cm">// default + named arguments — no overload explosion</span>
+<span class="kw">fun</span> <span class="fn">greet</span>(name: <span class="type">String</span>, greeting: <span class="type">String</span> = <span class="str">"Hello"</span>, loud: <span class="type">Boolean</span> = <span class="kw">false</span>): <span class="type">String</span> {
+    <span class="kw">val</span> msg = <span class="str">"$greeting, $name"</span>
+    <span class="kw">return</span> <span class="kw">if</span> (loud) msg.<span class="fn">uppercase</span>() <span class="kw">else</span> msg
+}
+
+<span class="cm">// extension function: add a method to an existing type</span>
+<span class="kw">fun</span> <span class="type">String</span>.<span class="fn">shout</span>() = <span class="kw">this</span>.<span class="fn">uppercase</span>() + <span class="str">"!"</span>
+
+<span class="cm">// higher-order function taking a lambda (Int) -&gt; Unit</span>
+<span class="kw">fun</span> <span class="fn">repeatDo</span>(n: <span class="type">Int</span>, action: (<span class="type">Int</span>) -&gt; <span class="type">Unit</span>) {
+    <span class="kw">for</span> (i <span class="kw">in</span> <span class="num">0</span> <span class="kw">until</span> n) <span class="fn">action</span>(i)
+}
+
+<span class="kw">fun</span> <span class="fn">main</span>() {
+    <span class="fn">println</span>(<span class="fn">square</span>(<span class="num">5</span>))
+    <span class="fn">println</span>(<span class="fn">greet</span>(<span class="str">"Ada"</span>))
+    <span class="fn">println</span>(<span class="fn">greet</span>(<span class="str">"Ada"</span>, loud = <span class="kw">true</span>))   <span class="cm">// named arg skips 'greeting'</span>
+    <span class="fn">println</span>(<span class="str">"kotlin"</span>.<span class="fn">shout</span>())
+    <span class="fn">repeatDo</span>(<span class="num">3</span>) { i -&gt; <span class="fn">print</span>(<span class="str">"$i "</span>) }    <span class="cm">// trailing lambda, outside the parens</span>
+    <span class="fn">println</span>()
+}</pre>
+<pre><span class="cm">// → output:</span>
+25
+Hello, Ada
+HELLO, ADA
+KOTLIN!
+0 1 2 </pre>
+<div class="insight"><p>An extension function is resolved <strong>statically</strong> — it is compiled to a plain static method taking the receiver as its first parameter, and does <em>not</em> actually modify <code>String</code> or dispatch virtually. Named arguments also make defaults safe to reorder: <code>greet("Ada", loud = true)</code> keeps <code>greeting</code> at its default without a positional placeholder. Inside a lambda with one parameter you can drop the declaration and use the implicit name <code>it</code>.</p></div>
+</div>
+</div>
+
+<!-- CLASSES -->
+<div class="section" id="classes">
+<div class="card">
+<h2>Classes — primary constructors, data &amp; sealed</h2>
+<p>Kotlin classes are concise: the <strong>primary constructor</strong> and its properties are declared in the class header, and a property with <code>val</code>/<code>var</code> gets a backing field and accessors automatically (override them with a custom <code>get()</code>/<code>set()</code>). A <code>data class</code> auto-generates <code>equals</code>/<code>hashCode</code>/<code>toString</code>/<code>copy</code> and the <code>componentN</code> destructuring operators. A <code>sealed class</code> defines a closed hierarchy, which makes a <code>when</code> over it <strong>exhaustive</strong> — no <code>else</code> branch required, and adding a subtype turns every such <code>when</code> into a compile error until you handle it.</p>
+<pre><span class="cm">// primary constructor + properties inline; val = read-only property</span>
+<span class="kw">data</span> <span class="kw">class</span> <span class="type">User</span>(<span class="kw">val</span> id: <span class="type">Int</span>, <span class="kw">var</span> name: <span class="type">String</span>)
+
+<span class="cm">// custom getter over a backing property (computed, no backing field)</span>
+<span class="kw">class</span> <span class="type">Temperature</span>(<span class="kw">var</span> celsius: <span class="type">Double</span>) {
+    <span class="kw">val</span> fahrenheit: <span class="type">Double</span>
+        <span class="kw">get</span>() = celsius * <span class="num">9</span> / <span class="num">5</span> + <span class="num">32</span>
+}
+
+<span class="cm">// sealed hierarchy: when over it is exhaustive (no else needed)</span>
+<span class="kw">sealed</span> <span class="kw">class</span> <span class="type">Outcome</span>
+<span class="kw">data</span> <span class="kw">class</span> <span class="type">Ok</span>(<span class="kw">val</span> value: <span class="type">Int</span>)   : <span class="type">Outcome</span>()
+<span class="kw">data</span> <span class="kw">class</span> <span class="type">Err</span>(<span class="kw">val</span> message: <span class="type">String</span>) : <span class="type">Outcome</span>()
+
+<span class="kw">fun</span> <span class="fn">render</span>(r: <span class="type">Outcome</span>): <span class="type">String</span> = <span class="kw">when</span> (r) {
+    <span class="kw">is</span> <span class="type">Ok</span>  -&gt; <span class="str">"ok: ${r.value}"</span>
+    <span class="kw">is</span> <span class="type">Err</span> -&gt; <span class="str">"err: ${r.message}"</span>
+}
+
+<span class="cm">// companion object: the closest thing to Java 'static' members</span>
+<span class="kw">class</span> <span class="type">Counter</span> <span class="kw">private</span> <span class="kw">constructor</span>(<span class="kw">val</span> start: <span class="type">Int</span>) {
+    <span class="kw">companion</span> <span class="kw">object</span> {
+        <span class="kw">fun</span> <span class="fn">create</span>() = <span class="type">Counter</span>(<span class="num">0</span>)
+    }
+}
+
+<span class="kw">fun</span> <span class="fn">main</span>() {
+    <span class="kw">val</span> u1 = <span class="type">User</span>(<span class="num">1</span>, <span class="str">"Ann"</span>)
+    <span class="kw">val</span> u2 = u1.<span class="fn">copy</span>(name = <span class="str">"Bob"</span>)   <span class="cm">// copy() from data class</span>
+    <span class="fn">println</span>(u1)                        <span class="cm">// toString() from data class</span>
+    <span class="fn">println</span>(u2)
+    <span class="fn">println</span>(u1 == <span class="type">User</span>(<span class="num">1</span>, <span class="str">"Ann"</span>))   <span class="cm">// structural equals from data class</span>
+    <span class="fn">println</span>(<span class="type">Temperature</span>(<span class="num">100.0</span>).fahrenheit)
+    <span class="fn">println</span>(<span class="fn">render</span>(<span class="type">Ok</span>(<span class="num">42</span>)))
+    <span class="fn">println</span>(<span class="fn">render</span>(<span class="type">Err</span>(<span class="str">"nope"</span>)))
+    <span class="fn">println</span>(<span class="type">Counter</span>.<span class="fn">create</span>().start)
+}</pre>
+<pre><span class="cm">// → output:</span>
+User(id=1, name=Ann)
+User(id=1, name=Bob)
+true
+212.0
+ok: 42
+err: nope
+0</pre>
+<div class="insight"><p><code>copy</code> gives you cheap immutable updates: keep properties as <code>val</code> and produce a modified clone rather than mutating in place. The exhaustive <code>when</code> over a <code>sealed</code> type is the Kotlin analogue of Rust's <code>match</code> over an enum — the compiler is your safety net when the hierarchy grows. A <code>companion object</code> is a real singleton object (not a static namespace); you can name it, have it implement interfaces, and add extensions to it.</p></div>
+</div>
+</div>
+
+<!-- COLLECTIONS -->
+<div class="section" id="collections">
+<div class="card">
+<h2>Collections — read-only views &amp; functional ops</h2>
+<p>Kotlin splits collections into <strong>read-only</strong> interfaces (<code>List</code>, <code>Set</code>, <code>Map</code>) and <strong>mutable</strong> ones (<code>MutableList</code>, …). <code>listOf</code> gives you a read-only <code>List</code>; <code>mutableListOf</code> gives you one you can <code>add</code> to. The read-only type is a <em>view/interface</em>, not a deep-frozen guarantee — it simply doesn't expose mutators. On top sits a rich set of functional operators (<code>map</code>, <code>filter</code>, <code>groupBy</code>, <code>associate</code>, <code>fold</code>) that return new collections and read like a pipeline.</p>
+<pre><span class="kw">fun</span> <span class="fn">main</span>() {
+    <span class="kw">val</span> nums = <span class="fn">listOf</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>, <span class="num">6</span>)   <span class="cm">// read-only List&lt;Int&gt;</span>
+    <span class="kw">val</span> doubled = nums.<span class="fn">map</span> { it * <span class="num">2</span> }
+    <span class="kw">val</span> evens   = nums.<span class="fn">filter</span> { it % <span class="num">2</span> == <span class="num">0</span> }
+    <span class="kw">val</span> sum     = nums.<span class="fn">fold</span>(<span class="num">0</span>) { acc, n -&gt; acc + n }
+
+    <span class="kw">val</span> words = <span class="fn">listOf</span>(<span class="str">"apple"</span>, <span class="str">"banana"</span>, <span class="str">"avocado"</span>, <span class="str">"cherry"</span>)
+    <span class="kw">val</span> byInitial = words.<span class="fn">groupBy</span> { it.<span class="fn">first</span>() }   <span class="cm">// Char -&gt; List&lt;String&gt;</span>
+
+    <span class="kw">val</span> mutable = <span class="fn">mutableListOf</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>)
+    mutable.<span class="fn">add</span>(<span class="num">4</span>)
+
+    <span class="fn">println</span>(doubled)
+    <span class="fn">println</span>(evens)
+    <span class="fn">println</span>(<span class="str">"sum=$sum"</span>)
+    <span class="fn">println</span>(byInitial)
+    <span class="fn">println</span>(mutable)
+}</pre>
+<pre><span class="cm">// → output:</span>
+[2, 4, 6, 8, 10, 12]
+[2, 4, 6]
+sum=21
+{a=[apple, avocado], b=[banana], c=[cherry]}
+[1, 2, 3, 4]</pre>
+<div class="insight"><p><code>groupBy</code> returns a <code>LinkedHashMap</code>, so the keys appear in first-encounter order (<code>a</code>, then <code>b</code>, then <code>c</code>). The eager operators above allocate an intermediate collection at each step — fine for small data, wasteful for large chains.</p></div>
+
+<h3>Sequences: lazy evaluation for long chains</h3>
+<p>Wrapping a source in <code>asSequence()</code> makes the operators <strong>lazy</strong>: elements flow through the whole pipeline one at a time, and terminal operators like <code>first()</code> stop as soon as they're satisfied — no intermediate lists.</p>
+<pre><span class="kw">val</span> firstBig = (<span class="num">1</span>..<span class="num">1_000_000</span>).<span class="fn">asSequence</span>()
+    .<span class="fn">map</span> { it * <span class="num">2</span> }
+    .<span class="fn">filter</span> { it &gt; <span class="num">10</span> }
+    .<span class="fn">first</span>()          <span class="cm">// evaluates only until the first match</span>
+<span class="fn">println</span>(firstBig)</pre>
+<pre><span class="cm">// → output (only 6 elements are ever produced, not a million):</span>
+12</pre>
+<div class="tip"><p>Rule of thumb: use plain (eager) operators for small collections and short chains — they're simpler and often faster. Switch to <code>asSequence()</code> when the source is large <em>and</em> you chain several operators, or when a terminal like <code>first</code>/<code>find</code>/<code>take</code> can short-circuit.</p></div>
+</div>
+</div>
+
+<!-- SCOPE FUNCTIONS -->
+<div class="section" id="scope">
+<div class="card">
+<h2>Scope functions — <code>let</code> / <code>run</code> / <code>with</code> / <code>apply</code> / <code>also</code></h2>
+<p>Five standard-library functions run a block "on" an object; they differ in only two dimensions — how the object is referenced inside the block (<code>it</code> vs the receiver <code>this</code>) and what the whole call returns (the block's result vs the object itself). Memorizing that 2×2 dissolves the classic confusion.</p>
+<table>
+<tr><th>Function</th><th>Object referenced as</th><th>Returns</th><th>Typical use</th></tr>
+<tr><td><code>let</code></td><td><code>it</code></td><td>lambda result</td><td>run a block on a non-null value (<code>x?.let { … }</code>)</td></tr>
+<tr><td><code>run</code></td><td><code>this</code></td><td>lambda result</td><td>compute a result from the object's members</td></tr>
+<tr><td><code>with</code></td><td><code>this</code> (as argument)</td><td>lambda result</td><td>group several calls on one object</td></tr>
+<tr><td><code>apply</code></td><td><code>this</code></td><td>the object</td><td>configure then return the object (builders)</td></tr>
+<tr><td><code>also</code></td><td><code>it</code></td><td>the object</td><td>side effects (logging) in a chain</td></tr>
+</table>
+<pre><span class="kw">data</span> <span class="kw">class</span> <span class="type">Config</span>(<span class="kw">var</span> host: <span class="type">String</span> = <span class="str">""</span>, <span class="kw">var</span> port: <span class="type">Int</span> = <span class="num">0</span>)
+
+<span class="kw">fun</span> <span class="fn">main</span>() {
+    <span class="cm">// apply: configure the object, RETURN the same object</span>
+    <span class="kw">val</span> cfg = <span class="type">Config</span>().<span class="fn">apply</span> {
+        host = <span class="str">"localhost"</span>   <span class="cm">// 'this' is the Config</span>
+        port = <span class="num">8080</span>
+    }
+    <span class="fn">println</span>(cfg)
+
+    <span class="cm">// let: run a block on a non-null value, RETURN the block's result</span>
+    <span class="kw">val</span> nm: <span class="type">String</span>? = <span class="str">"kotlin"</span>
+    <span class="kw">val</span> len = nm?.<span class="fn">let</span> { it.length }   <span class="cm">// it = "kotlin"</span>
+    <span class="fn">println</span>(len)
+
+    <span class="cm">// also: side-effect (e.g. logging), RETURN the same object</span>
+    <span class="kw">val</span> doubled = <span class="fn">listOf</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>)
+        .<span class="fn">map</span> { it * <span class="num">2</span> }
+        .<span class="fn">also</span> { <span class="fn">println</span>(<span class="str">"after map: $it"</span>) }
+    <span class="fn">println</span>(doubled)
+
+    <span class="cm">// run: compute a result using 'this'</span>
+    <span class="kw">val</span> summary = cfg.<span class="fn">run</span> { <span class="str">"$host:$port"</span> }
+    <span class="fn">println</span>(summary)
+}</pre>
+<pre><span class="cm">// → output:</span>
+Config(host=localhost, port=8080)
+6
+after map: [2, 4, 6]
+[2, 4, 6]
+localhost:8080</pre>
+<div class="warn"><p>Overusing scope functions — especially nesting them — quickly becomes unreadable, and mixing <code>it</code>- and <code>this</code>-based ones inside each other makes it hard to tell which object <code>this</code> refers to. Reach for them when they remove a temporary variable or make a builder-style block clearer, not reflexively. When in doubt, a named <code>val</code> and a plain call are easier to read.</p></div>
+</div>
+</div>
+
+<!-- COROUTINES -->
+<div class="section" id="coroutines">
+<div class="card">
+<h2>Coroutines — structured concurrency</h2>
+<p>A coroutine is a <em>suspendable</em> computation: a <code>suspend</code> function can pause at a suspension point (like <code>delay</code> or a network call) and <strong>release its thread</strong> instead of blocking it, resuming later. That is why a server can run hundreds of thousands of coroutines on a small thread pool — they are far cheaper than OS threads. You start them with builders (<code>launch</code> for fire-and-forget, <code>async</code> for a result via <code>await</code>) inside a <code>CoroutineScope</code>, and <strong>structured concurrency</strong> guarantees the scope waits for all its children — no leaked background work.</p>
+<pre><span class="kw">import</span> kotlinx.coroutines.*
+
+<span class="kw">suspend</span> <span class="kw">fun</span> <span class="fn">fetch</span>(id: <span class="type">Int</span>): <span class="type">Int</span> {
+    <span class="fn">delay</span>(<span class="num">100</span>)          <span class="cm">// suspends the coroutine; does NOT block the thread</span>
+    <span class="kw">return</span> id * <span class="num">10</span>
+}
+
+<span class="kw">fun</span> <span class="fn">main</span>() = <span class="fn">runBlocking</span> {          <span class="cm">// bridges the blocking &amp; suspending worlds</span>
+    <span class="kw">val</span> a = <span class="fn">async</span> { <span class="fn">fetch</span>(<span class="num">1</span>) }        <span class="cm">// starts concurrently</span>
+    <span class="kw">val</span> b = <span class="fn">async</span> { <span class="fn">fetch</span>(<span class="num">2</span>) }
+    <span class="fn">println</span>(a.<span class="fn">await</span>() + b.<span class="fn">await</span>())   <span class="cm">// 30 — after ~100ms total, not ~200ms</span>
+    <span class="fn">launch</span> { <span class="fn">println</span>(<span class="str">"done"</span>) }         <span class="cm">// child coroutine; runBlocking waits for it</span>
+}</pre>
+<pre><span class="cm">// → output:</span>
+30
+done</pre>
+<div class="insight"><p>The two <code>async</code> calls run concurrently, so the two <code>delay(100)</code>s overlap: the sum prints after roughly one 100&nbsp;ms wait, not two. <code>runBlocking</code> then keeps the JVM alive until the <code>launch</code>ed child finishes — that is structured concurrency: a parent scope never completes while its children are still running. In real apps you rarely use <code>runBlocking</code> outside <code>main</code>/tests; you launch into a lifecycle-bound scope instead.</p></div>
+<div class="tip"><p><strong>Dispatchers</strong> decide which thread(s) a coroutine uses: <code>Dispatchers.Default</code> for CPU-bound work, <code>Dispatchers.IO</code> for blocking I/O, <code>Dispatchers.Main</code> for UI. Switch with <code>withContext(Dispatchers.IO) { … }</code> around a blocking call so it doesn't starve the others. Coroutines need the <code>kotlinx-coroutines-core</code> dependency; they are a library, not a language keyword (only <code>suspend</code> is).</p></div>
+</div>
+</div>
+
+<!-- JAVA INTEROP -->
+<div class="section" id="interop">
+<div class="card">
+<h2>Java interop — and its friction points</h2>
+<p>Kotlin compiles to the same JVM bytecode as Java and calls Java code directly: Java classes, the entire JDK, and existing libraries are used with normal Kotlin syntax, and a Java getter/setter pair shows up as a Kotlin property. The one real friction is nullability. The Java type system doesn't distinguish <code>String</code> from <code>String?</code>, so a value coming from Java has a <strong>platform type</strong>, written <code>String!</code> in diagnostics — Kotlin trusts you not to null-check it, which means a Java <code>null</code> can slip through and blow up at the first dereference.</p>
+<pre><span class="kw">import</span> java.util.ArrayList
+
+<span class="kw">fun</span> <span class="fn">main</span>() {
+    <span class="kw">val</span> list = <span class="type">ArrayList</span>&lt;<span class="type">String</span>&gt;()   <span class="cm">// a Java class, used with Kotlin syntax</span>
+    list.<span class="fn">add</span>(<span class="str">"a"</span>)
+    list.<span class="fn">add</span>(<span class="str">"b"</span>)
+    <span class="fn">println</span>(list.size)               <span class="cm">// Java's size() surfaces as a property</span>
+    <span class="fn">println</span>(list)
+}</pre>
+<pre><span class="cm">// → output:</span>
+2
+[a, b]</pre>
+<div class="warn"><p><strong>Platform types are the trap.</strong> If a Java method is not annotated, its return has type <code>T!</code> and Kotlin lets you assign it to either <code>T</code> or <code>T?</code> with no warning — so a surprise <code>null</code> becomes an NPE at the point of use, not at the boundary. Annotate the Java side with <code>@Nullable</code>/<code>@NonNull</code> (JetBrains, JSR-305, or AndroidX) so Kotlin imports the right nullability, and treat unannotated returns as nullable when you're unsure.</p></div>
+
+<h3>Making Kotlin pleasant to call <em>from</em> Java</h3>
+<p>Going the other way, a few annotations smooth the Kotlin→Java boundary. <code>@JvmStatic</code> emits a real static method (instead of forcing <code>Companion.method()</code>), and <code>@JvmOverloads</code> generates the overloads Java needs because Java has no default arguments.</p>
+<pre><span class="kw">class</span> <span class="type">Api</span> {
+    <span class="kw">companion</span> <span class="kw">object</span> {
+        @JvmStatic <span class="kw">fun</span> <span class="fn">version</span>() = <span class="str">"1.0"</span>   <span class="cm">// Java calls Api.version()</span>
+    }
+
+    @JvmOverloads
+    <span class="kw">fun</span> <span class="fn">connect</span>(host: <span class="type">String</span>, port: <span class="type">Int</span> = <span class="num">80</span>) {
+        <span class="cm">// Java sees connect(host) AND connect(host, port)</span>
+    }
+}</pre>
+<div class="insight"><p>Other everyday interop helpers: <code>@JvmName("…")</code> renames the generated method (useful to dodge JVM signature clashes), <code>@JvmField</code> exposes a property as a plain public field, and <code>@Throws(IOException::class)</code> declares checked exceptions so Java callers must catch them (Kotlin itself has no checked exceptions).</p></div>
+</div>
+</div>
+
+<!-- PITFALLS -->
+<div class="section" id="pitfalls">
+<div class="card">
+<h2>Common pitfalls (and their fixes)</h2>
+
+<h3>1 · <code>!!</code> everywhere</h3>
+<p>Reaching for the not-null assertion <code>x!!</code> to silence a nullability error just re-creates the NPE Kotlin removed — now with less context. Prefer a safe call <code>x?.…</code>, an Elvis fallback <code>x ?: default</code>, a smart-casting <code>if (x != null) { … }</code>, or <code>requireNotNull(x) { "why" }</code> when a null genuinely is a bug you want to fail on with a message.</p>
+
+<h3>2 · Leaking a mutable collection through a read-only type</h3>
+<p>Exposing a <code>MutableList</code> as a <code>List</code> looks safe, but if you hand back the <em>same</em> backing instance, a caller can cast it back and mutate your internals. Keep the mutable one private and expose a read-only property (or a defensive copy with <code>.toList()</code>).</p>
+<pre><span class="kw">class</span> <span class="type">Cart</span> {
+    <span class="kw">private</span> <span class="kw">val</span> _items = <span class="fn">mutableListOf</span>&lt;<span class="type">String</span>&gt;()
+    <span class="kw">val</span> items: <span class="type">List</span>&lt;<span class="type">String</span>&gt; <span class="kw">get</span>() = _items   <span class="cm">// read-only VIEW of the same list</span>
+    <span class="kw">fun</span> <span class="fn">add</span>(x: <span class="type">String</span>) { _items.<span class="fn">add</span>(x) }
+}</pre>
+<p>The <code>items</code> type hides the mutators, but it is still the live list — mutations via <code>add</code> show through it. When callers must not observe later changes at all, return <code>_items.toList()</code> (a snapshot copy).</p>
+
+<h3>3 · <code>companion object</code> is not Java <code>static</code></h3>
+<p>Members of a <code>companion object</code> are instance members of a real singleton, not true statics. From Java they are reached as <code>MyClass.Companion.foo()</code> unless annotated <code>@JvmStatic</code>. Don't assume a companion function is a zero-overhead static call, and annotate the ones Java needs to see as static.</p>
+
+<h3>4 · <code>equals</code> on a non-<code>data</code> class</h3>
+<p>Only <code>data class</code>es get structural <code>equals</code>/<code>hashCode</code>. A regular class uses identity, so two "equal-looking" instances compare unequal — and break as <code>HashMap</code>/<code>HashSet</code> keys.</p>
+<pre><span class="kw">class</span> <span class="type">Point</span>(<span class="kw">val</span> x: <span class="type">Int</span>, <span class="kw">val</span> y: <span class="type">Int</span>)      <span class="cm">// NOT a data class</span>
+
+<span class="kw">fun</span> <span class="fn">main</span>() {
+    <span class="kw">val</span> a = <span class="type">Point</span>(<span class="num">1</span>, <span class="num">2</span>)
+    <span class="kw">val</span> b = <span class="type">Point</span>(<span class="num">1</span>, <span class="num">2</span>)
+    <span class="fn">println</span>(a == b)   <span class="cm">// identity equality — no generated equals</span>
+}</pre>
+<pre><span class="cm">// → output:</span>
+false</pre>
+<p>Fix by making it a <code>data class</code> (value equality) or overriding <code>equals</code>/<code>hashCode</code> by hand. Note <code>==</code> in Kotlin calls <code>equals</code>; reference equality is the separate <code>===</code>.</p>
+
+<h3>5 · <code>lazy</code> vs <code>lateinit</code></h3>
+<p>Both defer initialization, but they solve different problems. <code>by lazy { … }</code> is for a <code>val</code> computed once on first access (thread-safe by default). <code>lateinit var</code> is for a non-null <code>var</code> assigned externally later (DI, setup) — no default, and reading it early throws. Use <code>lazy</code> when you own the computation; <code>lateinit</code> when something else sets the value.</p>
+<pre><span class="kw">val</span> config: <span class="type">String</span> <span class="kw">by</span> <span class="kw">lazy</span> {   <span class="cm">// computed once, on first access</span>
+    <span class="fn">println</span>(<span class="str">"computing"</span>)
+    <span class="str">"loaded"</span>
+}
+
+<span class="kw">fun</span> <span class="fn">main</span>() {
+    <span class="fn">println</span>(config)   <span class="cm">// triggers the block, then prints the value</span>
+    <span class="fn">println</span>(config)   <span class="cm">// cached — block does NOT run again</span>
+}</pre>
+<pre><span class="cm">// → output:</span>
+computing
+loaded
+loaded</pre>
+<div class="warn"><p>A meta-pitfall for Java developers: writing Kotlin as "Java with a different syntax" — <code>var</code> everywhere, manual null checks instead of <code>?.</code>/<code>?:</code>, getter/setter boilerplate, and utility classes full of static methods instead of top-level or extension functions. The idiomatic style (immutability by default, expressions over statements, the standard-library operators) is what makes Kotlin worth the switch.</p></div>
+</div>
+</div>
+
+<!-- TOOLING -->
+<div class="section" id="tooling">
+<div class="card">
+<h2>Tooling &amp; ecosystem</h2>
+<p>Kotlin is built and tested with the same toolchain as the JVM ecosystem. Most projects use <strong>Gradle with the Kotlin DSL</strong> (<code>build.gradle.kts</code>) — the build script is itself Kotlin, so you get completion and type checking on your build. The <code>kotlinc</code> compiler produces JVM bytecode (and, via other backends, JavaScript and native binaries).</p>
+<table>
+<tr><th>Tool</th><th>What it does</th></tr>
+<tr><td><code>kotlinc</code> / <code>kotlin</code></td><td>Compile to JVM bytecode; run a compiled program or a <code>.kts</code> script.</td></tr>
+<tr><td><code>gradle build</code></td><td>Build via Gradle, configured in a Kotlin-DSL <code>build.gradle.kts</code>.</td></tr>
+<tr><td><code>ktlint</code></td><td>Formatter + linter enforcing the official Kotlin style — no style debates.</td></tr>
+<tr><td><code>detekt</code></td><td>Static analysis: code smells, complexity, and configurable rule sets.</td></tr>
+</table>
+<pre><span class="cm">// build.gradle.kts — the Gradle Kotlin DSL</span>
+plugins {
+    <span class="fn">kotlin</span>(<span class="str">"jvm"</span>) version <span class="str">"2.0.0"</span>
+    application
+}
+
+dependencies {
+    <span class="fn">implementation</span>(<span class="str">"org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1"</span>)
+    <span class="fn">testImplementation</span>(<span class="fn">kotlin</span>(<span class="str">"test"</span>))
+}
+
+application {
+    mainClass.<span class="fn">set</span>(<span class="str">"MainKt"</span>)
+}</pre>
+<div class="insight"><p><strong>Interview angle.</strong> A strong "why Kotlin?" answer connects the pieces: null safety in the type system removes the JVM's most common runtime crash; immutability-by-default (<code>val</code>) plus expressions and data classes cut boilerplate and bugs; coroutines give cheap structured concurrency; and 100% Java interop means you adopt it incrementally in an existing JVM codebase with no rewrite. Google made Kotlin an official language for Android development in 2017 (and later "Kotlin-first"), which is a large part of its adoption story.</p></div>
+<div class="tip"><p>Kotlin is also <strong>multiplatform</strong> (KMP): the same Kotlin business logic can compile to JVM, Android, native (via Kotlin/Native), and JavaScript, letting teams share a core module across platforms while keeping platform-specific UI native. Wire <code>ktlint</code>/<code>detekt</code> into CI and use IntelliJ IDEA (or Android Studio) for first-class inline types, quick fixes, and the Java-to-Kotlin converter.</p></div>
+</div>
+</div>
+
+<!-- GLOSSARY -->
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong><code>val</code> / <code>var</code></strong></td><td>Read-only (assign-once, like a Java <code>final</code>) vs. reassignable variable binding; prefer <code>val</code>.</td></tr>
+<tr><td><strong>Nullable type (<code>T?</code>)</strong></td><td>A type that may hold <code>null</code>; the plain type <code>T</code> never can.</td></tr>
+<tr><td><strong>Safe call (<code>?.</code>)</strong></td><td>Calls a member only if the receiver is non-null, otherwise yields <code>null</code>.</td></tr>
+<tr><td><strong>Elvis operator (<code>?:</code>)</strong></td><td>Supplies a fallback value when the left-hand expression is <code>null</code>.</td></tr>
+<tr><td><strong>Smart cast</strong></td><td>Compiler auto-casts a value to non-null or a subtype after a proven check.</td></tr>
+<tr><td><strong><code>lateinit</code></strong></td><td>Modifier for a non-null <code>var</code> assigned after construction; reading it early throws.</td></tr>
+<tr><td><strong>Not-null assertion (<code>!!</code>)</strong></td><td>Forces <code>T?</code> to <code>T</code>, throwing <code>NullPointerException</code> if null; treat as a code smell.</td></tr>
+<tr><td><strong>Extension function</strong></td><td>Adds a method to an existing type; resolved statically, not dispatched virtually.</td></tr>
+<tr><td><strong>Higher-order function</strong></td><td>A function that takes or returns another function (a lambda).</td></tr>
+<tr><td><strong><code>it</code></strong></td><td>Implicit name of the single parameter inside a one-argument lambda.</td></tr>
+<tr><td><strong><code>data class</code></strong></td><td>Class auto-generating <code>equals</code>, <code>hashCode</code>, <code>toString</code>, <code>copy</code>, and <code>componentN</code>.</td></tr>
+<tr><td><strong><code>sealed class</code></strong></td><td>Closed type hierarchy that makes a <code>when</code> over it exhaustive.</td></tr>
+<tr><td><strong><code>companion object</code></strong></td><td>A named singleton holding a class's static-like members (not true JVM statics).</td></tr>
+<tr><td><strong>Sequence</strong></td><td>Lazily evaluated collection pipeline that avoids intermediate lists and can short-circuit.</td></tr>
+<tr><td><strong>Scope function</strong></td><td><code>let</code>/<code>run</code>/<code>with</code>/<code>apply</code>/<code>also</code>: run a block "on" an object.</td></tr>
+<tr><td><strong>Coroutine</strong></td><td>A suspendable computation that releases its thread instead of blocking it.</td></tr>
+<tr><td><strong><code>suspend</code></strong></td><td>Keyword marking a function that may pause at a suspension point and resume later.</td></tr>
+<tr><td><strong>Structured concurrency</strong></td><td>A scope waits for all its child coroutines, preventing leaked background work.</td></tr>
+<tr><td><strong>Dispatcher</strong></td><td>Selects the thread(s) a coroutine runs on (<code>Default</code>, <code>IO</code>, <code>Main</code>).</td></tr>
+<tr><td><strong>Platform type (<code>T!</code>)</strong></td><td>Type of an unannotated Java value; its nullability is unknown to Kotlin.</td></tr>
+<tr><td><strong>Gradle Kotlin DSL</strong></td><td>Build script written in Kotlin (<code>build.gradle.kts</code>); DSL = domain-specific language.</td></tr>
+<tr><td><strong>KMP</strong></td><td>Kotlin Multiplatform: share Kotlin logic across JVM, native, and JavaScript targets.</td></tr>
+</table>
+</div>
+
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  evt.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="rust_refresher.html">‹ Rust Refresher</a><a class="bkc" href="index.html">📖 Contents</a><a href="objc_refresher.html">Objective-C Refresher ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

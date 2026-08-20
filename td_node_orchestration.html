@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Node-Level Orchestration &amp; Fleet Bring-up — The Interview Prep Handbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XV · Chapter 4 — <b>Node-Level Orchestration &amp; Fleet Bring-up</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Node-Level Orchestration &amp; Fleet Bring-up</h1>
+  <div class="sub">The system-software view of how a single server becomes a scheduling target and how a rack full of them becomes a fleet: what a container actually is (cgroups v2 + namespaces, not a VM), how a workload gets handed a specific accelerator or high-speed NIC, how bare metal goes from power-on to "healthy node in the cluster," and why bringing up hardware is really CI/CD for physical machines. The control-plane view of Kubernetes lives in Part XIII; here we stay on the node, close to the kernel and the metal.</div>
+</header>
+
+<div class="ins"><div class="insl">Read this like a story</div><p>We start at the node and zoom out to the fleet. §1 frames the two altitudes (control plane vs node) so we don't retread Part XIII. §2 dissects what a container <em>is</em> — a process wearing cgroups and namespaces. §3 is the kubelet + CRI + OCI runtime chain that turns a pod spec into running processes. §4 is how special hardware becomes schedulable (device plugins, Topology Manager, Node Feature Discovery). §5 is bare-metal bring-up: power-on → firmware → NetBoot OS → join → burn-in, treated as declarative, idempotent CI/CD. §6 is fleet telemetry and hardware health. §7 is interconnect topology as background context (PCIe, NVLink, InfiniBand/RDMA) and why topology-aware scheduling matters. §8 is validation and regression-gating firmware/kernel/driver changes. §9 collects the interview questions. Read it as one arc: a process becomes a container, a box becomes a node, a rack becomes a fleet.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. Two Altitudes: Control Plane vs the Node</h2>
+<p class="lead">Cluster orchestration is usually taught from the top — the API server, the scheduler, controllers reconciling desired state. That is the <strong>control-plane</strong> altitude, and it is Part XIII's subject. This chapter lives one level down, at the <strong>node</strong>: the single machine that actually runs the work, and the Linux kernel primitives that make "a container" more than a marketing word. If the control plane is the distributed database that decides <em>what</em> should run <em>where</em>, the node is the execution engine that makes it real on one box.</p>
+
+<p>The clean mental split: the control plane <em>decides and records intent</em> (this pod should exist, on a node with these resources); the node <em>realizes that intent</em> (create the cgroups, set up the namespaces, pull the image, start the process, report back health). The contract between them is small and deliberate — the scheduler places a pod onto a node, and from there the node's agent takes over. Everything in this chapter is about that second half plus the physical layer beneath it.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 700 260" xmlns="http://www.w3.org/2000/svg">
+  <rect x="40" y="26" width="620" height="70" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/>
+  <text x="350" y="48" text-anchor="middle" font-size="12" font-weight="700" fill="#6d28d9">CONTROL PLANE (Part XIII) — decides &amp; records intent</text>
+  <text x="350" y="70" text-anchor="middle" font-size="10" fill="#526176">API server · scheduler · controllers · etcd — "this pod should run on a node with 1 accelerator"</text>
+  <text x="350" y="86" text-anchor="middle" font-size="9.5" fill="#526176">distributed-systems altitude</text>
+  <line x1="350" y1="96" x2="350" y2="128" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#d1)"/>
+  <defs><marker id="d1" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0,10 4,0 8" fill="#5b6b7f"/></marker></defs>
+  <text x="380" y="118" font-size="9" fill="#526176">bind pod → node</text>
+  <rect x="40" y="130" width="620" height="80" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="350" y="152" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">NODE (this chapter) — realizes intent on one machine</text>
+  <text x="350" y="173" text-anchor="middle" font-size="10" fill="#526176">kubelet · container runtime (CRI) · cgroups v2 + namespaces · device plugins</text>
+  <text x="350" y="189" text-anchor="middle" font-size="9.5" fill="#526176">system-software / kernel altitude</text>
+  <line x1="350" y1="210" x2="350" y2="230" stroke="#5b6b7f" stroke-width="1.4"/>
+  <text x="350" y="248" text-anchor="middle" font-size="10" font-weight="700" fill="#0f766e">bare-metal bring-up (§5) turns a powered-off box into a node in the first place</text>
+</svg>
+<div class="svg-cap">The two altitudes. The control plane decides where work goes; the node makes it run. Bring-up is what produces a node the control plane can schedule onto.</div>
+</div>
+
+<div class="tip"><div class="tipl">Interview signal</div><p>If asked "how does Kubernetes run a container," a weak answer stops at "the scheduler picks a node." A strong answer continues down: "the kubelet on that node calls the container runtime over the CRI, which creates cgroups and namespaces and hands the OCI image's root filesystem to a runtime like runc." Knowing the handoff point between control plane and node is the whole game here.</p></div>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. What a Container Actually Is</h2>
+<p>The single most clarifying fact for a backend engineer: <strong>a container is not a virtual machine.</strong> There is no guest kernel, no hypervisor, no emulated hardware. A container is just <strong>one (or more) ordinary Linux processes</strong> running on the host kernel, with two kernel features applied to them: <strong>namespaces</strong> (which control what the process can <em>see</em>) and <strong>cgroups</strong> (which control what the process can <em>use</em>). That's it. Everything else — images, layers, the runtime — is packaging and plumbing around those two primitives.</p>
+
+<div class="ins"><div class="insl">The one-sentence bridge</div><p>A container is a process with namespace isolation (its own view of PIDs, mounts, network, etc.) plus cgroup limits (a cap on CPU, memory, and I/O) — sharing the host's single kernel. A VM virtualizes the hardware and runs a whole second kernel; a container virtualizes only the OS-level <em>view</em> and shares the kernel.</p></div>
+
+<h3>Namespaces — what the process can see</h3>
+<p>A <strong>namespace</strong> partitions a global kernel resource so that processes inside it see their own isolated instance. When you create a process in a fresh set of namespaces, it believes it has the machine to itself. The kernel provides several, and a typical container uses most of them:</p>
+<table class="tbl">
+  <tr><th>Namespace</th><th>Isolates</th><th>Effect inside the container</th></tr>
+  <tr><td><code>pid</code></td><td>Process IDs</td><td>Its main process is PID 1; it can't see host processes.</td></tr>
+  <tr><td><code>mnt</code></td><td>Mount points</td><td>Its own filesystem tree (the image's root fs), not the host's.</td></tr>
+  <tr><td><code>net</code></td><td>Network stack</td><td>Own interfaces, routes, ports, firewall rules.</td></tr>
+  <tr><td><code>uts</code></td><td>Hostname / domain</td><td>Can set its own hostname without touching the host's.</td></tr>
+  <tr><td><code>ipc</code></td><td>SysV IPC / POSIX msg queues</td><td>Own shared-memory and semaphore namespace.</td></tr>
+  <tr><td><code>user</code></td><td>UID/GID mappings</td><td>Can be root (UID 0) inside while unprivileged on the host.</td></tr>
+  <tr><td><code>cgroup</code></td><td>cgroup root view</td><td>Sees its own cgroup tree rooted at its slice, not the host root.</td></tr>
+</table>
+<p>Under the hood these are created with the <code>clone()</code>/<code>unshare()</code> syscalls (a process asks the kernel for a new namespace) and joined with <code>setns()</code>. You can even watch this happen by hand:</p>
+<pre><span class="cm"># run a shell in fresh PID + mount + UTS + net namespaces</span>
+<span class="cm"># (unshare is the user-space front-end to the unshare() syscall)</span>
+<span class="cm"># --mount-proc remounts /proc for the new PID ns; without it, ps still reads the host's procfs</span>
+sudo unshare --pid --mount --uts --net --fork --mount-proc bash
+<span class="cm"># inside: hostname is ours to set, and:</span>
+ps aux            <span class="cm"># sees almost nothing — its own PID view</span>
+ip link           <span class="cm"># only loopback — its own empty net namespace</span></pre>
+<div class="note"><div class="notel">Bridge for distributed-systems folks</div><p>A namespace is like giving a tenant its own <em>view</em> of a shared multi-tenant system — its own schema, its own visible rows — without spinning up a separate database. The data plane (the kernel) is shared; only the visibility is partitioned.</p></div>
+
+<h3>cgroups v2 — what the process can use</h3>
+<p><strong>Control groups (cgroups)</strong> are the kernel's resource-accounting-and-limiting mechanism. Where namespaces answer "what can I see," cgroups answer "how much can I consume." <strong>cgroups v2</strong> is the current unified hierarchy: a single tree under <code>/sys/fs/cgroup</code> where each node is a directory, and <em>controllers</em> (cpu, memory, io, pids) are enabled per subtree. A container is placed in its own cgroup, and the runtime writes limits into that directory's control files.</p>
+<pre><span class="cm"># cgroups v2 unified hierarchy — a container's slice is just a directory</span>
+/sys/fs/cgroup/&lt;slice&gt;/&lt;container&gt;/
+  cpu.max        <span class="cm"># "&lt;quota&gt; &lt;period&gt;", e.g. "20000 100000" = 0.2 CPU</span>
+  cpu.weight     <span class="cm"># relative share under contention (default 100)</span>
+  memory.max     <span class="cm"># hard memory cap; exceeding it triggers the OOM killer</span>
+  memory.high    <span class="cm"># soft cap — throttles/reclaims before the hard max</span>
+  io.max         <span class="cm"># per-device IOPS / bandwidth ceilings</span>
+  pids.max       <span class="cm"># cap on number of processes (fork-bomb guard)</span></pre>
+<p>The mapping to a pod spec is direct. A Kubernetes <strong>CPU limit</strong> becomes <code>cpu.max</code> (a hard quota per period); a <strong>CPU request</strong> becomes <code>cpu.weight</code> (a proportional share when the node is busy). A <strong>memory limit</strong> becomes <code>memory.max</code> — and here is the asymmetry candidates trip on:</p>
+<div class="trap"><div class="trapl">CPU throttles, memory kills</div><p>Exceeding a CPU limit does <em>not</em> kill the process — the scheduler simply <strong>throttles</strong> it (it gets no more slices until the next period), which shows up as latency, not a crash. Exceeding <code>memory.max</code> is different: memory can't be "given back" the way CPU time can, so the kernel's <strong>OOM killer</strong> terminates a process in the cgroup. That's why a memory-limited pod dies with <code>OOMKilled</code> while a CPU-limited one just runs slowly. Confusing the two is a classic misdiagnosis of a "slow" vs "crashing" workload.</p></div>
+
+<div class="svg-container">
+<svg viewBox="0 0 680 250" xmlns="http://www.w3.org/2000/svg">
+  <text x="340" y="22" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">A container = one process, two kernel features applied</text>
+  <!-- host kernel -->
+  <rect x="40" y="188" width="600" height="44" rx="6" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.4"/>
+  <text x="340" y="215" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">Single shared host Linux kernel (no guest kernel, no hypervisor)</text>
+  <!-- two containers -->
+  <g>
+    <rect x="70" y="60" width="240" height="118" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+    <text x="190" y="80" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">Container A (just processes)</text>
+    <rect x="90" y="92" width="90" height="24" rx="4" fill="#eff6ff" stroke="#2563eb"/><text x="135" y="108" text-anchor="middle" font-size="8.5" fill="#1d4ed8">namespaces</text>
+    <rect x="200" y="92" width="90" height="24" rx="4" fill="#eff6ff" stroke="#2563eb"/><text x="245" y="108" text-anchor="middle" font-size="8.5" fill="#1d4ed8">cgroup slice</text>
+    <text x="190" y="140" text-anchor="middle" font-size="9" fill="#526176">sees: own PID/mnt/net</text>
+    <text x="190" y="156" text-anchor="middle" font-size="9" fill="#526176">uses: capped CPU/mem/io</text>
+  </g>
+  <g>
+    <rect x="370" y="60" width="240" height="118" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.4"/>
+    <text x="490" y="80" text-anchor="middle" font-size="10.5" font-weight="700" fill="#166534">Container B (just processes)</text>
+    <rect x="390" y="92" width="90" height="24" rx="4" fill="#f0fdf4" stroke="#16a34a"/><text x="435" y="108" text-anchor="middle" font-size="8.5" fill="#166534">namespaces</text>
+    <rect x="500" y="92" width="90" height="24" rx="4" fill="#f0fdf4" stroke="#16a34a"/><text x="545" y="108" text-anchor="middle" font-size="8.5" fill="#166534">cgroup slice</text>
+    <text x="490" y="140" text-anchor="middle" font-size="9" fill="#526176">own view, own limits</text>
+    <text x="490" y="156" text-anchor="middle" font-size="9" fill="#526176">isolated from A</text>
+  </g>
+  <line x1="190" y1="178" x2="190" y2="188" stroke="#5b6b7f" stroke-width="1.4"/>
+  <line x1="490" y1="178" x2="490" y2="188" stroke="#5b6b7f" stroke-width="1.4"/>
+</svg>
+<div class="svg-cap">Both containers are just processes on one shared kernel. Namespaces isolate their view; cgroups cap their consumption. Contrast a VM, which would run a second full kernel on emulated hardware.</div>
+</div>
+
+<div class="tip"><div class="tipl">Interview signal</div><p>"What is a container?" — the answer that lands is "a process (tree) with namespace isolation and cgroup limits, sharing the host kernel — not a VM." Bonus points for naming the split: namespaces = visibility, cgroups = resource limits, and that CPU limits throttle while memory limits OOM-kill.</p></div>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. The Node Agent: kubelet, CRI &amp; OCI</h2>
+<p>Given those primitives, who actually assembles them into a running pod? On each node a daemon called the <strong>kubelet</strong> is the local agent. It watches the control plane for pods bound to its node, and for each one it drives the container lifecycle: pull images, create the sandbox, start containers, run health probes, and continuously report status back. The kubelet does <em>not</em> create containers itself — it delegates to a <strong>container runtime</strong> through a stable gRPC interface called the <strong>CRI (Container Runtime Interface)</strong>.</p>
+
+<h3>The runtime stack, layer by layer</h3>
+<ul>
+  <li><strong>CRI</strong> — a gRPC API with two services: <code>RuntimeService</code> (sandboxes, containers, exec) and <code>ImageService</code> (pull/list/remove images). It decouples the kubelet from any specific runtime, the way a driver interface decouples a kernel from a specific device.</li>
+  <li><strong>containerd</strong> (a common high-level runtime that implements the CRI) — manages images, snapshots (the layered filesystem), and container lifecycle. It hands the actual process creation to a low-level runtime.</li>
+  <li><strong>runc</strong> (the OCI reference low-level runtime) — the small program that does the raw kernel calls: set up namespaces, apply the cgroup, pivot into the image's root filesystem, drop capabilities, and <code>exec</code> the entrypoint. This is where the primitives from §2 are actually invoked.</li>
+</ul>
+
+<div class="svg-container">
+<svg viewBox="0 0 700 210" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="c1" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0,10 4,0 8" fill="#5b6b7f"/></marker></defs>
+  <rect x="20" y="70" width="120" height="70" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/>
+  <text x="80" y="100" text-anchor="middle" font-size="11" font-weight="700" fill="#6d28d9">kubelet</text>
+  <text x="80" y="118" text-anchor="middle" font-size="8.5" fill="#526176">node agent</text>
+  <rect x="200" y="70" width="130" height="70" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="265" y="100" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">containerd</text>
+  <text x="265" y="118" text-anchor="middle" font-size="8.5" fill="#526176">high-level runtime</text>
+  <rect x="390" y="70" width="120" height="70" rx="8" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="450" y="100" text-anchor="middle" font-size="11" font-weight="700" fill="#0f766e">runc</text>
+  <text x="450" y="118" text-anchor="middle" font-size="8.5" fill="#526176">OCI low-level</text>
+  <rect x="570" y="70" width="120" height="70" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="630" y="96" text-anchor="middle" font-size="10.5" font-weight="700" fill="#166534">kernel</text>
+  <text x="630" y="112" text-anchor="middle" font-size="8" fill="#526176">namespaces</text>
+  <text x="630" y="126" text-anchor="middle" font-size="8" fill="#526176">+ cgroups</text>
+  <line x1="140" y1="105" x2="198" y2="105" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#c1)"/>
+  <text x="169" y="98" text-anchor="middle" font-size="8" fill="#526176">CRI (gRPC)</text>
+  <line x1="330" y1="105" x2="388" y2="105" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#c1)"/>
+  <text x="359" y="98" text-anchor="middle" font-size="8" fill="#526176">OCI runtime</text>
+  <line x1="510" y1="105" x2="568" y2="105" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#c1)"/>
+  <text x="539" y="98" text-anchor="middle" font-size="8" fill="#526176">syscalls</text>
+  <text x="350" y="30" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">Pod spec → running process: the handoff chain</text>
+  <text x="350" y="175" text-anchor="middle" font-size="9.5" fill="#526176">each arrow is a stable interface — swap containerd or runc without touching the kubelet</text>
+</svg>
+<div class="svg-cap">The node runtime stack. The kubelet speaks CRI to a high-level runtime (containerd), which invokes an OCI low-level runtime (runc), which makes the kernel calls that build the container.</div>
+</div>
+
+<h3>OCI images: the artifact</h3>
+<p>What gets pulled and run is an <strong>OCI image</strong> — an open, vendor-neutral format. An image is a <strong>manifest</strong> (JSON pointing to a config + a list of layers) plus <strong>layers</strong> (each a tarball of filesystem changes, content-addressed by digest) plus a <strong>config</strong> (entrypoint, env, working dir). The layers stack into the container's root filesystem via a union/overlay filesystem, so shared base layers are pulled and stored once. Content-addressing (a layer is named by the SHA-256 of its bytes) gives free deduplication and integrity checking.</p>
+<div class="note"><div class="notel">Bridge</div><p>Think of an OCI image like an immutable, content-addressed build artifact in an artifact repository: layers are cached by digest exactly like dependency jars keyed by hash, and the overlay filesystem is a copy-on-write merge of those read-only layers plus one writable top layer for the running container.</p></div>
+
+<div class="warn"><div class="warnl">CRI vs the control plane — don't conflate</div><p>The CRI is a <em>node-local</em> interface between the kubelet and a runtime. It is unrelated to the <em>control-plane</em> APIs (the scheduler, controllers, etcd) from Part XIII. A common interview slip is to say "the scheduler creates the container" — it doesn't; it only <em>binds</em> the pod to a node. The node's kubelet, via CRI, does the creating.</p></div>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. Exposing Special Hardware to Workloads</h2>
+<p>A stock node advertises CPU and memory, and the scheduler places pods against those. But accelerators, high-speed NICs, and other specialized devices are invisible to the base scheduler — the kernel sees a PCIe device, but Kubernetes has no built-in concept of "one inference accelerator." The <strong>device-plugin API</strong> is how a node teaches the cluster to <em>see</em> and <em>allocate</em> such hardware.</p>
+
+<div class="ins"><div class="insl">The one-sentence bridge</div><p>A device plugin is how the cluster "sees" special hardware: it is a small daemon on the node that discovers devices, advertises them to the kubelet as a countable, schedulable resource (e.g. <code>example.com/accel: 8</code>), and — when a pod is granted one — tells the runtime exactly which device nodes and environment to inject.</p></div>
+
+<h3>The device-plugin flow</h3>
+<ol>
+  <li><strong>Register.</strong> The plugin (usually a DaemonSet, one per node) connects to the kubelet over a gRPC socket and registers under a resource name like <code>example.com/accel</code>.</li>
+  <li><strong>Advertise (ListAndWatch).</strong> It streams the list of healthy device IDs to the kubelet, which surfaces them as <em>extended resources</em> in the node's capacity. Now a pod can request <code>resources.limits: example.com/accel: 2</code> and the scheduler treats it like any countable resource.</li>
+  <li><strong>Allocate.</strong> When the kubelet assigns devices to a pod, it calls the plugin's <code>Allocate</code>; the plugin returns the concrete device files, mounts, and environment variables the runtime must inject so the container can open exactly those devices — and no others.</li>
+</ol>
+<pre><span class="cm"># a pod requesting a specialized accelerator as an extended resource</span>
+<span class="kw">resources</span>:
+  <span class="kw">limits</span>:
+    example.com/accel: <span class="num">2</span>      <span class="cm"># scheduler only places this on a node</span>
+                             <span class="cm"># whose plugin advertises >= 2 free devices</span></pre>
+
+<div class="svg-container">
+<svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="a1" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0,10 4,0 8" fill="#5b6b7f"/></marker></defs>
+  <rect x="40" y="30" width="150" height="60" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="115" y="55" text-anchor="middle" font-size="10.5" font-weight="700" fill="#166534">Device plugin</text>
+  <text x="115" y="73" text-anchor="middle" font-size="8.5" fill="#526176">DaemonSet on node</text>
+  <rect x="275" y="30" width="150" height="60" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/>
+  <text x="350" y="55" text-anchor="middle" font-size="10.5" font-weight="700" fill="#6d28d9">kubelet</text>
+  <text x="350" y="73" text-anchor="middle" font-size="8.5" fill="#526176">node capacity</text>
+  <rect x="510" y="30" width="150" height="60" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="585" y="55" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">scheduler</text>
+  <text x="585" y="73" text-anchor="middle" font-size="8.5" fill="#526176">control plane</text>
+  <line x1="190" y1="52" x2="273" y2="52" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="231" y="45" text-anchor="middle" font-size="8" fill="#526176">register + ListAndWatch</text>
+  <line x1="425" y1="52" x2="508" y2="52" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="466" y="45" text-anchor="middle" font-size="8" fill="#526176">accel: 8</text>
+  <rect x="510" y="140" width="150" height="56" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.4"/>
+  <text x="585" y="164" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">Pod (wants accel:2)</text>
+  <text x="585" y="181" text-anchor="middle" font-size="8.5" fill="#526176">bound to this node</text>
+  <line x1="585" y1="140" x2="585" y2="92" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="640" y="118" text-anchor="middle" font-size="8" fill="#526176">place</text>
+  <line x1="510" y1="168" x2="200" y2="168" stroke="#5b6b7f" stroke-width="1.4" stroke-dasharray="5,3"/>
+  <line x1="115" y1="168" x2="115" y2="92" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#a1)"/>
+  <rect x="40" y="140" width="150" height="56" rx="8" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.4"/>
+  <text x="115" y="164" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0f766e">Allocate → device</text>
+  <text x="115" y="181" text-anchor="middle" font-size="8.5" fill="#526176">files + env injected</text>
+  <text x="350" y="228" text-anchor="middle" font-size="9.5" fill="#526176">discover → advertise → schedule against count → Allocate injects the exact device nodes</text>
+</svg>
+<div class="svg-cap">Device-plugin lifecycle: the plugin advertises devices to the kubelet as a countable resource; the scheduler places pods against that count; Allocate injects the concrete device files into the granted container.</div>
+</div>
+
+<h3>Topology matters: NUMA, Topology Manager &amp; NFD</h3>
+<p>Advertising a device by <em>count</em> is not enough for performance. On a multi-socket server, an accelerator hangs off a particular PCIe root complex attached to one <strong>NUMA node</strong>; the CPU cores and memory that feed it should be on that <em>same</em> NUMA node, or every transfer pays a cross-socket hop. (NUMA is RAM data-locality — the same locality/sharding instinct you already apply to data, applied to which socket owns which memory and device.)</p>
+<ul>
+  <li><strong>Topology Manager</strong> — a kubelet component that coordinates the CPU Manager, Memory Manager, and device plugins so a pod's cores, memory, and devices are all allocated from the <em>same</em> NUMA node when possible. Policies range from <code>best-effort</code> (try, but don't block) to <code>single-numa-node</code> (refuse to admit the pod unless it fits on one node).</li>
+  <li><strong>Node Feature Discovery (NFD)</strong> — a daemon that inspects each node's hardware and kernel (CPU flags, PCIe devices, kernel version, NIC capabilities) and publishes them as node <em>labels</em>. Workloads then use node affinity to land only where a required capability exists — e.g. "schedule only where an RDMA-capable NIC is present."</li>
+</ul>
+<div class="tip"><div class="tipl">Interview signal</div><p>"How does a pod get a specific accelerator?" → the device plugin advertises the device to the kubelet as an extended resource; the scheduler places the pod against that count; the kubelet calls Allocate, which injects the concrete device files. Then raise the bar yourself: "and for performance you want the Topology Manager to co-locate the pod's CPU, memory, and device on one NUMA node, with NFD labeling nodes by capability." That shows you understand allocation <em>and</em> locality.</p></div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. Bare-Metal Bring-up: CI/CD for Physical Hardware</h2>
+<p>Before any of the above can happen, a physical machine has to <em>become</em> a node. <strong>Bring-up</strong> is the pipeline that takes a rack of powered-off, bare hardware and produces validated, cluster-joined nodes — repeatably, for hundreds or thousands of boxes. The guiding principle is that this is <strong>CI/CD for physical hardware</strong>: declarative desired state, idempotent steps, automated validation gates, and no manual, hand-crafted configuration.</p>
+
+<h3>The bring-up pipeline</h3>
+<div class="svg-container">
+<svg viewBox="0 0 720 150" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="b1" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0,9 3.5,0 7" fill="#5b6b7f"/></marker></defs>
+  <g font-size="8.8" font-weight="700">
+    <rect x="8"  y="50" width="96" height="50" rx="6" fill="#ede9fe" stroke="#7c3aed"/><text x="56"  y="72" text-anchor="middle" fill="#6d28d9">1 · Power-on</text><text x="56" y="88" text-anchor="middle" font-size="7.5" fill="#526176">BMC / out-of-band</text>
+    <rect x="122" y="50" width="96" height="50" rx="6" fill="#dbeafe" stroke="#2563eb"/><text x="170" y="72" text-anchor="middle" fill="#1d4ed8">2 · Firmware</text><text x="170" y="88" text-anchor="middle" font-size="7.5" fill="#526176">UEFI/BIOS config</text>
+    <rect x="236" y="50" width="96" height="50" rx="6" fill="#ccfbf1" stroke="#0d9488"/><text x="284" y="72" text-anchor="middle" fill="#0f766e">3 · NetBoot</text><text x="284" y="88" text-anchor="middle" font-size="7.5" fill="#526176">PXE → OS install</text>
+    <rect x="350" y="50" width="96" height="50" rx="6" fill="#dcfce7" stroke="#16a34a"/><text x="398" y="72" text-anchor="middle" fill="#166534">4 · Config</text><text x="398" y="88" text-anchor="middle" font-size="7.5" fill="#526176">drivers, agents</text>
+    <rect x="464" y="50" width="96" height="50" rx="6" fill="#fef3c7" stroke="#d97706"/><text x="512" y="72" text-anchor="middle" fill="#92400e">5 · Burn-in</text><text x="512" y="88" text-anchor="middle" font-size="7.5" fill="#526176">stress + validate</text>
+    <rect x="578" y="50" width="96" height="50" rx="6" fill="#fee2e2" stroke="#dc2626"/><text x="626" y="72" text-anchor="middle" fill="#991b1b">6 · Join</text><text x="626" y="88" text-anchor="middle" font-size="7.5" fill="#526176">register + Ready</text>
+  </g>
+  <line x1="104" y1="75" x2="120" y2="75" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#b1)"/>
+  <line x1="218" y1="75" x2="234" y2="75" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#b1)"/>
+  <line x1="332" y1="75" x2="348" y2="75" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#b1)"/>
+  <line x1="446" y1="75" x2="462" y2="75" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#b1)"/>
+  <line x1="560" y1="75" x2="576" y2="75" stroke="#5b6b7f" stroke-width="1.4" marker-end="url(#b1)"/>
+  <text x="360" y="128" text-anchor="middle" font-size="9.5" fill="#526176">a failed gate quarantines the box for repair instead of admitting a bad node — like a red CI build blocking a merge</text>
+</svg>
+<div class="svg-cap">The bare-metal bring-up pipeline: power-on through health-validated cluster join. Each stage is idempotent and gated; a failure routes the node to repair rather than into service.</div>
+</div>
+
+<h4>1 — Power-on via the BMC (out-of-band)</h4>
+<p>You can't press a button on a thousand machines. Each server has a <strong>BMC (Baseboard Management Controller)</strong> — a tiny always-on computer on the motherboard, on its own management network, that can power the box on/off, read sensors, and mount virtual media <em>even when the main OS is down or the box is "off."</em> Fleet tooling drives it programmatically, historically via <strong>IPMI</strong> and increasingly via <strong>Redfish</strong> (a modern HTTPS/JSON REST API — structured resources instead of IPMI's opaque byte commands).</p>
+<div class="note"><div class="notel">Bridge</div><p>The BMC is an always-on out-of-band admin sidecar: a separate little computer that manages the box independently of the main OS — the same pattern as a sidecar/agent that stays up to administer a service even when the service itself has crashed. Redfish is its clean REST API; IPMI is the older binary protocol it's replacing.</p></div>
+
+<h4>2 — Firmware configuration</h4>
+<p>UEFI/BIOS is the pre-OS "init" (covered in Chapter 1). Bring-up applies a <em>declarative</em> firmware profile: enable virtualization and the <strong>IOMMU (VT-d/AMD-Vi)</strong>, set boot order to network-first, configure Secure Boot state, memory and NUMA options, and power/thermal policy. The goal is that every node of a given type has byte-identical firmware settings — configuration drift here causes maddening one-off failures later.</p>
+
+<h4>3 — OS install via NetBoot (ties to Chapter 1)</h4>
+<p>With network-first boot, the machine does a <strong>PXE / network boot</strong>: firmware gets an address over DHCP, is pointed at a boot server, downloads a bootloader and an installer/provisioning image over TFTP/HTTP, and installs (or boots a live provisioning environment). This is exactly the NetBoot mechanism from Chapter 1, now used as the OS-delivery step of bring-up. The installed image is standardized and version-pinned so every node starts from the same known-good baseline.</p>
+
+<h4>4 — Config: drivers, agents, kernel</h4>
+<p>Post-install, a declarative config step installs the pinned kernel, device drivers/firmware for accelerators and NICs, the container runtime, the node agent, and telemetry exporters (§6). Everything is versioned and idempotent — re-running converges to the same state rather than stacking changes.</p>
+
+<h4>5 — Burn-in &amp; health validation</h4>
+<p>Before a node carries real work it must earn trust. <strong>Burn-in</strong> runs stress tests for a sustained period to surface infant-mortality failures (defective parts that fail soon after first being switched on): CPU/memory stressors, a full memory pass to surface bad DIMMs, storage I/O, thermal soak, and interconnect/link checks. Only a node that passes every gate proceeds.</p>
+
+<h4>6 — Join &amp; go Ready</h4>
+<p>The validated node registers with the control plane, the node agent starts, and once its health checks pass the node is marked schedulable. It is now a first-class member of the fleet — and the loop from §1–§4 can begin placing pods on it.</p>
+
+<div class="warn"><div class="warnl">Idempotent &amp; declarative — why it's non-negotiable</div><p>At fleet scale, imperative "SSH in and run these commands" bring-up is unreproducible and drifts. Declarative desired-state provisioning (describe the target; let the tool converge) plus idempotency (re-running is safe and lands the same state) is what makes bring-up a <em>pipeline</em> and not a craft. It's the same reason infrastructure-as-code beat hand-clicked consoles.</p></div>
+
+<div class="iq">"I'd model bring-up as a declarative, gated pipeline — power-on over the BMC via Redfish, apply a firmware profile, NetBoot a version-pinned OS image over PXE, converge drivers and agents idempotently, run burn-in stress and hardware validation as a gate, then join the cluster and go Ready. A failed gate quarantines the box for repair; nothing enters service unvalidated. It's CI/CD, but the artifact is a physical machine."</div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. Fleet Telemetry &amp; Hardware Health</h2>
+<p>A node that joined healthy doesn't stay healthy forever. Fleet operation depends on continuous telemetry — both the software-level metrics you know and the <strong>hardware</strong> health signals that a backend engineer rarely sees but that dominate physical-fleet reliability. This ties directly into the observability stack of Chapter 3; here we focus on what's <em>node- and hardware-specific</em>.</p>
+
+<h3>The exporter model</h3>
+<p>The prevailing pattern is a small <strong>exporter</strong> process per node that reads local counters and exposes them over HTTP for a time-series scraper to pull. A host <em>node exporter</em> surfaces OS-level metrics (CPU, memory, filesystem, network); additional exporters surface hardware sensors and device-specific counters. Because it's pull-based scraping of a plain HTTP endpoint, adding a node just means the scraper discovers one more target.</p>
+
+<h3>Hardware health signals that matter</h3>
+<table class="tbl">
+  <tr><th>Signal</th><th>Source</th><th>Why it matters</th></tr>
+  <tr><td>Temperature (CPU, board, device, inlet)</td><td>BMC sensors / device</td><td>Thermal excursions cause throttling (silent slowdown) or shutdown; a hot inlet can indicate a cooling failure across a rack.</td></tr>
+  <tr><td>Power draw &amp; PSU status</td><td>BMC / PDU</td><td>Power capping affects performance; a failing PSU or redundancy loss is a pre-failure warning.</td></tr>
+  <tr><td>Fan speeds</td><td>BMC</td><td>A stuck/failed fan precedes thermal problems.</td></tr>
+  <tr><td><strong>ECC memory errors</strong></td><td>EDAC / kernel</td><td>Correctable ECC errors are a leading indicator of a DIMM about to fail; a spike means "drain and replace before it causes uncorrectable errors / crashes."</td></tr>
+  <tr><td>Disk/SSD SMART &amp; wear</td><td>SMART</td><td>Reallocated sectors, media wear-out predict drive failure.</td></tr>
+  <tr><td>Link errors / flaps</td><td>NIC / switch counters</td><td>A degrading high-speed link silently drags down distributed-job throughput long before it goes fully down.</td></tr>
+  <tr><td>Correctable PCIe / interconnect errors</td><td>AER / device counters</td><td>Rising correctable-error rates flag a marginal lane or cable.</td></tr>
+</table>
+
+<div class="ins"><div class="insl">Why ECC is the canary</div><p><strong>ECC (Error-Correcting Code) memory</strong> detects and corrects single-bit errors transparently. The value for fleet health is the <em>correctable</em> error stream: a DIMM that starts logging a rising rate of corrected errors is usually on its way to an <em>uncorrectable</em> error (which crashes the machine or corrupts data). Watching correctable-ECC trends lets you drain and replace a DIMM on a maintenance schedule instead of eating an unplanned node crash — the hardware equivalent of acting on a rising error-rate metric before it pages you.</p></div>
+
+<h3>Closing the loop: health-driven remediation</h3>
+<p>Telemetry only helps if it drives action. A mature fleet ties these signals to automated remediation: a node crossing a health threshold is <strong>cordoned</strong> (marked unschedulable) and <strong>drained</strong> (its pods evicted and rescheduled elsewhere), then routed to an automated repair workflow — reseat/replace the flagged component, re-run burn-in (§5), and only re-admit on a pass. The out-of-band BMC path is essential here: it lets tooling power-cycle or reimage a stuck node whose main OS is unresponsive.</p>
+<div class="tip"><div class="tipl">Interview signal</div><p>Mentioning <em>hardware</em> health — ECC error trends, thermal throttling, link flaps — and tying it to automated cordon/drain/repair shows you think about a physical fleet, not just pods. The phrase that lands: "correctable ECC errors are a leading indicator; we drain and replace proactively rather than wait for an uncorrectable crash."</p></div>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Interconnect Topology as Context</h2>
+<p>This section is background, not the chapter's core — but you can't reason about topology-aware scheduling (§4) without a working picture of how devices and nodes are wired together. The theme: <strong>bandwidth and latency depend on the physical path</strong>, so <em>where</em> two things sit relative to each other changes performance by an order of magnitude.</p>
+
+<h3>Inside the box: PCIe and device-to-device links</h3>
+<ul>
+  <li><strong>PCIe topology.</strong> Devices attach through a tree of PCIe switches rooted at the CPU's root complex. Two devices under the same switch can talk with low latency; two devices on different root complexes (different NUMA nodes) must route through the CPU interconnect. This tree structure is exactly why the Topology Manager cares which NUMA node a device is on.</li>
+  <li><strong>Device-to-device fabric (NVLink / NVSwitch).</strong> For accelerator-dense servers, NVIDIA's <strong>NVLink</strong> provides direct high-bandwidth links between accelerators, and <strong>NVSwitch</strong> is a switch chip that lets many accelerators in a box communicate at full bandwidth without funneling through the slower PCIe/CPU path. The scheduling consequence: a multi-device job runs far faster when its devices are mutually NVLink-connected than when traffic must fall back to PCIe.</li>
+</ul>
+
+<h3>Across boxes: InfiniBand, RDMA &amp; RoCE</h3>
+<p>Between servers, high-performance fleets use <strong>RDMA (Remote Direct Memory Access)</strong>: one machine reads or writes another machine's memory <em>directly</em>, with no involvement from the remote CPU and no copies through the kernel network stack.</p>
+<div class="ins"><div class="insl">The one-sentence bridge</div><p>RDMA = remote direct memory access with no CPU and zero copy: the NIC on one host transfers data straight into a pre-registered buffer in another host's memory, bypassing both kernels — the network analogue of DMA (a device writing memory directly, past the CPU) that you met in Chapter 2.</p></div>
+<ul>
+  <li><strong>Transports.</strong> RDMA runs natively over <strong>InfiniBand</strong> (a purpose-built low-latency fabric) or over Ethernet via <strong>RoCE (RDMA over Converged Ethernet)</strong>, which needs a lossless/well-configured Ethernet fabric to perform.</li>
+  <li><strong>Verbs.</strong> Applications use the <strong>verbs</strong> API: register memory regions, create queue pairs (send/receive queues), and post work requests directly to the NIC. Completed transfers land in a completion queue the app polls — no syscall on the data path, the same "keep the kernel off the hot path" idea from low-latency systems.</li>
+  <li><strong>GPUDirect RDMA</strong> lets a NIC DMA data straight into (or out of) an accelerator's memory over PCIe, skipping a bounce through host CPU memory entirely — so a distributed training/inference job can move tensors between accelerators on different servers with minimal CPU involvement and minimal copies.</li>
+</ul>
+<p>The practical upshot for scheduling: a distributed job's collective operations (all-reduce and friends, e.g. via NCCL) are bottlenecked by the <em>slowest</em> link in the group. Placing the job's workers so they share fast intra-node NVLink and a common high-bandwidth RDMA fabric — rather than scattering them across distant nodes — is why <strong>topology-aware scheduling</strong> exists.</p>
+<div class="warn"><div class="warnl">Keep this in proportion</div><p>Interconnect details are context for topology-aware placement, not the node-orchestration core. In an interview, one or two accurate sentences — "RDMA is zero-copy, no-remote-CPU memory access over InfiniBand or RoCE; collectives are gated by the slowest link, so you place workers to share NVLink and a common fabric" — is the right depth unless the role is specifically about networking hardware.</p></div>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Validation &amp; CI/CD for System Software</h2>
+<p>System software — firmware, kernel, drivers — sits underneath every workload, so a regression there can take down a whole fleet at once. The discipline that prevents this is the same one application teams use, applied to the lowest layers: <strong>automated validation and staged, gated rollout of every firmware/kernel/driver change.</strong></p>
+
+<h3>The validation layers</h3>
+<table class="tbl">
+  <tr><th>Layer</th><th>What it checks</th><th>Analogy</th></tr>
+  <tr><td>Component unit tests</td><td>A driver or firmware module behaves correctly in isolation.</td><td>Unit tests in a code CI pipeline.</td></tr>
+  <tr><td>Hardware validation suite</td><td>Every device, link, and sensor on a node functions to spec (device enumerates, links train to expected width/speed, ECC works, thermals sane).</td><td>Integration tests against real dependencies.</td></tr>
+  <tr><td>Stress / burn-in</td><td>Sustained load surfaces marginal hardware and thermal/power limits (§5).</td><td>Load/soak testing before release.</td></tr>
+  <tr><td>Regression suite</td><td>A new kernel/driver/firmware doesn't lose performance or break a previously-working device.</td><td>Regression tests gating a merge.</td></tr>
+</table>
+
+<h3>Regression-gating a fleet-wide change</h3>
+<p>You never push a new firmware or kernel to the whole fleet at once. The rollout is staged exactly like a well-run deployment pipeline:</p>
+<ol>
+  <li><strong>Lab / hardware-in-the-loop.</strong> Validate the change on every affected hardware SKU in a lab, running the full validation + regression suite. Firmware/driver behavior is SKU-specific, so coverage across hardware variants matters as much as code coverage.</li>
+  <li><strong>Canary.</strong> Roll to a small, representative slice of the production fleet and watch the telemetry from §6 (thermals, ECC rates, link errors, workload performance) for regressions.</li>
+  <li><strong>Staged expansion.</strong> Widen in waves, with automated health gates between stages — any regression halts the rollout.</li>
+  <li><strong>Automated rollback.</strong> Keep the previous known-good firmware/kernel image and a fast path back to it, because a bad low-level change can render nodes unbootable — which is exactly where the out-of-band BMC (§5) proves its worth, letting you reimage a node whose OS won't come up.</li>
+</ol>
+
+<div class="trap"><div class="trapl">Why firmware/driver rollout is scarier than app rollout</div><p>A bad application deploy usually fails safely — the pod crash-loops and the control plane keeps the old version running. A bad <em>firmware</em> or <em>kernel</em> change can leave a node <strong>unbootable</strong> or subtly corrupt data, and it affects hardware you can't just "roll back" with a redeploy. That's why the gates are stricter, the canary is mandatory, per-SKU validation is essential, and out-of-band recovery is designed in from the start.</p></div>
+
+<div class="tip"><div class="tipl">Interview signal</div><p>Framing firmware/kernel/driver changes as "CI/CD with hardware-in-the-loop validation, per-SKU coverage, canary + staged rollout gated on hardware telemetry, and out-of-band rollback for unbootable nodes" shows you'd treat the riskiest layer with the most rigor — the opposite of the naive "just flash all the nodes" answer.</p></div>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Common Interview Questions</h2>
+<div class="card">
+<p><strong>Q: What are cgroups and namespaces, really — and how do they make a container?</strong><br>Namespaces isolate what a process can <em>see</em> (its own PID/mount/network/UTS/IPC/user/cgroup views), created via <code>clone()</code>/<code>unshare()</code>. cgroups (v2) limit and account what it can <em>use</em> (CPU, memory, I/O, pids) via a unified hierarchy under <code>/sys/fs/cgroup</code>. A container is just a process (tree) with both applied, sharing the host kernel — no guest kernel, no hypervisor. Key nuance: a CPU limit <em>throttles</em>, a memory limit <em>OOM-kills</em>.</p>
+<p><strong>Q: Walk me from a pod spec to a running process on the node.</strong><br>The scheduler binds the pod to a node (control plane). The node's kubelet sees it and calls the container runtime over the CRI (gRPC). A high-level runtime like containerd pulls the OCI image (content-addressed layers → overlay root fs) and asks an OCI low-level runtime like runc to create the container: set up namespaces, apply the cgroup, pivot root into the image fs, drop capabilities, and <code>exec</code> the entrypoint. The kubelet then runs probes and reports status.</p>
+<p><strong>Q: How does a pod get a specific accelerator or high-speed NIC?</strong><br>A device plugin (DaemonSet) discovers the devices and advertises them to the kubelet as an extended resource (e.g. <code>example.com/accel: 8</code>). A pod requests a count in its resource limits; the scheduler places it on a node with enough free devices; the kubelet calls the plugin's <code>Allocate</code>, which injects the concrete device files, mounts, and env into the container. For performance, the Topology Manager co-locates CPU, memory, and device on one NUMA node, and NFD labels nodes by hardware capability.</p>
+<p><strong>Q: Design a bare-metal bring-up pipeline.</strong><br>Treat it as CI/CD for hardware, declarative and idempotent: (1) power-on via the BMC out-of-band using Redfish/IPMI; (2) apply a firmware profile (IOMMU, boot order, Secure Boot); (3) NetBoot a version-pinned OS over PXE (Chapter 1); (4) converge drivers, runtime, and agents idempotently; (5) run burn-in stress + a hardware-validation gate; (6) join the cluster and go Ready. A failed gate quarantines the box for repair; nothing unvalidated enters service. Keep a fast out-of-band reimage/rollback path.</p>
+<p><strong>Q: Why does NUMA / topology-aware scheduling matter?</strong><br>Because memory, CPU cores, and devices attached to different sockets/root complexes are slower to reach across the interconnect. A pod whose cores, memory, and accelerator all sit on one NUMA node avoids cross-socket hops; a distributed job whose workers share fast NVLink and a common RDMA fabric avoids being bottlenecked by the slowest link. Count-based allocation isn't enough — locality is a first-order performance factor.</p>
+<p><strong>Q: What does RDMA buy a distributed job?</strong><br>RDMA moves data directly between machines' memory with no remote CPU involvement and no copies through the kernel network stack (zero-copy, over InfiniBand or RoCE), using the verbs API with no syscall on the data path. GPUDirect RDMA extends this straight into device memory. For collective operations (all-reduce, etc.), that means dramatically lower latency and CPU overhead — and since collectives are gated by the slowest link, it's why you place workers to share the fastest interconnect.</p>
+<p><strong>Q: How would you safely roll out a firmware or kernel change to a fleet?</strong><br>Validate on every affected hardware SKU in a lab (hardware-in-the-loop) with full validation + regression suites; canary on a small production slice watching hardware telemetry (ECC, thermals, link errors); expand in waves behind automated health gates; and keep a known-good image with out-of-band (BMC) rollback because a bad low-level change can leave nodes unbootable. Never flash the whole fleet at once.</p>
+</div>
+
+<div class="note"><div class="notel">One-line summary</div><p>Node-level orchestration is where intent becomes execution: a container is a process wearing namespaces (visibility) and cgroups (limits) on the shared host kernel (§2); the kubelet realizes pod specs by calling a runtime over the CRI to run OCI images (§3); device plugins plus the Topology Manager and NFD let workloads see and locally place special hardware (§4); bare-metal bring-up is declarative, idempotent, gated CI/CD that turns a powered-off box into a validated node — power-on over the BMC, firmware profile, NetBoot, converge, burn-in, join (§5); fleet health leans on hardware telemetry like ECC-error trends and thermals driving automated cordon/drain/repair (§6); interconnect topology (PCIe, NVLink/NVSwitch, InfiniBand/RDMA) is the context that makes topology-aware scheduling worthwhile (§7); and every firmware/kernel/driver change ships through hardware-in-the-loop validation, canary, and staged rollout with out-of-band rollback (§8).</p></div>
+
+<!-- ══════════════ TERMINOLOGY ══════════════ -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Control plane</strong></td><td>The cluster layer that decides and records intent — API server, scheduler, controllers, etcd (Part XIII).</td></tr>
+<tr><td><strong>Node</strong></td><td>A single machine that runs the work and realizes the control plane's intent close to the kernel.</td></tr>
+<tr><td><strong>Namespace</strong></td><td>Kernel feature that isolates what a process can <em>see</em> — its own PID, mount, network, UTS, IPC, user, and cgroup views.</td></tr>
+<tr><td><strong>cgroups v2</strong></td><td>Control groups, unified hierarchy — the kernel mechanism that limits and accounts what a process can <em>use</em> (CPU, memory, I/O, pids).</td></tr>
+<tr><td><strong>OOM killer</strong></td><td>Out-of-memory killer: the kernel terminates a process when its cgroup exceeds <code>memory.max</code>.</td></tr>
+<tr><td><strong>kubelet</strong></td><td>The per-node agent that watches for bound pods and drives their container lifecycle.</td></tr>
+<tr><td><strong>CRI</strong></td><td>Container Runtime Interface — the gRPC API between the kubelet and a container runtime.</td></tr>
+<tr><td><strong>containerd</strong></td><td>A high-level container runtime that implements the CRI, managing images, snapshots, and lifecycle.</td></tr>
+<tr><td><strong>runc</strong></td><td>The OCI reference low-level runtime that makes the raw kernel calls to build a container.</td></tr>
+<tr><td><strong>OCI image</strong></td><td>Open Container Initiative image — a vendor-neutral manifest plus content-addressed layers plus config.</td></tr>
+<tr><td><strong>Device plugin</strong></td><td>A node daemon that discovers special hardware and advertises it to the kubelet as a countable, schedulable resource.</td></tr>
+<tr><td><strong>NUMA</strong></td><td>Non-Uniform Memory Access — memory and devices attached to a given socket are faster to reach from that socket's cores.</td></tr>
+<tr><td><strong>Topology Manager</strong></td><td>A kubelet component that co-locates a pod's CPU, memory, and devices on the same NUMA node.</td></tr>
+<tr><td><strong>NFD</strong></td><td>Node Feature Discovery — a daemon that inspects node hardware/kernel and publishes capabilities as node labels.</td></tr>
+<tr><td><strong>BMC</strong></td><td>Baseboard Management Controller — an always-on out-of-band controller that manages the box even when the main OS is down.</td></tr>
+<tr><td><strong>IPMI / Redfish</strong></td><td>Out-of-band management protocols: IPMI (Intelligent Platform Management Interface) is the older binary protocol; Redfish is the modern HTTPS/JSON REST API replacing it.</td></tr>
+<tr><td><strong>IOMMU</strong></td><td>Input-Output Memory Management Unit (VT-d / AMD-Vi) — enables safe device pass-through and DMA remapping.</td></tr>
+<tr><td><strong>PXE</strong></td><td>Preboot Execution Environment — network boot: firmware gets an address over DHCP and loads an OS image over TFTP/HTTP.</td></tr>
+<tr><td><strong>Burn-in</strong></td><td>Sustained stress testing of a new node to surface infant-mortality hardware failures before it carries work.</td></tr>
+<tr><td><strong>ECC memory</strong></td><td>Error-Correcting Code memory — detects/corrects single-bit errors; rising correctable errors are a leading DIMM-failure indicator.</td></tr>
+<tr><td><strong>PCIe</strong></td><td>Peripheral Component Interconnect Express — the tree of switches, rooted at the CPU, through which devices attach.</td></tr>
+<tr><td><strong>NVLink / NVSwitch</strong></td><td>NVIDIA's direct high-bandwidth accelerator-to-accelerator links (NVLink) and the switch chip connecting many (NVSwitch).</td></tr>
+<tr><td><strong>RDMA</strong></td><td>Remote Direct Memory Access — one host reads/writes another's memory directly, with no remote CPU and zero copies.</td></tr>
+<tr><td><strong>InfiniBand / RoCE</strong></td><td>RDMA transports: InfiniBand is a purpose-built low-latency fabric; RoCE is RDMA over Converged Ethernet.</td></tr>
+<tr><td><strong>GPUDirect RDMA</strong></td><td>Lets a NIC DMA data straight into or out of an accelerator's memory, skipping a bounce through host CPU memory.</td></tr>
+</table>
+</div>
+
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="td_system_observability.html">&lsaquo; Low-Level Observability &amp; Hardware Diagnostics</a><a class="bkc" href="index.html">📖 Contents</a><span class="bkspacer"></span></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

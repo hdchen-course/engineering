@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCP/IP &amp; Packet Analysis — a Practical Deep-Dive — The Interview Prep Handbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XIII · Chapter 2 — <b>TCP/IP &amp; Packet Analysis</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>TCP/IP &amp; Packet Analysis — a Practical Deep-Dive</h1>
+  <div class="sub">What actually happens on the wire when two programs talk: how a byte stream is wrapped into segments, packets, and frames; the exact layout of the IPv4, UDP, and TCP headers; how the 3-way handshake, teardown, reliability, flow control, and congestion control work; how ports, sockets, and NAT identify a connection; and how to read all of it with tcpdump and Wireshark. Every header field size and command flag below is checked against the RFCs.</div>
+</header>
+
+<div class="ins"><div class="insl">Read this like a story</div><p>The sections build from "how does a byte stream become framed packets" up to "capture a handshake and spot a retransmission." If you already know the layered model, skip to §4 (the TCP header) and §5 (the handshake) — those, plus §7–8 on reliability and congestion control, are what interviewers actually probe. Header layouts are drawn to match RFC 791 (IPv4), RFC 768 (UDP), and RFC 9293 (TCP, which obsoletes the original RFC 793). This chapter is generic, public networking knowledge.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. The Layered Model &amp; Encapsulation</h2>
+
+<p class="lead">Two processes on different machines want to exchange bytes. Between "<code>write()</code> some bytes into a socket" and "electrons/photons on a link" sit a handful of layers, each adding its own header and each solving one problem: the <strong>link</strong> layer moves a frame across one physical hop, the <strong>internet</strong> layer (IP) routes a packet across many hops, the <strong>transport</strong> layer (TCP/UDP) gives processes a conversation, and the <strong>application</strong> layer (HTTP, DNS, …) gives that conversation meaning. This is the TCP/IP model — four layers, more practical than the 7-layer OSI reference model it is usually mapped onto.</p>
+
+<h3>The four TCP/IP layers</h3>
+<table class="tbl">
+  <tr><th>Layer</th><th>Unit</th><th>Job</th><th>Addressing</th></tr>
+  <tr><td>Application</td><td>message</td><td>What the bytes <em>mean</em>: HTTP, DNS, TLS, gRPC</td><td>URLs, names</td></tr>
+  <tr><td>Transport</td><td>segment (TCP) / datagram (UDP)</td><td>Process-to-process delivery; TCP adds reliability &amp; ordering</td><td>port numbers</td></tr>
+  <tr><td>Internet</td><td>packet (datagram)</td><td>Route across networks, host to host, hop by hop</td><td>IP addresses (32-bit v4 / 128-bit v6)</td></tr>
+  <tr><td>Link</td><td>frame</td><td>Move a frame across one physical segment</td><td>MAC addresses</td></tr>
+</table>
+
+<h3>Encapsulation: how a byte stream becomes framed packets</h3>
+<p>Each layer treats the layer above as opaque <em>payload</em> and prepends its own header (the link layer also appends a trailer, e.g. an Ethernet CRC). Sending is wrap-wrap-wrap; receiving is the mirror — each layer strips its header and hands the payload up. The names people say ("segment," "packet," "frame") are just "the payload plus this layer's header."</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- application data -->
+  <rect x="470" y="30" width="150" height="40" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.4"/>
+  <text x="545" y="55" text-anchor="middle" font-size="11" font-weight="700" fill="#6d28d9">App data</text>
+
+  <!-- TCP segment -->
+  <rect x="360" y="90" width="110" height="40" rx="6" fill="#dbeafe" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="415" y="115" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">TCP hdr</text>
+  <rect x="470" y="90" width="150" height="40" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="545" y="115" text-anchor="middle" font-size="10" fill="#526176">App data</text>
+  <text x="490" y="83" text-anchor="middle" font-size="9.5" fill="#526176">segment</text>
+
+  <!-- IP packet -->
+  <rect x="250" y="150" width="110" height="40" rx="6" fill="#fee2e2" stroke="#dc2626" stroke-width="1.4"/>
+  <text x="305" y="175" text-anchor="middle" font-size="10.5" font-weight="700" fill="#991b1b">IP hdr</text>
+  <rect x="360" y="150" width="260" height="40" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1.2"/>
+  <text x="490" y="175" text-anchor="middle" font-size="10" fill="#526176">TCP segment</text>
+  <text x="435" y="143" text-anchor="middle" font-size="9.5" fill="#526176">packet</text>
+
+  <!-- Ethernet frame -->
+  <rect x="140" y="210" width="110" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="195" y="235" text-anchor="middle" font-size="10.5" font-weight="700" fill="#166534">Eth hdr</text>
+  <rect x="250" y="210" width="370" height="40" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="435" y="235" text-anchor="middle" font-size="10" fill="#526176">IP packet</text>
+  <rect x="620" y="210" width="70" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.4"/>
+  <text x="655" y="235" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">CRC</text>
+  <text x="415" y="203" text-anchor="middle" font-size="9.5" fill="#526176">frame</text>
+
+  <!-- layer labels on the left -->
+  <text x="70" y="55" text-anchor="middle" font-size="10.5" font-weight="700" fill="#6d28d9">Application</text>
+  <text x="70" y="115" text-anchor="middle" font-size="10.5" font-weight="700" fill="#1d4ed8">Transport</text>
+  <text x="70" y="175" text-anchor="middle" font-size="10.5" font-weight="700" fill="#991b1b">Internet</text>
+  <text x="70" y="235" text-anchor="middle" font-size="10.5" font-weight="700" fill="#166534">Link</text>
+  <text x="410" y="285" text-anchor="middle" font-size="10" fill="#526176">each layer wraps the one above in its own header, then hands it down</text>
+</svg>
+<div class="svg-cap">Encapsulation: application bytes gain a TCP header (segment), then an IP header (packet), then an Ethernet header + CRC (frame). The receiver strips each header in reverse.</div>
+</div>
+
+<h3>MTU: the size limit that shapes everything</h3>
+<p>A link imposes a <strong>Maximum Transmission Unit</strong> — the largest payload one frame may carry. On classic Ethernet that is <strong>1500 bytes</strong>. IP must fit a packet inside the MTU; if a packet is too big it is either <em>fragmented</em> (IPv4, §2) or rejected so the sender can retry smaller. TCP avoids fragmentation by negotiating a <strong>Maximum Segment Size</strong> (MSS) — on a 1500-byte Ethernet MTU with 20-byte IPv4 and 20-byte TCP headers, that is <code>1500 − 20 − 20 = 1460</code> bytes of data per segment (§10 covers MTU/MSS/PMTUD in depth).</p>
+<div class="note"><div class="notel">Model vs. reality</div><p>The 7-layer OSI model (physical, data-link, network, transport, session, presentation, application) is a teaching reference; real stacks are TCP/IP's four layers. When someone says "layer 4" they mean transport (TCP/UDP); "layer 7" means application (HTTP). Knowing the mapping — and that TLS lives between L4 and L7 — is enough.</p></div>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. The IPv4 Header</h2>
+<p>IP is the internet layer: it carries a packet from a source IP to a destination IP, hop by hop, with <strong>no</strong> delivery guarantee, no ordering, and no connection — it is best-effort. The IPv4 header (RFC 791) is <strong>20 bytes</strong> without options and up to <strong>60 bytes</strong> with them. Every row below is 32 bits (4 bytes) wide.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 680 350" xmlns="http://www.w3.org/2000/svg">
+  <!-- bit ruler -->
+  <text x="20"  y="16" text-anchor="middle" font-size="9" fill="#94a3b8">0</text>
+  <text x="180" y="16" text-anchor="middle" font-size="9" fill="#94a3b8">8</text>
+  <text x="340" y="16" text-anchor="middle" font-size="9" fill="#94a3b8">16</text>
+  <text x="500" y="16" text-anchor="middle" font-size="9" fill="#94a3b8">24</text>
+  <text x="655" y="16" text-anchor="middle" font-size="9" fill="#94a3b8">31</text>
+  <!-- Row 1 -->
+  <rect x="20"  y="28" width="80"  height="44" fill="#dbeafe" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="60"  y="52" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">Version</text>
+  <text x="60"  y="65" text-anchor="middle" font-size="8" fill="#526176">4 bits</text>
+  <rect x="100" y="28" width="80"  height="44" fill="#dbeafe" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="140" y="52" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">IHL</text>
+  <text x="140" y="65" text-anchor="middle" font-size="8" fill="#526176">4 bits</text>
+  <rect x="180" y="28" width="160" height="44" fill="#eff6ff" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="260" y="52" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">DSCP + ECN (ToS)</text>
+  <text x="260" y="65" text-anchor="middle" font-size="8" fill="#526176">8 bits</text>
+  <rect x="340" y="28" width="320" height="44" fill="#eff6ff" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="500" y="52" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">Total Length</text>
+  <text x="500" y="65" text-anchor="middle" font-size="8" fill="#526176">16 bits (whole packet, ≤ 65535)</text>
+  <!-- Row 2 -->
+  <rect x="20"  y="72" width="320" height="44" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="180" y="96" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">Identification</text>
+  <text x="180" y="109" text-anchor="middle" font-size="8" fill="#526176">16 bits (fragment group id)</text>
+  <rect x="340" y="72" width="60"  height="44" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="370" y="94" text-anchor="middle" font-size="8.5" font-weight="700" fill="#166534">Flags</text>
+  <text x="370" y="106" text-anchor="middle" font-size="7.5" fill="#526176">3 bits</text>
+  <rect x="400" y="72" width="260" height="44" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="530" y="96" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">Fragment Offset</text>
+  <text x="530" y="109" text-anchor="middle" font-size="8" fill="#526176">13 bits (× 8 bytes)</text>
+  <!-- Row 3 -->
+  <rect x="20"  y="116" width="160" height="44" fill="#fef3c7" stroke="#d97706" stroke-width="1.2"/>
+  <text x="100" y="140" text-anchor="middle" font-size="9.5" font-weight="700" fill="#92400e">TTL</text>
+  <text x="100" y="153" text-anchor="middle" font-size="8" fill="#526176">8 bits (hop limit)</text>
+  <rect x="180" y="116" width="160" height="44" fill="#fef3c7" stroke="#d97706" stroke-width="1.2"/>
+  <text x="260" y="140" text-anchor="middle" font-size="9.5" font-weight="700" fill="#92400e">Protocol</text>
+  <text x="260" y="153" text-anchor="middle" font-size="8" fill="#526176">8 bits (6=TCP,17=UDP)</text>
+  <rect x="340" y="116" width="320" height="44" fill="#fffbeb" stroke="#d97706" stroke-width="1.2"/>
+  <text x="500" y="140" text-anchor="middle" font-size="9.5" font-weight="700" fill="#92400e">Header Checksum</text>
+  <text x="500" y="153" text-anchor="middle" font-size="8" fill="#526176">16 bits (header only)</text>
+  <!-- Row 4 -->
+  <rect x="20"  y="160" width="640" height="40" fill="#fee2e2" stroke="#dc2626" stroke-width="1.2"/>
+  <text x="340" y="184" text-anchor="middle" font-size="9.5" font-weight="700" fill="#991b1b">Source Address — 32 bits</text>
+  <!-- Row 5 -->
+  <rect x="20"  y="200" width="640" height="40" fill="#fee2e2" stroke="#dc2626" stroke-width="1.2"/>
+  <text x="340" y="224" text-anchor="middle" font-size="9.5" font-weight="700" fill="#991b1b">Destination Address — 32 bits</text>
+  <!-- Row 6 options -->
+  <rect x="20"  y="240" width="640" height="40" fill="#f1f5f9" stroke="#64748b" stroke-width="1.2" stroke-dasharray="5,3"/>
+  <text x="340" y="264" text-anchor="middle" font-size="9.5" font-weight="700" fill="#475569">Options + Padding (only if IHL &gt; 5) — variable</text>
+  <!-- brace -->
+  <text x="340" y="300" text-anchor="middle" font-size="9.5" fill="#526176">fixed header = 20 bytes (IHL = 5 words); with options up to 60 bytes (IHL = 15)</text>
+</svg>
+<div class="svg-cap">The IPv4 header (RFC 791). Each row is 32 bits. The first five 32-bit words (20 bytes) are the fixed header; the Options word appears only when IHL &gt; 5.</div>
+</div>
+
+<h3>The fields that matter in interviews</h3>
+<table class="tbl">
+  <tr><th>Field</th><th>Size</th><th>What it does</th></tr>
+  <tr><td>Version</td><td>4 bits</td><td>IP version — <code>4</code> for IPv4.</td></tr>
+  <tr><td>IHL (Internet Header Length)</td><td>4 bits</td><td>Header length in 32-bit words. Minimum <code>5</code> → 20 bytes; maximum <code>15</code> → 60 bytes. This is how the receiver knows where options end and data begins.</td></tr>
+  <tr><td>DSCP + ECN (formerly ToS)</td><td>8 bits</td><td>6 bits DSCP for QoS class + 2 bits ECN for explicit congestion notification.</td></tr>
+  <tr><td>Total Length</td><td>16 bits</td><td>Length of the <em>entire</em> packet (header + data) in bytes — so max 65535.</td></tr>
+  <tr><td>Identification, Flags, Fragment Offset</td><td>16 + 3 + 13 bits</td><td>Fragmentation control (below). Flags: bit 0 reserved, <strong>DF</strong> (Don't Fragment), <strong>MF</strong> (More Fragments). Offset is measured in 8-byte units.</td></tr>
+  <tr><td>TTL (Time To Live)</td><td>8 bits</td><td>Decremented by 1 at each router; at 0 the packet is dropped and an ICMP "time exceeded" is returned — this is exactly what <code>traceroute</code> exploits.</td></tr>
+  <tr><td>Protocol</td><td>8 bits</td><td>What is inside: <code>1</code>=ICMP, <code>6</code>=TCP, <code>17</code>=UDP.</td></tr>
+  <tr><td>Header Checksum</td><td>16 bits</td><td>Covers the <em>header only</em>. Because TTL changes every hop, each router must recompute it.</td></tr>
+  <tr><td>Source / Destination Address</td><td>32 bits each</td><td>The IPv4 addresses — 32 bits is why the world ran out and needed NAT and IPv6.</td></tr>
+</table>
+
+<h3>Fragmentation</h3>
+<p>If a packet is larger than the next link's MTU and DF is not set, an IPv4 router may <strong>fragment</strong> it: split the payload across several packets that share the same Identification, each with its Fragment Offset set (in 8-byte units) and MF=1 on all but the last. The <em>destination</em> reassembles them; a lost fragment loses the whole packet. If DF=1 and the packet is too big, the router drops it and returns ICMP "fragmentation needed" — the mechanism Path MTU Discovery relies on (§10).</p>
+
+<h3>A note on IPv6</h3>
+<div class="ins"><div class="insl">IPv6 in one paragraph</div><p>IPv6 (RFC 8200) uses <strong>128-bit</strong> addresses and a <em>fixed</em> <strong>40-byte</strong> header. It drops the header checksum (trusting L2 and L4 to catch errors), removes in-network fragmentation (only the source may fragment, guided by PMTUD), and replaces variable options with a chain of <em>extension headers</em> via the <strong>Next Header</strong> field. <strong>Hop Limit</strong> replaces TTL; <strong>Traffic Class</strong> + <strong>Flow Label</strong> replace ToS. The transport layer above (TCP/UDP) is unchanged.</p></div>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. UDP — the Minimal Transport</h2>
+<p>UDP (RFC 768) is the thinnest possible transport: it adds ports (so bytes reach the right process) and an optional checksum, and nothing else. It is <strong>connectionless</strong> — no handshake, no acknowledgements, no ordering, no retransmission, no flow or congestion control. If you want any of those, you build them yourself on top. The header is exactly <strong>8 bytes</strong>.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 680 150" xmlns="http://www.w3.org/2000/svg">
+  <text x="20"  y="16" text-anchor="middle" font-size="9" fill="#94a3b8">0</text>
+  <text x="340" y="16" text-anchor="middle" font-size="9" fill="#94a3b8">16</text>
+  <text x="655" y="16" text-anchor="middle" font-size="9" fill="#94a3b8">31</text>
+  <!-- Row 1 -->
+  <rect x="20"  y="28" width="320" height="44" fill="#dbeafe" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="180" y="52" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">Source Port</text>
+  <text x="180" y="65" text-anchor="middle" font-size="8" fill="#526176">16 bits</text>
+  <rect x="340" y="28" width="320" height="44" fill="#dbeafe" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="500" y="52" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">Destination Port</text>
+  <text x="500" y="65" text-anchor="middle" font-size="8" fill="#526176">16 bits</text>
+  <!-- Row 2 -->
+  <rect x="20"  y="72" width="320" height="44" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="180" y="96" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">Length</text>
+  <text x="180" y="109" text-anchor="middle" font-size="8" fill="#526176">16 bits (header + data, ≥ 8)</text>
+  <rect x="340" y="72" width="320" height="44" fill="#fef3c7" stroke="#d97706" stroke-width="1.2"/>
+  <text x="500" y="96" text-anchor="middle" font-size="9.5" font-weight="700" fill="#92400e">Checksum</text>
+  <text x="500" y="109" text-anchor="middle" font-size="8" fill="#526176">16 bits</text>
+  <text x="340" y="138" text-anchor="middle" font-size="9.5" fill="#526176">8-byte header, then application data</text>
+</svg>
+<div class="svg-cap">The UDP header (RFC 768): four 16-bit fields, 8 bytes total, followed immediately by the payload.</div>
+</div>
+
+<h3>The four fields</h3>
+<ul>
+  <li><strong>Source Port / Destination Port</strong> (16 bits each) — which process sent it and which should receive it.</li>
+  <li><strong>Length</strong> (16 bits) — the length of the UDP header <em>plus</em> data, so the minimum value is 8.</li>
+  <li><strong>Checksum</strong> (16 bits) — computed over a <em>pseudo-header</em> (source/dest IP, protocol, UDP length), the UDP header, and the data. It is <em>optional</em> in IPv4 (a zero value means "not computed") but <strong>mandatory</strong> in IPv6.</li>
+</ul>
+
+<h3>When UDP is the right choice</h3>
+<p>UDP wins when <strong>low latency beats reliability</strong>, or when the app does its own reliability. Real-time media (voice/video) would rather drop a late packet than wait for a retransmit. DNS uses a single small request/response where a connection setup would dominate the cost. And QUIC — the transport under HTTP/3 — runs <em>on top of</em> UDP precisely so it can implement its own streams, ordering, and congestion control in user space without being locked into the kernel's TCP.</p>
+<div class="tip"><div class="tipl">Interview signal</div><p>"TCP vs. UDP" is really "do I want the transport to handle reliability/ordering/flow control, or will the application?" Naming a concrete UDP user that <em>rebuilds</em> reliability itself (QUIC, or a game netcode layer) shows you understand it is a deliberate trade, not just "UDP is faster."</p></div>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. The TCP Header</h2>
+<p>TCP (RFC 9293, which obsoletes RFC 793) turns IP's unreliable packets into a <strong>reliable, ordered, connection-oriented byte stream</strong>. It does this with sequence numbers, acknowledgements, windows, and a set of control flags — all carried in a header that is <strong>20 bytes</strong> without options and up to <strong>60 bytes</strong> with them.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 680 350" xmlns="http://www.w3.org/2000/svg">
+  <text x="20"  y="16" text-anchor="middle" font-size="9" fill="#94a3b8">0</text>
+  <text x="180" y="16" text-anchor="middle" font-size="9" fill="#94a3b8">8</text>
+  <text x="340" y="16" text-anchor="middle" font-size="9" fill="#94a3b8">16</text>
+  <text x="500" y="16" text-anchor="middle" font-size="9" fill="#94a3b8">24</text>
+  <text x="655" y="16" text-anchor="middle" font-size="9" fill="#94a3b8">31</text>
+  <!-- Row 1 -->
+  <rect x="20"  y="28" width="320" height="40" fill="#dbeafe" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="180" y="47" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">Source Port</text>
+  <text x="180" y="60" text-anchor="middle" font-size="8" fill="#526176">16 bits</text>
+  <rect x="340" y="28" width="320" height="40" fill="#dbeafe" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="500" y="47" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">Destination Port</text>
+  <text x="500" y="60" text-anchor="middle" font-size="8" fill="#526176">16 bits</text>
+  <!-- Row 2 -->
+  <rect x="20"  y="68" width="640" height="40" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="340" y="92" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">Sequence Number — 32 bits</text>
+  <!-- Row 3 -->
+  <rect x="20"  y="108" width="640" height="40" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="340" y="132" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">Acknowledgment Number — 32 bits</text>
+  <!-- Row 4 -->
+  <rect x="20"  y="148" width="80" height="46" fill="#fef3c7" stroke="#d97706" stroke-width="1.2"/>
+  <text x="60"  y="169" text-anchor="middle" font-size="8" font-weight="700" fill="#92400e">Data Off.</text>
+  <text x="60"  y="181" text-anchor="middle" font-size="7.5" fill="#526176">4 bits</text>
+  <rect x="100" y="148" width="80" height="46" fill="#fffbeb" stroke="#d97706" stroke-width="1.2"/>
+  <text x="140" y="169" text-anchor="middle" font-size="8" font-weight="700" fill="#92400e">Rsrvd</text>
+  <text x="140" y="181" text-anchor="middle" font-size="7.5" fill="#526176">4 bits</text>
+  <rect x="180" y="148" width="160" height="46" fill="#fef3c7" stroke="#d97706" stroke-width="1.2"/>
+  <text x="260" y="167" text-anchor="middle" font-size="8" font-weight="700" fill="#92400e">Control bits (flags)</text>
+  <text x="260" y="179" text-anchor="middle" font-size="7" fill="#526176">8 bits: CWR ECE URG</text>
+  <text x="260" y="189" text-anchor="middle" font-size="7" fill="#526176">ACK PSH RST SYN FIN</text>
+  <rect x="340" y="148" width="320" height="46" fill="#fef3c7" stroke="#d97706" stroke-width="1.2"/>
+  <text x="500" y="169" text-anchor="middle" font-size="9.5" font-weight="700" fill="#92400e">Window Size</text>
+  <text x="500" y="181" text-anchor="middle" font-size="8" fill="#526176">16 bits (receive window)</text>
+  <!-- Row 5 -->
+  <rect x="20"  y="194" width="320" height="40" fill="#fee2e2" stroke="#dc2626" stroke-width="1.2"/>
+  <text x="180" y="213" text-anchor="middle" font-size="9.5" font-weight="700" fill="#991b1b">Checksum</text>
+  <text x="180" y="226" text-anchor="middle" font-size="8" fill="#526176">16 bits</text>
+  <rect x="340" y="194" width="320" height="40" fill="#fee2e2" stroke="#dc2626" stroke-width="1.2"/>
+  <text x="500" y="213" text-anchor="middle" font-size="9.5" font-weight="700" fill="#991b1b">Urgent Pointer</text>
+  <text x="500" y="226" text-anchor="middle" font-size="8" fill="#526176">16 bits (valid if URG set)</text>
+  <!-- Row 6 options -->
+  <rect x="20"  y="234" width="640" height="42" fill="#f1f5f9" stroke="#64748b" stroke-width="1.2" stroke-dasharray="5,3"/>
+  <text x="340" y="254" text-anchor="middle" font-size="9.5" font-weight="700" fill="#475569">Options + Padding — variable (MSS, Window Scale, SACK, Timestamps)</text>
+  <text x="340" y="268" text-anchor="middle" font-size="8" fill="#526176">present only when Data Offset &gt; 5</text>
+  <text x="340" y="296" text-anchor="middle" font-size="9.5" fill="#526176">fixed header = 20 bytes (Data Offset = 5 words); with options up to 60 bytes (= 15)</text>
+</svg>
+<div class="svg-cap">The TCP header (RFC 9293). Data Offset gives the header length in 32-bit words, exactly like IPv4's IHL. The Options word appears only when Data Offset &gt; 5.</div>
+</div>
+
+<h3>Fields, precisely</h3>
+<table class="tbl">
+  <tr><th>Field</th><th>Size</th><th>What it does</th></tr>
+  <tr><td>Source / Destination Port</td><td>16 bits each</td><td>Identify the sending and receiving processes; with the IPs they form the connection's 4-tuple (§9).</td></tr>
+  <tr><td>Sequence Number</td><td>32 bits</td><td>The byte offset of the first data byte in this segment within the stream. On a SYN it carries the ISN.</td></tr>
+  <tr><td>Acknowledgment Number</td><td>32 bits</td><td>When ACK is set, the <em>next</em> byte the sender expects to receive — i.e. it acknowledges everything up to (but not including) this number (cumulative ACK, §7).</td></tr>
+  <tr><td>Data Offset</td><td>4 bits</td><td>Header length in 32-bit words. Min <code>5</code> (20 bytes), max <code>15</code> (60 bytes) — this bounds how many option bytes fit.</td></tr>
+  <tr><td>Reserved</td><td>4 bits</td><td>Must be zero. (Historically 6 reserved bits; ECN reclaimed two of them as CWR/ECE.)</td></tr>
+  <tr><td>Control bits (flags)</td><td>8 bits</td><td>See below — the six classic flags plus the two ECN flags.</td></tr>
+  <tr><td>Window Size</td><td>16 bits</td><td>The <em>receive window</em>: how many more bytes the sender of this segment is willing to accept (flow control, §7). 16 bits caps it at 65535 unless window scaling is on (§10).</td></tr>
+  <tr><td>Checksum</td><td>16 bits</td><td>Covers a pseudo-header (src/dst IP, protocol, TCP length), the TCP header, and the data — so it detects both corruption and misdelivery. Mandatory.</td></tr>
+  <tr><td>Urgent Pointer</td><td>16 bits</td><td>Offset of "urgent" data when URG is set. Rarely used in practice.</td></tr>
+</table>
+
+<h3>The control flags</h3>
+<table class="tbl">
+  <tr><th>Flag</th><th>Bit value</th><th>Meaning</th></tr>
+  <tr><td><strong>SYN</strong></td><td>0x02</td><td>Synchronize — open a connection and carry the initial sequence number. Consumes one sequence number.</td></tr>
+  <tr><td><strong>ACK</strong></td><td>0x10</td><td>The Acknowledgment Number field is valid. Set on every segment after the first SYN.</td></tr>
+  <tr><td><strong>FIN</strong></td><td>0x01</td><td>No more data from the sender — begin an orderly close. Consumes one sequence number.</td></tr>
+  <tr><td><strong>RST</strong></td><td>0x04</td><td>Reset — abort the connection immediately (no graceful close).</td></tr>
+  <tr><td><strong>PSH</strong></td><td>0x08</td><td>Push — deliver buffered data to the application now, don't wait to fill a segment.</td></tr>
+  <tr><td><strong>URG</strong></td><td>0x20</td><td>Urgent Pointer is valid. Legacy; effectively unused.</td></tr>
+  <tr><td>CWR / ECE</td><td>0x80 / 0x40</td><td>ECN signalling (RFC 3168) — Congestion Window Reduced / ECN-Echo. Optional.</td></tr>
+</table>
+<p>Those hex values are the bit positions within the flags byte (byte offset 13 of the TCP header) — you will use them directly in tcpdump filters like <code>tcp[tcpflags] &amp; tcp-syn != 0</code> (§10).</p>
+
+<h3>The options that matter</h3>
+<table class="tbl">
+  <tr><th>Option</th><th>Kind</th><th>What it negotiates</th></tr>
+  <tr><td><strong>MSS</strong> (Maximum Segment Size)</td><td>2</td><td>Sent on the SYN: the largest segment payload this side will accept — typically 1460 on Ethernet. Bounds segment size so IP need not fragment.</td></tr>
+  <tr><td><strong>Window Scale</strong></td><td>3</td><td>A shift count (0–14) that multiplies the 16-bit Window field, allowing windows up to ~1 GiB for high bandwidth-delay-product links (RFC 7323). Negotiated on the SYN only.</td></tr>
+  <tr><td><strong>SACK-Permitted / SACK</strong></td><td>4 / 5</td><td>Selective Acknowledgment (RFC 2018): lets the receiver acknowledge non-contiguous blocks so the sender retransmits only the true gaps, not everything after a loss.</td></tr>
+  <tr><td><strong>Timestamps</strong></td><td>8</td><td>Two 4-byte timestamps (RFC 7323) for accurate RTT measurement (RTTM) and protection against wrapped sequence numbers (PAWS).</td></tr>
+</table>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. The 3-Way Handshake</h2>
+<p>Before any data flows, TCP opens a connection by <strong>synchronizing sequence numbers</strong> in both directions — three segments, hence "3-way." Each side picks a random <strong>Initial Sequence Number (ISN)</strong> and learns the other's. Randomizing the ISN (RFC 6528) matters for security: a predictable ISN lets an off-path attacker forge segments into the stream.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ha" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#5b6b7f"/></marker>
+  </defs>
+  <!-- lifelines -->
+  <rect x="70" y="24" width="150" height="42" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="145" y="50" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Client</text>
+  <rect x="480" y="24" width="150" height="42" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="555" y="50" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">Server</text>
+  <line x1="145" y1="66" x2="145" y2="356" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4,4"/>
+  <line x1="555" y1="66" x2="555" y2="356" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4,4"/>
+
+  <!-- initial states -->
+  <rect x="88" y="78" width="114" height="22" rx="5" fill="#eff6ff" stroke="#2563eb" stroke-width="1"/>
+  <text x="145" y="93" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">CLOSED</text>
+  <rect x="498" y="78" width="114" height="22" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+  <text x="555" y="93" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">LISTEN</text>
+
+  <!-- SYN -->
+  <line x1="145" y1="120" x2="553" y2="150" stroke="#5b6b7f" stroke-width="1.8" marker-end="url(#ha)"/>
+  <text x="345" y="126" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">SYN &nbsp; seq = x</text>
+  <rect x="88" y="128" width="114" height="22" rx="5" fill="#eff6ff" stroke="#2563eb" stroke-width="1"/>
+  <text x="145" y="143" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">SYN-SENT</text>
+
+  <!-- SYN-ACK -->
+  <line x1="555" y1="188" x2="147" y2="218" stroke="#5b6b7f" stroke-width="1.8" marker-end="url(#ha)"/>
+  <text x="352" y="194" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">SYN, ACK &nbsp; seq = y, ack = x+1</text>
+  <rect x="498" y="164" width="114" height="22" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+  <text x="555" y="179" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">SYN-RECEIVED</text>
+
+  <!-- ACK -->
+  <line x1="145" y1="256" x2="553" y2="286" stroke="#5b6b7f" stroke-width="1.8" marker-end="url(#ha)"/>
+  <text x="345" y="262" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">ACK &nbsp; seq = x+1, ack = y+1</text>
+  <rect x="88" y="264" width="114" height="22" rx="5" fill="#dbeafe" stroke="#2563eb" stroke-width="1.2"/>
+  <text x="145" y="279" text-anchor="middle" font-size="9.5" font-weight="700" fill="#1d4ed8">ESTABLISHED</text>
+  <rect x="498" y="300" width="114" height="22" rx="5" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="555" y="315" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">ESTABLISHED</text>
+
+  <text x="350" y="348" text-anchor="middle" font-size="9.5" fill="#526176">data can now flow in both directions</text>
+</svg>
+<div class="svg-cap">The 3-way handshake. Each SYN carries a random ISN and consumes one sequence number, so the reply acknowledges <code>ISN + 1</code>. After the third segment, both sides are ESTABLISHED.</div>
+</div>
+
+<h3>Step by step</h3>
+<ol>
+  <li><strong>SYN</strong> — the client picks ISN <code>x</code>, sends a segment with SYN set and <code>seq = x</code>, and moves <code>CLOSED → SYN-SENT</code>. The server was in <code>LISTEN</code>.</li>
+  <li><strong>SYN-ACK</strong> — the server picks its own ISN <code>y</code>, replies with SYN and ACK set, <code>seq = y</code> and <code>ack = x + 1</code> (acknowledging the client's SYN), and moves <code>LISTEN → SYN-RECEIVED</code>.</li>
+  <li><strong>ACK</strong> — the client replies with ACK set, <code>seq = x + 1</code>, <code>ack = y + 1</code>, and moves to <code>ESTABLISHED</code>. When the server sees this ACK it too becomes <code>ESTABLISHED</code>.</li>
+</ol>
+<p>Because SYN "consumes" one sequence number, the very next data byte the client sends has <code>seq = x + 1</code>. The same +1 rule applies to FIN at teardown.</p>
+<div class="note"><div class="notel">Why three, not two</div><p>Two segments could open the connection in one direction, but TCP is <em>full-duplex</em>: <strong>both</strong> sides must announce and have their ISN acknowledged. The middle SYN-ACK serves two purposes — it acknowledges the client's SYN <em>and</em> carries the server's SYN — which is why the exchange collapses to three segments rather than four.</p></div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. Connection Teardown</h2>
+<p>Closing is also sequenced, but because each direction of the stream closes independently it normally takes <strong>four</strong> segments (a FIN and an ACK each way). One side calls <code>close()</code> first — the <em>active</em> closer — but the other can keep sending until it closes too (a "half-close").</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ta" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#5b6b7f"/></marker>
+  </defs>
+  <rect x="60" y="20" width="170" height="40" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="145" y="45" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Active closer</text>
+  <rect x="470" y="20" width="170" height="40" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="555" y="45" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">Passive closer</text>
+  <line x1="145" y1="60" x2="145" y2="376" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4,4"/>
+  <line x1="555" y1="60" x2="555" y2="376" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4,4"/>
+
+  <!-- FIN 1 -->
+  <line x1="145" y1="92" x2="553" y2="118" stroke="#5b6b7f" stroke-width="1.8" marker-end="url(#ta)"/>
+  <text x="345" y="98" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">FIN</text>
+  <rect x="78" y="72" width="134" height="20" rx="5" fill="#eff6ff" stroke="#2563eb" stroke-width="1"/>
+  <text x="145" y="86" text-anchor="middle" font-size="9" font-weight="700" fill="#1d4ed8">FIN-WAIT-1</text>
+  <!-- ACK 1 -->
+  <line x1="555" y1="150" x2="147" y2="176" stroke="#5b6b7f" stroke-width="1.8" marker-end="url(#ta)"/>
+  <text x="345" y="156" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">ACK</text>
+  <rect x="488" y="126" width="134" height="20" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+  <text x="555" y="140" text-anchor="middle" font-size="9" font-weight="700" fill="#166534">CLOSE-WAIT</text>
+  <rect x="78" y="180" width="134" height="20" rx="5" fill="#eff6ff" stroke="#2563eb" stroke-width="1"/>
+  <text x="145" y="194" text-anchor="middle" font-size="9" font-weight="700" fill="#1d4ed8">FIN-WAIT-2</text>
+  <!-- FIN 2 -->
+  <line x1="555" y1="228" x2="147" y2="254" stroke="#5b6b7f" stroke-width="1.8" marker-end="url(#ta)"/>
+  <text x="345" y="234" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">FIN</text>
+  <rect x="488" y="208" width="134" height="20" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+  <text x="555" y="222" text-anchor="middle" font-size="9" font-weight="700" fill="#166534">LAST-ACK</text>
+  <!-- ACK 2 -->
+  <line x1="145" y1="286" x2="553" y2="312" stroke="#5b6b7f" stroke-width="1.8" marker-end="url(#ta)"/>
+  <text x="345" y="292" text-anchor="middle" font-size="10.5" font-weight="700" fill="#334155">ACK</text>
+  <rect x="78" y="258" width="134" height="20" rx="5" fill="#fef3c7" stroke="#d97706" stroke-width="1.1"/>
+  <text x="145" y="272" text-anchor="middle" font-size="9" font-weight="700" fill="#92400e">TIME-WAIT</text>
+  <rect x="488" y="316" width="134" height="20" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1"/>
+  <text x="555" y="330" text-anchor="middle" font-size="9" font-weight="700" fill="#166534">CLOSED</text>
+
+  <text x="145" y="360" text-anchor="middle" font-size="8.5" fill="#526176">wait 2·MSL</text>
+  <text x="145" y="372" text-anchor="middle" font-size="8.5" font-weight="700" fill="#92400e">→ CLOSED</text>
+</svg>
+<div class="svg-cap">Four-segment teardown. The active closer ends in TIME-WAIT for 2·MSL before finally reaching CLOSED; the passive closer goes CLOSE-WAIT → LAST-ACK → CLOSED.</div>
+</div>
+
+<h3>Why TIME_WAIT exists</h3>
+<p>After sending the final ACK, the active closer does not immediately vanish — it sits in <strong>TIME_WAIT</strong> for twice the Maximum Segment Lifetime (2·MSL; Linux fixes this at 60 s). This looks wasteful but does two essential jobs:</p>
+<ul>
+  <li><strong>Guarantee the final ACK arrives.</strong> If that ACK is lost, the peer will retransmit its FIN; only a socket still in TIME_WAIT can answer with another ACK. Vanish too early and the peer is stuck in LAST-ACK, keeps retransmitting its FIN, and — finding no socket on the other side — gets an RST back.</li>
+  <li><strong>Let old duplicates die out.</strong> Waiting 2·MSL ensures any straggling segments from this connection have expired in the network, so they cannot be misread as belonging to a <em>new</em> connection that happens to reuse the same 4-tuple.</li>
+</ul>
+<div class="trap"><div class="trapl">TIME_WAIT is on the side that closes first</div><p>A server that initiates the close accumulates many sockets in TIME_WAIT under high connection churn, which can exhaust local ports. The fix is architectural — use persistent/keep-alive connections, or arrange for the <em>client</em> to close first — not to blindly shorten the timeout, which reintroduces the stale-segment hazard. Options like <code>SO_REUSEADDR</code> / <code>tcp_tw_reuse</code> help within safe limits.</p></div>
+
+<h3>RST — the abrupt close</h3>
+<p>A <strong>RST</strong> tears the connection down immediately, with no FIN/ACK exchange. It is sent when a segment arrives for a connection that does not exist (e.g. a SYN to a closed port, which yields RST), when an application sets <code>SO_LINGER</code> to 0, or when a stack gives up on a broken connection. In a capture, an unexpected RST mid-stream usually means one side crashed, a firewall injected it, or a process closed a socket that still had unread data.</p>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Reliability &amp; Flow Control</h2>
+<p>IP can drop, duplicate, or reorder packets. TCP layers reliability on top using <strong>sequence numbers</strong> (label every byte), <strong>acknowledgements</strong> (confirm receipt), <strong>retransmission</strong> (resend what wasn't acked), and a <strong>sliding window</strong> (keep many bytes in flight without waiting for each one).</p>
+
+<h3>Sequence numbers &amp; cumulative ACK</h3>
+<p>Every byte in the stream has a sequence number. The receiver's Acknowledgment Number is <strong>cumulative</strong>: <code>ack = N</code> means "I have every byte up to N−1; send me N next." A single ACK therefore confirms a whole run of bytes, and a lost ACK is harmless if a later one covers the same range. If segments arrive out of order, the receiver buffers them but keeps ACKing the last <em>in-order</em> byte — producing <strong>duplicate ACKs</strong> that signal a gap.</p>
+
+<h3>Retransmission: timeout vs. fast</h3>
+<ul>
+  <li><strong>Retransmission Timeout (RTO).</strong> Each connection estimates the round-trip time and derives a timeout. Per RFC 6298 it keeps a smoothed RTT (<code>SRTT</code>) and its variation (<code>RTTVAR</code>) and sets <code>RTO = SRTT + 4 × RTTVAR</code> (with a 1 s floor). If an ACK doesn't arrive within the RTO, the segment is resent and the RTO is <em>doubled</em> (exponential backoff).</li>
+  <li><strong>Fast retransmit.</strong> Waiting for a timeout is slow. If the sender receives <strong>three duplicate ACKs</strong> (RFC 5681) for the same sequence number, it infers that segment was lost and resends it <em>immediately</em>, without waiting for the RTO.</li>
+</ul>
+<div class="formula">
+<span class="cm"># RTO estimation (RFC 6298), per round-trip sample R'</span><br>
+RTTVAR = (1 − 1/4)·RTTVAR + (1/4)·|SRTT − R'|   <span class="cm"># computed first, using the old SRTT</span><br>
+SRTT   = (1 − 1/8)·SRTT   + (1/8)·R'<br>
+<b>RTO    = SRTT + 4 × RTTVAR</b>   <span class="cm"># clamped to a 1 s minimum</span>
+</div>
+
+<h3>The sliding window &amp; flow control</h3>
+<p>To keep the pipe full, TCP allows many unacknowledged bytes "in flight" at once — up to the current <strong>window</strong>. As ACKs arrive, the window slides forward and new bytes may be sent. <strong>Flow control</strong> prevents a fast sender from overwhelming a slow receiver: every ACK advertises the receiver's free buffer space in the 16-bit <strong>Window</strong> field (the <em>receive window</em>, <code>rwnd</code>). The sender must never have more unacknowledged data outstanding than the smaller of the two limits:</p>
+<div class="formula">
+<b>bytes in flight ≤ min( rwnd , cwnd )</b><br>
+<span class="cm"># rwnd = receiver's advertised free buffer (on the wire, flow control)</span><br>
+<span class="cm"># cwnd = sender's congestion window (local, never transmitted — §8)</span>
+</div>
+<div class="trap"><div class="trapl">Zero window &amp; the persist timer</div><p>If the receiving application stops reading, its buffer fills and it advertises a <strong>zero window</strong> — "send nothing more." The sender then stalls. To avoid deadlock if the later window-update ACK is lost, the sender runs a <em>persist timer</em> and periodically sends a 1-byte <strong>zero-window probe</strong> to re-elicit the current window. Seeing repeated <code>TCP Zero Window</code> then <code>Window Update</code> in a capture points squarely at a slow/stuck consumer, not the network.</p></div>
+
+<h3>SACK — acknowledge the holes</h3>
+<p>Plain cumulative ACKs can't say "I got 1–1000 and 2001–3000 but not 1001–2000." With <strong>Selective Acknowledgment</strong> (RFC 2018, negotiated on the SYN) the receiver reports the exact non-contiguous blocks it holds, so the sender retransmits <em>only</em> the missing 1001–2000 instead of everything after the gap. This is a big win on links with sporadic loss.</p>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Congestion Control</h2>
+<p>Flow control protects the <em>receiver</em>; <strong>congestion control</strong> protects the <em>network</em>. The sender maintains a private <strong>congestion window (cwnd)</strong> — never sent on the wire — and treats packet loss as the network's signal that it is sending too fast. The standard algorithm (RFC 5681) has four intertwined phases.</p>
+
+<h3>Slow start → congestion avoidance</h3>
+<ul>
+  <li><strong>Slow start.</strong> Begin with a small initial window (commonly 10 MSS, RFC 6928) and increase <code>cwnd</code> by 1 MSS for every ACK — which roughly <em>doubles</em> it each RTT. Exponential growth probes for capacity quickly. It continues until <code>cwnd</code> reaches the slow-start threshold <code>ssthresh</code> or a loss occurs.</li>
+  <li><strong>Congestion avoidance.</strong> Above <code>ssthresh</code>, growth turns <em>linear</em>: roughly +1 MSS per RTT. This is the cautious probing phase.</li>
+</ul>
+
+<h3>The AIMD idea</h3>
+<p>Together these give <strong>AIMD — Additive Increase, Multiplicative Decrease</strong>: grow the window by a constant each RTT while things are fine, but on loss <em>halve</em> it. Additive increase is gentle and fair; multiplicative decrease backs off hard enough to relieve congestion fast. Iterated across many flows, AIMD converges to a roughly fair, stable share of the link — the property that makes the internet's congestion control work at all.</p>
+<div class="formula">
+<span class="cm"># AIMD, per round trip</span><br>
+no loss:  <b>cwnd += 1 MSS</b>        <span class="cm"># additive increase (linear)</span><br>
+on loss:  <b>cwnd = cwnd / 2</b>       <span class="cm"># multiplicative decrease</span><br>
+<span class="cm"># timeout (worse than dup-ACKs) → ssthresh = cwnd/2, cwnd resets to 1 MSS, slow start again</span>
+</div>
+
+<h3>Fast retransmit &amp; fast recovery</h3>
+<p>How TCP reacts depends on <em>how</em> it learned of the loss. Three duplicate ACKs (fast retransmit, §7) mean packets are still flowing — mild congestion — so TCP does <strong>fast recovery</strong>: halve <code>cwnd</code> and continue in congestion avoidance rather than crashing back to slow start. A full <strong>timeout</strong> is a worse sign (nothing is getting through): <code>ssthresh</code> drops to half, <code>cwnd</code> resets to 1 MSS (the loss window), and slow start begins again.</p>
+
+<div class="note"><div class="notel">Modern algorithms: CUBIC &amp; BBR</div><p>Classic AIMD (Reno/NewReno) underuses fast, long-distance links. <strong>CUBIC</strong> — the Linux default — grows the window along a cubic curve of time-since-last-loss, filling high bandwidth-delay-product pipes far better while staying loss-based. <strong>BBR</strong> (developed at Google) takes a different approach: instead of treating loss as the signal, it <em>models</em> the path's bottleneck bandwidth and round-trip propagation time and paces sending to that estimate — which can sidestep the throughput collapse loss-based schemes suffer on links with random (non-congestion) loss. Naming CUBIC as today's default and BBR as the model-based alternative is the senior touch.</p></div>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Ports, Sockets &amp; NAT</h2>
+
+<h3>The 4-tuple identifies a connection</h3>
+<p>A single server IP:port (say <code>:443</code>) handles thousands of simultaneous connections. What distinguishes them is the full <strong>4-tuple</strong>: <code>(source IP, source port, destination IP, destination port)</code>. (Include the protocol and it is a 5-tuple.) Two connections may share three of the four fields; as long as one differs, they are distinct entries in the kernel's connection table. A <em>socket</em> is the OS handle to one endpoint of such a connection.</p>
+<div class="formula">
+<span class="cm"># two browser tabs to the same server — same server side, different source ports</span><br>
+conn A:  10.0.0.5 : <b>51514</b>  →  93.184.216.34 : 443<br>
+conn B:  10.0.0.5 : <b>51520</b>  →  93.184.216.34 : 443<br>
+<span class="cm"># identical dst IP:port; the source port disambiguates them</span>
+</div>
+
+<h3>Ephemeral ports</h3>
+<p>Servers listen on <em>well-known</em> ports (80, 443, 22, 53…). The client's source port is an <strong>ephemeral port</strong> the OS picks from a high range for the life of the connection (IANA suggests 49152–65535; Linux defaults to roughly 32768–60999). Because a source port is 16-bit, one client IP can hold at most ~64K simultaneous connections <em>to the same</em> server IP:port — a real limit for busy proxies.</p>
+
+<h3>NAT / PAT</h3>
+<p>IPv4 addresses are scarce, so a home or office network shares one public IP via <strong>NAT</strong> (Network Address Translation). The common form is <strong>PAT</strong> (Port Address Translation, a.k.a. "NAT overload" or masquerading): the router rewrites each outbound packet's <em>source</em> IP+port to its public IP and a chosen port, records the mapping in a table, and reverses the rewrite on the replies.</p>
+<div class="formula">
+<span class="cm"># NAT/PAT rewriting an outbound connection</span><br>
+inside :   192.168.1.20 : 51514  →  93.184.216.34 : 443<br>
+<span class="cm"># router rewrites source, stores the mapping</span><br>
+outside:   <b>203.0.113.9 : 40001</b>  →  93.184.216.34 : 443<br>
+<span class="cm"># reply to 203.0.113.9:40001 is rewritten back to 192.168.1.20:51514</span>
+</div>
+
+<h3>Why NAT complicates peer-to-peer</h3>
+<p>NAT mappings are created by <em>outbound</em> traffic and, for a strict NAT, only accept replies from the same remote endpoint. So two peers who are <em>both</em> behind NAT can't simply connect: neither has an inbound mapping the other can reach, and neither knows its own public IP:port. The workarounds are <strong>STUN</strong> (a peer asks a public server "what public IP:port do you see me as?"), <strong>hole punching</strong> (both peers send outbound packets at once so each NAT opens a mapping the other's packets then match), and, when those fail (symmetric NATs), <strong>TURN</strong> — relaying all traffic through a public server. This is exactly the machinery WebRTC's ICE framework orchestrates.</p>
+<div class="tip"><div class="tipl">Interview signal</div><p>"How would two clients behind NAT talk directly?" is a common probe. The crisp answer: you can't rely on inbound connections, so use a rendezvous/signaling server plus STUN to discover public mappings, hole-punch to open them, and fall back to a TURN relay for symmetric NATs.</p></div>
+
+<!-- ══════════════ SECTION 10 ══════════════ -->
+<h2>10. Packet Analysis in Practice</h2>
+<p>The theory above is only useful if you can <em>see</em> it. <strong>tcpdump</strong> (CLI capture) and <strong>Wireshark / tshark</strong> (GUI + CLI with deep dissection) let you watch handshakes, read flags, follow a stream, and spot retransmissions, resets, and zero-windows. Live capture needs root/admin privileges and is out of scope for this chapter — the commands below are the ones you would run on a host you own; the sequences they would produce are described, not fabricated.</p>
+
+<h3>tcpdump — a correct filter cheat-set</h3>
+<pre><span class="cm"># --- capture basics ---</span>
+tcpdump -i eth0 -nn                     <span class="cm"># -n: no DNS, -nn: no port-name lookup either</span>
+tcpdump -i any -nn -c 100               <span class="cm"># all interfaces, stop after 100 packets</span>
+tcpdump -i eth0 -w capture.pcap         <span class="cm"># write raw packets to a file (open later in Wireshark)</span>
+tcpdump -r capture.pcap -nn             <span class="cm"># read/replay from a file</span>
+tcpdump -i eth0 -s0 -X                  <span class="cm"># full snap length + hex/ASCII payload dump</span>
+
+<span class="cm"># --- host / net / port filters (BPF syntax) ---</span>
+tcpdump -nn host 93.184.216.34          <span class="cm"># traffic to OR from this host</span>
+tcpdump -nn src net 10.0.0.0/8          <span class="cm"># source in this network</span>
+tcpdump -nn tcp port 443                <span class="cm"># TCP on port 443, either direction</span>
+tcpdump -nn 'tcp port 443 and host 93.184.216.34'   <span class="cm"># combine with and/or/not</span>
+
+<span class="cm"># --- match by TCP flags (byte 13 of the TCP header) ---</span>
+tcpdump -nn 'tcp[tcpflags] &amp; tcp-syn != 0'           <span class="cm"># any SYN (includes SYN-ACK)</span>
+tcpdump -nn 'tcp[tcpflags] == tcp-syn'               <span class="cm"># SYN only (a pure connection open)</span>
+tcpdump -nn 'tcp[tcpflags] &amp; (tcp-syn|tcp-ack) == (tcp-syn|tcp-ack)'  <span class="cm"># SYN-ACK</span>
+tcpdump -nn 'tcp[tcpflags] &amp; tcp-rst != 0'           <span class="cm"># resets</span>
+tcpdump -nn 'tcp[tcpflags] &amp; tcp-fin != 0'           <span class="cm"># FINs (orderly close)</span></pre>
+<p>The <code>tcp-syn</code>, <code>tcp-ack</code>, <code>tcp-fin</code>, <code>tcp-rst</code>, <code>tcp-push</code>, and <code>tcp-urg</code> names are tcpdump macros for the flag bits (0x02, 0x10, 0x01, 0x04, 0x08, 0x20) in the flags byte at TCP offset 13 — the same values from §4. <code>tcp[tcpflags]</code> and the older <code>tcp[13]</code> are interchangeable.</p>
+
+<h3>tshark / Wireshark — display filters</h3>
+<p>Capture filters (BPF, above) decide what is <em>recorded</em>; <strong>display filters</strong> decide what is <em>shown</em> from an already-captured set and are far richer because Wireshark has fully dissected each packet.</p>
+<pre><span class="cm"># tshark reads the same .pcap and applies a DISPLAY filter with -Y</span>
+tshark -r capture.pcap -Y 'tcp.flags.syn==1 &amp;&amp; tcp.flags.ack==0'   <span class="cm"># connection opens</span>
+tshark -r capture.pcap -Y 'tcp.analysis.retransmission'            <span class="cm"># retransmits</span>
+tshark -r capture.pcap -Y 'tcp.analysis.zero_window'               <span class="cm"># receiver stalled</span>
+tshark -r capture.pcap -Y 'tcp.analysis.duplicate_ack'             <span class="cm"># the dup-ACKs before a fast retransmit</span>
+tshark -r capture.pcap -Y 'tcp.flags.reset==1'                     <span class="cm"># RSTs</span>
+
+<span class="cm"># follow one TCP stream's payload as text (stream index 0)</span>
+tshark -r capture.pcap -q -z follow,tcp,ascii,0
+
+<span class="cm"># live capture with a CAPTURE filter (-f), needs privileges</span>
+tshark -i eth0 -f 'tcp port 443'</pre>
+<p>The equivalents typed into the Wireshark GUI filter bar are identical: <code>tcp.flags.syn==1</code>, <code>tcp.analysis.retransmission</code>, <code>tcp.analysis.zero_window</code>, <code>tcp.flags.reset==1</code>. Right-click a packet → <em>Follow → TCP Stream</em> is the GUI form of the <code>follow,tcp</code> command.</p>
+
+<h3>What a healthy handshake looks like (illustrative)</h3>
+<p>The following is an <em>illustrative</em> dissection — hand-written to show the shape you would look for, <em>not</em> captured output. On a real host you would generate it with the SYN filter above.</p>
+<div class="formula">
+<span class="cm"># illustrative — the 3-way handshake, as tshark might summarize it</span><br>
+1  10.0.0.5:51514 → 93.184.216.34:443  <b>[SYN]</b>       Seq=0  Win=64240  MSS=1460 WS=128 SACK_PERM<br>
+2  93.184.216.34:443 → 10.0.0.5:51514  <b>[SYN,ACK]</b>   Seq=0  Ack=1  Win=65535  MSS=1460 WS=256<br>
+3  10.0.0.5:51514 → 93.184.216.34:443  <b>[ACK]</b>       Seq=1  Ack=1  Win=64240<br>
+<span class="cm"># Wireshark shows relative seq/ack (starting at 0) by default — the ISNs are randomized on the wire</span>
+</div>
+<p>Reading it: packet 1 is the pure SYN carrying the client's options (MSS, window scale, SACK-permitted); packet 2 is the combined SYN-ACK; packet 3 is the bare ACK that opens the connection. After this, data segments carry <code>[PSH, ACK]</code> and the sequence/ack numbers climb by the bytes exchanged.</p>
+
+<h3>Reading trouble on the wire</h3>
+<table class="tbl">
+  <tr><th>Symptom in the capture</th><th>What it usually means</th></tr>
+  <tr><td>Many <code>SYN</code> with no <code>SYN,ACK</code> back</td><td>Server unreachable, port closed/filtered, or dropped by a firewall.</td></tr>
+  <tr><td>A run of <code>[TCP Dup ACK]</code> then <code>[TCP Retransmission]</code></td><td>A segment was lost; three dup-ACKs triggered a fast retransmit (§7).</td></tr>
+  <tr><td><code>[TCP Zero Window]</code> then <code>[TCP Window Update]</code></td><td>The receiving app stopped reading, then resumed — a slow consumer, not a network fault (§7).</td></tr>
+  <tr><td>An unexpected <code>[RST]</code> mid-stream</td><td>One side crashed/closed abruptly, or a middlebox injected a reset (§6).</td></tr>
+  <tr><td><code>[TCP Retransmission]</code> spaced at doubling intervals</td><td>RTO-based retransmits with exponential backoff — the path is badly congested or black-holing.</td></tr>
+</table>
+
+<h3>Interview framing — probe Q&amp;As</h3>
+<div class="card">
+<p><strong>Q: Why does TIME_WAIT exist, and why is it on the closing side?</strong><br>After the final ACK, the active closer waits 2·MSL for two reasons: so it can re-ACK a retransmitted FIN if that final ACK was lost, and so any stale segments from this connection expire before the 4-tuple could be reused. It sits on whichever side closed first, which is why a server that initiates closes can pile up TIME_WAIT sockets — the fix is keep-alive/persistent connections or having the client close, not just shrinking the timer.</p>
+<p><strong>Q: What is a SYN flood, and how do SYN cookies defend against it?</strong><br>An attacker sends many SYNs with spoofed sources and never completes the handshake. Each half-open connection normally consumes an entry in the server's SYN backlog queue; flood it and legitimate SYNs are dropped. <strong>SYN cookies</strong> remove the need to store that state: the server encodes the connection parameters into the ISN it returns in the SYN-ACK and allocates nothing. Only when a valid final ACK comes back (echoing ISN+1) does it reconstruct and create the connection — so there is no queue to exhaust.</p>
+<p><strong>Q: Nagle vs. delayed ACK — why can they interact badly?</strong><br>Nagle's algorithm (RFC 896) reduces tiny-packet overhead by holding a small write until the previously-sent data is ACKed. Delayed ACK (RFC 1122) holds an ACK up to ~200 ms hoping to piggyback it on a reply. Put them together on a request/response with small writes and each waits for the other: the sender withholds the next small segment until an ACK arrives, while the receiver delays that ACK — adding up to ~200 ms of latency. Disabling Nagle with <code>TCP_NODELAY</code> is the usual fix for latency-sensitive, small-message protocols.</p>
+<p><strong>Q: What problem does window scaling solve?</strong><br>The Window field is only 16 bits, capping the receive window at 65535 bytes. On a high bandwidth-delay-product link (fast + long RTT) that is far less than one RTT's worth of data, so throughput is throttled by the window, not the link. The <strong>window scale</strong> option (RFC 7323), negotiated on the SYN, applies a left-shift of up to 14 to the advertised window, raising the ceiling to about 1 GiB so the pipe can be kept full.</p>
+<p><strong>Q: MTU vs. MSS vs. PMTUD?</strong><br><strong>MTU</strong> is the largest frame payload a link carries (1500 on Ethernet). <strong>MSS</strong> is the largest TCP <em>segment payload</em>, advertised on the SYN — MTU minus the IP and TCP headers (1460 for classic IPv4/Ethernet). <strong>Path MTU Discovery</strong> finds the smallest MTU along the whole path: the sender sets DF, and any router that can't forward without fragmenting drops the packet and returns ICMP "fragmentation needed" with the next-hop MTU, so the sender shrinks its segments. If those ICMP messages are filtered, PMTUD <em>black-holes</em> — large packets vanish silently — which is why an unhelpful firewall can cause "small requests work, big ones hang."</p>
+</div>
+
+<div class="note"><div class="notel">One-line summary</div><p>TCP/IP is a stack of headers each solving one problem: IP routes best-effort packets by 32-bit address; UDP adds only ports; TCP adds a reliable, ordered byte stream via sequence/ack numbers, a 3-way handshake, sliding-window flow control, and AIMD congestion control; ports and NAT identify and multiplex connections by 4-tuple; and tcpdump/Wireshark let you read every bit of it on the wire. Know the header field sizes from memory, be able to draw the handshake, and explain TIME_WAIT, SYN cookies, and PMTUD, and you can reason about almost any connectivity or performance question.</p></div>
+
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>MTU</strong> (Maximum Transmission Unit)</td><td>Largest payload one link-layer frame may carry — 1500 bytes on classic Ethernet.</td></tr>
+<tr><td><strong>MSS</strong> (Maximum Segment Size)</td><td>Largest TCP segment payload a side accepts, advertised on the SYN — 1460 on Ethernet.</td></tr>
+<tr><td><strong>IHL</strong> (Internet Header Length)</td><td>IPv4 header length in 32-bit words: 5 (20 bytes) to 15 (60 bytes).</td></tr>
+<tr><td><strong>DSCP</strong> (Differentiated Services Code Point)</td><td>6-bit field marking a packet's QoS class; upper part of the former ToS byte.</td></tr>
+<tr><td><strong>ECN</strong> (Explicit Congestion Notification)</td><td>2 bits letting routers signal congestion without dropping packets; paired with TCP's CWR/ECE flags.</td></tr>
+<tr><td><strong>TTL</strong> (Time To Live)</td><td>Hop counter decremented at each router; at 0 the packet is dropped — how traceroute works.</td></tr>
+<tr><td><strong>PMTUD</strong> (Path MTU Discovery)</td><td>Finds the smallest MTU along a path using DF and ICMP "fragmentation needed" replies.</td></tr>
+<tr><td><strong>SACK</strong> (Selective Acknowledgment)</td><td>Lets a receiver acknowledge non-contiguous blocks so the sender resends only the true gaps (RFC 2018).</td></tr>
+<tr><td><strong>ISN</strong> (Initial Sequence Number)</td><td>Randomized sequence number each side picks on its SYN when opening a connection.</td></tr>
+<tr><td><strong>MSL</strong> (Maximum Segment Lifetime)</td><td>Assumed maximum time a segment survives in the network; TIME_WAIT lasts 2·MSL.</td></tr>
+<tr><td><strong>RTO</strong> (Retransmission Timeout)</td><td>Time to wait for an ACK before resending; derived from RTT (RFC 6298).</td></tr>
+<tr><td><strong>rwnd</strong> (receive window)</td><td>Receiver's advertised free buffer space, carried in the TCP Window field (flow control).</td></tr>
+<tr><td><strong>cwnd</strong> (congestion window)</td><td>Sender's private limit on unacknowledged bytes, never sent on the wire (congestion control).</td></tr>
+<tr><td><strong>AIMD</strong> (Additive Increase, Multiplicative Decrease)</td><td>Grow the window linearly while healthy, halve it on loss — the basis of TCP fairness.</td></tr>
+<tr><td><strong>BBR</strong> (Bottleneck Bandwidth and Round-trip propagation time)</td><td>Model-based congestion control (developed at Google) that paces to estimated bandwidth rather than reacting to loss.</td></tr>
+<tr><td><strong>NAT</strong> (Network Address Translation)</td><td>Rewrites packet addresses so a private network shares one public IP.</td></tr>
+<tr><td><strong>PAT</strong> (Port Address Translation)</td><td>NAT variant that also rewrites ports, multiplexing many hosts behind one IP ("NAT overload").</td></tr>
+<tr><td><strong>STUN</strong> (Session Traversal Utilities for NAT)</td><td>Lets a peer discover the public IP:port a NAT maps it to.</td></tr>
+<tr><td><strong>TURN</strong> (Traversal Using Relays around NAT)</td><td>Relays all traffic through a public server when direct NAT traversal fails (symmetric NATs).</td></tr>
+<tr><td><strong>BPF</strong> (Berkeley Packet Filter)</td><td>The filter syntax tcpdump uses to select which packets to capture.</td></tr>
+</table>
+</div>
+
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="td_kubernetes.html">&lsaquo; Kubernetes — a Practical Deep-Dive</a><a class="bkc" href="index.html">📖 Contents</a><a href="td_lowlatency_cpp.html">Low-Latency C++ (for Trading &amp; Real-Time Systems) &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

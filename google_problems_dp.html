@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dynamic Programming — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 6 — <b>Dynamic Programming</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Dynamic Programming</h1>
+  <div class="sub">Six Google-style dynamic-programming problems &bull; original framing, execution-tested solutions, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+<div class="tip" style="margin-bottom:24px;"><p><strong>How to read this chapter:</strong> every worked example uses inputs invented for this book, and each stated output was produced by <em>compiling and running</em> the accompanying Java. Beyond hand-picked edge cases (all-negative arrays, arrays with zeros, strictly-decreasing prices, impossible coin targets, single characters, and the two split-array extremes <code>m = 1</code> and <code>m = n</code>) each solution was cross-checked against an independent brute force over hundreds of thousands of random inputs, and the two split-array methods were differentially tested against each other. The recurring idea below is to <strong>define a state, find the recurrence that links it to smaller states, and either scan once carrying a rolling optimum (Kadane-style) or fill a table bottom-up</strong> &mdash; and, when the answer itself is monotone, to <strong>binary-search on the answer</strong> instead.</p></div>
+
+
+<!-- PROBLEM: Maximum Subarray -->
+<div class="card">
+<h2>Maximum Subarray</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given an integer array, find the contiguous non-empty subarray with the largest sum and return that sum. Values may be negative.</p>
+<ul>
+  <li>The subarray must be non-empty, so a single element is a valid answer.</li>
+  <li>When every value is negative the best sum is the single least-negative element &mdash; you are never forced to add a second number that can only make the sum worse.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[3, -4, 5, -1, 2, -8, 6]</code> the answer is <code>6</code> (computed by running the code). The best window is <code>[5, -1, 2]</code>, summing <code>5 - 1 + 2 = 6</code>; it dips through the <code>-1</code> because the surrounding positives more than pay for it. The lone <code>[6]</code> at the end also reaches <code>6</code>, but never more. An all-negative array such as <code>[-5, -2, -8]</code> returns <code>-2</code> &mdash; the least-negative single element.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>This is the canonical one-dimensional DP known as <strong>Kadane&rsquo;s algorithm</strong>. Define <code>cur</code> as the largest sum of a subarray that <em>ends at the current index</em>. The recurrence is a single decision at each element: either <strong>extend</strong> the previous best-ending-here (<code>cur + nums[i]</code>) or <strong>restart</strong> a fresh subarray at the current element (<code>nums[i]</code>) &mdash; whichever is larger. Because a negative running sum can only hurt a later extension, restarting whenever <code>cur + nums[i] &lt; nums[i]</code> is exactly the right move. Keep a separate <code>best</code> as you scan, to remember the largest <code>cur</code> ever seen; the ending index that maximises the sum need not be the last one.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">maxSubArray</span>(<span class="kw">int</span>[] nums) {
+    <span class="kw">int</span> best = nums[<span class="num">0</span>], cur = nums[<span class="num">0</span>];   <span class="cm">// seed BOTH at the first element, not 0</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt; nums.length; i++) {
+        cur = <span class="type">Math</span>.<span class="fn">max</span>(nums[i], cur + nums[i]);  <span class="cm">// extend, or restart at nums[i]</span>
+        best = <span class="type">Math</span>.<span class="fn">max</span>(best, cur);           <span class="cm">// remember the best window seen</span>
+    }
+    <span class="kw">return</span> best;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; one pass, constant work per element. Space <code>O(1)</code> &mdash; two scalars, no table.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Seed with the first element, not <code>0</code>.</strong> Initialising <code>best = 0</code> silently returns <code>0</code> on an all-negative array, since no real subarray beats the empty one &mdash; but the problem forbids empty subarrays, so the least-negative element must win. <strong>Take the max <em>before</em> adding, not after.</strong> The decision is <code>max(nums[i], cur + nums[i])</code>; writing <code>cur = max(0, cur) + nums[i]</code> is an equivalent reset but only if you never let <code>best</code> initialise to <code>0</code>. <strong>Track <code>best</code> separately from <code>cur</code>.</strong> The maximal window may end in the middle of the array, so returning <code>cur</code> (the best ending at the <em>last</em> index) is wrong. <strong>Follow-up: return the indices.</strong> Interviewers often ask you to also report the subarray&rsquo;s bounds &mdash; track a candidate start that moves whenever you restart, and commit it when <code>cur</code> beats <code>best</code>.</p></div>
+</div>
+
+
+<!-- PROBLEM: Maximum Product Subarray -->
+<div class="card">
+<h2>Maximum Product Subarray</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given an integer array, find the contiguous non-empty subarray whose elements multiply to the largest product, and return that product. The array may contain negatives and zeros.</p>
+<ul>
+  <li>A single element is a valid subarray, so the answer is at least the largest single value.</li>
+  <li>Two negatives multiply to a positive, so the biggest product can hide behind a pair of negatives &mdash; you cannot simply track the running maximum.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[2, -3, -2, 4, -1]</code> the answer is <code>48</code> (computed by running the code): the window <code>[2, -3, -2, 4]</code> gives <code>2 &times; -3 &times; -2 &times; 4 = 48</code> &mdash; the two negatives cancel. Extending to include the final <code>-1</code> would flip the sign to <code>-48</code>, so the scan stops there. With a zero, <code>[-2, 0, -1]</code> returns <code>0</code>: the zero severs the array and the best any window can reach is <code>0</code> itself.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>The twist over Maximum Subarray is that <strong>sign matters</strong>: multiplying by a negative turns the largest product into the smallest and vice-versa, so a running maximum alone is blind to the &ldquo;two negatives make a positive&rdquo; case. Carry <em>both</em> a <code>curMax</code> and a <code>curMin</code> (the largest and most-negative products ending at the current index). When the current value is negative, <strong>swap</strong> them before multiplying, because the old minimum &times; a negative becomes the new candidate maximum. Each is then <code>max</code>/<code>min</code> of &ldquo;start fresh at <code>v</code>&rdquo; versus &ldquo;extend&rdquo;; the <code>max(v, &hellip;)</code> also handles a <strong>zero</strong> for free &mdash; a zero drags both products to <code>0</code>, and the fresh-start term restarts the window at the next element.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">maxProduct</span>(<span class="kw">int</span>[] nums) {
+    <span class="kw">int</span> best = nums[<span class="num">0</span>], curMax = nums[<span class="num">0</span>], curMin = nums[<span class="num">0</span>];
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">1</span>; i &lt; nums.length; i++) {
+        <span class="kw">int</span> v = nums[i];
+        <span class="kw">if</span> (v &lt; <span class="num">0</span>) {                       <span class="cm">// a negative flips max &lt;-&gt; min roles</span>
+            <span class="kw">int</span> t = curMax; curMax = curMin; curMin = t;
+        }
+        curMax = <span class="type">Math</span>.<span class="fn">max</span>(v, curMax * v);  <span class="cm">// best product ending here (v = restart)</span>
+        curMin = <span class="type">Math</span>.<span class="fn">min</span>(v, curMin * v);  <span class="cm">// worst (most negative) ending here</span>
+        best = <span class="type">Math</span>.<span class="fn">max</span>(best, curMax);
+    }
+    <span class="kw">return</span> best;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; one pass, constant work per element. Space <code>O(1)</code> &mdash; three scalars.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Track the minimum too.</strong> Keeping only <code>curMax</code> misses products like <code>-3 &times; -2</code> that turn positive; the most-negative running product is a live candidate the moment the next negative arrives. <strong>Swap before multiplying, on a negative.</strong> When <code>v &lt; 0</code>, exchange <code>curMax</code> and <code>curMin</code> <em>first</em> &mdash; multiplying by a negative sends the old min to the top and the old max to the bottom. <strong>Zeros reset naturally.</strong> Because each update takes <code>max</code>/<code>min</code> against a bare <code>v</code>, a <code>0</code> zeroes both running products and the window restarts at the next element &mdash; no special case needed. <strong>Seed from <code>nums[0]</code>, not <code>1</code>.</strong> Initialising the products to <code>1</code> invents a phantom empty prefix and breaks a single-element or leading-negative array. <strong>Overflow.</strong> On worst-case input the product can exceed <code>int</code> range; an interviewer may ask you to switch to <code>long</code>.</p></div>
+</div>
+
+
+<!-- PROBLEM: Best Time to Buy and Sell Stock -->
+<div class="card">
+<h2>Best Time to Buy and Sell Stock</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You are given daily prices of a single asset. Choose one day to buy and a <em>later</em> day to sell, maximising your profit. Return the maximum profit, or <code>0</code> if no profitable transaction is possible. Exactly one buy and one sell are allowed.</p>
+<ul>
+  <li>You must buy before you sell, so the sell day&rsquo;s index is strictly greater than the buy day&rsquo;s.</li>
+  <li>If prices only fall, the best you can do is not trade &mdash; the answer is <code>0</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[8, 3, 6, 2, 9, 5]</code> the answer is <code>7</code> (computed by running the code): buy at the <code>2</code> on day&nbsp;4 and sell at the <code>9</code> on day&nbsp;5, for <code>9 - 2 = 7</code>. Note the global minimum <code>2</code> comes <em>after</em> the earlier dip to <code>3</code>, and the best sell price <code>9</code> follows it &mdash; a single left-to-right pass captures this. A strictly-decreasing series like <code>[9, 7, 4, 1]</code> returns <code>0</code>: no later day ever exceeds an earlier buy.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Frame it as a rolling DP over one pass. Sweep left to right tracking <code>minSoFar</code>, the cheapest price seen up to (and including) today &mdash; the best day to have bought. For each day, the best profit achievable by <em>selling today</em> is <code>price - minSoFar</code>; fold the largest such value into a running <code>best</code>. Because <code>minSoFar</code> only ever considers earlier days, the buy-before-sell constraint holds automatically. Seeding <code>best = 0</code> encodes the &ldquo;don&rsquo;t trade&rdquo; option, so a market that only falls yields <code>0</code>.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">maxProfit</span>(<span class="kw">int</span>[] prices) {
+    <span class="kw">int</span> minSoFar = <span class="type">Integer</span>.MAX_VALUE, best = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> p : prices) {
+        <span class="kw">if</span> (p &lt; minSoFar) minSoFar = p;                 <span class="cm">// cheapest buy day so far</span>
+        <span class="kw">else if</span> (p - minSoFar &gt; best) best = p - minSoFar;  <span class="cm">// best sale if we sell today</span>
+    }
+    <span class="kw">return</span> best;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; a single pass. Space <code>O(1)</code> &mdash; two scalars.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Don&rsquo;t pair the global min with the global max blindly.</strong> The max must occur <em>after</em> the min; tracking <code>minSoFar</code> as you go enforces the ordering, whereas <code>max(prices) - min(prices)</code> can pick a sell day that precedes the buy day. <strong>Seed <code>best = 0</code>, not <code>MIN_VALUE</code>.</strong> The &ldquo;no transaction&rdquo; fallback is a profit of <code>0</code>; a strictly-decreasing series should return <code>0</code>, never a negative &ldquo;loss.&rdquo; <strong>The <code>else if</code> is fine.</strong> On a day that sets a new minimum there is no sale worth considering (selling at your own buy price yields <code>0</code>), so updating the min and skipping the profit check in one branch is correct. <strong>Follow-ups.</strong> Unlimited transactions (sum every upward step) and at-most-<code>k</code> transactions (a genuine 2-D DP) are the usual escalations.</p></div>
+</div>
+
+
+<!-- PROBLEM: Coin Change -->
+<div class="card">
+<h2>Coin Change</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given coin denominations and a target amount, return the <em>fewest</em> coins that sum exactly to the amount. You may use each denomination any number of times. If the amount cannot be made, return <code>-1</code>.</p>
+<ul>
+  <li>An amount of <code>0</code> needs <code>0</code> coins.</li>
+  <li>Greedily taking the largest coin can fail &mdash; e.g. with <code>[2, 5, 7]</code> for <code>27</code>, grabbing sevens first is not optimal &mdash; so a DP over every sub-amount is required.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for coins <code>[2, 5, 7]</code> and amount <code>27</code> the answer is <code>5</code> (computed by running the code): <code>5 + 5 + 5 + 5 + 7 = 27</code> uses five coins, and no combination uses fewer. A greedy &ldquo;largest first&rdquo; would take <code>7 + 7 + 7 = 21</code>, then grab the largest coin &le; the remaining <code>6</code> &mdash; a <code>5</code> &mdash; leaving <code>1</code>, which no coin can make, so greedy <em>dead-ends</em> entirely. That failure is exactly why a DP over every sub-amount is needed. For coins <code>[3, 5]</code> and amount <code>4</code> the code returns <code>-1</code>: no multiset of <code>3</code>s and <code>5</code>s sums to <code>4</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>This is an <strong>unbounded-knapsack DP</strong>. Let <code>dp[a]</code> be the minimum number of coins that sum to exactly <code>a</code>. Build the table bottom-up: <code>dp[a] = 1 + min over coins c of dp[a - c]</code> for every coin that fits (<code>c &le; a</code>). Because each denomination may repeat, we simply reuse the already-computed <code>dp[a - c]</code> for the same coin set &mdash; no &ldquo;used-up&rdquo; bookkeeping. Initialise every entry to a sentinel <code>INF = amount + 1</code> (strictly larger than any real coin count, which is at most <code>amount</code>) and set <code>dp[0] = 0</code>. If <code>dp[amount]</code> is still above <code>amount</code> at the end, the target is unreachable, so return <code>-1</code>.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">coinChange</span>(<span class="kw">int</span>[] coins, <span class="kw">int</span> amount) {
+    <span class="kw">int</span> INF = amount + <span class="num">1</span>;              <span class="cm">// sentinel: bigger than any real coin count</span>
+    <span class="kw">int</span>[] dp = <span class="kw">new</span> <span class="kw">int</span>[amount + <span class="num">1</span>];
+    <span class="type">Arrays</span>.<span class="fn">fill</span>(dp, INF);
+    dp[<span class="num">0</span>] = <span class="num">0</span>;                       <span class="cm">// zero coins make amount 0</span>
+    <span class="kw">for</span> (<span class="kw">int</span> a = <span class="num">1</span>; a &lt;= amount; a++)
+        <span class="kw">for</span> (<span class="kw">int</span> c : coins)
+            <span class="kw">if</span> (c &lt;= a &amp;&amp; dp[a - c] + <span class="num">1</span> &lt; dp[a])
+                dp[a] = dp[a - c] + <span class="num">1</span>;
+    <span class="kw">return</span> dp[amount] &gt; amount ? -<span class="num">1</span> : dp[amount];  <span class="cm">// untouched -&gt; impossible</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(amount &times; coins)</code> &mdash; every sub-amount tries every denomination. Space <code>O(amount)</code> for the table.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Return <code>-1</code> for the impossible case.</strong> Guard with a sentinel and test whether <code>dp[amount]</code> was ever lowered; returning the raw <code>INF</code> or <code>0</code> is a classic bug. <strong>Choose the sentinel so it can&rsquo;t overflow or be mistaken for a real answer.</strong> Using <code>amount + 1</code> (rather than <code>Integer.MAX_VALUE</code>) keeps <code>dp[a - c] + 1</code> from overflowing while staying strictly above any legitimate count of at most <code>amount</code> one-value coins. <strong>Greedy is wrong.</strong> Taking the largest coin first fails on sets like <code>[2, 5, 7]</code>; the DP is what guarantees optimality. <strong>Amount <code>0</code>.</strong> <code>dp[0] = 0</code> both answers the trivial case and anchors the recurrence. <strong>Follow-up: count the ways.</strong> Coin Change II asks for the <em>number</em> of combinations instead of the minimum count &mdash; same table shape, but loop coins on the outside to avoid counting permutations.</p></div>
+</div>
+
+
+<!-- PROBLEM: Longest Palindromic Substring -->
+<div class="card">
+<h2>Longest Palindromic Substring</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a string, return a longest substring that reads the same forwards and backwards. If several share the maximum length, returning any one of them is acceptable.</p>
+<ul>
+  <li>A single character is a palindrome, so the answer is never empty for a non-empty input.</li>
+  <li>Palindromes come in two shapes: <em>odd</em> length (a single centre character, like <code>aba</code>) and <em>even</em> length (a centre between two characters, like <code>abba</code>). Both must be considered.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>"abaxyzzyxf"</code> the answer is <code>"xyzzyx"</code> (computed by running the code) &mdash; a length-6 <em>even</em> palindrome centred between the two <code>z</code>s. The shorter <code>"aba"</code> (an odd palindrome) also appears but loses on length. A single character like <code>"z"</code> returns <code>"z"</code>, and a string with no repeats such as <code>"abcd"</code> returns a length-1 substring (the code returns <code>"a"</code>).</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Expand around every centre.</strong> A palindrome is symmetric about its centre, so treat each index as a potential centre and grow outward while the mirrored characters match. There are two centre kinds: <em>odd</em>-length palindromes centred <em>on</em> a character (start the two pointers at <code>i, i</code>) and <em>even</em>-length ones centred <em>between</em> two characters (start at <code>i, i + 1</code>). For each of the <code>n</code> indices we run both expansions, giving <code>2n - 1</code> centres in all, and keep the longest span found. The index arithmetic <code>start = i - (len - 1) / 2</code>, <code>end = i + len / 2</code> recovers the substring bounds correctly for both parities. (A table DP where <code>dp[i][j]</code> marks whether <code>s[i..j]</code> is a palindrome is the textbook alternative &mdash; same <code>O(n&sup2;)</code> time but <code>O(n&sup2;)</code> space.)</p>
+
+<pre><span class="kw">public</span> <span class="type">String</span> <span class="fn">longestPalindrome</span>(<span class="type">String</span> s) {
+    <span class="kw">if</span> (s == <span class="kw">null</span> || s.length() &lt; <span class="num">1</span>) <span class="kw">return</span> <span class="str">""</span>;
+    <span class="kw">int</span> start = <span class="num">0</span>, end = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; s.length(); i++) {
+        <span class="kw">int</span> odd  = <span class="fn">expand</span>(s, i, i);       <span class="cm">// odd-length centre ON i</span>
+        <span class="kw">int</span> even = <span class="fn">expand</span>(s, i, i + <span class="num">1</span>);   <span class="cm">// even-length centre BETWEEN i, i+1</span>
+        <span class="kw">int</span> len = <span class="type">Math</span>.<span class="fn">max</span>(odd, even);
+        <span class="kw">if</span> (len &gt; end - start + <span class="num">1</span>) {      <span class="cm">// found a longer palindrome</span>
+            start = i - (len - <span class="num">1</span>) / <span class="num">2</span>;
+            end   = i + len / <span class="num">2</span>;
+        }
+    }
+    <span class="kw">return</span> s.<span class="fn">substring</span>(start, end + <span class="num">1</span>);
+}
+<span class="cm">// Grow outward while the mirrored ends match; return the matched length in chars.</span>
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">expand</span>(<span class="type">String</span> s, <span class="kw">int</span> l, <span class="kw">int</span> r) {
+    <span class="kw">while</span> (l &gt;= <span class="num">0</span> &amp;&amp; r &lt; s.length() &amp;&amp; s.<span class="fn">charAt</span>(l) == s.<span class="fn">charAt</span>(r)) { l--; r++; }
+    <span class="kw">return</span> r - l - <span class="num">1</span>;                 <span class="cm">// pointers overshot by one on each side</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n&sup2;)</code> &mdash; <code>2n - 1</code> centres, each expanding up to <code>O(n)</code>. Space <code>O(1)</code> beyond the output (the DP variant costs <code>O(n&sup2;)</code> space; Manacher&rsquo;s algorithm reaches <code>O(n)</code> time).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Check both centre parities.</strong> Expanding only from <code>i, i</code> misses every even-length palindrome (like <code>"xyzzyx"</code>); you must also expand from <code>i, i + 1</code>. <strong>The even seed can be out of range &mdash; that&rsquo;s fine.</strong> When <code>i</code> is the last index, <code>i + 1</code> is past the end, so <code>expand</code> matches nothing and returns length <code>0</code>; the <code>r &lt; s.length()</code> guard handles it. <strong>Get the return-length formula right.</strong> After the loop the pointers have moved one step too far on each side, so the matched length is <code>r - l - 1</code>, not <code>r - l</code>. <strong>Recover bounds for both parities with the same math.</strong> <code>start = i - (len - 1) / 2</code> and <code>end = i + len / 2</code> work whether <code>len</code> is odd or even. <strong>Compare lengths, not raw expand results.</strong> Update the answer only when the new span strictly exceeds the stored one so the first maximal palindrome is kept.</p></div>
+</div>
+
+
+<!-- PROBLEM: Split Array Largest Sum -->
+<div class="card">
+<h2>Split Array Largest Sum</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given an array of non-negative integers and an integer <code>m</code>, split the array into <code>m</code> non-empty <em>contiguous</em> subarrays so that the largest subarray sum among them is as small as possible. Return that minimised largest sum.</p>
+<ul>
+  <li>With <code>m = 1</code> there is no choice &mdash; the answer is the sum of the whole array.</li>
+  <li>With <code>m = n</code> (one element per part) the answer is the single largest element.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[4, 3, 2, 6, 7, 1]</code> with <code>m = 3</code> the answer is <code>8</code> (computed by running the code). The split <code>[4, 3] | [2, 6] | [7, 1]</code> yields subarray sums <code>7, 8, 8</code>, so the largest is <code>8</code>, and no 3-way split does better. As sanity checks, <code>m = 1</code> returns the full sum <code>23</code> and <code>m = 6</code> returns the largest element <code>7</code> &mdash; both matched by an independent DP.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Binary-search on the answer.</strong> The quantity we want &mdash; the largest allowed subarray sum, call it the <em>capacity</em> &mdash; is <em>monotone</em>: if a capacity <code>cap</code> lets us fit the array into <code>&le; m</code> pieces, then any larger cap does too. So binary-search the smallest feasible cap. The search range is pinned: the low bound is <code>max(arr)</code> (a single element must fit inside one piece, so no cap below the largest element can ever work) and the high bound is <code>sum(arr)</code> (one piece holding everything, the <code>m = 1</code> case). Feasibility is a greedy <code>O(n)</code> check: walk left to right adding to the current piece, and start a new piece whenever adding the next element would exceed <code>cap</code>; if that needs more than <code>m</code> pieces, <code>cap</code> is too small. (A DP with state &ldquo;minimum possible largest sum splitting the first <code>i</code> elements into <code>k</code> parts&rdquo; also solves it in <code>O(m &middot; n&sup2;)</code>; we used it only as a cross-check.)</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">splitArray</span>(<span class="kw">int</span>[] nums, <span class="kw">int</span> m) {
+    <span class="kw">int</span> lo = <span class="num">0</span>, hi = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> n : nums) { lo = <span class="type">Math</span>.<span class="fn">max</span>(lo, n); hi += n; }  <span class="cm">// max(arr) .. sum(arr)</span>
+    <span class="kw">while</span> (lo &lt; hi) {
+        <span class="kw">int</span> mid = lo + (hi - lo) / <span class="num">2</span>;
+        <span class="kw">if</span> (<span class="fn">feasible</span>(nums, m, mid)) hi = mid;   <span class="cm">// mid works -&gt; try smaller</span>
+        <span class="kw">else</span> lo = mid + <span class="num">1</span>;                      <span class="cm">// too small -&gt; raise the cap</span>
+    }
+    <span class="kw">return</span> lo;                                   <span class="cm">// lo == hi == smallest feasible cap</span>
+}
+<span class="cm">// Greedy: can nums be split into &lt;= m contiguous pieces, each summing to &lt;= cap?</span>
+<span class="kw">private</span> <span class="kw">boolean</span> <span class="fn">feasible</span>(<span class="kw">int</span>[] nums, <span class="kw">int</span> m, <span class="kw">int</span> cap) {
+    <span class="kw">int</span> pieces = <span class="num">1</span>, cur = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> n : nums) {
+        <span class="kw">if</span> (cur + n &gt; cap) {                     <span class="cm">// n won't fit -&gt; open a new piece</span>
+            pieces++; cur = n;
+            <span class="kw">if</span> (pieces &gt; m) <span class="kw">return</span> <span class="kw">false</span>;
+        } <span class="kw">else</span> cur += n;
+    }
+    <span class="kw">return</span> <span class="kw">true</span>;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n &middot; log(sum - max))</code> &mdash; each of <code>O(log range)</code> binary-search steps runs an <code>O(n)</code> feasibility scan. Space <code>O(1)</code>. The DP alternative is <code>O(m &middot; n&sup2;)</code> time and <code>O(m &middot; n)</code> space.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Set the search bounds precisely.</strong> The low end must be <code>max(arr)</code>, not <code>0</code> &mdash; any cap below the largest element can never hold that element, so the greedy feasibility check would mis-report (accepting a piece whose running sum exceeds the cap); the high end is <code>sum(arr)</code>. <strong>The answer is monotone &mdash; that&rsquo;s why binary search applies.</strong> Feasibility only ever flips from false to true as the cap grows, so you can search for the boundary. <strong>Start the piece count at <code>1</code>.</strong> You already have one open piece before the scan; counting from <code>0</code> is off by one. <strong>Contiguous, not any subset.</strong> The pieces must be consecutive slices, which is exactly what the left-to-right greedy produces &mdash; reordering elements changes the problem. <strong>Use <code>lo + (hi - lo) / 2</code>.</strong> Writing <code>(lo + hi) / 2</code> can overflow when the sum is near <code>Integer.MAX_VALUE</code>. <strong>Non-negativity matters.</strong> The greedy feasibility argument relies on a piece&rsquo;s running sum only ever increasing as you add elements; with negative numbers the problem needs the DP instead.</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_problems_trees.html">&lsaquo; Trees — Recursion, DFS &amp; Tree DP</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_sorting.html">Sorting &amp; Searching &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

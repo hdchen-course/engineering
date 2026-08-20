@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apache Cassandra Deep Dive — Senior-Level Interview Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* HEADER */
+.page-header {
+  background: linear-gradient(135deg, #0f2f2b 0%, #0d5c53 40%, #0d9488 100%);
+  padding: 40px 44px 20px;
+}
+.header-tag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.header-title { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.header-title span { color: #5eead4; }
+.header-desc { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 700px; }
+
+/* TABS */
+.tab-bar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 44px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.tab-btn {
+  padding: 14px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text3);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 3px solid transparent;
+  transition: all .2s;
+  white-space: nowrap;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.tab-btn:hover { color: var(--teal); background: var(--teal-l); }
+.tab-btn.active { color: #0f766e; border-bottom-color: var(--teal); }
+/* Dark: hardcoded #0f766e teal on the dark tab bar is only 2.98:1 (WCAG 1.4.3
+   fail); brighten the active-tab label + underline to a lighter teal (~8.7:1). */
+html[data-theme="dark"] .tab-btn.active { color: #2dd4bf; border-bottom-color: #2dd4bf; }
+
+/* CONTENT */
+.content { padding: 32px 44px 60px; max-width: 1100px; margin: 0 auto; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* SECTION */
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--teal-l);
+}
+.subsection-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text2);
+  margin: 20px 0 10px;
+}
+
+/* CARD */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title .icon { font-size: 18px; }
+
+/* COLLAPSIBLE */
+.collapsible {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.collapsible-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  transition: background .15s;
+  user-select: none;
+}
+.collapsible-header:hover { background: var(--bg3); }
+.collapsible-header .arrow {
+  transition: transform .2s;
+  font-size: 12px;
+  color: var(--text3);
+}
+.collapsible.open .collapsible-header .arrow { transform: rotate(90deg); }
+.collapsible-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease;
+}
+.collapsible.open .collapsible-body { max-height: 6000px; }
+.collapsible-content {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* CODE */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--bg3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--teal);
+}
+pre {
+  font-family: 'JetBrains Mono', monospace;
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 16px 20px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+pre code { background: none; color: inherit; padding: 0; }
+
+/* TABLE */
+.table-wrapper { overflow-x: auto; margin: 12px 0; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th { background: var(--bg3); font-weight: 600; color: var(--text2); }
+tr:hover td { background: var(--bg3); }
+
+/* BADGE */
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 8px; }
+.badge-blue { background: var(--blue-l); color: var(--blue-d); }
+.badge-green { background: var(--green-l); color: var(--green); }
+.badge-yellow { background: var(--yellow-l); color: var(--yellow); }
+.badge-red { background: var(--red-l); color: var(--red); }
+.badge-purple { background: var(--purple-l); color: var(--purple); }
+.badge-teal { background: var(--teal-l); color: var(--teal); }
+
+/* KEY POINT */
+.key-point {
+  background: var(--yellow-l);
+  border-left: 4px solid var(--yellow);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.key-point strong { color: var(--yellow); }
+
+/* INFO BOX */
+.info-box {
+  background: var(--teal-l);
+  border-left: 4px solid var(--teal);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+.warning-box {
+  background: var(--red-l);
+  border-left: 4px solid var(--red);
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin: 12px 0;
+  font-size: 13.5px;
+}
+
+/* SVG DIAGRAM */
+.diagram-container {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  margin: 16px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.diagram-caption {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* LIST */
+ul, ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 6px; font-size: 14px; }
+
+/* COMPARISON */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+@media (max-width: 768px) {
+  .comparison-grid { grid-template-columns: 1fr; }
+  .content { padding: 20px; }
+  .page-header { padding: 24px 20px 16px; }
+  .tab-bar { padding: 0 20px; }
+}
+
+.highlight { background: var(--yellow-l); padding: 1px 4px; border-radius: 3px; }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part V · Chapter 5 — <b>Cassandra Deep Dive</b></span><span class="bkspacer"></span></nav>
+
+<div class="page-header">
+  <div class="header-tag">Distributed Systems / Database — Senior-Level Interview Prep</div>
+  <h1 class="ht header-title">Apache Cassandra <span>Deep Dive</span></h1>
+  <div class="header-desc">A wide-column, masterless, AP database. This guide covers the ring and consistent hashing, query-driven data modeling, the LSM write/read path, tunable consistency, multi-DC replication, and the anti-patterns interviewers probe. Facts reflect Cassandra 4.x / 5.0 (2024–2026).</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="overview">Architecture</button>
+  <button class="tab-btn" data-tab="datamodel">Data Modeling</button>
+  <button class="tab-btn" data-tab="storage">Storage Engine</button>
+  <button class="tab-btn" data-tab="consistency">Consistency</button>
+  <button class="tab-btn" data-tab="pitfalls">Pitfalls</button>
+  <button class="tab-btn" data-tab="interview">Interview</button>
+</div>
+
+<div class="content">
+
+<!-- ==================== ARCHITECTURE TAB ==================== -->
+<div id="tab-overview" class="tab-panel active">
+  <div class="section">
+    <h2 class="section-title">What Cassandra Is (and Isn't)</h2>
+    <p>Apache Cassandra is a <strong>wide-column, masterless (peer-to-peer), horizontally scalable</strong> distributed database. It descends from two lineages: the data model of Google Bigtable (a sparse, wide-column map) and the distribution model of Amazon Dynamo (consistent hashing, replication, tunable eventual consistency). Every node is identical — there is <strong>no primary, no config server, no single point of failure</strong>. It is designed to run across many commodity nodes and multiple data centers.</p>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Dimension</th><th>Cassandra's choice</th><th>Consequence</th></tr></thead>
+        <tbody>
+          <tr><td>CAP position</td><td><span class="badge badge-teal">AP</span> — Available + Partition-tolerant, tunable toward C</td><td>Stays writable during network partitions; consistency is a per-query knob, not a fixed guarantee</td></tr>
+          <tr><td>Topology</td><td>Masterless ring, every node a peer</td><td>No failover election for writes; any node can coordinate any request</td></tr>
+          <tr><td>Storage engine</td><td>Log-structured merge tree (LSM)</td><td>Writes are append-only and extremely fast; reads may touch multiple SSTables</td></tr>
+          <tr><td>Scaling</td><td>Linear horizontal scale-out</td><td>Add nodes to add throughput and capacity; no sharding logic in the app</td></tr>
+          <tr><td>Conflict resolution</td><td>Last-write-wins by cell timestamp</td><td>Simple and lock-free, but clock skew and blind updates can silently lose data</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="key-point">
+      <strong>One-line pitch:</strong> Cassandra trades joins, ad-hoc queries, and strong-by-default consistency for <em>predictable low-latency writes at massive scale, no single point of failure, and painless multi-region operation</em>. If you need those trades reversed, you want a different database.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">The Ring &amp; Consistent Hashing</h2>
+    <p>Cassandra maps every node onto a <strong>token ring</strong>. A partitioner hashes the <strong>partition key</strong> of each row to a token; the row lives on the node that owns that token range. The default partitioner is <code>Murmur3Partitioner</code>, which produces 64-bit tokens over the range <code>-2^63 … 2^63-1</code>.</p>
+    <div class="diagram-container">
+      <svg viewBox="0 0 760 420" width="720" xmlns="http://www.w3.org/2000/svg">
+        <text x="380" y="24" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#0f172a">Token Ring with Consistent Hashing (RF = 3)</text>
+        <!-- Ring -->
+        <circle cx="290" cy="220" r="140" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+        <!-- Nodes on ring -->
+        <circle cx="290" cy="80" r="26" fill="#ccfbf1" stroke="#0b786e" stroke-width="2"/>
+        <text x="290" y="78" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#0f766e">Node A</text>
+        <text x="290" y="92" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#59677c">0</text>
+        <circle cx="411" cy="150" r="26" fill="#dbeafe" stroke="#1658ea" stroke-width="2"/>
+        <text x="411" y="148" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#1d4ed8">Node B</text>
+        <text x="411" y="162" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#59677c">2^61</text>
+        <circle cx="411" cy="290" r="26" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+        <text x="411" y="288" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#7c3aed">Node C</text>
+        <text x="411" y="302" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#59677c">2^62</text>
+        <circle cx="290" cy="360" r="26" fill="#dcfce7" stroke="#117e39" stroke-width="2"/>
+        <text x="290" y="358" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#166534">Node D</text>
+        <circle cx="169" cy="290" r="26" fill="#fef3c7" stroke="#a35905" stroke-width="2"/>
+        <text x="169" y="288" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#92400e">Node E</text>
+        <circle cx="169" cy="150" r="26" fill="#fee2e2" stroke="#c62020" stroke-width="2"/>
+        <text x="169" y="148" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#c62020">Node F</text>
+        <!-- Key hash marker -->
+        <circle cx="470" cy="205" r="6" fill="#0f172a"/>
+        <text x="486" y="200" font-family="Inter" font-size="10" font-weight="600" fill="#0f172a">hash("user42")</text>
+        <text x="486" y="214" font-family="Inter" font-size="9" fill="#59677c">= token t</text>
+        <path d="M470 211 Q440 240 411 274" stroke="#0f172a" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#arrH)"/>
+        <!-- Replica set box -->
+        <rect x="540" y="250" width="200" height="120" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/>
+        <text x="640" y="272" text-anchor="middle" font-family="Inter" font-size="11" font-weight="700" fill="#334155">Replica set for t</text>
+        <text x="640" y="294" text-anchor="middle" font-family="Inter" font-size="10" fill="#7c3aed">1. Node C (owner)</text>
+        <text x="640" y="312" text-anchor="middle" font-family="Inter" font-size="10" fill="#166534">2. Node D (next)</text>
+        <text x="640" y="330" text-anchor="middle" font-family="Inter" font-size="10" fill="#a35905">3. Node E (next)</text>
+        <text x="640" y="354" text-anchor="middle" font-family="Inter" font-size="8.5" fill="#59677c">walk clockwise, skip same rack/DC</text>
+        <defs>
+          <marker id="arrH" markerWidth="9" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#0f172a"/></marker>
+        </defs>
+      </svg>
+      <div class="diagram-caption">Fig 1: A key hashes to a token; the owning node plus the next N-1 nodes clockwise form the replica set.</div>
+    </div>
+    <ul>
+      <li><strong>Ownership:</strong> the first node clockwise from a token owns it. With replication factor (RF) = N, the row is also stored on the next N-1 nodes walking clockwise, subject to the replica-placement strategy (e.g. skip nodes in the same rack).</li>
+      <li><strong>Consistent hashing</strong> means adding or removing a node only reshuffles the token ranges adjacent to it — not the whole dataset. This is what makes elastic scaling cheap.</li>
+      <li><strong>Any node can be the coordinator</strong> for a request. A client connects to some node; that node hashes the key, forwards to the replicas, gathers responses, and enforces the consistency level. Drivers are token-aware and usually pick a replica as coordinator to save a hop.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Virtual Nodes (vnodes)</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Why vnodes fixed the "one token per node" problem</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>Originally each node owned exactly <strong>one</strong> contiguous token range. That made ring balance fragile: adding a node only split one neighbor's range, and rebuilding a failed node streamed from just one or two peers. <strong>Virtual nodes</strong> give each physical node many small, non-contiguous token ranges instead.</p>
+        <ul>
+          <li>Configured by <code>num_tokens</code> in <code>cassandra.yaml</code>. Cassandra 1.2–3.x defaulted to <strong>256</strong>; <strong>Cassandra 4.0 changed the default to 16</strong>, paired with <code>allocate_tokens_for_local_replication_factor</code> for even, RF-aware placement.</li>
+          <li><strong>Fewer tokens (e.g. 8–16)</strong> is now preferred: 256 vnodes hurt availability (any two nodes down likely share a range) and made repair and token allocation heavier. 16 balances distribution against those costs.</li>
+          <li><strong>Rebuild parallelism:</strong> a replacement node streams its many ranges from many peers at once, so recovery is far faster than the single-token era.</li>
+          <li><strong>Heterogeneous hardware:</strong> a bigger node can be given more tokens to own a larger slice of the ring.</li>
+        </ul>
+        <div class="key-point"><strong>Interview note:</strong> "256 vnodes" is stale advice. Modern guidance (4.0+) is a small <code>num_tokens</code> (8–16) with the token allocation algorithm enabled. Be ready to explain the availability trade-off: more vnodes = more even data, but higher probability that any pair of node failures loses a quorum for some range.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Gossip, Snitches &amp; Failure Detection</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>How peers agree on cluster state without a coordinator</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li><strong>Gossip:</strong> once per second each node exchanges state (up/down, load, schema version, tokens) with a few random peers. State converges epidemically across the cluster in O(log N) rounds — no central membership service.</li>
+          <li><strong>Phi-accrual failure detector:</strong> rather than a binary up/down, each node computes a suspicion level (phi) from the recent gossip inter-arrival history, so flaky networks don't cause instant false failures.</li>
+          <li><strong>Snitch:</strong> tells Cassandra the topology — which rack and data center each node is in — so replicas are spread across failure domains and reads prefer local nodes. <code>GossipingPropertyFileSnitch</code> is the standard production choice (each node declares its own DC/rack, propagated via gossip). Cloud snitches (e.g. <code>Ec2Snitch</code>) infer DC/rack from instance metadata.</li>
+          <li><strong>Seeds</strong> are well-known bootstrap nodes a new node contacts first to join the gossip mesh; they are not masters and hold no special data.</li>
+        </ul>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DATA MODELING TAB ==================== -->
+<div id="tab-datamodel" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Query-Driven Modeling — The Core Mindset</h2>
+    <div class="warning-box">
+      <strong>Unlearn the relational reflex.</strong> In an RDBMS you model the entities (normalize), then write whatever queries you need. In Cassandra you do the <em>opposite</em>: start from the <strong>queries</strong> your application must serve, then design one table per query pattern so every read is a single-partition lookup. Cassandra has <strong>no joins, no ad-hoc WHERE, and no cross-partition aggregation</strong> at scale. The schema is a materialized answer to a known question.
+    </div>
+    <ol>
+      <li><strong>Identify the access patterns</strong> — the exact reads the app issues ("show a user's messages in a room, newest first").</li>
+      <li><strong>Design one table per query</strong> — duplicate data across tables as needed. Denormalization is expected, not a smell.</li>
+      <li><strong>Choose the partition key</strong> so each query hits exactly one partition, and partitions stay bounded (not unbounded-growth).</li>
+      <li><strong>Choose clustering columns</strong> to give the on-disk sort order the query wants.</li>
+    </ol>
+    <div class="key-point"><strong>Mantra:</strong> "Writes are cheap, disk is cheap, joins don't exist." Optimize for reads by writing the same fact into multiple denormalized tables at write time.</div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Partition Key vs Clustering Columns</h2>
+    <p>A CQL <code>PRIMARY KEY</code> has two parts. Understanding the split is the single most important modeling skill.</p>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Part</th><th>Role</th><th>Determines</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Partition key</strong> (first component; parenthesized if compound)</td><td>Hashed to a token → picks the node(s)</td><td><em>Where</em> the data lives. All rows with the same partition key are stored together on the same replicas.</td></tr>
+          <tr><td><strong>Clustering columns</strong> (the rest)</td><td>Sort rows <em>within</em> a partition on disk</td><td><em>Order</em> of rows in the partition, and which range slices are efficient.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <pre><code>PRIMARY KEY ((room_id), bucket, sent_at, message_id)
+--            ^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--          partition key       clustering columns
+--          (picks node)     (sort order within partition)
+
+-- Compound partition key (both hashed together as the token):
+PRIMARY KEY ((room_id, bucket), sent_at, message_id)</code></pre>
+    <ul>
+      <li>Rows in a partition are physically sorted by clustering columns, so <code>ORDER BY</code> and range slices (<code>sent_at &gt; ?</code>) are free — no sort step.</li>
+      <li>You can only filter on clustering columns following the leftmost-prefix rule (like a composite index): you must restrict earlier clustering columns before ranging on a later one.</li>
+      <li>The partition key must be fully specified with equality (<code>=</code> or <code>IN</code>) for an efficient query. You cannot range-scan across partitions without <code>ALLOW FILTERING</code> (a red flag — see Pitfalls).</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Worked Example: Chat Messages</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>One data model, three query patterns, three tables</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p><strong>Access patterns:</strong> (1) fetch the latest messages in a room, newest first; (2) look up a single message by id; (3) list the rooms a user belongs to. We build a table for each.</p>
+        <pre><code>-- Keyspace: NetworkTopologyStrategy pins replicas per data center.
+CREATE KEYSPACE chat
+  WITH replication = {
+    'class': 'NetworkTopologyStrategy',
+    'us_east': 3,
+    'eu_west': 3
+  };
+
+-- Query 1: messages in a room, newest first, time-bucketed to bound partition size.
+CREATE TABLE chat.messages_by_room (
+  room_id     uuid,
+  bucket      date,          -- e.g. one partition per room per day
+  sent_at     timestamp,
+  message_id  timeuuid,
+  sender_id   uuid,
+  body        text,
+  PRIMARY KEY ((room_id, bucket), sent_at, message_id)
+) WITH CLUSTERING ORDER BY (sent_at DESC, message_id DESC);
+
+-- Read it (single partition, already sorted newest-first):
+SELECT sender_id, body, sent_at
+FROM chat.messages_by_room
+WHERE room_id = ? AND bucket = ?
+LIMIT 50;
+
+-- Query 2: fetch one message by id (separate lookup table).
+CREATE TABLE chat.message_by_id (
+  message_id  timeuuid PRIMARY KEY,
+  room_id     uuid,
+  sender_id   uuid,
+  body        text,
+  sent_at     timestamp
+);
+
+-- Query 3: rooms a user is in.
+CREATE TABLE chat.rooms_by_user (
+  user_id  uuid,
+  room_id  uuid,
+  joined_at timestamp,
+  PRIMARY KEY ((user_id), room_id)
+);</code></pre>
+        <div class="info-box"><strong>Why the <code>bucket</code>?</strong> A busy room could accumulate millions of messages. A partition that grows without bound becomes a "large partition" — slow reads, GC pressure, and eventually a hard failure. Adding a time bucket (day/week) to the partition key caps each partition's size. The application reads recent buckets and pages backward. This "time bucketing" is one of the most common Cassandra modeling techniques.</div>
+        <p><strong>Writing all three at once:</strong> the app issues three <code>INSERT</code>s (optionally in a <code>LOGGED BATCH</code> for atomicity across tables). There is no join to reassemble later — each table already answers its query directly.</p>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">No Joins, No Referential Integrity</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#9888;</span> What Cassandra deliberately does not do</div>
+      <ul>
+        <li><strong>No joins.</strong> You denormalize and duplicate. If a user renames themselves, you update every table that embedded the old name (or store only ids and accept a second lookup).</li>
+        <li><strong>No foreign keys / referential integrity.</strong> Consistency across tables is the application's job.</li>
+        <li><strong>No ad-hoc aggregation at scale.</strong> <code>GROUP BY</code>/aggregates only work efficiently within a single partition. Cluster-wide analytics belong in Spark, a warehouse, or a purpose-built OLAP store.</li>
+        <li><strong>No multi-partition transactions.</strong> A <code>LOGGED BATCH</code> gives atomicity (all-or-nothing) but <em>not</em> isolation, and it is not a distributed transaction — use it for keeping denormalized copies in sync, not for cross-entity invariants.</li>
+        <li><strong>Limited uniqueness.</strong> The only free uniqueness is the primary key. Enforcing "unique email" needs a lightweight transaction (<code>IF NOT EXISTS</code>, Paxos) — slow and to be used sparingly.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Wide-Column Storage Shape</h2>
+    <div class="collapsible">
+      <div class="collapsible-header"><span>How a CQL row maps to the underlying partition</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>Under the hood a partition is a sorted map: <code>partition key → (clustering key → (column → cell))</code>. Each cell carries a value plus a <strong>write timestamp</strong> and optional TTL. Columns absent in a row simply store nothing — the model is sparse, so wide, mostly-empty rows cost nothing for the missing cells. This is the "wide-column" shape: a single partition can hold from one row up to (bounded) millions of clustered rows, each a different set of cells.</p>
+        <ul>
+          <li><strong>Collections</strong> (<code>set</code>, <code>list</code>, <code>map</code>) and <strong>UDTs</strong> let you nest structure inside a row, but each collection is read/written whole and should stay small (thousands of elements, not millions).</li>
+          <li><strong>Counters</strong> are a special column type with their own replication rules; a table is either all-counter or no-counter.</li>
+          <li><strong>Static columns</strong> are shared across all rows of a partition — handy for per-partition metadata.</li>
+        </ul>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== STORAGE ENGINE TAB ==================== -->
+<div id="tab-storage" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">The Write Path (LSM Tree)</h2>
+    <p>Cassandra is a log-structured merge-tree store. Writes never do a read-modify-write on disk and never seek — they are pure appends, which is why write throughput is so high and so predictable.</p>
+    <div class="diagram-container">
+      <svg viewBox="0 0 820 340" width="780" xmlns="http://www.w3.org/2000/svg">
+        <text x="410" y="22" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#0f172a">Write Path: Commit Log + Memtable → SSTable</text>
+        <!-- client -->
+        <rect x="20" y="120" width="110" height="50" rx="8" fill="#f1f5f9" stroke="#59677c" stroke-width="1.5"/>
+        <text x="75" y="142" text-anchor="middle" font-family="Inter" font-size="11" font-weight="600" fill="#334155">Write</text>
+        <text x="75" y="158" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">(coordinator)</text>
+        <!-- commit log -->
+        <rect x="180" y="40" width="180" height="70" rx="8" fill="#fef3c7" stroke="#a35905" stroke-width="2"/>
+        <text x="270" y="66" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#92400e">Commit Log</text>
+        <text x="270" y="84" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">append-only, on disk</text>
+        <text x="270" y="98" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">durability / crash replay</text>
+        <!-- memtable -->
+        <rect x="180" y="180" width="180" height="70" rx="8" fill="#ccfbf1" stroke="#0b786e" stroke-width="2"/>
+        <text x="270" y="206" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#0f766e">Memtable</text>
+        <text x="270" y="224" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">in RAM, sorted by</text>
+        <text x="270" y="238" text-anchor="middle" font-family="Inter" font-size="9" fill="#59677c">clustering key</text>
+        <!-- arrows client->both -->
+        <path d="M130 138 L180 75" stroke="#a35905" stroke-width="1.8" marker-end="url(#aw)"/>
+        <path d="M130 152 L180 210" stroke="#0b786e" stroke-width="1.8" marker-end="url(#aw2)"/>
+        <text x="100" y="100" font-family="Inter" font-size="8" fill="#a35905">1. append</text>
+        <text x="124" y="202" font-family="Inter" font-size="8" fill="#0f766e">2. insert</text>
+        <!-- flush -->
+        <path d="M360 215 L470 215" stroke="#7c3aed" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#aw3)"/>
+        <text x="415" y="207" text-anchor="middle" font-family="Inter" font-size="8.5" fill="#7c3aed">3. flush (full/periodic)</text>
+        <!-- SSTables -->
+        <rect x="480" y="150" width="300" height="150" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+        <text x="630" y="172" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#7c3aed">SSTables (immutable, on disk)</text>
+        <rect x="500" y="185" width="120" height="44" rx="5" fill="#fff" stroke="#a78bfa"/>
+        <text x="560" y="203" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">Data.db</text>
+        <text x="560" y="219" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">rows, sorted</text>
+        <rect x="640" y="185" width="120" height="44" rx="5" fill="#fff" stroke="#a78bfa"/>
+        <text x="700" y="203" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#334155">Index / Filter</text>
+        <text x="700" y="219" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">bloom + offsets</text>
+        <rect x="500" y="240" width="260" height="44" rx="5" fill="#faf5ff" stroke="#c4b5fd"/>
+        <text x="630" y="258" text-anchor="middle" font-family="Inter" font-size="9" fill="#7c3aed">never modified in place</text>
+        <text x="630" y="272" text-anchor="middle" font-family="Inter" font-size="8" fill="#59677c">updates/deletes = new SSTables, merged later by compaction</text>
+        <defs>
+          <marker id="aw" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#a35905"/></marker>
+          <marker id="aw2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#0b786e"/></marker>
+          <marker id="aw3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#7c3aed"/></marker>
+        </defs>
+      </svg>
+      <div class="diagram-caption">Fig 2: Every write appends to the commit log and updates the in-memory memtable; memtables later flush to immutable SSTables.</div>
+    </div>
+    <ol>
+      <li><strong>Commit log append.</strong> The mutation is appended to the on-disk commit log for durability (crash replay). By default the commit log is <code>periodic</code> (fsync every <code>commitlog_sync_period</code>, default ~10s); <code>batch</code>/<code>group</code> modes fsync before ack for stronger durability at higher latency.</li>
+      <li><strong>Memtable update.</strong> The mutation is applied to an in-memory memtable, sorted by clustering key. Reads see it immediately.</li>
+      <li><strong>Ack.</strong> Once enough replicas have done the above to satisfy the consistency level, the coordinator acks the client. There is <em>no read before write</em> for normal inserts/updates — an update is just a new timestamped cell.</li>
+      <li><strong>Flush.</strong> When a memtable fills (heap thresholds) or on demand, it is flushed to a new immutable <strong>SSTable</strong> on disk, and the corresponding commit log segments become eligible for recycling.</li>
+    </ol>
+    <div class="key-point"><strong>Why writes are fast:</strong> no disk seek, no read-modify-write, no in-place mutation, no uniqueness check (for plain writes). An <code>UPDATE</code> and an <code>INSERT</code> are the same operation — an "upsert" of timestamped cells. This also means a blind <code>UPDATE</code> to a non-existent row silently creates it.</div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">SSTable Anatomy &amp; the Read Path</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Reads must merge many immutable files — the helpers that keep it fast</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>Because SSTables are immutable, a single partition's data (and its updates and deletes) can be spread across the memtable and multiple SSTables. A read must find and merge all of them, keeping the newest cell per column by timestamp. Several structures make this cheap:</p>
+        <ul>
+          <li><strong>Bloom filter</strong> (per SSTable, in RAM): a probabilistic test for "might this SSTable contain this partition key?" A negative answer lets the reader skip the SSTable entirely with zero disk I/O. False positives are possible, false negatives are not.</li>
+          <li><strong>Partition index + summary:</strong> map a partition key to its byte offset in <code>Data.db</code>; the summary is a sampled, in-memory shortcut into the index.</li>
+          <li><strong>Key cache / row cache / chunk cache:</strong> cache hot key locations, whole rows, and decompressed file chunks respectively.</li>
+          <li><strong>Compression offsets:</strong> data is compressed in blocks; an offset map allows reading just the needed block.</li>
+        </ul>
+        <p><strong>Read steps:</strong> (1) check memtables; (2) for each SSTable, consult its bloom filter, skip on a miss; (3) for candidates, use the index to seek the partition and read the needed rows; (4) merge all fragments by timestamp, applying tombstones; (5) return the reconciled result. The more SSTables a partition is spread across, the more work a read does — which is exactly what compaction fights.</p>
+        <div class="info-box"><strong>Cassandra 5.0 storage upgrades:</strong> a new trie-indexed SSTable format (<strong>BTI</strong>, selectable via <code>sstable_format</code>) uses memory-efficient tries for partition/row indexing, and <strong>trie-based memtables</strong> reduce heap overhead. These are additive improvements to the same LSM model, not a redesign.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Compaction Strategies</h2>
+    <p>Compaction merges SSTables in the background: it collapses multiple versions of a cell to the newest, drops data shadowed by tombstones (after <code>gc_grace_seconds</code>), and reduces the number of files a read must touch. Choosing the strategy to match the workload is a classic tuning question.</p>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Strategy</th><th>How it merges</th><th>Best for</th><th>Watch out for</th></tr></thead>
+        <tbody>
+          <tr><td><strong>STCS</strong><br>SizeTieredCompactionStrategy <span class="badge badge-blue">default</span></td><td>Merges SSTables of similar size into larger ones once enough accumulate.</td><td>Write-heavy / general purpose; low write amplification.</td><td>Higher read amplification; can need up to ~2x free disk for a big compaction; old data lingers in large tables.</td></tr>
+          <tr><td><strong>LCS</strong><br>LeveledCompactionStrategy</td><td>Organizes SSTables into size levels; each level holds non-overlapping ranges.</td><td>Read-heavy, update-heavy; bounds a partition to few SSTables (fast, predictable reads).</td><td>Much higher write amplification and CPU/I/O — bad for pure write-once workloads.</td></tr>
+          <tr><td><strong>TWCS</strong><br>TimeWindowCompactionStrategy</td><td>Buckets data by time window; compacts within a window, then leaves windows sealed.</td><td>Time-series / append-only with TTL; whole old SSTables expire and drop cheaply.</td><td>Only for time-ordered, immutable data; out-of-order writes and reads across windows hurt.</td></tr>
+          <tr><td><strong>UCS</strong><br>UnifiedCompactionStrategy <span class="badge badge-teal">5.0</span></td><td>A single configurable strategy that can behave tiered-like or leveled-like via scaling parameters.</td><td>Recommended direction going forward (STCS is still the out-of-the-box default); tune one strategy instead of switching classes.</td><td>Newer; understand the scaling parameters before deploying broadly.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warning-box"><strong>DTCS is deprecated.</strong> The old DateTieredCompactionStrategy was deprecated and superseded by <strong>TWCS</strong>; don't propose DTCS in 2026. For time-series, the answer is TWCS (or UCS configured for it). Note STCS remains the out-of-the-box default table strategy; UCS is available in 5.0 and is the strategic direction.</div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Read vs Write Amplification — the LSM Trade</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#9878;</span> The lever every compaction choice pulls</div>
+      <ul>
+        <li><strong>Write amplification:</strong> a byte written once is rewritten several times as compaction merges files. LCS has the most; STCS/TWCS the least.</li>
+        <li><strong>Read amplification:</strong> a read may touch many SSTables. LCS minimizes it (few files per partition); STCS can be worse over time.</li>
+        <li><strong>Space amplification:</strong> obsolete/overwritten data and tombstones occupy disk until compacted away.</li>
+      </ul>
+      <p>The interview-ready summary: <em>LSM databases turn random write I/O into sequential appends (great for writes) at the cost of reads having to merge across files and background compaction rewriting data. The compaction strategy is how you choose where on that read/write/space triangle to sit.</em></p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== CONSISTENCY TAB ==================== -->
+<div id="tab-consistency" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Tunable Consistency</h2>
+    <p>Cassandra does not pick consistency for you globally. <strong>Every read and write specifies a consistency level (CL)</strong> — how many replicas must respond before the operation is considered successful. This is the tunable dial between latency/availability and consistency.</p>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Consistency level</th><th>Replicas required</th><th>Typical use</th></tr></thead>
+        <tbody>
+          <tr><td><code>ONE</code> / <code>TWO</code> / <code>THREE</code></td><td>1 / 2 / 3 replicas respond</td><td>Lowest latency; weakest guarantee. <code>ONE</code> read may return stale data.</td></tr>
+          <tr><td><code>LOCAL_ONE</code></td><td>1 replica in the local DC</td><td>Fast reads that must not cross DCs.</td></tr>
+          <tr><td><code>QUORUM</code></td><td>majority of <em>all</em> replicas across all DCs</td><td>Strong consistency single-DC; cross-DC latency in multi-DC.</td></tr>
+          <tr><td><code>LOCAL_QUORUM</code> <span class="badge badge-teal">multi-DC go-to</span></td><td>majority of replicas in the local DC</td><td>Strong-enough consistency without paying cross-DC round trips. The default choice for multi-region apps.</td></tr>
+          <tr><td><code>EACH_QUORUM</code></td><td>a quorum in <em>every</em> DC</td><td>Writes that must be durable in all regions (rare; high latency).</td></tr>
+          <tr><td><code>ALL</code></td><td>every replica</td><td>Strongest, but a single node down fails the operation. Rarely worth it.</td></tr>
+          <tr><td><code>ANY</code> (writes only)</td><td>at least a hint is stored</td><td>Maximum availability; a write can succeed with only a hinted handoff and no live replica.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Quorum for N replicas is <code>floor(N/2) + 1</code>. For RF=3, QUORUM = 2. For RF=5, QUORUM = 3.</p>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">The R + W &gt; N Rule</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>When do reads see the latest write? Strong consistency without a leader</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>Let <strong>N</strong> = replication factor, <strong>W</strong> = write consistency level, <strong>R</strong> = read consistency level. If <strong>R + W &gt; N</strong>, the read replica set and the write replica set are guaranteed to <strong>overlap in at least one replica</strong> — so at least one node in the read holds the latest write, and the coordinator reconciles the responses by cell timestamp and returns that fresh value. (Read repair additionally writes the fresh value back to any stale replicas, but is not required for this read to be fresh.)</p>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>N</th><th>W</th><th>R</th><th>R+W&gt;N?</th><th>Guarantee</th></tr></thead>
+            <tbody>
+              <tr><td>3</td><td>QUORUM (2)</td><td>QUORUM (2)</td><td><span class="badge badge-green">2+2=4 &gt; 3</span></td><td>Strong — reads see the latest committed write.</td></tr>
+              <tr><td>3</td><td>ALL (3)</td><td>ONE (1)</td><td><span class="badge badge-green">3+1=4 &gt; 3</span></td><td>Strong reads, but writes fail if any replica is down.</td></tr>
+              <tr><td>3</td><td>ONE (1)</td><td>ONE (1)</td><td><span class="badge badge-red">1+1=2 &le; 3</span></td><td>Eventual only — a read may miss a recent write.</td></tr>
+              <tr><td>3</td><td>LOCAL_QUORUM (2)</td><td>LOCAL_QUORUM (2)</td><td><span class="badge badge-green">within a DC: 2+2 &gt; 3</span></td><td>Strong within the local DC; other DCs converge asynchronously.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="key-point"><strong>Interview move:</strong> The most common production setting for a globally-distributed app is RF=3 per DC with <code>LOCAL_QUORUM</code> reads and writes. That satisfies R+W&gt;N <em>inside each DC</em> (2+2&gt;3) for low-latency strong-enough consistency, while cross-DC replication stays asynchronous. Reach for <code>EACH_QUORUM</code>/<code>QUORUM</code> only when you truly need cross-region read-after-write.</div>
+        <div class="warning-box"><strong>Caveat — no isolation.</strong> R+W&gt;N gives you <em>freshness</em>, not transactional isolation. Concurrent writers still resolve by last-write-wins timestamp, so lost updates are possible. For compare-and-set semantics you need lightweight transactions (Paxos), covered below.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Hinted Handoff</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Keeping writes flowing when a replica is briefly down</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li>If a replica is down when a write arrives, the coordinator stores a <strong>hint</strong> — a saved copy of the mutation destined for the dead replica.</li>
+          <li>When the replica comes back within the hint window (<code>max_hint_window_in_ms</code>, default <strong>3 hours</strong>), the coordinator replays the hint to it, restoring the missed write.</li>
+          <li>Hints improve availability and reduce the repair burden after short outages. They do <em>not</em> count toward the write's consistency level (except that CL <code>ANY</code> can be satisfied by a hint alone).</li>
+          <li>If a node is down longer than the hint window, hints stop being stored for it and you must rely on <strong>anti-entropy repair</strong> to restore consistency — this is why replacing a long-dead node without repair risks resurrecting deleted data.</li>
+        </ul>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Read Repair &amp; Anti-Entropy Repair</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Two mechanisms that converge divergent replicas</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <h3 class="subsection-title">Read repair (during reads)</h3>
+        <ul>
+          <li>On a read at CL &ge; QUORUM, the coordinator asks one replica for full data and the others for a lightweight <strong>digest</strong>. If digests disagree, it detects divergence, fetches the conflicting data, reconciles by timestamp, returns the correct answer to the client, <em>and</em> writes the fresh version back to the stale replicas — <strong>blocking read repair</strong>.</li>
+          <li>Configured per table via the <code>read_repair</code> option (<code>BLOCKING</code> default, or <code>NONE</code>). Note: the old probabilistic <code>read_repair_chance</code> / <code>dclocal_read_repair_chance</code> table options were <strong>removed in Cassandra 4.0</strong> — don't cite them.</li>
+        </ul>
+        <h3 class="subsection-title">Anti-entropy repair (background / scheduled)</h3>
+        <ul>
+          <li><code>nodetool repair</code> compares data between replicas using <strong>Merkle trees</strong> (hash trees over token ranges) to find differing ranges cheaply, then streams only the differences.</li>
+          <li>This is the authoritative way to make replicas fully consistent, and it is <strong>operationally mandatory</strong>: run repair on every node at least once per <code>gc_grace_seconds</code> (default 10 days) to avoid <em>zombie data</em> — deleted rows reappearing because a tombstone was purged before all replicas saw it.</li>
+          <li>Tools like <strong>Cassandra Reaper</strong> schedule and throttle repairs so they don't overwhelm the cluster. Cassandra 4.0+ also supports incremental repair that tracks already-repaired data.</li>
+        </ul>
+        <div class="key-point"><strong>Convergence trio:</strong> hinted handoff (short outages), read repair (on the read path, for hot data), and anti-entropy repair (the backstop for cold data and long outages) together make an eventually-consistent system converge. A common probe is how deleted data could "come back" — the answer is a missed tombstone plus skipped repair.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Lightweight Transactions (LWT)</h2>
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Compare-and-set via Paxos — powerful but expensive</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>When you truly need linearizable compare-and-set (e.g. "register this username only if free"), Cassandra offers LWT using a Paxos consensus round scoped to a single partition:</p>
+        <pre><code>INSERT INTO users (email, user_id)
+VALUES ('a@example.com', ?)
+IF NOT EXISTS;                       -- succeeds only if the row doesn't exist
+
+UPDATE accounts SET balance = ?
+WHERE id = ?
+IF balance = ?;                      -- conditional update (CAS)</code></pre>
+        <ul>
+          <li>Uses <code>SERIAL</code> / <code>LOCAL_SERIAL</code> consistency for the Paxos ballot; <code>LOCAL_SERIAL</code> keeps it within one DC.</li>
+          <li>Costs roughly <strong>4 round trips</strong> instead of 1 — often an order of magnitude slower than a normal write.</li>
+          <li>Only atomic within a single partition; not a general multi-row transaction. Use sparingly for genuine uniqueness/CAS needs, never on the hot write path in bulk.</li>
+        </ul>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Multi-DC Replication</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Why Cassandra is a natural fit for global, multi-region deployments</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <ul>
+          <li><strong>NetworkTopologyStrategy</strong> lets you set an independent replication factor per data center, e.g. <code>{'us_east': 3, 'eu_west': 3}</code>. Every DC holds a full, independent set of replicas.</li>
+          <li>Cross-DC replication is <strong>asynchronous by default</strong> — a write acked at <code>LOCAL_QUORUM</code> in one DC propagates to other DCs in the background, so a regional link problem doesn't stall local writes.</li>
+          <li>Reads and writes use <code>LOCAL_*</code> consistency to stay within the caller's region, keeping latency low; the snitch ensures each request prefers local replicas.</li>
+          <li>Common patterns: <strong>active-active</strong> (every region serves reads and writes to local users), <strong>geo-locality / data residency</strong> (keep certain data in-region), and adding an <strong>analytics DC</strong> that never serves user traffic.</li>
+        </ul>
+        <div class="info-box"><strong>Contrast with leader-based systems:</strong> because there is no primary, there is no cross-region leader election or failover on the write path. A whole DC can go offline and the others keep serving — this operational simplicity for multi-region is one of Cassandra's strongest selling points.</div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PITFALLS TAB ==================== -->
+<div id="tab-pitfalls" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">Tombstones — Deletes Are Writes</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>How deletion works in an append-only store, and why it bites</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>Because SSTables are immutable, a delete cannot erase data in place. Instead it writes a <strong>tombstone</strong> — a special marker with a timestamp that says "this cell/row/range is deleted." On read, the tombstone shadows any older data. The data is only physically removed later, during compaction, after <code>gc_grace_seconds</code>.</p>
+        <ul>
+          <li><strong><code>gc_grace_seconds</code> (default 864000 = 10 days):</strong> tombstones must survive at least this long so that every replica learns of the delete via repair before the tombstone is purged. Purging too early causes <em>zombie data</em> (deleted rows resurrecting from a replica that never saw the delete).</li>
+          <li><strong>Read amplification from tombstones:</strong> a query that scans a partition full of tombstones has to read and merge them all. Cassandra warns at <code>tombstone_warn_threshold</code> (default 1000 per read) and aborts the query at <code>tombstone_failure_threshold</code> (default 100000).</li>
+          <li><strong>TTL is a tombstone.</strong> Data written with a TTL becomes a tombstone when it expires — mass expirations create tombstone storms.</li>
+        </ul>
+        <div class="warning-box"><strong>Classic anti-pattern:</strong> a queue/ring-buffer table where rows are inserted and deleted constantly. Reads at the "head" scan across thousands of tombstones from already-deleted rows and get slow or fail. Fixes: model with <strong>TWCS</strong> and TTL so whole SSTables expire, bucket by time, or avoid the queue-on-Cassandra pattern entirely.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Secondary Index Pitfalls</h2>
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Why "just add an index" is usually the wrong instinct</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p>Cassandra indexes are <strong>local to each node</strong> (each node indexes only its own data). Querying a secondary index without also restricting the partition key forces the coordinator to <strong>scatter-gather across every node in the ring</strong> — an anti-pattern that does not scale.</p>
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Index type</th><th>Status</th><th>Good for</th><th>Bad for</th></tr></thead>
+            <tbody>
+              <tr><td>Legacy secondary index (2i)</td><td>Available, discouraged</td><td>Low-cardinality columns queried <em>together with a partition key</em>.</td><td>High-cardinality columns (e.g. email, uuid) and very low-cardinality columns (e.g. boolean) — both perform terribly; cluster-wide queries scatter to all nodes.</td></tr>
+              <tr><td>SASI</td><td>Experimental, not recommended for production</td><td>Some text/range cases historically.</td><td>General use — never a safe interview recommendation.</td></tr>
+              <tr><td><strong>SAI</strong> (Storage-Attached Index)</td><td><span class="badge badge-teal">GA in 5.0</span></td><td>The modern answer: multiple indexed columns, numeric ranges and text, far lower disk overhead than 2i.</td><td>Still not a substitute for a well-chosen partition key; per-node scatter still applies without a partition restriction.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="key-point"><strong>Preferred solution:</strong> instead of indexing, <strong>model another table</strong> keyed by the column you need to query (a "query table" / manual materialized view). If you must index, use <strong>SAI</strong> (5.0) and still constrain by partition key where possible. Native <strong>materialized views</strong> exist but have long carried correctness caveats and are treated as experimental — prefer application-maintained query tables.</div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Large Partitions &amp; Hotspots</h2>
+    <div class="card">
+      <div class="card-title"><span class="icon">&#9888;</span> The two failure modes of a bad partition key</div>
+      <ul>
+        <li><strong>Unbounded partitions:</strong> a partition key like <code>country</code> or a single hot <code>room_id</code> can grow to gigabytes. Large partitions cause slow reads, long compactions, GC pauses, and eventually node instability. <strong>Fix:</strong> add a bucketing component (time bucket, hash bucket) to the partition key to cap size.</li>
+        <li><strong>Hotspots / hot partitions:</strong> if traffic concentrates on one partition key (a celebrity user, a "global" counter), one replica set gets overloaded while the ring sits idle — you've re-created a single point of load on a distributed system. <strong>Fix:</strong> spread the key (sharding a hot partition into <code>key + shard_no</code>), or cache in front.</li>
+        <li><strong>Low-cardinality partition keys</strong> waste the ring: with only a handful of distinct keys, data can't spread across nodes.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Other Anti-Patterns to Know</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Anti-pattern</th><th>Why it hurts</th><th>Do instead</th></tr></thead>
+        <tbody>
+          <tr><td><code>ALLOW FILTERING</code></td><td>Silences the safety error and lets Cassandra scan/filter across partitions — unpredictable, cluster-wide cost.</td><td>Redesign the table so the query hits one partition; treat any need for it as a modeling bug.</td></tr>
+          <tr><td>Read-before-write / read-modify-write on hot rows</td><td>Adds read latency and races; LWW can lose the update.</td><td>Model as append-only events, or use LWT for genuine CAS.</td></tr>
+          <tr><td>Unlogged batches spanning many partitions</td><td>Coordinator fans out to many nodes, creating load and timeouts; batches are not a performance optimization.</td><td>Use async individual writes; reserve LOGGED batches for keeping denormalized copies atomic.</td></tr>
+          <tr><td>Frequent updates to the same cells</td><td>Piles up versions/tombstones across SSTables → read amplification.</td><td>Model immutable events; consider LCS if updates are unavoidable.</td></tr>
+          <tr><td>Using Cassandra as a queue</td><td>Insert+delete churn creates tombstone storms on the read path.</td><td>Use a real queue (Kafka, SQS); if unavoidable, TWCS + TTL + time buckets.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== INTERVIEW TAB ==================== -->
+<div id="tab-interview" class="tab-panel">
+  <div class="section">
+    <h2 class="section-title">When to Use Cassandra — and When to Avoid It</h2>
+    <div class="comparison-grid">
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--green)">Reach for Cassandra when…</div>
+        <ul>
+          <li><strong>Very high, sustained write throughput</strong> (telemetry, event logs, IoT, time-series, feeds, messaging).</li>
+          <li><strong>Availability &gt; strict consistency</strong> — the app can tolerate tunable/eventual consistency and must stay up during failures (AP).</li>
+          <li><strong>Multi-region / active-active</strong> with local low-latency reads and writes and no cross-region write leader.</li>
+          <li><strong>Predictable scale-out</strong> — capacity and throughput grow near-linearly by adding nodes.</li>
+          <li><strong>Known, bounded query patterns</strong> that can be satisfied by single-partition lookups.</li>
+        </ul>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="card-title" style="color:var(--red)">Avoid Cassandra when…</div>
+        <ul>
+          <li>You need <strong>ad-hoc queries, joins, or cluster-wide aggregation</strong> — use an RDBMS or a warehouse.</li>
+          <li>You need <strong>strong ACID multi-row transactions</strong> or complex referential integrity.</li>
+          <li>The workload is <strong>read-heavy with unpredictable access paths</strong> that can't be modeled as query tables.</li>
+          <li>Data volume is small — the operational overhead isn't justified; a single Postgres/MySQL is simpler.</li>
+          <li>You need heavy <strong>full-text search or true OLAP</strong> — use OpenSearch/Elasticsearch or ClickHouse/BigQuery.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Cassandra vs Neighbors</h2>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>System</th><th>Relationship</th><th>Key contrast</th></tr></thead>
+        <tbody>
+          <tr><td>Amazon DynamoDB</td><td>Shares the Dynamo distribution lineage; a managed AP key-value/wide-column store.</td><td>DynamoDB is fully managed and serverless with its own capacity model; Cassandra is self/vendor-operated open source with richer CQL modeling and no per-request pricing.</td></tr>
+          <tr><td>Google Bigtable / HBase</td><td>Shares the wide-column data model.</td><td>Bigtable/HBase are more CP-leaning with a single-writer-per-range design; Cassandra is masterless and AP with tunable consistency.</td></tr>
+          <tr><td>MongoDB</td><td>Both are NoSQL, both scale horizontally.</td><td>MongoDB is document-oriented with secondary indexes and richer ad-hoc queries but a primary-per-shard (CP-leaning) model; Cassandra favors write throughput and masterless availability.</td></tr>
+          <tr><td>MySQL / PostgreSQL</td><td>The relational alternative.</td><td>RDBMS gives joins, ACID, ad-hoc SQL, strong consistency — at the cost of harder horizontal scaling and multi-region writes.</td></tr>
+          <tr><td>ScyllaDB</td><td>A C++ rewrite that is CQL/protocol-compatible with Cassandra.</td><td>Same data model and modeling rules; different implementation aimed at lower latency per node.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Common Interview Q&amp;A</h2>
+
+    <div class="collapsible open">
+      <div class="collapsible-header"><span>Q: Walk me through what happens on a write at LOCAL_QUORUM, RF=3.</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p><strong>A:</strong> The client's driver (token-aware) sends the write to a coordinator, ideally a replica for that key. The coordinator hashes the partition key to a token, finds the 3 replicas in the local DC, and forwards the mutation to all of them in parallel. Each replica appends to its commit log and updates its memtable, then acks. Once <strong>2 of 3</strong> (local quorum) ack, the coordinator returns success to the client. If a replica is down, the coordinator stores a hint for it. Cross-DC replicas receive the write asynchronously. No read occurs; the write is an upsert of timestamped cells.</p>
+      </div></div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Q: A user deleted a row two weeks ago but it reappeared. Why?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p><strong>A:</strong> Zombie data. The delete wrote a tombstone that lived for <code>gc_grace_seconds</code> (10 days) and was then purged by compaction. But one replica was down/partitioned during the delete and never received the tombstone, and <strong>no anti-entropy repair ran within the grace window</strong>. After purge, that replica still holds the old (undeleted) data with an older-but-now-unshadowed timestamp, and read repair/streaming propagates it back. Fix: run <code>nodetool repair</code> on every node at least once per <code>gc_grace_seconds</code> (use Reaper), and never resurrect a long-dead node without repairing.</p>
+      </div></div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Q: How do you make reads see the latest write?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p><strong>A:</strong> Choose consistency levels so <strong>R + W &gt; N</strong>. With RF=3, using QUORUM (or LOCAL_QUORUM within a DC) for both reads and writes gives 2+2 &gt; 3, so the read and write replica sets overlap and the coordinator reconciles the responses by timestamp, returning the freshest value (blocking read repair then writes it back to stale replicas). This gives read-your-writes freshness — but not isolation; concurrent writers still resolve by last-write-wins, so use LWT for compare-and-set.</p>
+      </div></div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Q: Design a table for "the 50 most recent orders for a customer."</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <pre><code>CREATE TABLE orders_by_customer (
+  customer_id  uuid,
+  order_ts     timestamp,
+  order_id     timeuuid,
+  amount       decimal,
+  status       text,
+  PRIMARY KEY ((customer_id), order_ts, order_id)
+) WITH CLUSTERING ORDER BY (order_ts DESC, order_id DESC);
+
+SELECT * FROM orders_by_customer WHERE customer_id = ? LIMIT 50;</code></pre>
+        <p><strong>A:</strong> Partition by <code>customer_id</code> so one customer's orders live together; cluster by <code>order_ts DESC</code> so the newest sort first and the read is a single-partition slice, no filtering. If a customer could have millions of orders, add a time bucket to the partition key (e.g. <code>(customer_id, year_month)</code>) to bound partition size, and page across buckets.</p>
+      </div></div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Q: STCS vs LCS vs TWCS — which and why?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p><strong>A:</strong> <strong>STCS</strong> (default) for write-heavy/general workloads — low write amplification, but reads can touch many SSTables. <strong>LCS</strong> for read-heavy or update-heavy tables where you want few SSTables per partition and predictable read latency — at the cost of high write amplification. <strong>TWCS</strong> for time-series/append-only-with-TTL, where whole time-windowed SSTables expire and drop cheaply, avoiding tombstone build-up. In 5.0, <strong>UCS</strong> unifies these behaviors under one tunable strategy. (Never propose DTCS — it was replaced by TWCS.)</p>
+      </div></div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Q: Why not just add a secondary index to query by email?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p><strong>A:</strong> Secondary indexes are local per node, so a query on a high-cardinality column like email without a partition-key restriction scatter-gathers across the whole ring — it doesn't scale and latency is unpredictable. The idiomatic fix is a <strong>second query table</strong> keyed by email (<code>PRIMARY KEY (email)</code>) that the app writes alongside the main table. If you genuinely need indexing, Cassandra 5.0's <strong>SAI</strong> is the modern, lower-overhead option, but a well-modeled query table is still preferred, and uniqueness ("email not already taken") requires an LWT.</p>
+      </div></div>
+    </div>
+
+    <div class="collapsible">
+      <div class="collapsible-header"><span>Q: How does Cassandra achieve no single point of failure?</span><span class="arrow">&#9654;</span></div>
+      <div class="collapsible-body"><div class="collapsible-content">
+        <p><strong>A:</strong> Every node is a peer (masterless). Membership and state spread via gossip; any node can coordinate any request; data is replicated to RF nodes chosen by consistent hashing and the snitch's topology. There's no leader to elect and no config master to lose. A node — or an entire data center — can fail while the rest keep serving reads and writes (at the chosen consistency level), and hinted handoff plus repair heal the gap when it returns.</p>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Rapid-Fire Facts (2024–2026)</h2>
+    <div class="card">
+      <ul>
+        <li>Default partitioner <code>Murmur3Partitioner</code>, 64-bit token range <code>-2^63 … 2^63-1</code>.</li>
+        <li><code>num_tokens</code> default is <strong>16</strong> since Cassandra 4.0 (was 256), with RF-aware token allocation.</li>
+        <li><code>gc_grace_seconds</code> default <strong>864000</strong> (10 days); tombstone warn/fail thresholds <strong>1000 / 100000</strong> per read.</li>
+        <li>Hint window <code>max_hint_window_in_ms</code> default <strong>3 hours</strong>.</li>
+        <li>Quorum = <code>floor(RF/2)+1</code>; strong consistency needs <strong>R+W&gt;RF</strong>.</li>
+        <li>Read repair options: <code>read_repair = BLOCKING</code> (default) or <code>NONE</code>; probabilistic <code>read_repair_chance</code> removed in 4.0.</li>
+        <li>Compaction: STCS (default), LCS, TWCS, and <strong>UCS (new in 5.0)</strong>; DTCS deprecated (superseded by TWCS).</li>
+        <li>Cassandra <strong>5.0</strong> (GA 2024) added Storage-Attached Indexes (SAI), trie memtables/BTI SSTables, Unified Compaction, and vector search (<code>VECTOR</code> type + ANN).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Wide-column</strong></td><td>Data model where each partition holds many sparse rows, each with its own set of columns.</td></tr>
+<tr><td><strong>Masterless (peer-to-peer)</strong></td><td>Every node is an identical peer — no primary, config server, or single point of failure.</td></tr>
+<tr><td><strong>AP (CAP)</strong></td><td>Available and partition-tolerant; stays writable during partitions, with consistency tunable per query.</td></tr>
+<tr><td><strong>LSM tree</strong></td><td>Log-structured merge tree — storage engine that turns writes into fast sequential appends.</td></tr>
+<tr><td><strong>SSTable</strong></td><td>Sorted Strings Table — an immutable, sorted on-disk file produced when a memtable is flushed.</td></tr>
+<tr><td><strong>LWW</strong></td><td>Last-write-wins — conflicts resolved by keeping the cell with the highest write timestamp.</td></tr>
+<tr><td><strong>Consistent hashing</strong></td><td>Mapping keys onto a token ring so adding or removing a node reshuffles only adjacent ranges.</td></tr>
+<tr><td><strong>Partition key</strong></td><td>Primary-key component hashed to a token; decides which node(s) store the row.</td></tr>
+<tr><td><strong>Clustering columns</strong></td><td>Primary-key columns that sort rows within a partition on disk, enabling ordered range slices.</td></tr>
+<tr><td><strong>RF</strong></td><td>Replication factor — the number of nodes that hold a copy of each row.</td></tr>
+<tr><td><strong>Coordinator</strong></td><td>The node handling a client request; routes it to replicas and enforces the consistency level.</td></tr>
+<tr><td><strong>Vnode</strong></td><td>Virtual node — many small token ranges per physical node for balance and faster rebuilds.</td></tr>
+<tr><td><strong>Gossip</strong></td><td>Once-per-second peer state exchange that spreads cluster membership without a central service.</td></tr>
+<tr><td><strong>Snitch</strong></td><td>Component telling Cassandra each node's rack and data center for replica placement and routing.</td></tr>
+<tr><td><strong>CQL</strong></td><td>Cassandra Query Language — SQL-like interface with no joins or ad-hoc cross-partition queries.</td></tr>
+<tr><td><strong>Memtable</strong></td><td>In-memory, sorted write buffer that is flushed to an SSTable when full.</td></tr>
+<tr><td><strong>Commit log</strong></td><td>Append-only on-disk log written first on each write for durability and crash replay.</td></tr>
+<tr><td><strong>Compaction</strong></td><td>Background merge of SSTables that discards shadowed data and reduces files touched per read.</td></tr>
+<tr><td><strong>Bloom filter</strong></td><td>Per-SSTable probabilistic test that lets a read skip SSTables not holding a key.</td></tr>
+<tr><td><strong>Tombstone</strong></td><td>Deletion marker written instead of erasing data; removed by compaction after gc_grace_seconds.</td></tr>
+<tr><td><strong>gc_grace_seconds</strong></td><td>Window (default 10 days) a tombstone must survive so all replicas learn of a delete; prevents zombie data.</td></tr>
+<tr><td><strong>Consistency level (CL)</strong></td><td>Per-query count of replicas that must respond (ONE, QUORUM, LOCAL_QUORUM, ALL, and so on).</td></tr>
+<tr><td><strong>LOCAL_QUORUM</strong></td><td>Majority of replicas within the local data center — the go-to consistency level for multi-DC.</td></tr>
+<tr><td><strong>R + W &gt; N</strong></td><td>If read and write replica sets overlap, a read is guaranteed to see the latest write.</td></tr>
+<tr><td><strong>Hinted handoff</strong></td><td>Coordinator stores a write for a briefly down replica and replays it on recovery.</td></tr>
+<tr><td><strong>Read repair</strong></td><td>On a QUORUM+ read, the coordinator compares replica digests and writes the newest version back to any stale replica — converging hot data on the read path.</td></tr>
+<tr><td><strong>Anti-entropy repair</strong></td><td><code>nodetool repair</code> comparing replicas via Merkle trees and streaming only the differences.</td></tr>
+<tr><td><strong>LWT</strong></td><td>Lightweight transaction — Paxos-based compare-and-set scoped to a single partition.</td></tr>
+<tr><td><strong>NetworkTopologyStrategy</strong></td><td>Replication strategy that sets an independent replication factor per data center.</td></tr>
+<tr><td><strong>SAI</strong></td><td>Storage-Attached Index — Cassandra 5.0's modern, lower-overhead secondary index type.</td></tr>
+</table>
+</div>
+
+</div> <!-- end .content -->
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// Collapsible cards
+document.querySelectorAll('.collapsible-header').forEach(header => {
+  header.addEventListener('click', () => {
+    header.parentElement.classList.toggle('open');
+  });
+});
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="mongodb_deep_dive.html">‹ MongoDB Deep Dive</a><a class="bkc" href="index.html">📖 Contents</a><a href="dynamodb_deep_dive.html">DynamoDB Deep Dive ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

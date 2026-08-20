@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Designing Agentic AI &amp; Multi-Agent Workflows — Applied System Design &amp; Emerging Topics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XIV · Chapter 2 — <b>Agentic AI &amp; Multi-Agent Workflows</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Designing Agentic AI &amp; Multi-Agent Workflows</h1>
+  <div class="sub">How to design software where a large language model doesn't just answer once but runs a loop — it reasons, calls tools, observes results, and repeats until a task is done. This is the systems view: the agent loop, its components, reasoning patterns, tool use, memory, multi-agent topologies, orchestration, evaluation, and the guardrails that keep an autonomous loop safe and affordable. A hot interview topic, and a design skill in its own right.</div>
+</header>
+
+<div class="ins"><div class="insl">Read this like a story</div><p>Start at the top even if you've already wired an LLM to a couple of tools. The sections build from "what actually <em>is</em> an agent, and when do you even want one" up to "stop a runaway loop, evaluate a system whose output is non-deterministic, and defend it against prompt injection." The two diagrams (the single-agent control loop and an orchestrator-worker multi-agent topology) are the spine; every later section hangs off one of them.</p></div>
+
+<div class="note"><div class="notel">Scope — public patterns only</div><p>Everything here is drawn from <strong>publicly documented</strong> agentic-AI and multi-agent practice: published research patterns (ReAct, Reflexion, Tree-of-Thoughts, RAG) and public open-source frameworks and specs (LangChain, LlamaIndex, LangGraph, AutoGen, CrewAI, the function-calling / tool-use interface, the Model Context Protocol). No proprietary or internal system is described. The design shapes below are generic and vendor-neutral. Where a project or organization is named it is a public open-source framework, spec, or standards body (e.g. LangChain, MCP, OWASP), referenced factually.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. What an LLM Agent Actually Is</h2>
+
+<p class="lead">A plain LLM call is a function: text in, text out, one shot, no memory of the last call, no way to touch the world. An <strong>agent</strong> wraps that same model in a <em>loop</em> and gives it <em>tools</em>, so it can take an action, see what happened, and decide what to do next. The model stops being an oracle you query once and becomes a <strong>policy</strong> that is driven repeatedly inside a control loop until a goal is met.</p>
+
+<p>The working definition to say out loud in an interview:</p>
+<div class="formula">
+<span class="cm"># an agent, in one line</span><br>
+agent = <b>LLM (policy)</b> + <b>tools</b> + <b>memory</b> + a <b>control loop</b> that runs until done<br>
+<br>
+<span class="cm"># the loop itself</span><br>
+loop: perceive (build context) → reason/plan → act (call a tool) → observe (result) → repeat
+</div>
+
+<p>The defining property is <strong>autonomy over control flow</strong>: with a plain prompt or a fixed pipeline, <em>you</em> decide the sequence of steps in code; with an agent, the <em>model</em> decides — at each turn — whether to call a tool, which tool, with what arguments, or whether it's finished. That single shift is what makes agents powerful and also what makes them hard to bound, evaluate, and secure (the rest of this chapter).</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 360" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker>
+    <marker id="ahg" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#16a34a"/></marker>
+  </defs>
+
+  <!-- top loop-back arrow -->
+  <path d="M 759 120 C 759 40, 99 40, 99 118" fill="none" stroke="#7c3aed" stroke-width="1.7" marker-end="url(#ah)"/>
+  <text x="429" y="34" text-anchor="middle" font-size="10" font-weight="700" fill="#6d28d9">loop: append observation to context, repeat until done or step budget hit</text>
+
+  <!-- four stage boxes -->
+  <rect x="24" y="120" width="150" height="66" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="99" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Perceive</text>
+  <text x="99" y="166" text-anchor="middle" font-size="9" fill="#526176">build context</text>
+
+  <rect x="244" y="120" width="150" height="66" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.6"/>
+  <text x="319" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Reason / Plan</text>
+  <text x="319" y="166" text-anchor="middle" font-size="9" fill="#526176">LLM policy decides</text>
+
+  <rect x="464" y="120" width="150" height="66" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.6"/>
+  <text x="539" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">Act</text>
+  <text x="539" y="166" text-anchor="middle" font-size="9" fill="#526176">emit a tool call</text>
+
+  <rect x="684" y="120" width="150" height="66" rx="10" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.6"/>
+  <text x="759" y="148" text-anchor="middle" font-size="12" font-weight="700" fill="#0d7a6f">Observe</text>
+  <text x="759" y="166" text-anchor="middle" font-size="9" fill="#526176">read the result</text>
+
+  <!-- horizontal arrows -->
+  <line x1="174" y1="153" x2="242" y2="153" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#ah)"/>
+  <line x1="394" y1="153" x2="462" y2="153" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#ah)"/>
+  <line x1="614" y1="153" x2="682" y2="153" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#ah)"/>
+
+  <!-- bottom boxes -->
+  <rect x="24" y="262" width="150" height="56" rx="9" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="99" y="286" text-anchor="middle" font-size="10.5" font-weight="700" fill="#6d28d9">Memory</text>
+  <text x="99" y="302" text-anchor="middle" font-size="9" fill="#526176">context + store</text>
+
+  <rect x="244" y="262" width="150" height="56" rx="9" fill="#dcfce7" stroke="#16a34a" stroke-width="1.6"/>
+  <text x="319" y="286" text-anchor="middle" font-size="10.5" font-weight="700" fill="#166534">Final answer</text>
+  <text x="319" y="302" text-anchor="middle" font-size="9" fill="#526176">stop &amp; return</text>
+
+  <rect x="464" y="262" width="150" height="56" rx="9" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="539" y="286" text-anchor="middle" font-size="10.5" font-weight="700" fill="#c2410c">Tools / runtime</text>
+  <text x="539" y="302" text-anchor="middle" font-size="9" fill="#526176">execute the call</text>
+
+  <!-- memory -> perceive -->
+  <line x1="99" y1="262" x2="99" y2="188" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="112" y="228" text-anchor="start" font-size="8.5" fill="#6d28d9">context in</text>
+  <!-- reason -> final (stop) -->
+  <line x1="319" y1="188" x2="319" y2="260" stroke="#16a34a" stroke-width="1.6" marker-end="url(#ahg)"/>
+  <text x="332" y="228" text-anchor="start" font-size="8.5" fill="#166534">done → stop</text>
+  <!-- act -> tools -->
+  <line x1="539" y1="188" x2="539" y2="260" stroke="#ea580c" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="552" y="222" text-anchor="start" font-size="8.5" fill="#c2410c">tool call (JSON)</text>
+  <!-- tools -> observe (result) -->
+  <path d="M 614 280 C 690 280, 759 250, 759 188" fill="none" stroke="#0d9488" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="700" y="256" text-anchor="middle" font-size="8.5" fill="#0d7a6f">result</text>
+</svg>
+<div class="svg-cap">The agent control loop. The model <em>perceives</em> (context assembled from memory), <em>reasons/plans</em>, <em>acts</em> by emitting a tool call the runtime executes, and <em>observes</em> the result — which is appended to context and fed back on the next turn. The loop repeats until the model decides it is done (green exit to <em>Final answer</em>) or the controller's step budget is hit. The controller — not shown as a box because it is the loop itself — is what enforces that budget (§7).</div>
+</div>
+
+<h3>When you need an agent — and when you don't</h3>
+<p>Autonomy is a cost, not a free upgrade. Choose the least-powerful shape that solves the task:</p>
+<table class="tbl">
+  <tr><th>Shape</th><th>Who controls the steps</th><th>Use when</th></tr>
+  <tr><td><strong>Single prompt</strong></td><td>No steps — one call</td><td>The task fits in one model call: summarize, classify, rewrite, extract. Cheapest, most predictable.</td></tr>
+  <tr><td><strong>Fixed pipeline</strong> (chain / workflow)</td><td>You, in code</td><td>The steps are known and stable — e.g. retrieve → generate → validate. Deterministic control flow, easy to test.</td></tr>
+  <tr><td><strong>Agent</strong> (dynamic loop)</td><td>The model, at run time</td><td>The path is <em>not</em> known ahead of time: the number and choice of steps depend on intermediate results (research, debugging, multi-step tool use).</td></tr>
+</table>
+<div class="tip"><div class="tipl">Interview signal</div><p>A widely-repeated piece of public guidance: reach for the simplest thing first. If a fixed pipeline of LLM calls solves the problem, use it — it is cheaper, more predictable, and far easier to evaluate. Introduce a dynamic agent loop only when the task genuinely requires the model to decide the control flow. Saying "I'd start with a workflow and only add agency where the path is data-dependent" signals maturity, not weakness.</p></div>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. Core Components</h2>
+<p>Every agent, from a toy to a production system, is built from the same five parts. Name them explicitly — an interviewer wants to hear the decomposition, not "I call the model in a while-loop."</p>
+
+<table class="tbl">
+  <tr><th>Component</th><th>Role</th><th>Design concern</th></tr>
+  <tr><td><strong>Model / policy</strong></td><td>The LLM that, given the current context, decides the next action (a tool call or a final answer).</td><td>Capability vs. cost/latency; a bigger model reasons better but costs more (model tiering, §9).</td></tr>
+  <tr><td><strong>Tools / function-calling</strong></td><td>The typed actions the agent can take: search, read a file, run code, call an API.</td><td>Clear schemas, validation, permissions, error handling (§4).</td></tr>
+  <tr><td><strong>Memory</strong></td><td>What the agent knows. <em>Short-term</em> = the context window (this run's messages); <em>long-term</em> = an external store persisted across runs.</td><td>Context limits, summarization/compaction, retrieval (§5).</td></tr>
+  <tr><td><strong>Planner</strong></td><td>How the agent decides the sequence of steps — implicit (reason each turn) or explicit (write a plan first).</td><td>Reasoning pattern choice (§3).</td></tr>
+  <tr><td><strong>Controller / orchestration loop</strong></td><td>The non-model code that actually runs the loop: invokes the model, executes tool calls, appends observations, enforces the step budget, handles retries.</td><td>Determinism, budgets, parallelism, retries (§7).</td></tr>
+</table>
+
+<div class="note"><div class="notel">The controller is code you own, not the model</div><p>A frequent beginner error is imagining the LLM "runs itself." It doesn't. The <strong>controller</strong> is ordinary deterministic software — a loop — that you write and fully control. It calls the model, parses the tool call the model emits, executes that call, appends the result, and loops. Every safety and cost lever in this chapter (step budgets, timeouts, validation, allow-lists) lives in the <em>controller</em>, not in the model. Keeping that boundary crisp is the whole game.</p></div>
+
+<h3>The policy is stateless; the loop supplies the state</h3>
+<p>The model itself has no memory between calls — each invocation is stateless. Continuity is an illusion the controller creates by re-sending the accumulating context (the message history plus retrieved memories) on every turn. This is why context-window management (§5) is central: the agent's entire "working memory" is whatever text the controller packs into the next call.</p>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. Reasoning &amp; Planning Patterns</h2>
+<p>These are the public, widely-cited patterns for <em>how</em> an agent decides its next step. They're not mutually exclusive — real systems combine them. Know each by name and by its one-line trade-off.</p>
+
+<h3>ReAct — interleave reasoning and acting</h3>
+<p><strong>ReAct</strong> (from the public paper "ReAct: Synergizing Reasoning and Acting in Language Models," Yao et al., 2022) is the default agent pattern: the model alternates a short <em>reasoning</em> step ("I need the current price, so I'll search") with an <em>action</em> (the tool call), then reads the <em>observation</em> and reasons again. Reasoning keeps the tool use grounded; acting keeps the reasoning grounded in real results. This is exactly the loop in the diagram above, made explicit turn-by-turn.</p>
+<div class="formula">
+<span class="cm"># one ReAct turn, conceptually</span><br>
+Thought:      I don't know the release date; I should search.<br>
+Action:       search("framework X release date")<br>
+Observation:  "released 2023-10-11"          <span class="cm"># returned by the runtime</span><br>
+Thought:      Now I can answer.              <span class="cm"># next turn, or finish</span>
+</div>
+
+<h3>Plan-then-execute</h3>
+<p>Instead of deciding one step at a time, the agent first writes a <em>whole plan</em> (an ordered list of subtasks), then executes the steps — optionally re-planning if reality diverges. This reduces meandering on long tasks and makes the intended trajectory inspectable before any tool runs, at the cost of a plan that can go stale. Public frameworks expose this as a "plan-and-execute" style agent.</p>
+
+<h3>Reflection / self-critique</h3>
+<p><strong>Reflection</strong> adds a step where the agent (or a separate critic) reviews its own output or trajectory and revises. The public <em>Reflexion</em> pattern (Shinn et al., 2023) has the agent generate verbal self-feedback after a failed attempt and use it to do better on the next try. A cheap, effective version in practice: after producing a result, ask the model "critique this against the requirements, then fix it." Guard it with an iteration cap so it doesn't reflect forever.</p>
+
+<h3>Tree-of-Thought (high level)</h3>
+<p><strong>Tree-of-Thoughts</strong> (Yao et al., 2023) generalizes single-line "chain-of-thought" reasoning into a <em>search</em>: the model explores several candidate reasoning branches, evaluates them, and expands the promising ones (breadth/depth search over "thoughts"). It can crack puzzles that trip up linear reasoning, but it multiplies token cost and latency, so it's reserved for hard problems where a single pass reliably fails.</p>
+
+<div class="tip"><div class="tipl">How to talk about these</div><p>Don't recite all four as if they're a checklist. Say: "I'd start with <strong>ReAct</strong> as the default loop, add an explicit <strong>plan</strong> if tasks are long and multi-step, and layer a <strong>reflection</strong> pass where correctness matters enough to pay for it. <strong>Tree-of-thought</strong> only if the problem is a genuine search and a single trajectory keeps failing." That's a design decision with reasons, which is what's being tested.</p></div>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. Tool Use / Function Calling</h2>
+<p>Tools are how an agent affects the world. The mechanism is now standardized across the industry as <strong>function calling</strong> (also called tool use): you describe the available functions with a machine-readable schema, and the model responds with a structured request to call one.</p>
+
+<h3>The mechanism, step by step</h3>
+<ol>
+  <li>You pass the model a list of <strong>tool definitions</strong> — each a name, a description, and a JSON-Schema for its parameters.</li>
+  <li>Given the context, the model decides to use a tool and emits a structured <strong>tool call</strong>: the tool name plus arguments as JSON (it does <em>not</em> execute anything itself).</li>
+  <li>Your <strong>runtime</strong> validates the arguments against the schema, then <em>executes</em> the real function (query a DB, hit an API, run code).</li>
+  <li>You append the tool's <strong>result</strong> to the context and call the model again. It reads the result and either calls another tool or produces the final answer.</li>
+</ol>
+
+<div class="formula">
+<span class="cm"># a tool definition the model sees (JSON-Schema shape)</span><br>
+{<br>
+&nbsp;&nbsp;"name": "get_weather",<br>
+&nbsp;&nbsp;"description": "Current weather for a city.",<br>
+&nbsp;&nbsp;"parameters": { "type": "object",<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"properties": { "city": {"type": "string"} },<br>
+&nbsp;&nbsp;&nbsp;&nbsp;"required": ["city"] } }<br>
+<br>
+<span class="cm"># what the MODEL emits (it does not run anything)</span><br>
+{ "tool_call": { "name": "get_weather", "arguments": { "city": "Taipei" } } }<br>
+<br>
+<span class="cm"># what YOUR runtime does: validate → execute → return</span><br>
+result = get_weather(city="Taipei")   → append to context → call model again
+</div>
+
+<div class="note"><div class="notel">Standardized wiring: MCP</div><p>Connecting an agent to a sprawl of tools used to be bespoke glue per integration. The <strong>Model Context Protocol (MCP)</strong> is a public, open specification (introduced in late 2024 and adopted broadly) that standardizes how applications expose tools, data, and prompts to LLMs — a client/server protocol so any compliant agent can talk to any compliant tool server. Knowing it exists, and that it's an open standard rather than any one vendor's internal system, is current and relevant.</p></div>
+
+<h3>Designing good tools</h3>
+<ul>
+  <li><strong>Clear, narrow schemas.</strong> A tool with a crisp name, a one-line description, and typed, validated parameters is far more reliably called than a vague catch-all. Treat tool descriptions as prompt surface — the model chooses based on them.</li>
+  <li><strong>Validate every argument</strong> against the schema <em>before</em> executing. The model can and will emit malformed or out-of-range arguments; the runtime is the gate.</li>
+  <li><strong>Return errors as data, not exceptions.</strong> When a tool fails, hand the model a structured error message it can read and react to ("file not found — try listing the directory"), so the loop can recover instead of crashing.</li>
+  <li><strong>Keep results small and relevant.</strong> Dumping a 200 KB API response into context burns tokens and buries the signal; return the fields that matter.</li>
+</ul>
+
+<div class="trap"><div class="trapl">Tools are your blast radius — sandbox and permission them</div><p>A tool that runs code or writes to a database is a hole punched straight through the model into your systems. Two non-negotiables: (1) run risky tools (code execution, shell) in a <strong>sandbox</strong> with bounded CPU/memory/network and no ambient credentials; (2) enforce <strong>permissions</strong> in the runtime, not in the prompt — an allow-list of what this agent may call, with least privilege. "Please don't delete anything" in the system prompt is not a security control (§9).</p></div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. Memory &amp; Context</h2>
+<p>The model's <strong>context window</strong> — the tokens it can attend to in one call — is finite. Everything the agent "knows" in the moment must fit there: the system prompt, the tool definitions, the conversation/trajectory so far, and any retrieved knowledge. Managing that budget <em>is</em> agent memory design.</p>
+
+<h3>Short-term vs. long-term memory</h3>
+<div class="g2">
+<div class="card"><h4 style="margin-top:0">Short-term (in-context)</h4>
+<ul>
+  <li>The current run's messages and observations — the running transcript.</li>
+  <li>Lives entirely in the context window; vanishes when the run ends.</li>
+  <li>Bounded by the window size, so it needs active pruning as the run grows.</li>
+</ul></div>
+<div class="card"><h4 style="margin-top:0">Long-term (external store)</h4>
+<ul>
+  <li>Persisted outside the model: a database, a vector index, files.</li>
+  <li>Survives across runs; the agent retrieves relevant pieces <em>into</em> context on demand.</li>
+  <li>Often split into <strong>episodic</strong> (what happened before — past interactions/events) and <strong>semantic</strong> (facts/knowledge) memory.</li>
+</ul></div>
+</div>
+
+<h3>RAG — bring knowledge into the window</h3>
+<p><strong>Retrieval-Augmented Generation</strong> (Lewis et al., 2020) is the standard way to give an agent knowledge it wasn't trained on without stuffing everything into the prompt: index your documents (commonly as vector embeddings), retrieve the few most relevant chunks for the current query, and place <em>only those</em> in context. It keeps the window small, grounds answers in real sources, and lets knowledge update without retraining. In agent terms, retrieval is often exposed as just another tool the model can call.</p>
+
+<h3>Summarization &amp; compaction</h3>
+<p>Long-horizon tasks overflow the window: a 60-step debugging session produces more transcript than fits. The fix is <strong>compaction</strong> — periodically summarize older turns into a compact note and drop the raw text, keeping recent turns verbatim. You trade fidelity for headroom. Common tactics: summarize once the transcript crosses a threshold; keep a rolling window of the last N turns plus a running summary; store the full transcript externally and retrieve back specific details if needed.</p>
+
+<div class="tip"><div class="tipl">Why long-horizon tasks need external memory</div><p>An interviewer might push: "the task takes 200 steps — how does the agent remember step 3 at step 190?" The answer is that it <em>can't</em>, in-context — the window won't hold it. You persist state to an <strong>external memory</strong> (a store the agent writes to and reads back via tools) and keep only a compacted summary plus the working set in the window. The context window is working memory; the external store is long-term memory. Conflating the two is the giveaway sign of someone who's only built single-turn demos.</p></div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. Multi-Agent Topologies</h2>
+<p>Sometimes one agent with many tools isn't the cleanest design and you split the work across <em>several</em> agents, each with a focused role, prompt, and tool set. Multi-agent isn't automatically better — it adds coordination cost — so know the standard topologies and when each earns its keep.</p>
+
+<h3>The common shapes</h3>
+<ul>
+  <li><strong>Orchestrator-worker (supervisor).</strong> One coordinating agent decomposes the task, delegates subtasks to specialized workers, and synthesizes their results. The most common production shape; diagrammed below.</li>
+  <li><strong>Pipeline / sequential.</strong> Agents in a fixed chain — output of one is input to the next (e.g. researcher → writer → editor). Simple and deterministic in structure; really a workflow made of agents.</li>
+  <li><strong>Debate / critic.</strong> Two or more agents argue or one proposes while another critiques, to surface errors and improve quality. The reflection pattern (§3) scaled to separate agents.</li>
+  <li><strong>Blackboard.</strong> Agents don't call each other directly; they read from and write to a shared workspace ("blackboard"), and a controller decides who acts next. Decouples agents at the cost of a shared-state design.</li>
+</ul>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 430" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ah3" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker>
+    <marker id="ah3t" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#0d9488"/></marker>
+  </defs>
+
+  <!-- user -->
+  <rect x="40" y="30" width="140" height="56" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="110" y="54" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1d4ed8">User</text>
+  <text x="110" y="70" text-anchor="middle" font-size="9" fill="#526176">submits a task</text>
+
+  <!-- orchestrator -->
+  <rect x="320" y="24" width="220" height="70" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.7"/>
+  <text x="430" y="50" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">Orchestrator / Supervisor</text>
+  <text x="430" y="68" text-anchor="middle" font-size="9" fill="#526176">decompose · delegate · synthesize</text>
+
+  <!-- user <-> orchestrator -->
+  <line x1="180" y1="50" x2="318" y2="50" stroke="#5b6b7f" stroke-width="1.6" marker-end="url(#ah3)"/>
+  <text x="248" y="42" text-anchor="middle" font-size="8.5" fill="#526176">task</text>
+  <path d="M 318 74 C 260 92, 200 92, 182 74" fill="none" stroke="#0d9488" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#ah3t)"/>
+  <text x="248" y="102" text-anchor="middle" font-size="8.5" fill="#0d7a6f">final answer</text>
+
+  <!-- workers -->
+  <rect x="60" y="210" width="200" height="70" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="160" y="236" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6d28d9">Worker: Research</text>
+  <text x="160" y="254" text-anchor="middle" font-size="9" fill="#526176">gather &amp; retrieve facts</text>
+
+  <rect x="330" y="210" width="200" height="70" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="430" y="236" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6d28d9">Worker: Code</text>
+  <text x="430" y="254" text-anchor="middle" font-size="9" fill="#526176">write &amp; run code</text>
+
+  <rect x="600" y="210" width="200" height="70" rx="10" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="700" y="236" text-anchor="middle" font-size="11.5" font-weight="700" fill="#6d28d9">Worker: Verify</text>
+  <text x="700" y="254" text-anchor="middle" font-size="9" fill="#526176">check against rubric</text>
+
+  <!-- delegate arrows (solid, down) -->
+  <line x1="360" y1="94" x2="175" y2="208" stroke="#d97706" stroke-width="1.6" marker-end="url(#ah3)"/>
+  <text x="230" y="150" text-anchor="middle" font-size="8.5" font-weight="700" fill="#92400e">subtask A</text>
+  <line x1="430" y1="94" x2="430" y2="208" stroke="#d97706" stroke-width="1.6" marker-end="url(#ah3)"/>
+  <text x="452" y="150" text-anchor="middle" font-size="8.5" font-weight="700" fill="#92400e">subtask B</text>
+  <line x1="500" y1="94" x2="685" y2="208" stroke="#d97706" stroke-width="1.6" marker-end="url(#ah3)"/>
+  <text x="632" y="150" text-anchor="middle" font-size="8.5" font-weight="700" fill="#92400e">subtask C</text>
+
+  <!-- result arrows (dashed, up) -->
+  <path d="M 210 210 C 250 150, 330 120, 372 96" fill="none" stroke="#0d9488" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#ah3t)"/>
+  <text x="300" y="126" text-anchor="middle" font-size="8.5" fill="#0d7a6f">result A</text>
+  <path d="M 700 210 C 660 150, 540 118, 496 96" fill="none" stroke="#0d9488" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#ah3t)"/>
+  <text x="600" y="122" text-anchor="middle" font-size="8.5" fill="#0d7a6f">result C</text>
+
+  <!-- tools under workers -->
+  <rect x="70" y="340" width="180" height="50" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="160" y="362" text-anchor="middle" font-size="9.5" font-weight="700" fill="#c2410c">Tools: search / RAG</text>
+  <text x="160" y="378" text-anchor="middle" font-size="8.5" fill="#526176">retrieval index</text>
+  <rect x="340" y="340" width="180" height="50" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="430" y="362" text-anchor="middle" font-size="9.5" font-weight="700" fill="#c2410c">Tools: code sandbox</text>
+  <text x="430" y="378" text-anchor="middle" font-size="8.5" fill="#526176">isolated runtime</text>
+  <rect x="610" y="340" width="180" height="50" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.3"/>
+  <text x="700" y="362" text-anchor="middle" font-size="9.5" font-weight="700" fill="#c2410c">Tools: test runner</text>
+  <text x="700" y="378" text-anchor="middle" font-size="8.5" fill="#526176">rubric / assertions</text>
+
+  <line x1="160" y1="280" x2="160" y2="338" stroke="#ea580c" stroke-width="1.4" marker-end="url(#ah3)"/>
+  <line x1="430" y1="280" x2="430" y2="338" stroke="#ea580c" stroke-width="1.4" marker-end="url(#ah3)"/>
+  <line x1="700" y1="280" x2="700" y2="338" stroke="#ea580c" stroke-width="1.4" marker-end="url(#ah3)"/>
+</svg>
+<div class="svg-cap">Orchestrator-worker topology. The user hands a task to the <em>orchestrator</em>, which decomposes it and delegates subtasks (solid amber arrows) to specialized <em>worker</em> agents, each running its own loop against its own tools (orange, bottom). Workers return results (dashed teal arrows) that the orchestrator synthesizes into the final answer returned to the user (dashed teal, top). Subtask B runs straight down the middle while A and C fan out to the sides; the return arrows for A and C are drawn (B's result travels back up the same middle lane).</div>
+</div>
+
+<h3>Single-agent vs. multi-agent — the real trade-off</h3>
+<div class="miniboxes">
+  <div class="mb pro"><div class="mbh">Multi-agent helps when</div><ul><li>The task cleanly decomposes into specialties (research vs. code vs. review) with distinct tools/prompts.</li><li>Subtasks are independent and can run <strong>in parallel</strong> (fan-out).</li><li>You want isolation — a worker's messy context doesn't pollute the others'.</li></ul></div>
+  <div class="mb con"><div class="mbh">Multi-agent hurts when</div><ul><li>The task is really sequential — you've just added message-passing overhead to a pipeline.</li><li>Agents must share lots of state; passing context between them is lossy and token-expensive.</li><li>Errors compound — each hop is another chance to misread instructions; more agents = more ways to fail.</li></ul></div>
+</div>
+<div class="warn"><div class="warnl">Coordination cost is real</div><p>Every agent-to-agent handoff is a serialization of context into text and back, which loses information and burns tokens, and each additional agent multiplies the ways the system can misunderstand itself. The honest default: <strong>start with one well-equipped agent</strong>; move to multi-agent only when a task genuinely splits into parallelizable specialties. "More agents" is not "more intelligence."</p></div>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Orchestration &amp; Control</h2>
+<p>The controller is the deterministic code that runs the loop. This is where you convert an open-ended model into a system that terminates, stays within budget, and recovers from failure. It is the single most important piece for making an agent production-safe.</p>
+
+<h3>The run loop and its budgets</h3>
+<div class="formula">
+<span class="cm"># the controller loop — plain, deterministic code you own</span><br>
+step = 0<br>
+<b>while</b> step &lt; MAX_STEPS:                <span class="cm"># step budget — the runaway guard</span><br>
+&nbsp;&nbsp;action = model(context)               <span class="cm"># reason/plan</span><br>
+&nbsp;&nbsp;<b>if</b> action.is_final: <b>return</b> action.answer   <span class="cm"># normal exit</span><br>
+&nbsp;&nbsp;validate(action)                      <span class="cm"># schema + allow-list check</span><br>
+&nbsp;&nbsp;result = run_tool(action, timeout=T)  <span class="cm"># bounded execution</span><br>
+&nbsp;&nbsp;context.append(result)                <span class="cm"># observe</span><br>
+&nbsp;&nbsp;step += 1<br>
+<b>raise</b> BudgetExceeded                    <span class="cm"># hard stop — never loop forever</span>
+</div>
+
+<ul>
+  <li><strong>Step budget / max-iterations.</strong> The single most important guard: a hard cap on loop turns so a confused agent can't spin forever. Pair it with a <strong>token budget</strong> and a <strong>wall-clock timeout</strong> — whichever trips first stops the run.</li>
+  <li><strong>Per-tool timeouts.</strong> Every tool call is bounded; a hung API call must not hang the agent. On timeout, return an error observation so the loop can react.</li>
+  <li><strong>Retries with backoff</strong> for transient tool failures — but capped, and counted against the step budget so retries can't become the runaway.</li>
+</ul>
+
+<h3>Model-driven vs. deterministic control flow</h3>
+<p>A spectrum, not a binary. The more you let the model decide the path, the more flexible <em>and</em> the less predictable the system. Push the parts that <em>can</em> be deterministic into code:</p>
+<div class="miniboxes">
+  <div class="mb pro"><div class="mbh">Put in deterministic code</div><ul><li>The loop, budgets, timeouts, retries.</li><li>Input/output validation and tool permissions.</li><li>Fixed step ordering when the order is actually known (make it a workflow, not agent choice).</li></ul></div>
+  <div class="mb con"><div class="mbh">Leave to the model</div><ul><li>Which tool to call next when the path is genuinely data-dependent.</li><li>How to interpret an ambiguous result.</li><li>When the task is complete.</li></ul></div>
+</div>
+
+<h3>Parallel fan-out and join</h3>
+<p>When subtasks are independent — the orchestrator's worker calls, or one query against many sources — run them <strong>in parallel</strong> and <strong>join</strong> the results, rather than serially. This cuts latency dramatically for fan-out-shaped work. The controller issues the calls concurrently, waits for all (or a quorum, or until a deadline), and assembles the outcomes. Design the join for partial failure: decide up front whether a missing worker result fails the task or degrades gracefully.</p>
+
+<div class="tip"><div class="tipl">Idempotency and re-entrancy</div><p>Because runs get retried (a step timed out, the process crashed), design tool actions to be safe to repeat where possible, and make the loop re-entrant by persisting progress. A retried run that re-executes a non-idempotent write (charge a card twice, send a duplicate email) is a classic agent bug. Same lesson as any distributed system — it just arrives through the model.</p></div>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Evaluation</h2>
+<p>Agents are genuinely hard to evaluate, and interviewers know it — so this section separates strong candidates. The difficulty is intrinsic: outputs are non-deterministic, there are many valid paths to a correct answer, and a run can reach the right result by luck or the wrong result through a plausible-looking trajectory.</p>
+
+<h3>Why it's hard</h3>
+<ul>
+  <li><strong>Non-determinism.</strong> The same input can yield different trajectories run to run; a single pass tells you little. You need repeated runs and aggregate metrics.</li>
+  <li><strong>Many valid paths.</strong> Unlike a unit test with one expected output, an agent can succeed via different tool sequences — so you often can't assert on exact steps.</li>
+  <li><strong>Right answer, wrong reasons (and vice-versa).</strong> Final-answer-only scoring misses an agent that guessed correctly or that reasoned well but tripped on the last step.</li>
+</ul>
+
+<h3>What to measure</h3>
+<table class="tbl">
+  <tr><th>Method</th><th>What it checks</th><th>Watch out for</th></tr>
+  <tr><td><strong>Task success rate</strong></td><td>Did the run achieve the goal? (An objective, programmatic check where one exists — file compiled, ticket in the right state.)</td><td>Only works when success is machine-checkable; many tasks aren't cleanly so.</td></tr>
+  <tr><td><strong>Trajectory / rubric eval</strong></td><td>Grade the <em>steps</em>, not just the answer: did it call the right tools, avoid unsafe actions, stay on budget?</td><td>Requires a rubric and reference trajectories; more effort to build.</td></tr>
+  <tr><td><strong>LLM-as-judge</strong></td><td>A separate model scores outputs against a rubric — scales far cheaper than human grading.</td><td>Real biases (below) — never trust it blind.</td></tr>
+  <tr><td><strong>Human-in-the-loop</strong></td><td>Human review on a sample, and human approval gates for high-stakes actions.</td><td>Doesn't scale to every run; reserve for samples and high-risk paths.</td></tr>
+</table>
+
+<h3>Offline eval sets and regression suites</h3>
+<p>Build a fixed set of representative tasks with known-good outcomes and run the agent against it whenever you change a prompt, tool, or model — an agentic analog of a test suite. This catches regressions a single manual try would miss and lets you compare configurations on the same yardstick. Track success rate, average steps, average cost, and failure modes over time, not just a single pass/fail.</p>
+
+<div class="trap"><div class="trapl">LLM-as-judge pitfalls</div><p>Using a model to grade a model is powerful but has documented biases: <strong>position bias</strong> (favoring the first or last option presented), <strong>verbosity bias</strong> (rating longer answers higher regardless of quality), and <strong>self-preference bias</strong> (a model rating its own family's outputs more favorably). Mitigate by giving the judge a concrete rubric, randomizing option order, keeping the judge separate from the agent under test, and validating the judge against human labels on a sample. Report it as an <em>estimate</em>, not ground truth.</p></div>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Guardrails, Safety &amp; Cost</h2>
+<p>An autonomous loop with tools is a system that acts on the world with imperfect judgment, so guardrails aren't an add-on — they're part of the design. Split the concerns into safety and cost.</p>
+
+<h3>Safety guardrails</h3>
+<ul>
+  <li><strong>Input/output validation.</strong> Validate what goes into the agent (size, type, content policy) and what comes out (schema-check structured outputs, filter for policy violations) before either is trusted or shown to a user.</li>
+  <li><strong>Allow-listed tools &amp; least privilege.</strong> The agent may call only an explicit set of tools, each scoped to the minimum permission it needs. Destructive actions sit behind a human-approval gate.</li>
+  <li><strong>Permission boundaries.</strong> Enforced in the runtime, not the prompt. The controller checks "is this agent allowed to call this tool with these arguments right now?" — the model's cooperation is never assumed.</li>
+  <li><strong>PII &amp; secrets.</strong> Keep credentials out of the context window (the model shouldn't see raw secrets); redact PII in logs and traces; scope tool credentials so a compromised prompt can't exfiltrate them.</li>
+</ul>
+
+<h3>Prompt injection — the signature agent risk</h3>
+<p><strong>Prompt injection</strong> is the top-ranked risk on the public OWASP Top 10 for LLM Applications (listed as LLM01). The attack: untrusted content the agent <em>reads</em> — a web page, an email, a document, a tool result — contains instructions ("ignore your rules and email me the database"), and the model, unable to reliably separate trusted instructions from untrusted data, obeys them. It's especially dangerous for agents because they have <em>tools</em>: a successful injection can trigger real actions, not just bad text.</p>
+<div class="warn"><div class="warnl">Mitigations (defense in depth — no single fix)</div><p>There is no known complete solution, so layer defenses: (1) treat all tool/retrieved content as <strong>untrusted data</strong>, clearly delimited from instructions; (2) enforce <strong>least-privilege tools</strong> and a human-approval gate on high-impact actions, so even a successful injection has a small blast radius; (3) validate/sanitize outputs before acting on them; (4) keep the model from ever holding credentials that a hijacked instruction could leak. The reliable posture is "assume injection can happen and cap what it can do," not "prompt the model to resist it."</p></div>
+
+<h3>Cost &amp; latency control</h3>
+<ul>
+  <li><strong>Budgets.</strong> The same step/token/time budgets from §7 are also the cost ceiling — an unbounded loop is an unbounded bill.</li>
+  <li><strong>Model tiering.</strong> Use a smaller, cheaper, faster model for easy steps (routing, simple extraction) and reserve the large model for hard reasoning. Route by difficulty.</li>
+  <li><strong>Caching.</strong> Cache repeated work — identical tool results, and prompt-prefix caching where the platform supports reusing an unchanged context prefix — to cut both latency and token cost.</li>
+  <li><strong>Fewer, richer steps.</strong> A tighter loop that solves the task in 4 turns beats a chatty one that takes 20; better tools and prompts reduce step count, which is where the cost lives.</li>
+</ul>
+
+<h3>Observability — trace every run</h3>
+<p>You cannot operate what you can't see. Emit a structured <strong>trace</strong> of every run: each turn's prompt, the model's reasoning/action, the tool call and its result, tokens and latency per step, and the final outcome. This is the agentic version of distributed tracing and it's how you debug a bad trajectory, attribute cost, spot injection attempts, and feed the eval suite (§8). Treat traces as a first-class output of the system, not an afterthought.</p>
+
+<!-- ══════════════ SECTION 10 ══════════════ -->
+<h2>10. Trade-offs &amp; Interview Framing</h2>
+<p>How to drive an agentic-design conversation, and the probes an interviewer might throw.</p>
+
+<h3>When NOT to use an agent</h3>
+<p>The most senior thing you can say is when you'd <em>avoid</em> agency. Skip the dynamic loop when: the task fits one prompt; the steps are known and stable (use a fixed pipeline — deterministic, testable, cheaper); latency or cost is tight and a loop's variance is unacceptable; or the failure cost is high and you can't bound the blast radius. Determinism is a feature. Reach for autonomy only when the path is genuinely data-dependent.</p>
+
+<h3>How to drive the conversation</h3>
+<ol>
+  <li><strong>Clarify the task shape (1–2 min):</strong> Is the path known or data-dependent? One step or many? What tools/side-effects? How bad is a wrong action? This decides prompt vs. pipeline vs. agent.</li>
+  <li><strong>Establish the loop &amp; components</strong> (§1–2) — model, tools, memory, controller — and put the budget/guards in the controller from the start.</li>
+  <li><strong>Pick a reasoning pattern</strong> (§3) with a reason; add memory/RAG for knowledge and long horizons (§5).</li>
+  <li><strong>Go multi-agent only if it decomposes</strong> (§6), and name the coordination cost.</li>
+  <li><strong>Close on eval, safety, and cost</strong> (§8–9) — these are what separate a demo from a system.</li>
+</ol>
+
+<h3>What interviewers probe (with one-liners)</h3>
+<div class="card">
+<p><strong>Q: Agent vs. a fixed pipeline — how do you decide?</strong><br>By who controls the steps. If the sequence is known and stable, use a deterministic pipeline — it's cheaper, predictable, and testable. Use an agent only when the number and choice of steps depend on intermediate results, i.e. the model must decide the control flow at run time. Start simple; add agency where the path is genuinely data-dependent.</p>
+<p><strong>Q: How do you stop a runaway loop?</strong><br>Bounds in the controller, not hope in the prompt: a hard <em>step / max-iteration</em> cap, plus a token budget and a wall-clock timeout — whichever trips first halts the run. Per-tool timeouts stop a hung call, retries are capped and counted against the budget, and every run emits a trace so you can see where it spun.</p>
+<p><strong>Q: How do you evaluate an agent?</strong><br>Not with one run. Use an offline eval set of representative tasks with known outcomes, measure task success rate <em>and</em> grade the trajectory against a rubric (right tools, safe actions, on budget), run it as a regression suite on every prompt/tool/model change, and use LLM-as-judge to scale scoring — with awareness of its position/verbosity/self-preference biases — plus human review on a sample and on high-stakes paths.</p>
+<p><strong>Q: When does multi-agent help, and what's the cost?</strong><br>It helps when the task decomposes into independent specialties that can run in parallel with isolated context. The cost is coordination: every agent-to-agent handoff serializes context to text and back (lossy, token-expensive), and more agents mean more ways to misread instructions and compound errors. Default to one well-equipped agent; split only when the parallel decomposition is real.</p>
+<p><strong>Q: How do you defend against prompt injection?</strong><br>Assume it can happen and cap the blast radius. Treat all retrieved/tool content as untrusted data delimited from instructions, enforce least-privilege allow-listed tools with human approval on high-impact actions, validate outputs before acting, and never let the model hold credentials a hijacked instruction could exfiltrate. It's OWASP's top LLM risk and has no single complete fix — defense in depth is the answer.</p>
+</div>
+
+<div class="note"><div class="notel">One-line summary</div><p>An LLM agent is a model policy driven in a controller loop — perceive, reason, act via validated tools, observe, repeat — with memory in and out of a finite context window. Reach for it only when the path is data-dependent; bound it with step/token/time budgets; add multi-agent structure only for genuine parallel decomposition; evaluate with offline suites and trajectory rubrics rather than a single run; and treat guardrails, prompt-injection defense, cost control, and full-run tracing as part of the design, not extras.</p></div>
+
+<!-- ══════════════ GLOSSARY ══════════════ -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>LLM (Large Language Model)</strong></td><td>A model that predicts text; here it acts as the agent's decision-making "brain" on each turn.</td></tr>
+<tr><td><strong>Agent</strong></td><td>An LLM wrapped in a control loop with tools, so it acts, observes results, and repeats until a task is done.</td></tr>
+<tr><td><strong>Policy</strong></td><td>The LLM in its decision-making role: given the current context, it chooses the next action or the final answer.</td></tr>
+<tr><td><strong>Controller</strong></td><td>The deterministic code that runs the loop — invokes the model, executes tool calls, and enforces budgets, timeouts, and permissions.</td></tr>
+<tr><td><strong>ReAct (Reasoning and Acting)</strong></td><td>Pattern that interleaves a short reasoning step with a tool action each turn, then reasons again on the observation.</td></tr>
+<tr><td><strong>Plan-then-execute (plan-and-execute)</strong></td><td>Pattern where the agent first writes a whole ordered plan, then executes the steps — optionally re-planning if reality diverges.</td></tr>
+<tr><td><strong>Reflexion / Reflection</strong></td><td>Pattern where the agent (or a critic) reviews its own output or trajectory and revises on the next attempt.</td></tr>
+<tr><td><strong>Tree-of-Thoughts (ToT)</strong></td><td>Reasoning framed as a search over several candidate branches, evaluating and expanding the promising ones.</td></tr>
+<tr><td><strong>Function calling (tool use)</strong></td><td>Standardized mechanism where the model emits a structured request to call a described function, which the runtime executes.</td></tr>
+<tr><td><strong>JSON-Schema</strong></td><td>Machine-readable description of a tool's parameters; the runtime validates the model's arguments against it before executing.</td></tr>
+<tr><td><strong>MCP (Model Context Protocol)</strong></td><td>Open client/server specification standardizing how applications expose tools, data, and prompts to LLMs.</td></tr>
+<tr><td><strong>Context window</strong></td><td>The finite set of tokens a model can attend to in one call — the agent's short-term working memory.</td></tr>
+<tr><td><strong>RAG (Retrieval-Augmented Generation)</strong></td><td>Retrieving the few most relevant documents and placing only those in context to ground answers in real sources.</td></tr>
+<tr><td><strong>Compaction</strong></td><td>Periodically summarizing older turns and dropping the raw text to free context space on long-horizon tasks.</td></tr>
+<tr><td><strong>Orchestrator-worker (supervisor)</strong></td><td>Topology where a coordinating agent decomposes a task, delegates subtasks to specialized workers, and synthesizes their results.</td></tr>
+<tr><td><strong>Step budget (max-iterations)</strong></td><td>A hard cap on loop turns that prevents a confused agent from spinning forever.</td></tr>
+<tr><td><strong>Idempotency</strong></td><td>The property that repeating an action is safe — important because runs get retried after timeouts or crashes.</td></tr>
+<tr><td><strong>LLM-as-judge</strong></td><td>Using a separate model to score outputs against a rubric; scales cheaply but carries documented biases.</td></tr>
+<tr><td><strong>Prompt injection</strong></td><td>Attack where untrusted content the agent reads carries hidden instructions that hijack its behavior.</td></tr>
+<tr><td><strong>PII (Personally Identifiable Information)</strong></td><td>Personal data that must be kept out of the context window and redacted in logs and traces.</td></tr>
+</table>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="ds_device_lab.html">&lsaquo; Design a Device Lab / Test-Farm Platform</a><a class="bkc" href="index.html">📖 Contents</a><a href="ds_mobile_telemetry.html">Mobile Telemetry &amp; the Data Flywheel &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

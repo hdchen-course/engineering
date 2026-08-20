@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Productivity — System Design & Interview Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.nav { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 40px; position: sticky; top: 0; background: var(--bg); padding: 16px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 10px 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; white-space: pre-wrap; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part IV · Chapter 5 — <b>Engineering Productivity Systems</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Engineering Productivity &mdash; System Design</h1>
+  <div class="sub">Device Test Lab &bull; AI Bug Triage &bull; CI/CD for Firmware &bull; AI Agent Platform &bull; Interview Questions</div>
+</header>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection('overview')">Overview</button>
+  <button class="nav-btn" onclick="showSection('testlab')">Device Test Lab</button>
+  <button class="nav-btn" onclick="showSection('aitriage')">AI Bug Triage</button>
+  <button class="nav-btn" onclick="showSection('cicd')">Firmware CI/CD</button>
+  <button class="nav-btn" onclick="showSection('aiplatform')">AI Agent Platform</button>
+  <button class="nav-btn" onclick="showSection('questions')">Interview Questions</button>
+  <button class="nav-btn" onclick="showSection('testselection')">Test Selection Engine</button>
+  <button class="nav-btn" onclick="showSection('buildspeed')">Build Speed Optimization</button>
+  <button class="nav-btn" onclick="showSection('knowledge')">EngProd Knowledge</button>
+  <button class="nav-btn" onclick="showSection('howtoem')">How to EM</button>
+  <button class="nav-btn" onclick="showSection('selling')">Selling Points</button>
+</div>
+
+<!-- ===== Overview ===== -->
+<div class="section active" id="overview">
+<div class="card">
+<h2>What EngProd Teams Typically Own</h2>
+
+<table>
+  <tr><th>System</th><th>What It Does</th><th>Why It Matters</th></tr>
+  <tr><td><strong>Device Test Lab</strong></td><td>Pool of physical devices, automated scheduling, test execution</td><td>Hardware can't be virtualized — must test on real devices</td></tr>
+  <tr><td><strong>CI/CD Pipeline</strong></td><td>Build → flash → test → release automation for firmware/apps</td><td>Multi-target builds, physical device dependency</td></tr>
+  <tr><td><strong>Quality Dashboards</strong></td><td>Test pass rates, flaky detection, coverage metrics</td><td>Cross-team visibility into release readiness</td></tr>
+  <tr><td><strong>AI Developer Tools</strong></td><td>AI-generated tests, bug triage agent, code review assistant</td><td>Multiply engineer productivity with AI</td></tr>
+  <tr><td><strong>Test Framework</strong></td><td>Unified API across unit/integration/device tests</td><td>Minimize boilerplate, enable non-experts to write tests</td></tr>
+</table>
+
+<h3>Common EngProd Metrics</h3>
+<ul>
+  <li><strong>Developer velocity:</strong> time from code push to test result</li>
+  <li><strong>Test reliability:</strong> flaky test rate, false failure rate</li>
+  <li><strong>Device utilization:</strong> % of time devices are running tests vs idle</li>
+  <li><strong>MTTR:</strong> mean time to recover/repair a regression (detection time is tracked separately as MTTD)</li>
+  <li><strong>Coverage:</strong> % of code paths exercised by automated tests</li>
+</ul>
+</div>
+</div>
+
+<!-- ===== Device Test Lab ===== -->
+<div class="section" id="testlab">
+<div class="card">
+<h2>System Design: Device Test Lab</h2>
+<p>Design a system that manages a pool of physical devices for automated testing. Engineers submit test requests, the system schedules them on available devices, executes tests, and reports results.</p>
+
+<h3>Requirements</h3>
+<h4>Functional</h4>
+<ul>
+  <li>Submit test job (specify: test suite, device type, OS version, timeout)</li>
+  <li>Queue management (priority, FIFO within priority)</li>
+  <li>Device allocation (match device capabilities to test requirements)</li>
+  <li>Test execution (flash firmware if needed → run suite → collect results)</li>
+  <li>Result reporting (pass/fail, logs, screenshots, video)</li>
+  <li>Retry on flaky failures</li>
+</ul>
+<h4>Non-functional</h4>
+<ul>
+  <li>100+ devices across multiple device types</li>
+  <li>1000+ test jobs per day</li>
+  <li>Fair scheduling (no team starves)</li>
+  <li>Device health monitoring (detect broken/offline devices)</li>
+  <li>99.9% scheduler uptime</li>
+</ul>
+
+<h3>Back-of-Envelope Estimation</h3>
+<ul>
+  <li><strong>Submission rate:</strong> 1,000 jobs/day ≈ 0.01 jobs/s average. Even a 10&times; presubmit burst is ~0.1 jobs/s — trivial for the API/DB. <em>This is not a QPS problem; it is a device-throughput and scheduling problem.</em></li>
+  <li><strong>Device throughput:</strong> per job = flash (0 if version already matches, else 2&ndash;5 min) + boot + test ≈ 15 min average. One device does ~16 usable hrs/day ÷ 15 min ≈ <strong>60 jobs/device/day</strong>. 100 devices ≈ 6,000 jobs/day capacity vs 1,000 demand — ample <em>average</em> headroom, but presubmit traffic is bursty, so peak contention and fair sharing matter far more than raw capacity.</li>
+  <li><strong>Artifact storage:</strong> logs 1&ndash;10 MB, screenshots small, optional video 50&ndash;200 MB → ~100 MB/job avg. 1,000 jobs/day &times; 100 MB ≈ <strong>100 GB/day ≈ 36 TB/yr</strong>. Store artifacts in object storage (S3); keep only metadata + pointers in the DB. Tiered retention: full artifacts ~30 days, then keep pass/fail + metadata long-term.</li>
+  <li><strong>Metadata DB:</strong> ~365K job rows/yr — tiny. A single primary PostgreSQL (plus a read replica for the dashboard) handles this comfortably; no sharding needed.</li>
+</ul>
+
+<h3>Architecture</h3>
+<svg viewBox="0 0 700 320" style="width:100%;max-width:1000px;margin:16px auto;display:block;" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif">
+  <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#495057"/></marker></defs>
+  <!-- Engineers -->
+  <rect x="10" y="20" width="130" height="50" rx="8" fill="#d0ebff" stroke="#1767b1"/>
+  <text x="75" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#1767b1">Engineers</text>
+  <text x="75" y="58" text-anchor="middle" font-size="9" fill="#495057">(submit jobs)</text>
+  <!-- Job Queue -->
+  <rect x="200" y="20" width="130" height="50" rx="8" fill="#fff3bf" stroke="#a65600"/>
+  <text x="265" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#a65600">Job Queue</text>
+  <text x="265" y="58" text-anchor="middle" font-size="9" fill="#495057">(priority)</text>
+  <!-- Scheduler -->
+  <rect x="390" y="20" width="140" height="50" rx="8" fill="#d3f9d8" stroke="#247834"/>
+  <text x="460" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#247834">Scheduler</text>
+  <text x="460" y="58" text-anchor="middle" font-size="9" fill="#495057">(match &amp; assign)</text>
+  <!-- Test Executor -->
+  <rect x="390" y="120" width="140" height="50" rx="8" fill="#e5dbff" stroke="#653ae6"/>
+  <text x="460" y="142" text-anchor="middle" font-size="11" font-weight="600" fill="#653ae6">Test Executor</text>
+  <text x="460" y="158" text-anchor="middle" font-size="9" fill="#495057">(per device host)</text>
+  <!-- Device Pool -->
+  <rect x="390" y="220" width="140" height="50" rx="8" fill="#ffe3e3" stroke="#c92a2a"/>
+  <text x="460" y="242" text-anchor="middle" font-size="11" font-weight="600" fill="#c92a2a">Device Pool</text>
+  <text x="460" y="258" text-anchor="middle" font-size="9" fill="#495057">(health monitor)</text>
+  <!-- Dashboard -->
+  <rect x="200" y="120" width="130" height="50" rx="8" fill="#f1f3f5" stroke="#495057"/>
+  <text x="265" y="142" text-anchor="middle" font-size="11" font-weight="600" fill="#495057">Dashboard</text>
+  <text x="265" y="158" text-anchor="middle" font-size="9" fill="#495057">(results)</text>
+  <!-- Arrows -->
+  <line x1="140" y1="45" x2="195" y2="45" stroke="#495057" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="330" y1="45" x2="385" y2="45" stroke="#495057" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="460" y1="70" x2="460" y2="115" stroke="#495057" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="460" y1="170" x2="460" y2="215" stroke="#495057" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="390" y1="145" x2="335" y2="145" stroke="#495057" stroke-width="1.5" marker-end="url(#arr)"/>
+</svg>
+
+<h3>Components</h3>
+
+<h4>1. Job Queue (Priority Queue + Persistence)</h4>
+<ul>
+  <li>Store: Database (PostgreSQL or Spanner)</li>
+  <li>Schema: job_id, submitter, priority, device_requirements, test_suite, status, created_at</li>
+  <li>Priority: P0 (release blocking) &gt; P1 (presubmit) &gt; P2 (nightly)</li>
+</ul>
+
+<h4>2. Scheduler</h4>
+<ul>
+  <li>Matches job requirements to available devices</li>
+  <li>Considers: device type, OS version, hardware revision, health status</li>
+  <li>Fair scheduling: round-robin across teams at same priority</li>
+  <li>Trigger: device becomes available → pull next matching job</li>
+</ul>
+
+<h4>3. Device Manager</h4>
+<ul>
+  <li>Device states: AVAILABLE, IN_USE, FLASHING, OFFLINE, MAINTENANCE</li>
+  <li>Health checks: periodic heartbeat, detect unresponsive</li>
+  <li>Auto-quarantine on 3 consecutive <em>infra/setup</em> failures (device unreachable, flash failed, no heartbeat) → MAINTENANCE. Do NOT quarantine on test-<em>assertion</em> failures — those usually mean a broken commit, not a broken device, and pulling healthy devices for a bad build drains the pool.</li>
+</ul>
+
+<h4>4. Test Executor (per device host)</h4>
+<ul>
+  <li>Flash firmware if job requires specific version</li>
+  <li>Execute test suite with timeout</li>
+  <li>Collect artifacts: logs, logcat, screenshots, crash dumps</li>
+  <li>Watchdog: kill stuck tests → report timeout</li>
+</ul>
+
+<h4>5. Result Store + Dashboard</h4>
+<ul>
+  <li>All results with full artifacts</li>
+  <li>Aggregations: pass rate by suite/device/date</li>
+  <li>Flaky detection: same test, same code, different results</li>
+  <li>Regression detection: pass rate drop after specific commit</li>
+</ul>
+
+<h3>API Design</h3>
+<pre>
+POST /v1/jobs                 submit job  → {job_id, status:"QUEUED"}
+    body: { test_suite, device_requirements:{type, os_version, hw_rev},
+            priority, timeout_sec, firmware_version }
+    header: Idempotency-Key   // safe client retries — no duplicate jobs
+GET  /v1/jobs/{id}            → status + result summary
+GET  /v1/jobs/{id}/artifacts  → pre-signed URLs (logs, screenshots, video)
+POST /v1/jobs/{id}/cancel     cancel a QUEUED or RUNNING job
+GET  /v1/devices              pool state (type, os, status, current_job)
+POST /v1/devices/{id}/quarantine   manual quarantine (ops action)
+</pre>
+<ul>
+  <li><strong>Async by design:</strong> submit returns immediately with a job_id; clients poll <code>GET /v1/jobs/{id}</code> or subscribe to a completion webhook. Never hold the HTTP request open for a minutes-long test.</li>
+  <li><strong>Idempotency key</strong> on submit prevents duplicate jobs when a client retries after a network timeout.</li>
+</ul>
+
+<h3>Detailed Design: Scheduler Algorithm</h3>
+<pre>
+while (true):
+    device = waitForAvailableDevice()           // event-driven, not polling
+    job = findBestMatchingJob(device)           // query DB: match device caps + priority
+    if job == null: continue
+
+    // Atomic claim: conditional update (device.state AVAILABLE -> IN_USE) in one txn.
+    // Lets you run N stateless scheduler replicas for HA without double-assigning a device.
+    if not atomicClaim(device, job):            // CAS / SELECT ... FOR UPDATE; lost the race → retry
+        continue
+    markJob(job, RUNNING, assigned_device=device)
+    notifyExecutor(device.host, job)            // RPC or durable queue message
+</pre>
+
+<h4>Matching Logic</h4>
+<ul>
+  <li><strong>Hard constraints:</strong> device_type must match, OS version must match (or "any")</li>
+  <li><strong>Soft preferences:</strong> prefer device with most recent successful test (less likely broken)</li>
+  <li><strong>Priority tiebreaker:</strong> within same priority, FIFO by creation time</li>
+  <li><strong>Starvation prevention:</strong> if a job waits > 30 min, boost priority by 1 level</li>
+</ul>
+
+<h3>Detailed Design: Flaky Test Detection</h3>
+<table>
+  <tr><th>Signal</th><th>Detection</th><th>Action</th></tr>
+  <tr><td>Same test, same code, different results</td><td>Track (test_id, commit_hash) → pass/fail ratio</td><td>If ratio between 20%-80% over 5+ runs → mark flaky</td></tr>
+  <tr><td>Fails only on specific device</td><td>Compare pass rate per device for same test</td><td>Quarantine device, not test</td></tr>
+  <tr><td>Fails only at certain time</td><td>Correlate with time-of-day, other running jobs</td><td>Likely resource contention → isolate or add capacity</td></tr>
+</table>
+
+<h3>Design Decisions (Talking Points)</h3>
+<div class="insight">
+  <p><strong>"Why not use VMs/emulators?"</strong> — Hardware-specific sensors (cameras, IMUs, displays, payment chip readers) can't be virtualized. Timing-sensitive tests (Bluetooth, NFC) behave differently on emulators.</p>
+</div>
+<div class="insight">
+  <p><strong>"How to handle flaky tests?"</strong> — Auto-retry up to 2x. If still flaky, quarantine and notify owner. Track flake rate per test. Distinguish "test flake" from "device flake" from "infra flake."</p>
+</div>
+<div class="insight">
+  <p><strong>"How to scale?"</strong> — Devices + hosts scale horizontally. Scheduler is stateless (reads from DB). No single point of failure. Can add devices from new geo locations (multi-site lab).</p>
+</div>
+<div class="insight">
+  <p><strong>"Scheduler goes down?"</strong> — Jobs stay in DB queue. Scheduler restarts, picks up. Running jobs continue on their hosts — executor reports result directly to DB. No coordinator dependency during execution.</p>
+</div>
+<div class="insight">
+  <p><strong>"Fair scheduling?"</strong> — Weighted fair queuing: each team gets a proportional share. Burst allowed if others idle. Age-based priority boosting prevents starvation.</p>
+</div>
+<div class="insight">
+  <p><strong>"Device breaks mid-test?"</strong> — Executor has watchdog timer. If no heartbeat from device for 60s, mark test as DEVICE_ERROR (not test failure). Auto-quarantine device. Requeue job for another device.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== AI Bug Triage ===== -->
+<div class="section" id="aitriage">
+<div class="card">
+<h2>System Design: AI Bug Triage Agent</h2>
+<p>Design an AI agent that automatically triages incoming bugs: reads the bug report + logs, identifies likely root cause, assigns to the right team/person.</p>
+
+<h3>Architecture</h3>
+<svg viewBox="0 0 650 250" style="width:100%;max-width:1000px;margin:16px auto;display:block;" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif">
+  <defs><marker id="arr2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#495057"/></marker></defs>
+  <!-- Bug Filed -->
+  <rect x="10" y="30" width="130" height="50" rx="8" fill="#ffe3e3" stroke="#c92a2a"/>
+  <text x="75" y="52" text-anchor="middle" font-size="11" font-weight="600" fill="#c92a2a">Bug Filed</text>
+  <text x="75" y="68" text-anchor="middle" font-size="9" fill="#495057">(bug tracker)</text>
+  <!-- AI Agent -->
+  <rect x="210" y="30" width="150" height="50" rx="8" fill="#d0ebff" stroke="#1767b1"/>
+  <text x="285" y="52" text-anchor="middle" font-size="11" font-weight="600" fill="#1767b1">AI Agent</text>
+  <text x="285" y="68" text-anchor="middle" font-size="9" fill="#495057">(LLM + RAG)</text>
+  <!-- Assignment -->
+  <rect x="430" y="30" width="140" height="50" rx="8" fill="#d3f9d8" stroke="#247834"/>
+  <text x="500" y="52" text-anchor="middle" font-size="11" font-weight="600" fill="#247834">Assignment</text>
+  <text x="500" y="68" text-anchor="middle" font-size="9" fill="#495057">(team / owner)</text>
+  <!-- Knowledge Base -->
+  <rect x="210" y="140" width="150" height="80" rx="8" fill="#e5dbff" stroke="#653ae6"/>
+  <text x="285" y="162" text-anchor="middle" font-size="11" font-weight="600" fill="#653ae6">Knowledge Base</text>
+  <text x="285" y="180" text-anchor="middle" font-size="9" fill="#495057">- code ownership</text>
+  <text x="285" y="195" text-anchor="middle" font-size="9" fill="#495057">- past bugs</text>
+  <text x="285" y="210" text-anchor="middle" font-size="9" fill="#495057">- team expertise</text>
+  <!-- Arrows -->
+  <line x1="140" y1="55" x2="205" y2="55" stroke="#495057" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="360" y1="55" x2="425" y2="55" stroke="#495057" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <line x1="285" y1="80" x2="285" y2="135" stroke="#495057" stroke-width="1.5" marker-end="url(#arr2)"/>
+</svg>
+
+<h3>How It Works</h3>
+<ol>
+  <li><strong>Bug filed</strong> → trigger agent</li>
+  <li><strong>Extract context:</strong> stack trace, affected component, device type, OS version</li>
+  <li><strong>RAG lookup:</strong> similar past bugs, code ownership for affected files</li>
+  <li><strong>LLM reasoning:</strong> "Given this crash in <code>libdisplay.so</code> at <code>RenderFrame()</code>, and past bugs in this file owned by Display team → assign to Display team"</li>
+  <li><strong>Confidence check:</strong> if confidence &lt; threshold → human triage queue</li>
+  <li><strong>Feedback loop:</strong> if reassigned by human → learn from correction</li>
+</ol>
+
+<h3>Key Design Decisions</h3>
+<table>
+  <tr><th>Question</th><th>Answer</th></tr>
+  <tr><td>Why RAG, not just LLM?</td><td>Code ownership changes weekly. LLM training data stale. RAG gives fresh context from OWNERS files + recent git blame.</td></tr>
+  <tr><td>How to measure success?</td><td>% of bugs correctly auto-assigned (no human reassignment). Target: 70%+</td></tr>
+  <tr><td>What about hallucination?</td><td>Always include confidence score. Low confidence → human triage. Never auto-close.</td></tr>
+  <tr><td>Cold start?</td><td>Bootstrap from historical bug assignments (last 6 months). Fine-tune on reassignment corrections.</td></tr>
+</table>
+
+<h3>AI Agent Execution Model</h3>
+<div class="insight">
+  <p><strong>How real AI agent platforms decompose:</strong> The key primitives are: <strong>Agent</strong> (configured with persona + tools + model), <strong>Skill</strong> (reusable expertise: RAG knowledge base, tool access, sub-agents), <strong>Job</strong> (task definition + trigger), <strong>JobRun</strong> (single execution with lifecycle: QUEUED → STARTED → IN_PROGRESS → COMPLETED/FAILED). This decomposition enables non-engineers to compose agents from pre-built skills.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Firmware CI/CD ===== -->
+<div class="section" id="cicd">
+<div class="card">
+<h2>System Design: CI/CD for Device Firmware</h2>
+<p>Design CI/CD pipeline for device firmware. Must build for multiple hardware targets, flash onto real devices for testing, and gate releases on test results.</p>
+
+<h3>Pipeline Stages</h3>
+<svg viewBox="0 0 750 60" style="width:100%;max-width:1000px;margin:16px auto;display:block;" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif">
+  <defs><marker id="arr3" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#495057"/></marker></defs>
+  <rect x="5" y="15" width="80" height="30" rx="6" fill="#d0ebff" stroke="#1767b1"/>
+  <text x="45" y="35" text-anchor="middle" font-size="9" font-weight="600" fill="#1767b1">Code Push</text>
+  <line x1="85" y1="30" x2="100" y2="30" stroke="#495057" marker-end="url(#arr3)"/>
+  <rect x="102" y="15" width="90" height="30" rx="6" fill="#fff3bf" stroke="#a65600"/>
+  <text x="147" y="35" text-anchor="middle" font-size="9" font-weight="600" fill="#a65600">Build (multi)</text>
+  <line x1="192" y1="30" x2="207" y2="30" stroke="#495057" marker-end="url(#arr3)"/>
+  <rect x="209" y="15" width="80" height="30" rx="6" fill="#d3f9d8" stroke="#247834"/>
+  <text x="249" y="35" text-anchor="middle" font-size="9" font-weight="600" fill="#247834">Unit Tests</text>
+  <line x1="289" y1="30" x2="304" y2="30" stroke="#495057" marker-end="url(#arr3)"/>
+  <rect x="306" y="15" width="90" height="30" rx="6" fill="#e5dbff" stroke="#653ae6"/>
+  <text x="351" y="35" text-anchor="middle" font-size="9" font-weight="600" fill="#653ae6">Flash Device</text>
+  <line x1="396" y1="30" x2="411" y2="30" stroke="#495057" marker-end="url(#arr3)"/>
+  <rect x="413" y="15" width="100" height="30" rx="6" fill="#ffe3e3" stroke="#c92a2a"/>
+  <text x="463" y="35" text-anchor="middle" font-size="9" font-weight="600" fill="#c92a2a">Integration</text>
+  <line x1="513" y1="30" x2="528" y2="30" stroke="#495057" marker-end="url(#arr3)"/>
+  <rect x="530" y="15" width="80" height="30" rx="6" fill="#fff3bf" stroke="#a65600"/>
+  <text x="570" y="35" text-anchor="middle" font-size="9" font-weight="600" fill="#a65600">Soak Test</text>
+  <line x1="610" y1="30" x2="625" y2="30" stroke="#495057" marker-end="url(#arr3)"/>
+  <rect x="627" y="15" width="70" height="30" rx="6" fill="#d3f9d8" stroke="#247834"/>
+  <text x="662" y="35" text-anchor="middle" font-size="9" font-weight="600" fill="#247834">Release</text>
+</svg>
+
+<h3>Key Challenges</h3>
+<table>
+  <tr><th>Challenge</th><th>Solution</th></tr>
+  <tr><td>Multi-target build (3+ hardware variants)</td><td>Parallel build matrix, shared source with target-specific configs</td></tr>
+  <tr><td>Physical device dependency</td><td>Device Test Lab integration (previous design)</td></tr>
+  <tr><td>Long build times (30-60 min)</td><td>Incremental builds, cache object files, only rebuild changed modules</td></tr>
+  <tr><td>Bricked device risk</td><td>Recovery bootloader that can reflash even if main OS is broken</td></tr>
+  <tr><td>Sidecar/container image staleness</td><td>Version-pinned images per environment, pipeline gates on image freshness</td></tr>
+</table>
+
+<h3>Release Strategy</h3>
+<ul>
+  <li><strong>Canary:</strong> Flash 5% of test devices first, wait 1hr, then rest</li>
+  <li><strong>Environment promotion:</strong> dev → staging → pre-prod → prod (gated by test pass rate)</li>
+  <li><strong>Rollback:</strong> Auto-rollback if error rate &gt; threshold within 30 min of deploy</li>
+  <li><strong>Image tagging:</strong> Environment-specific tags (e.g., <code>:staging</code>, <code>:prod</code>) to prevent cross-environment contamination</li>
+</ul>
+
+<div class="warning">
+  <p><strong>Real-world lesson:</strong> A pipeline's "publish-to-live" step was blocked for 2 months due to a cross-platform build failure. All downstream services ran stale images. New code merged but never deployed. Lesson: pipeline health monitoring must alert on promotion failures, not just build failures.</p>
+</div>
+
+<h3>Monitoring Must-Haves</h3>
+<ul>
+  <li>Alert on pipeline stage failure (not just final result)</li>
+  <li>Alert on image age &gt; threshold per environment</li>
+  <li>Dashboard: last successful deploy date per service per environment</li>
+  <li>Compare image digests across environments (detect staleness)</li>
+</ul>
+</div>
+</div>
+
+<!-- ===== AI Agent Platform ===== -->
+<div class="section" id="aiplatform">
+<div class="card">
+<h2>AI Agent Platform Design Patterns</h2>
+<p>Key architectural patterns for building scalable AI agent platforms that non-technical users can compose. Based on patterns common to production systems.</p>
+
+<h3>Core Primitives</h3>
+<table>
+  <tr><th>Primitive</th><th>What It Is</th><th>Analogy</th></tr>
+  <tr><td><strong>Agent (Teammate)</strong></td><td>Execution unit — AI configured with persona, guardrails, skills, model config. Has lifecycle: DRAFT → PUBLISHED → DEPRECATED with versioning.</td><td>A trained colleague with a specific role</td></tr>
+  <tr><td><strong>Skill</strong></td><td>Three types: (1) Knowledge Base — RAG retrieval, (2) Tool Server — MCP protocol giving tool access, (3) Sub-Agent — delegate complex reasoning</td><td>Domain expertise and tools the colleague has</td></tr>
+  <tr><td><strong>Tool Provider</strong></td><td>Reusable tool sources with stored connection config and auth. Registered in a "Skill Store" for discovery.</td><td>Shared capability library</td></tr>
+  <tr><td><strong>Job</strong></td><td>Task definition + trigger source (UI, Slack, JIRA, API, scheduled, event-driven)</td><td>A work order / standing instruction</td></tr>
+  <tr><td><strong>JobRun</strong></td><td>Single execution: QUEUED → STARTED → IN_PROGRESS → COMPLETED/FAILED/CANCELLED. Tracks duration, token usage, tool invocations.</td><td>One execution of the work order</td></tr>
+</table>
+
+<h3>System Architecture</h3>
+<svg viewBox="0 0 750 290" style="width:100%;max-width:1000px;margin:16px auto;display:block;" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif">
+  <defs><marker id="arr5" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#495057"/></marker></defs>
+  <!-- Clients -->
+  <rect x="10" y="20" width="140" height="100" rx="8" fill="#d0ebff" stroke="#1767b1"/>
+  <text x="80" y="42" text-anchor="middle" font-size="11" font-weight="600" fill="#1767b1">Clients</text>
+  <text x="80" y="60" text-anchor="middle" font-size="9" fill="#495057">Web UI</text>
+  <text x="80" y="75" text-anchor="middle" font-size="9" fill="#495057">Slack Bot</text>
+  <text x="80" y="90" text-anchor="middle" font-size="9" fill="#495057">JIRA Integration</text>
+  <text x="80" y="105" text-anchor="middle" font-size="9" fill="#495057">Scheduled (cron)</text>
+  <!-- API -->
+  <rect x="200" y="30" width="160" height="80" rx="8" fill="#d3f9d8" stroke="#247834"/>
+  <text x="280" y="52" text-anchor="middle" font-size="11" font-weight="600" fill="#247834">Backend API</text>
+  <text x="280" y="70" text-anchor="middle" font-size="9" fill="#495057">Auth + Authz (per-resource)</text>
+  <text x="280" y="85" text-anchor="middle" font-size="9" fill="#495057">Create JobRun → Queue</text>
+  <text x="280" y="100" text-anchor="middle" font-size="9" fill="#495057">SSE streaming to client</text>
+  <!-- Queue -->
+  <rect x="410" y="40" width="130" height="50" rx="8" fill="#fff3bf" stroke="#a65600"/>
+  <text x="475" y="62" text-anchor="middle" font-size="11" font-weight="600" fill="#a65600">Message Queue</text>
+  <text x="475" y="78" text-anchor="middle" font-size="9" fill="#495057">(SNS / SQS)</text>
+  <!-- Worker -->
+  <rect x="590" y="30" width="140" height="80" rx="8" fill="#e5dbff" stroke="#653ae6"/>
+  <text x="660" y="52" text-anchor="middle" font-size="11" font-weight="600" fill="#653ae6">Agent Worker</text>
+  <text x="660" y="70" text-anchor="middle" font-size="9" fill="#495057">Load Agent config</text>
+  <text x="660" y="85" text-anchor="middle" font-size="9" fill="#495057">Bind skills as tools</text>
+  <text x="660" y="100" text-anchor="middle" font-size="9" fill="#495057">Execute LLM loop</text>
+  <!-- Skills -->
+  <rect x="500" y="160" width="230" height="120" rx="8" fill="#f1f3f5" stroke="#495057"/>
+  <text x="615" y="182" text-anchor="middle" font-size="11" font-weight="600" fill="#495057">Skill Layer</text>
+  <rect x="515" y="195" width="90" height="30" rx="5" fill="#d0ebff" stroke="#1767b1"/>
+  <text x="560" y="214" text-anchor="middle" font-size="9" fill="#1767b1">MCP Tools</text>
+  <rect x="620" y="195" width="95" height="30" rx="5" fill="#d3f9d8" stroke="#247834"/>
+  <text x="667" y="214" text-anchor="middle" font-size="9" fill="#247834">Knowledge Base</text>
+  <rect x="515" y="235" width="90" height="30" rx="5" fill="#e5dbff" stroke="#653ae6"/>
+  <text x="560" y="254" text-anchor="middle" font-size="9" fill="#653ae6">Sub-Agents</text>
+  <rect x="620" y="235" width="95" height="30" rx="5" fill="#ffe3e3" stroke="#c92a2a"/>
+  <text x="667" y="254" text-anchor="middle" font-size="9" fill="#c92a2a">Code Executor</text>
+  <!-- DB -->
+  <rect x="200" y="160" width="160" height="50" rx="8" fill="#fff3bf" stroke="#a65600"/>
+  <text x="280" y="182" text-anchor="middle" font-size="11" font-weight="600" fill="#a65600">Persistence</text>
+  <text x="280" y="198" text-anchor="middle" font-size="9" fill="#495057">DynamoDB / PostgreSQL + S3</text>
+  <!-- Arrows -->
+  <line x1="150" y1="70" x2="195" y2="70" stroke="#495057" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <line x1="360" y1="65" x2="405" y2="65" stroke="#495057" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <line x1="540" y1="65" x2="585" y2="65" stroke="#495057" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <line x1="660" y1="110" x2="660" y2="155" stroke="#495057" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <line x1="280" y1="110" x2="280" y2="155" stroke="#495057" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <!-- Result arrow back (dashed) -->
+  <path d="M590,110 L590,135 L280,135 L280,155" fill="none" stroke="#666d75" stroke-width="1" stroke-dasharray="4" marker-end="url(#arr5)"/>
+  <text x="435" y="130" text-anchor="middle" font-size="8" fill="#666d75">results + metrics</text>
+</svg>
+
+<h3>Three Skill Types (Detail)</h3>
+<table>
+  <tr><th>Type</th><th>How It Works</th><th>When to Use</th><th>Example</th></tr>
+  <tr><td><strong>MCP Tool Server</strong></td><td>Server implementing Model Context Protocol — a session-based JSON-RPC 2.0 protocol (initialize handshake + capability negotiation, then tool calls over stdio or Streamable HTTP). Tool handlers are typically stateless.</td><td>When agent needs to take actions (read/write external systems)</td><td>Slack, JIRA, Confluence, database query, API call</td></tr>
+  <tr><td><strong>Knowledge Base (RAG)</strong></td><td>Vector store with embeddings. Creates sub-agent with retrieval tool. Searches docs, returns relevant chunks as context.</td><td>When agent needs domain knowledge that changes frequently</td><td>Team wikis, runbooks, past incident reports, code docs</td></tr>
+  <tr><td><strong>Sub-Agent</strong></td><td>A full autonomous agent with its own tools and reasoning loop. Called as a tool by parent agent. Can have different model/config.</td><td>When a task requires multi-step reasoning too complex for a single tool call</td><td>Code analysis, multi-file refactoring, complex investigation</td></tr>
+</table>
+
+<h3>Key Architecture Decisions</h3>
+<table>
+  <tr><th>Decision</th><th>Choice</th><th>Why</th></tr>
+  <tr><td>Credential model</td><td>Service-account (no human creds)</td><td>Enables long-running automation without token expiry</td></tr>
+  <tr><td>Skill discovery</td><td>"Skill Store" with registration</td><td>Non-engineers can compose agents from pre-built skills</td></tr>
+  <tr><td>Response delivery</td><td>SSE (Server-Sent Events)</td><td>Real-time streaming for chat UX, progress updates</td></tr>
+  <tr><td>LLM constraint</td><td>Function calling (tools)</td><td>Deterministic, testable behavior vs free-form text</td></tr>
+  <tr><td>Caching</td><td>Semantic embedding cache</td><td>Avoid redundant LLM calls for similar questions</td></tr>
+  <tr><td>Auth granularity</td><td>Per-resource policies</td><td>Owner can do all, team members can access shared, public is read-only</td></tr>
+  <tr><td>Compute isolation</td><td>Separate container per code execution task</td><td>Sandboxing: agent code tasks can't affect API or other agents</td></tr>
+  <tr><td>Async dispatch</td><td>Queue between API and worker</td><td>Decouple submission from execution, handle bursts</td></tr>
+  <tr><td>Multi-tenancy</td><td>Team vs User ownership</td><td>Teams share agents/skills; individuals own drafts</td></tr>
+  <tr><td>Observability</td><td>Per-JobRun metrics (tokens, duration, tool calls)</td><td>Cost attribution, performance monitoring, debugging</td></tr>
+</table>
+
+<h3>Pre-Built Connector Categories (Skill Store)</h3>
+<table>
+  <tr><th>Category</th><th>Examples</th></tr>
+  <tr><td>Communication</td><td>Slack (messages, files, user lookup), Email</td></tr>
+  <tr><td>Project Management</td><td>JIRA (CRUD, transitions, sprints), Confluence</td></tr>
+  <tr><td>Development</td><td>Git (clone, branch, PR/CR), browser automation</td></tr>
+  <tr><td>Data</td><td>SQL databases, S3, dashboards</td></tr>
+  <tr><td>Custom</td><td>Any MCP-compatible server you build</td></tr>
+</table>
+
+<h3>How to Build a Skill (MCP Tool Server)</h3>
+<pre>
+# 1. Define tool with clear docstring (LLM reads this to decide when to call)
+@mcp.tool()
+def search_bugs(query: str, max_results: int = 10) -> str:
+    """Search bug tracker for issues matching the query.
+    Returns JSON array of {id, title, status, assignee}."""
+    results = bug_api.search(query, limit=max_results)
+    return json.dumps(results)
+
+# 2. Deploy as HTTP server (stateless, healthcheck endpoint)
+# 3. Register in Skill Store with connection config + auth
+# 4. Attach to Agent → Agent can now call search_bugs() as a tool
+</pre>
+
+<h3>Execution Flow</h3>
+<svg viewBox="0 0 700 340" style="width:100%;max-width:1000px;margin:16px auto;display:block;" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif">
+  <defs><marker id="arr4" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#495057"/></marker></defs>
+  <rect x="250" y="5" width="200" height="30" rx="6" fill="#d0ebff" stroke="#1767b1"/>
+  <text x="350" y="25" text-anchor="middle" font-size="10" font-weight="600" fill="#1767b1">User submits task (UI/Slack/API)</text>
+  <line x1="350" y1="35" x2="350" y2="50" stroke="#495057" marker-end="url(#arr4)"/>
+  <rect x="250" y="52" width="200" height="28" rx="6" fill="#fff3bf" stroke="#a65600"/>
+  <text x="350" y="71" text-anchor="middle" font-size="10" fill="#495057">Job created in DB</text>
+  <line x1="350" y1="80" x2="350" y2="95" stroke="#495057" marker-end="url(#arr4)"/>
+  <rect x="250" y="97" width="200" height="28" rx="6" fill="#fff3bf" stroke="#a65600"/>
+  <text x="350" y="116" text-anchor="middle" font-size="10" fill="#495057">Worker picks up → JobRun created</text>
+  <line x1="350" y1="125" x2="350" y2="140" stroke="#495057" marker-end="url(#arr4)"/>
+  <rect x="220" y="142" width="260" height="28" rx="6" fill="#e5dbff" stroke="#653ae6"/>
+  <text x="350" y="161" text-anchor="middle" font-size="10" fill="#495057">Agent init (persona + skills + model)</text>
+  <line x1="350" y1="170" x2="350" y2="185" stroke="#495057" marker-end="url(#arr4)"/>
+  <rect x="220" y="187" width="260" height="28" rx="6" fill="#e5dbff" stroke="#653ae6"/>
+  <text x="350" y="206" text-anchor="middle" font-size="10" fill="#495057">LLM → function calls (plan)</text>
+  <line x1="350" y1="215" x2="350" y2="230" stroke="#495057" marker-end="url(#arr4)"/>
+  <rect x="220" y="232" width="260" height="28" rx="6" fill="#d3f9d8" stroke="#247834"/>
+  <text x="350" y="251" text-anchor="middle" font-size="10" fill="#495057">Execute tools (RAG, API, code)</text>
+  <line x1="350" y1="260" x2="350" y2="275" stroke="#495057" marker-end="url(#arr4)"/>
+  <rect x="220" y="277" width="260" height="28" rx="6" fill="#d3f9d8" stroke="#247834"/>
+  <text x="350" y="296" text-anchor="middle" font-size="10" fill="#495057">Result stored → COMPLETED</text>
+  <line x1="350" y1="305" x2="350" y2="320" stroke="#495057" marker-end="url(#arr4)"/>
+  <rect x="220" y="322" width="260" height="14" rx="4" fill="#f1f3f5" stroke="#dee2e6"/>
+  <text x="350" y="333" text-anchor="middle" font-size="8" fill="#666d75">Metrics: tokens, duration, tool invocations</text>
+</svg>
+
+<h3>How to Talk About This in Interview</h3>
+<div class="tip">
+  <p><strong>Frame it around the decomposition:</strong> explain how agent platforms break down into agents, skills, and jobs, then walk through the patterns you'd apply when building one — function calling for deterministic behavior, RAG for fresh data, streaming for UX, and semantic caching for cost optimization.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Interview Questions ===== -->
+<div class="section" id="questions">
+<div class="card">
+<h2>Likely Interview Questions + How to Answer</h2>
+
+<h3>Technical Leadership</h3>
+
+<h4>"How would you prioritize: fixing flaky tests vs building new AI tools vs improving build speed?"</h4>
+<div class="insight">
+  <p><strong>What they're really asking:</strong> Can you make trade-offs? Do you think about team impact vs effort?</p>
+</div>
+<p><strong>Answer framework:</strong> "I'd prioritize based on (1) how many engineers are blocked right now, (2) severity of pain, and (3) effort to fix. Flaky tests usually win because they erode trust in CI — engineers start ignoring failures and real bugs slip through. Build speed is next because it affects every engineer every day. AI tools are force multipliers but only after the foundation is solid."</p>
+
+<h4>"A team is blocked because the device lab has no available devices. What do you do?"</h4>
+<p><strong>Answer:</strong> "Immediate: check if any devices are stuck (health check failures, zombie jobs). Often 20% of devices are in MAINTENANCE state that nobody cleared. Medium-term: add priority lanes so release-blocking tests can preempt nightly runs. Long-term: track utilization metrics to justify budget for more devices."</p>
+
+<h4>"Your AI bug triage tool has 60% accuracy. Ship it or wait for 80%?"</h4>
+<p><strong>Answer:</strong> "Ship it with a confidence threshold — only auto-assign when confidence > 90%. Below that, suggest but require human confirmation. But first measure precision at that threshold and check the model is calibrated — don't assume the high-confidence bucket is accurate; set the cutoff from the measured precision, not a guess. Let humans handle the uncertain ones, and keep the action reversible — suggest, don't auto-close. Measure not just triage time saved but the mis-assignment rate and its cost (a mis-routed P0 is expensive); ship if the measured precision earns it."</p>
+
+<h4>"How do you measure engineering productivity? What metrics?"</h4>
+<p><strong>Answer:</strong> "I focus on cycle time (code push → test result), not lines of code. Key metrics: (1) P50/P90 time from push to green CI, (2) flaky test rate, (3) device utilization, (4) MTTR for regressions. I'd avoid vanity metrics like 'number of tests' — a team can write 1000 trivial tests that catch nothing."</p>
+
+<h3>People Management</h3>
+
+<h4>"If you don't have domain expertise in this area, how do you manage the team?"</h4>
+<div class="warning">
+  <p><strong>A common question for EM roles where you're new to the domain.</strong></p>
+</div>
+<p><strong>Answer:</strong> "I don't need to be the deepest domain expert on my team — that's what my senior engineers are for. My value is: (1) defining process and quality bar, (2) unblocking cross-team dependencies, (3) growing people, and (4) making sure we ship on time. Domain knowledge I can ramp up on quickly — I embed with the team and read the code and design docs (AI tools help me get through an unfamiliar codebase faster), but I lean on my senior engineers for the real depth. The engineering judgment and people-management skills are what take years to build and are portable across domains."</p>
+
+<h4>"How do you grow engineers on your team?"</h4>
+<p><strong>Answer:</strong> "I match stretch assignments to their growth areas. For a junior engineer who's technically strong but struggles with ambiguity, I give them a project with unclear requirements and coach them through the scoping process. I like to expand scope progressively — for instance, taking a junior engineer from owning a feature, to owning a service, to leading a small sub-team over time."</p>
+
+<h4>"How do you handle an underperformer?"</h4>
+<p><strong>Answer:</strong> "First, diagnose whether it's a skill issue, motivation issue, or clarity issue. Most 'underperformance' is actually unclear expectations. I start with a direct conversation: 'here's what I expect at your level, here's where I see a gap.' Set specific, measurable goals for 2-4 weeks. Meet weekly to check progress. If it's a skill gap, provide resources and pairing. If after 4-6 weeks there's no improvement despite clear support, then we have a harder conversation about fit."</p>
+
+<h4>"Tell me about a time you gave difficult feedback"</h4>
+<p><strong>Story shape:</strong> giving difficult feedback to a technically strong engineer whose delivery in code reviews (e.g., "this is wrong" with no explanation) was driving other engineers away.<br>
+<strong>Key points to hit:</strong> Name the specific behavior with concrete examples. Frame the impact — teammates start avoiding their reviews. Separate the value (technical insight) from the problem (delivery blocking collaboration). Agree on a concrete format going forward: always explain why, always suggest an alternative. Close on the outcome — review style improves and the team re-engages with their reviews.</p>
+
+<h4>"How do you manage across multiple teams/locations/time zones?"</h4>
+<p><strong>Answer:</strong> "Async-first communication: decisions documented in writing, not just in meetings. Clear ownership boundaries: each team owns a service end-to-end. Overlap hours for sync: find the 2-3 hour window where all locations are online and use it for decisions that need real-time discussion. Everything else goes through async channels with clear SLAs for response time."</p>
+
+<h3>System Design</h3>
+<ul>
+  <li>"Design a test scheduler for a pool of physical devices" → See Device Test Lab section</li>
+  <li>"Design an AI agent that auto-triages bugs" → See AI Bug Triage section</li>
+  <li>"How would you build a CI/CD pipeline for firmware on real hardware?" → See Firmware CI/CD section</li>
+  <li>"Design a flaky test detection and quarantine system" → See Flaky Test Detection in Device Test Lab</li>
+</ul>
+
+<h3>AI/LLM</h3>
+
+<h4>"How would you use LLMs to generate unit tests?"</h4>
+<p><strong>Answer:</strong> "Feed the LLM: (1) the function signature + docstring, (2) 2-3 example tests from the same codebase for style reference, (3) coverage report showing untested branches. Ask it to generate tests for uncovered paths. Human reviews generated tests for: correct assertions (not just 'it doesn't crash'), meaningful edge cases, no false positives. Measure: did coverage increase? Did we catch any real bugs?"</p>
+
+<h4>"What are the risks of AI-generated test code?"</h4>
+<p><strong>Answer:</strong> "Three main risks: (1) Tests that always pass — assert nothing meaningful, just exercise code without checking correctness. (2) Tests that encode current behavior as 'correct' — if the code has a bug, the AI generates a test that expects the buggy behavior. (3) Maintenance burden — generated tests may be brittle, breaking on any refactor. Mitigation: require human review, mutation testing to verify tests actually catch bugs, and prefer generated tests that test contracts/interfaces not implementation details."</p>
+
+<h4>"How do you handle LLM hallucination in an automated system?"</h4>
+<p><strong>Answer:</strong> "Never trust LLM output for consequential actions without verification. Three layers: (1) Constrain output format — use function calling / structured output so the LLM can only emit valid actions. (2) Confidence gating — only auto-execute above threshold, human review below. (3) Reversibility — if the action is reversible (e.g., assign a bug), auto-execute. If irreversible (e.g., close a bug, deploy code), always require human approval."</p>
+
+<h3>Debugging / RCA</h3>
+
+<h4>"Tests pass locally but fail in CI. How do you debug?"</h4>
+<p><strong>Answer:</strong> "Classic categories: (1) Environment difference — different OS, different dependencies, different timezone/locale. (2) Ordering dependency — locally tests run in one order, CI shuffles. (3) Resource constraint — CI has less memory/CPU, causes timeouts. (4) Shared state — test pollutes DB/filesystem, locally it's fresh each run. My approach: reproduce in CI environment first (run in Docker matching CI image), then bisect which category it is."</p>
+
+<h4>"A pipeline has been silently broken for weeks. How do you detect and prevent this?"</h4>
+<p><strong>Answer:</strong> "A classic failure mode: a container image pipeline is blocked for 2 months and nobody notices because the running service uses a cached image. Prevention: (1) Alert on pipeline stage failures, not just final build status. (2) Monitor artifact freshness — alert if deployed image is older than X days. (3) Compare artifact digests across environments — catch staleness early. (4) Weekly pipeline health dashboard reviewed in team standup. The key insight: monitor deployments, not just builds. A passing build that never deploys is invisible."</p>
+
+<h4>"How do you debug a device test that fails intermittently?"</h4>
+<p><strong>Answer:</strong> "Three suspects: (1) Device hardware — run same test on multiple devices, if it only fails on one device → device issue. (2) Timing/race condition — add retries, check if failure correlates with concurrent tests on same device or network traffic. (3) Environmental — correlate with time of day, other running jobs, or infrastructure state. Collect: full device logs, host logs, network state at time of failure. The hardest bugs are 'once a day' failures — for those I instrument heavily and wait."</p>
+
+<h3>Ownership &amp; Initiative</h3>
+
+<h4>"Tell me about a time you took ownership of something nobody wanted to own"</h4>
+<p><strong>Story shape:</strong> taking over an undocumented system after the previous owner left with zero handover.<br>
+<strong>Key points to hit:</strong> Didn't wait for documentation. Read the code line by line. Wrote the missing docs. Migrated to modern, cheaper infrastructure. Made it self-sustaining so the team no longer depends on any single person.</p>
+
+<h4>"Tell me about a time you identified a problem before others noticed"</h4>
+<p><strong>Story shape:</strong> a self-initiated security audit that nobody asked for.<br>
+<strong>Key points to hit:</strong> While working on an unrelated fix, you notice a systemic gap (e.g., parameterized queries not used anywhere). Audit the whole codebase, find the vulnerabilities, fix them all with tests, and bring the service into security compliance.</p>
+
+<h4>"Tell me about a time you improved a process for the whole team"</h4>
+<p><strong>Story shape:</strong> introducing an AI-assisted development methodology.<br>
+<strong>Key points to hit:</strong> Use AI to analyze unfamiliar codebases in a fraction of the usual time. Document the approach, present it to the team, and get it adopted as standard practice for onboarding new services — with other engineers reporting faster ramp-up.</p>
+
+<h3>Cross-team Collaboration</h3>
+
+<h4>"Tell me about a time you had to coordinate with many teams to deliver a feature"</h4>
+<p><strong>Story shape:</strong> a single feature spanning 10+ repositories and 5 teams (e.g., cloud, firmware, SDET, docs, data science).<br>
+<strong>Key points to hit:</strong> The change touched multiple languages (Go, Java, Kotlin, Smithy). Design the state machine for the lifecycle, coordinate a testing plan across teams, ramp up quickly on services you'd never touched, and deliver within the sprint.</p>
+
+<h4>"Describe a time you had to influence without authority"</h4>
+<p><strong>Story shape:</strong> challenging a flawed technical direction on a team where you had no formal authority (e.g., embedded temporarily with a data science team).<br>
+<strong>Key points to hit:</strong> A partner team favored monolithic prompting; you believed a function-calling architecture would be more deterministic. Rather than argue, you built a small prototype to make the trade-offs concrete — side-by-side, it showed testable, reproducible results — and that evidence brought the team to adopt the more deterministic design together.</p>
+
+<h4>"Tell me about a time you unblocked another team"</h4>
+<p><strong>Story shape:</strong> a metrics pipeline where another team (e.g., firmware) had been blocked for a month.<br>
+<strong>Key points to hit:</strong> Take over with zero context, ramp up fast, and find in a couple of days a root cause the previous engineer couldn't find in two weeks (e.g., a stale container image from a blocked pipeline). The blocked team is testing again within hours of the fix.</p>
+
+<h3>Technical Judgment</h3>
+
+<h4>"Tell me about a time you chose the simpler solution over the more elegant one"</h4>
+<p><strong>Story shape:</strong> pushing back on an over-engineered feature (e.g., a revenue-model change).<br>
+<strong>Key points to hit:</strong> A PM wants a complex revenue-sharing system. You analyze the user-behavior data and propose the simpler option — don't share revenue for this feature type at all. Simpler backend, faster to ship, same business outcome. The PM agrees after seeing the data, and it ships in 2 weeks instead of 6.</p>
+
+<h4>"Tell me about a time you had to make a decision with incomplete information"</h4>
+<p><strong>Story shape:</strong> discovering a broken pipeline nobody knew about, with no docs and no owner.<br>
+<strong>Key points to hit:</strong> Decide whether to ignore it or invest time. Talk to the data team first — they confirm they need the data, which is enough signal. Fix it and design a generic format so it won't break again. It's still running years later.</p>
+
+<h4>"Tell me about a time your technical judgment was challenged"</h4>
+<p><strong>Story shape:</strong> an architecture disagreement (e.g., a recording-feature design) where your judgment was challenged.<br>
+<strong>Key points to hit:</strong> Your team proposes one architecture; another team proposes a simpler but less flexible one. You push back at first, then realize their approach covers 90% of use cases and yours is over-engineering for hypothetical future needs. You concede and ship faster. Lesson: don't optimize for cases that might never happen.</p>
+
+<h3>Handling Failure</h3>
+
+<h4>"Tell me about a time something went wrong on your watch"</h4>
+<p><strong>Story shape:</strong> a missed deployment where, while helping another team, you broke their service.<br>
+<strong>Key points to hit:</strong> You picked up work outside your team as a favor and made a mistake in their codebase. Take full accountability, fix it immediately, then establish a process: no cross-team commits without the owning team's review, even for small changes. Turn a personal failure into a team-wide process improvement.</p>
+
+<h4>"Tell me about a time you received critical feedback"</h4>
+<p><strong>Answer framework:</strong> "I received feedback that I was spending too much time diving deep into technical problems myself instead of delegating. My manager pointed out that when I fix things directly, it's fast but my team doesn't learn. I shifted to coaching mode: when something breaks, I ask the engineer questions to guide them to the answer instead of solving it myself. Took discipline — it's slower in the short term but builds team capability long-term."</p>
+
+<h3>Scaling &amp; Strategy</h3>
+
+<h4>"How would you build a team from scratch for this role?"</h4>
+<p><strong>Answer:</strong> "First hire: a senior engineer who knows the device/platform well (compensates for my ramp-up time). Second: an infra engineer who can build CI/CD and test frameworks. Third: an AI/ML engineer for the tooling roadmap. First 90 days: understand current pain points by embedding with the teams we serve. Don't build anything until I've talked to 10+ engineers about what slows them down."</p>
+
+<h4>"What would your first 30/60/90 days look like?"</h4>
+<p><strong>Answer:</strong></p>
+<ul>
+  <li><strong>30 days:</strong> Listen. 1:1 with every team member + key stakeholders. Understand current systems, pain points, ongoing projects. Build relationship with partner teams (firmware, app, infra).</li>
+  <li><strong>60 days:</strong> Identify top 3 pain points. Propose roadmap. Quick win: fix the most-complained-about issue (usually flaky tests or slow builds). Start hiring if headcount available.</li>
+  <li><strong>90 days:</strong> Ship first improvement. Establish metrics dashboard. Set team goals for next quarter aligned with org priorities. Have regular syncs with partner teams.</li>
+</ul>
+
+<h4>"How do you balance platform work vs feature requests from other teams?"</h4>
+<p><strong>Answer:</strong> "70/20/10 rule: 70% on committed roadmap items (reduce build time, improve test reliability). 20% on high-priority requests from partner teams (unblock a launch). 10% on tech debt and exploration (AI tools, new approaches). Requests from other teams go through a lightweight intake process — prevents random interruptions while keeping us responsive. If a request is truly blocking a launch, we interrupt our roadmap. If it's 'nice to have,' it goes in the backlog and gets prioritized next quarter."</p>
+</div>
+</div>
+
+<!-- ===== How to EM ===== -->
+<div class="section" id="howtoem">
+<div class="card">
+<h2>How to Be a Good EngProd EM (Day-to-Day)</h2>
+
+<h3>The Core Job</h3>
+<div class="insight">
+  <p><strong>EM = multiplier, not doer.</strong> Your success metric is not "what did I build" but "what did my team ship, and would they have shipped it without me?" If you disappeared for 2 weeks and nothing changed, you're either very good (self-sufficient team) or very bad (not adding value).</p>
+</div>
+
+<h3>Weekly Rhythm</h3>
+<table>
+  <tr><th>Activity</th><th>Time</th><th>Purpose</th></tr>
+  <tr><td>1:1 with each report</td><td>30 min × N</td><td>Unblock, career growth, feedback, pulse check</td></tr>
+  <tr><td>Team standup / sync</td><td>15 min × 3-5</td><td>Surface blockers early, not status reporting</td></tr>
+  <tr><td>Design / code review</td><td>3-5 hrs</td><td>Stay technical, catch arch issues early</td></tr>
+  <tr><td>Cross-team sync</td><td>1-2 hrs</td><td>Dependency coordination, roadmap alignment</td></tr>
+  <tr><td>Planning / roadmap</td><td>2-3 hrs</td><td>Next quarter direction, priority calls</td></tr>
+  <tr><td>Hiring</td><td>2-4 hrs</td><td>Resume review, interviews, debrief</td></tr>
+</table>
+
+<h3>What Makes the Difference Between L5 and L6 EM</h3>
+<table>
+  <tr><th>Dimension</th><th>L5 EM</th><th>L6 EM</th></tr>
+  <tr><td>Scope</td><td>Manage one team, deliver assigned roadmap</td><td>Define the roadmap, influence org direction</td></tr>
+  <tr><td>Ambiguity</td><td>Execute clear goals</td><td>Turn ambiguous problems into clear goals for team</td></tr>
+  <tr><td>Cross-team</td><td>Coordinate with partner teams when needed</td><td>Proactively build relationships, shape other teams' priorities</td></tr>
+  <tr><td>People</td><td>Manage performance, give feedback</td><td>Build team culture, hire A-players, develop future leaders</td></tr>
+  <tr><td>Technical</td><td>Review designs, catch issues</td><td>Set technical vision, define "what good looks like" for the org</td></tr>
+  <tr><td>Impact framing</td><td>"My team did X"</td><td>"Because of X, the whole org can now do Y"</td></tr>
+</table>
+
+<h3>How to Measure and Record Impact (Without Being Self-Promotional)</h3>
+<div class="warning">
+  <p><strong>Problem:</strong> "I can't quantify my impact because I didn't track metrics before/after."<br><br>
+  <strong>Reality:</strong> You don't need before/after dashboards. You need to document the PROBLEM (what was broken), the ACTION (what you did), and the OUTCOME (what changed). Specific anecdotes with timestamps are more credible than made-up percentages.</p>
+</div>
+
+<h4>What to Track Weekly (takes 5 min)</h4>
+<ul>
+  <li><strong>Unblocks:</strong> "Team X was stuck on Y, I connected them with Z" — date, who, what</li>
+  <li><strong>Decisions:</strong> "Decided to prioritize A over B because C" — captures judgment</li>
+  <li><strong>People moments:</strong> "Gave feedback to X about Y, their response was Z"</li>
+  <li><strong>Shipped:</strong> "Feature Y launched, used by N teams"</li>
+  <li><strong>Incidents:</strong> "Pipeline broke, RCA found X, prevention: Y"</li>
+</ul>
+
+<h4>How to Quantify Without Pre-existing Metrics</h4>
+<table>
+  <tr><th>Instead of</th><th>Say</th></tr>
+  <tr><td>"Improved build speed"</td><td>"Engineers were complaining builds took 30+ min. After the change, the common case is under 10 min. I know because I asked 5 engineers and they confirmed."</td></tr>
+  <tr><td>"Reduced flaky tests"</td><td>"Before: team Slack had 3-4 flaky test complaints per day. After: about 1 per week. I tracked this for 2 weeks before and after."</td></tr>
+  <tr><td>"Improved team morale"</td><td>"Two engineers told me separately they feel more productive since we changed the code review process. One said they ship 2x faster."</td></tr>
+  <tr><td>"Unblocked the team"</td><td>"Firmware team was stuck for a month. I resolved the root cause in 2 days. They shipped their feature the same week."</td></tr>
+</table>
+
+<div class="tip">
+  <p><strong>Rule of thumb:</strong> If you can say "who was affected, how long was the problem, what's different now" — that's quantified enough. You don't need a Grafana dashboard for everything. Anecdotes with specifics (dates, names, durations) are credible because they can be verified.</p>
+</div>
+
+<h3>Joining a New Team as EM (Without Domain Knowledge or Social Skills)</h3>
+
+<h4>First 2 Weeks: Listen Only</h4>
+<ul>
+  <li>1:1 with every team member (use template questions below — no need to improvise)</li>
+  <li>Read their code, infra, dashboards (you can understand systems without people explaining)</li>
+  <li>Write down a pain points list (don't share yet, just absorb)</li>
+  <li><strong>DO NOT change anything yet.</strong> Don't propose improvements. Don't suggest tools. Just listen and learn.</li>
+</ul>
+
+<h4>Week 3-4: Fix One Thing</h4>
+<ul>
+  <li>Pick the #1 pain point everyone mentioned → fix it yourself or assign it as top priority</li>
+  <li>This single action builds more trust than 4 weeks of socializing</li>
+  <li>Engineers respect "this person fixed the thing we've been complaining about for months"</li>
+</ul>
+
+<h4>1:1 Template (for people who don't know how to make conversation)</h4>
+<div class="tip">
+  <p><strong>You don't need to be chatty. Use these 4 questions and let them talk:</strong></p>
+</div>
+<ol>
+  <li>"What are you working on this week? Anything blocking you?"</li>
+  <li>"Is there anything I can do to help you move faster?"</li>
+  <li>"What's the most frustrating part of your workflow right now?"</li>
+  <li>"Where do you want to be in a year? What skills are you trying to build?"</li>
+</ol>
+<p>That's it. 30 minutes. They talk 80%, you talk 20%. Take notes. Follow up on what they said next week. <strong>Consistency > charisma.</strong></p>
+
+<h4>Building Trust Without Being Social</h4>
+<table>
+  <tr><th>You Don't Need</th><th>You Do Need</th></tr>
+  <tr><td>Small talk, finding common interests</td><td>Remembering what they told you last 1:1 and following up</td></tr>
+  <tr><td>Team dinners, happy hours</td><td>Unblocking them when they're stuck (respond to Slack within 2 hours)</td></tr>
+  <tr><td>Being everyone's friend</td><td>Being fair, predictable, and competent</td></tr>
+  <tr><td>Charisma or energy</td><td>Delivering results that make their lives easier</td></tr>
+  <tr><td>Knowing the domain from day 1</td><td>Asking smart questions and ramping up visibly fast</td></tr>
+</table>
+
+<div class="insight">
+  <p><strong>The introvert EM advantage:</strong> You won't micro-manage (engineers hate that). You won't waste meeting time with chatter. You'll give people space. You'll communicate in writing (which is clearer and more inclusive for remote/async teams). Engineers prefer "quiet but useful" over "energetic but unhelpful."</p>
+</div>
+
+<h4>How to "Ramp Up Domain" Without Asking People to Teach You</h4>
+<ul>
+  <li>Read the team's design docs and wikis (even if outdated — you'll know what questions to ask)</li>
+  <li>Use AI to analyze their codebase and generate architecture summaries</li>
+  <li>Look at recent incident reports / postmortems — fastest way to understand what matters</li>
+  <li>Read their dashboards — what do they monitor = what they care about</li>
+  <li>Attend their standups silently for 1 week before saying anything</li>
+</ul>
+<p><strong>Goal:</strong> Within 2 weeks, you should be able to draw the system architecture on a whiteboard without anyone teaching you. This earns instant respect.</p>
+
+<h3>How to Build a Roadmap When You're New (and Not from the Domain)</h3>
+
+<div class="warning">
+  <p><strong>Problem:</strong> "I don't know the domain well enough to define what we should build next."<br><br>
+  <strong>Answer:</strong> EngProd roadmaps are demand-driven, not vision-driven. You don't invent what to build — you listen to what hurts and fix it in priority order. This is actually easier than product roadmaps (where you have to predict what users want).</p>
+</div>
+
+<h4>Step 1: Collect Pain Points (Week 1-2)</h4>
+<ul>
+  <li>Ask every partner team: "What slows you down the most day-to-day?"</li>
+  <li>Ask your own team: "What support requests do you get most often?"</li>
+  <li>Look at Slack: search for "broken", "stuck", "help", "flaky" in engineering channels</li>
+  <li>Look at incident history: what keeps breaking?</li>
+  <li>Run a 5-question survey if you have 50+ engineers (keep it short)</li>
+</ul>
+
+<h4>Step 2: Categorize and Prioritize (Week 3)</h4>
+<table>
+  <tr><th>Priority</th><th>Criteria</th><th>Example</th></tr>
+  <tr><td>P0: Broken</td><td>Something is actively broken, teams are working around it daily</td><td>CI flakes 15% of runs, engineers re-trigger manually</td></tr>
+  <tr><td>P1: Slow</td><td>Works but painfully slow, every engineer feels it</td><td>Build takes 40 min, could be 10 with caching</td></tr>
+  <tr><td>P2: Missing</td><td>Feature doesn't exist, teams manually do something that should be automated</td><td>No automated device regression — QA does it by hand every release</td></tr>
+  <tr><td>P3: Nice-to-have</td><td>Would improve DX but nobody is blocked without it</td><td>AI code review suggestions</td></tr>
+</table>
+
+<h4>Step 3: Frame as Roadmap (Week 4)</h4>
+<pre>
+Q3 2026 Roadmap: Engineering Productivity
+
+Theme: "Fix the foundation before building new things"
+
+P0 (must-do):
+  - Reduce CI flake rate from 15% to &lt;3% [blocks every team]
+  - Fix device lab scheduling deadlock [QA blocked 2x/week]
+
+P1 (should-do):
+  - Build cache layer to cut build time 40min → 15min [200 engineers affected]
+  - Unified test report dashboard [currently 3 separate tools]
+
+P2 (stretch):
+  - AI-assisted bug triage pilot (start with 1 team)
+  - Automated device provisioning (eliminate manual setup)
+
+Not doing this quarter:
+  - Full rewrite of test framework (too risky, defer to Q4)
+  - AI code review (P1/P0 items come first)
+</pre>
+
+<h4>The Trick: You Don't Need Domain Expertise for This</h4>
+<div class="insight">
+  <p><strong>Notice:</strong> Nothing in the roadmap above requires knowing how the firmware works, what the device architecture is, or what the product features are. You just need to know: (1) what's broken, (2) how many people it affects, (3) how hard it is to fix. That's universal EngProd reasoning.</p>
+</div>
+
+<h4>How to Present Roadmap to Leadership</h4>
+<ul>
+  <li><strong>Lead with the problem, not the solution:</strong> "200 engineers lose 30 min/day to flaky CI" not "we're implementing a retry mechanism"</li>
+  <li><strong>Show impact in engineer-hours:</strong> "This saves 100 engineer-hours per week" → that's 2.5 FTEs worth of recovered time</li>
+  <li><strong>Show what you're NOT doing and why:</strong> This proves you made priority calls, not just listed everything</li>
+  <li><strong>Get buy-in from partner team leads:</strong> If they agree with your priorities, leadership will too</li>
+</ul>
+
+<h4>Hard Problem: "I can't tell what's important vs not"</h4>
+<div class="warning">
+  <p><strong>You don't need to know the domain to prioritize. You need to know who's in pain and how much.</strong></p>
+</div>
+<p>Prioritization formula without domain knowledge:</p>
+<ul>
+  <li><strong>How many people affected?</strong> 200 engineers vs 3 engineers → obvious</li>
+  <li><strong>How often?</strong> Daily pain vs once-a-month annoyance → obvious</li>
+  <li><strong>What's the workaround cost?</strong> 30 min manual work every time vs 2 min retry → quantifiable</li>
+  <li><strong>Is it getting worse?</strong> Growing test suite = flake rate grows too → urgent</li>
+</ul>
+<p>If 3 different partner teams independently mention the same problem, it's P0. You don't need to understand WHY it's broken to know it's worth fixing.</p>
+
+<h4>Hard Problem: "I can't push back on low-priority requests"</h4>
+<p><strong>Say no with data, not with opinion:</strong></p>
+<pre>
+"I understand you need X. Here's our current priority:
+ - P0: CI flaky rate blocks 200 engineers daily (100 hrs/day lost)
+ - P1: Build time affects every push (saving 20 min × 50 pushes/day)
+ - Your request: affects 3 engineers occasionally
+
+I'm happy to do X in Q4, or if you'd like it sooner,
+help me understand which P0/P1 item you'd swap it with."
+</pre>
+<div class="tip">
+  <p><strong>Escalation path:</strong> If they insist and won't accept your prioritization, that's fine — escalate to both your managers. "We disagree on priority, can you two align?" This isn't a failure, it's the system working. Don't give in just to avoid conflict.</p>
+</div>
+
+<h4>Hard Problem: "Team has no direction — just keeping things alive"</h4>
+<div class="insight">
+  <p><strong>"Maintenance only" means nobody has looked for opportunities.</strong> This is actually the best situation for a new EM — you have a blank canvas.</p>
+</div>
+<p>Ask these questions to find direction:</p>
+<ul>
+  <li>"What do engineers do manually that could be automated?" → that's your roadmap</li>
+  <li>"What takes the longest in the development cycle?" → optimize it</li>
+  <li>"What tools does another team have that we don't?" → build or adopt</li>
+  <li>"What broke in the last 3 months?" → prevent it from happening again</li>
+  <li>"If you could wave a magic wand and fix one thing, what would it be?" → that's P0</li>
+  <li>"What would AI be good at in our workflow?" → future roadmap</li>
+</ul>
+<p>If after all this you truly find nothing to improve — your team is overstaffed. But this never happens in EngProd. There's always more to automate, more to speed up, more to make self-service.</p>
+
+<div class="warning">
+  <p><strong>The real risk of "maintenance only" teams:</strong> They become invisible. Leadership forgets they exist. Budget gets cut. People leave because there's no growth. As EM, your job is to turn "keeping the lights on" into "enabling the org to ship faster" — same work, different framing, completely different perception.</p>
+</div>
+
+<h4>Ongoing: How to Keep Roadmap Updated</h4>
+<ul>
+  <li>Monthly check-in with top 3 partner teams: "Is your biggest pain still X? Did anything new come up?"</li>
+  <li>Track support request volume: if a category spikes, it's telling you something</li>
+  <li>After every incident: ask "could tooling have prevented this or detected it faster?"</li>
+  <li>Quarterly retro: what shipped, what impact did it have, what's next</li>
+</ul>
+
+<h3>Common EM Anti-Patterns (Avoid These)</h3>
+<table>
+  <tr><th>Anti-pattern</th><th>Why it's bad</th><th>What to do instead</th></tr>
+  <tr><td>Doing IC work yourself because it's faster</td><td>Team doesn't learn, you become bottleneck, can't scale</td><td>Coach through questions: "what did you try? what would you look at next?"</td></tr>
+  <tr><td>Being a "meeting proxy" (just relay info between teams)</td><td>No value-add, could be an email</td><td>Synthesize: "here's the decision, here's why, here's what it means for us"</td></tr>
+  <tr><td>Avoiding difficult conversations</td><td>Underperformers drag down the whole team</td><td>Address early, be specific, give concrete actionable feedback</td></tr>
+  <tr><td>Over-shielding team from context</td><td>Team can't make good decisions without understanding the why</td><td>Share context, explain trade-offs, let them participate in priority decisions</td></tr>
+  <tr><td>Metrics theater (track everything, improve nothing)</td><td>Dashboards don't fix problems, actions do</td><td>Pick 3 metrics max. Act on them. Kill metrics nobody looks at.</td></tr>
+</table>
+
+<h3>EngProd-Specific EM Responsibilities</h3>
+<ul>
+  <li><strong>Serve internal customers:</strong> Your customers are other engineering teams. Meet with them regularly. Ask "what slows you down?"</li>
+  <li><strong>Balance platform vs requests:</strong> 70% roadmap / 20% partner requests / 10% tech debt</li>
+  <li><strong>Own reliability:</strong> If CI is broken, your team is responsible. Treat CI uptime like production uptime.</li>
+  <li><strong>Measure developer experience:</strong> Survey engineers quarterly. "How productive do you feel? What's your biggest friction?"</li>
+  <li><strong>Build for self-service:</strong> Every tool should be usable without your team's help. If engineers Slack your team 10x/day for help, the tool's UX is broken.</li>
+  <li><strong>Deprecate boldly:</strong> Old tools that "sort of work" are worse than no tool (they create false confidence). Kill them and migrate.</li>
+</ul>
+
+<h3>How to Frame EM Experience in Interview</h3>
+<div class="insight">
+  <p><strong>Frame shift for different questions:</strong><br><br>
+  "Tell me about your team" → Talk about the PROBLEM SPACE, not org chart. "My team owns the developer productivity for 200+ engineers. We build test infrastructure, CI/CD, and AI tools that reduce friction in their daily workflow."<br><br>
+  "What's your management style?" → "Context over control. I share the why (business context, trade-offs), set clear expectations on the what (quality bar, timelines), and give autonomy on the how (they choose the technical approach). I intervene when I see design decisions that will cause pain in 6 months."<br><br>
+  "How technical are you?" → "I review every design doc. I can read any PR on my team and give meaningful feedback. I prototype AI tools myself to validate feasibility before putting engineers on it. I don't write production code daily anymore, but I could if needed — for example, taking over an urgent pipeline issue and resolving it directly."</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Test Selection Engine ===== -->
+<div class="section" id="testselection">
+<div class="card">
+<h2>System Design: Test Selection Engine</h2>
+<p><strong>Problem:</strong> You have 4 million tests. A developer pushes a 10-line code change. Running all 4M tests takes 8 hours. How do you select the relevant subset to run in &lt;10 minutes?</p>
+
+<h3>Why This Is the Hardest Problem in Test Automation</h3>
+<div class="insight">
+  <p>Too few tests → miss a bug → production incident.<br>
+  Too many tests → 8 hour feedback loop → developers hate CI.<br>
+  The best balance is: run exactly the tests that could possibly be affected by this change.</p>
+</div>
+
+<h3>Approach 1: Dependency Graph (Static Analysis)</h3>
+<p><strong>Idea:</strong> Build a graph: "file A is imported by file B, which is tested by test C." If file A changes, run test C.</p>
+<ul>
+  <li><strong>How:</strong> Parse import statements / build dependencies (Bazel does this natively)</li>
+  <li><strong>Pros:</strong> Deterministic, no training data needed, no false negatives <em>within the captured dependency graph</em> (won't skip a test that statically depends on the change)</li>
+  <li><strong>Cons:</strong> Over-selects (interface change → everything depends on it → run thousands). Blind to edges the graph doesn't capture — cross-service effects (service A's API change breaks service B's integration test), reflection, dynamic dispatch, and config/data files → these <em>are</em> real false negatives</li>
+</ul>
+
+<h3>Approach 2: Historical Correlation (ML-based)</h3>
+<p><strong>Idea:</strong> Historically, when file X changed, tests T1, T2, T3 failed. Learn this pattern. When X changes again, predict T1-T3 might fail.</p>
+<ul>
+  <li><strong>How:</strong> Train model on (changed_files, failed_tests) pairs from last 6 months</li>
+  <li><strong>Pros:</strong> Catches non-obvious dependencies, cross-service effects, config changes</li>
+  <li><strong>Cons:</strong> Can miss new tests (no history). Can have false negatives (never seen this file fail this test before). Needs retraining.</li>
+</ul>
+
+<h3>Approach 3: Hybrid (Recommended for Interview)</h3>
+<pre>
+For every code change:
+1. ALWAYS run: dependency-graph-selected tests (guaranteed safety)
+2. ALSO run: ML-predicted high-risk tests (catches cross-boundary effects)
+3. SKIP: tests with zero dependency + zero historical correlation
+4. NIGHTLY: run ALL tests as safety net (catch what we missed)
+5. LEARN: if nightly catches something we skipped → retrain model
+</pre>
+
+<h3>Architecture</h3>
+<svg viewBox="0 0 700 200" style="width:100%;max-width:1000px;margin:16px auto;display:block;" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif">
+  <defs><marker id="arr6" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#495057"/></marker></defs>
+  <rect x="10" y="70" width="100" height="50" rx="6" fill="#d0ebff" stroke="#1767b1"/>
+  <text x="60" y="98" text-anchor="middle" font-size="10" font-weight="600" fill="#1767b1">Code Change</text>
+  <line x1="110" y1="95" x2="145" y2="95" stroke="#495057" marker-end="url(#arr6)"/>
+
+  <rect x="150" y="40" width="120" height="40" rx="6" fill="#d3f9d8" stroke="#247834"/>
+  <text x="210" y="64" text-anchor="middle" font-size="9" font-weight="600" fill="#247834">Dep Graph</text>
+
+  <rect x="150" y="100" width="120" height="40" rx="6" fill="#e5dbff" stroke="#653ae6"/>
+  <text x="210" y="124" text-anchor="middle" font-size="9" font-weight="600" fill="#653ae6">ML Predictor</text>
+
+  <line x1="270" y1="60" x2="320" y2="85" stroke="#495057" marker-end="url(#arr6)"/>
+  <line x1="270" y1="120" x2="320" y2="95" stroke="#495057" marker-end="url(#arr6)"/>
+
+  <rect x="325" y="70" width="80" height="50" rx="6" fill="#fff3bf" stroke="#a65600"/>
+  <text x="365" y="98" text-anchor="middle" font-size="9" font-weight="600" fill="#a65600">Union</text>
+
+  <line x1="405" y1="95" x2="440" y2="95" stroke="#495057" marker-end="url(#arr6)"/>
+
+  <rect x="445" y="70" width="100" height="50" rx="6" fill="#f1f3f5" stroke="#495057"/>
+  <text x="495" y="92" text-anchor="middle" font-size="9" font-weight="600" fill="#495057">Selected</text>
+  <text x="495" y="108" text-anchor="middle" font-size="9" fill="#495057">Tests</text>
+
+  <line x1="545" y1="95" x2="580" y2="95" stroke="#495057" marker-end="url(#arr6)"/>
+
+  <rect x="585" y="70" width="100" height="50" rx="6" fill="#ffe3e3" stroke="#c92a2a"/>
+  <text x="635" y="92" text-anchor="middle" font-size="9" font-weight="600" fill="#c92a2a">Execute</text>
+  <text x="635" y="108" text-anchor="middle" font-size="9" fill="#495057">&lt;10 min</text>
+</svg>
+
+<h3>Key Trade-offs (Discussion Points)</h3>
+<table>
+  <tr><th>Trade-off</th><th>Option A</th><th>Option B</th><th>Recommendation</th></tr>
+  <tr><td>Safety vs Speed</td><td>Run all (safe, slow)</td><td>Run subset (fast, risk)</td><td>Subset for presubmit + nightly full run as safety net</td></tr>
+  <tr><td>Graph granularity</td><td>File-level (coarse, over-selects)</td><td>Function-level (precise, expensive to compute)</td><td>File-level for most, function-level for hot paths</td></tr>
+  <tr><td>ML model freshness</td><td>Retrain daily (accurate)</td><td>Retrain weekly (cheaper)</td><td>Daily retrain, model is small (not expensive)</td></tr>
+  <tr><td>New tests (no history)</td><td>Always run (safe)</td><td>Skip until history builds</td><td>Always run new tests for first 2 weeks</td></tr>
+</table>
+
+<h3>Deep Dive: Meta's Predictive Test Selection (2018)</h3>
+<div class="insight">
+  <p><strong>The Numbers:</strong> Catches <strong>&gt;99.9%</strong> of regressions while running only <strong>1/3</strong> of transitively dependent tests &mdash; so running a third of the tests roughly triples effective throughput.</p>
+</div>
+
+<h4>Why Traditional Approach Fails at Meta Scale</h4>
+<p>In a large mobile monorepo, dependency-graph-based selection can trigger a large fraction of ALL tests for each code change (because low-level libraries are depended on by everything). That's way too many.</p>
+
+<h4>How It Works</h4>
+<ol>
+  <li><strong>Model:</strong> Gradient-boosted decision trees (explainable, fast to train, already in Meta's ML infra)</li>
+  <li><strong>Training:</strong> Historical (code_change, test_outcome) pairs. Retrained regularly on recent data.</li>
+  <li><strong>Prediction:</strong> For each new change, extract features → predict failure probability per test</li>
+  <li><strong>Selection:</strong> Run tests most likely to fail. Skip those extremely unlikely to find anything.</li>
+  <li><strong>Flake handling:</strong> Aggressively retry failures during training data collection to distinguish real failures from flakes</li>
+</ol>
+
+<h4>Key Design Decision: Why ML over Static Analysis?</h4>
+<p>Static change-impact analysis (who imports this file?) was impractical due to codebase size + language diversity. ML catches non-obvious correlations (e.g., "config file X changes often break test Y even though there's no direct import").</p>
+
+<h4>Safety Net</h4>
+<p>The system requires: predict &gt;95% of test outcomes correctly AND catch at least one failing test for &gt;99.9% of problematic changes. Nightly full test runs catch the remaining 0.1%.</p>
+
+<h3>Real-World References Summary</h3>
+<table>
+  <tr><th>Company</th><th>System</th><th>Approach</th><th>Key Result</th></tr>
+  <tr><td>Meta</td><td>Predictive Test Selection</td><td>ML (gradient boosted trees) predicts failure probability</td><td>1/3 of tests run, &gt;99.9% regressions caught</td></tr>
+  <tr><td>Google</td><td>TAP</td><td>Build dependency graph (Bazel targets) + flake filtering</td><td>Only affected targets tested, integrated with monorepo</td></tr>
+  <tr><td>Uber</td><td>SubmitQueue</td><td>Speculative pre-merge testing — an ML model predicts build outcomes and candidate builds run in parallel; only changes that keep the mainline green are landed (no post-merge reverts)</td><td>Mainline always green at high commit throughput</td></tr>
+</table>
+
+<div class="tip">
+  <p><strong>Interview talking point:</strong> "Meta showed that ML-based test selection catches 99.9% of regressions while running only a third of tests. The key insight: instead of asking 'which tests COULD be affected', ask 'which tests are LIKELY to find a bug.' This reframes test selection from a graph problem to a prediction problem."</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Build Speed Optimization ===== -->
+<div class="section" id="buildspeed">
+<div class="card">
+<h2>System Design: Build Speed Optimization</h2>
+<p><strong>Problem:</strong> Firmware builds take 40 minutes. Developers get coffee, context-switch, forget what they were doing. How do you get it under 10 minutes?</p>
+
+<h3>Why Build Speed Matters (Numbers)</h3>
+<div class="insight">
+  <p>200 engineers × 5 builds/day = 1,000 builds/day. Cutting each build from 40 min to 10 min frees 30 min/build → 30,000 min/day ≈ <strong>500 engineer-hours/day</strong>.<br>
+  Treat that as an upper bound — engineers multitask while waiting, so not every minute is truly lost. Even crediting only half (context-switch cost is real), that's ~250 engineer-hours/day ≈ <strong>30 engineers' worth of daily output</strong> recovered. The framing for leadership: build speed is a headcount-scale lever, not a nice-to-have.</p>
+</div>
+
+<h3>Optimization Strategies (in order of impact)</h3>
+
+<h4>1. Remote Caching (biggest win)</h4>
+<ul>
+  <li><strong>Idea:</strong> If someone else already built the same target with the same inputs, reuse their output</li>
+  <li><strong>How:</strong> Hash all inputs (source files + dependencies + compiler flags) → check remote cache → hit = skip build</li>
+  <li><strong>Impact:</strong> 60-80% cache hit rate in practice → build goes from 40 min to 8-10 min</li>
+  <li><strong>Tools:</strong> Bazel remote cache, ccache (C++), Gradle build cache, Turborepo (JS)</li>
+</ul>
+
+<h4>2. Incremental Builds</h4>
+<ul>
+  <li><strong>Idea:</strong> Only rebuild what actually changed (and its dependents)</li>
+  <li><strong>How:</strong> Dependency graph + file modification timestamps → minimal rebuild set</li>
+  <li><strong>Pitfall:</strong> C++ header files can trigger massive rebuilds (one .h change → recompile everything that includes it)</li>
+  <li><strong>Fix:</strong> Forward declarations, pimpl pattern, module boundaries</li>
+</ul>
+
+<h4>3. Distributed Build (parallel across machines)</h4>
+<ul>
+  <li><strong>Idea:</strong> Split compilation across a cluster of build workers</li>
+  <li><strong>How:</strong> Build graph has natural parallelism → ship independent targets to different machines</li>
+  <li><strong>Tools:</strong> Bazel remote execution, distcc (C++), BuildBuddy, EngFlow</li>
+  <li><strong>Limit:</strong> Critical path can't be parallelized (longest dependency chain)</li>
+</ul>
+
+<h4>4. Build Avoidance</h4>
+<ul>
+  <li><strong>Idea:</strong> Don't build what you don't need for this test</li>
+  <li><strong>How:</strong> If test only needs library A, don't build library B even if it changed</li>
+  <li><strong>Requires:</strong> Fine-grained dependency declaration (Bazel targets, not Makefile blobs)</li>
+</ul>
+
+<h4>5. Pre-built Dependencies (artifact registry)</h4>
+<ul>
+  <li><strong>Idea:</strong> Third-party deps and stable internal deps → pre-built binaries from registry</li>
+  <li><strong>How:</strong> Only rebuild from source when dependency version changes</li>
+  <li><strong>Tools:</strong> Maven/Nexus (Java), npm registry, Conan (C++), internal artifact stores</li>
+</ul>
+
+<h3>Architecture: Build Acceleration System</h3>
+<svg viewBox="0 0 700 220" style="width:100%;max-width:1000px;margin:16px auto;display:block;" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif">
+  <defs><marker id="arr7" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#495057"/></marker></defs>
+  <!-- Developer -->
+  <rect x="10" y="80" width="90" height="45" rx="6" fill="#d0ebff" stroke="#1767b1"/>
+  <text x="55" y="106" text-anchor="middle" font-size="10" font-weight="600" fill="#1767b1">Developer</text>
+  <line x1="100" y1="102" x2="135" y2="102" stroke="#495057" marker-end="url(#arr7)"/>
+  <!-- Build request -->
+  <rect x="140" y="80" width="100" height="45" rx="6" fill="#fff3bf" stroke="#a65600"/>
+  <text x="190" y="100" text-anchor="middle" font-size="9" font-weight="600" fill="#a65600">Build System</text>
+  <text x="190" y="115" text-anchor="middle" font-size="8" fill="#495057">(Bazel/Gradle)</text>
+  <!-- Cache check -->
+  <rect x="280" y="30" width="100" height="40" rx="6" fill="#d3f9d8" stroke="#247834"/>
+  <text x="330" y="50" text-anchor="middle" font-size="9" font-weight="600" fill="#247834">Remote Cache</text>
+  <text x="330" y="63" text-anchor="middle" font-size="8" fill="#495057">60-80% hit</text>
+  <!-- Remote exec -->
+  <rect x="280" y="130" width="100" height="40" rx="6" fill="#e5dbff" stroke="#653ae6"/>
+  <text x="330" y="150" text-anchor="middle" font-size="9" font-weight="600" fill="#653ae6">Remote Workers</text>
+  <text x="330" y="163" text-anchor="middle" font-size="8" fill="#495057">parallel build</text>
+  <!-- Arrows -->
+  <line x1="240" y1="90" x2="275" y2="55" stroke="#495057" marker-end="url(#arr7)"/>
+  <line x1="240" y1="115" x2="275" y2="148" stroke="#495057" marker-end="url(#arr7)"/>
+  <!-- Result -->
+  <rect x="430" y="80" width="90" height="45" rx="6" fill="#f1f3f5" stroke="#495057"/>
+  <text x="475" y="100" text-anchor="middle" font-size="9" font-weight="600" fill="#495057">Artifacts</text>
+  <text x="475" y="115" text-anchor="middle" font-size="8" fill="#495057">(binaries)</text>
+  <line x1="380" y1="50" x2="425" y2="90" stroke="#247834" marker-end="url(#arr7)"/>
+  <text x="410" y="62" font-size="8" fill="#247834">cache hit</text>
+  <line x1="380" y1="150" x2="425" y2="112" stroke="#653ae6" marker-end="url(#arr7)"/>
+  <text x="410" y="145" font-size="8" fill="#653ae6">cache miss</text>
+  <!-- Final -->
+  <line x1="520" y1="102" x2="555" y2="102" stroke="#495057" marker-end="url(#arr7)"/>
+  <rect x="560" y="80" width="110" height="45" rx="6" fill="#d0ebff" stroke="#1767b1"/>
+  <text x="615" y="100" text-anchor="middle" font-size="9" font-weight="600" fill="#1767b1">Test Execution</text>
+  <text x="615" y="115" text-anchor="middle" font-size="8" fill="#495057">(if build passes)</text>
+</svg>
+
+<h3>Key Trade-offs</h3>
+<table>
+  <tr><th>Trade-off</th><th>Option A</th><th>Option B</th><th>Recommendation</th></tr>
+  <tr><td>Cache correctness</td><td>Conservative hash (include compiler version, flags)</td><td>Aggressive (just source hash)</td><td>Conservative — cache poisoning is worse than cache miss</td></tr>
+  <tr><td>Local vs Remote build</td><td>Build locally (fast for small changes)</td><td>Always remote (consistent environment)</td><td>Hybrid: local for &lt;10 files, remote for large changes</td></tr>
+  <tr><td>Monorepo vs Polyrepo</td><td>Monorepo (one build graph, easy caching)</td><td>Polyrepo (independent, parallel CI)</td><td>Monorepo for co-evolving code (Google/Meta style)</td></tr>
+  <tr><td>Build reproducibility</td><td>Hermetic (sandboxed, reproducible)</td><td>Non-hermetic (faster, can use host tools)</td><td>Hermetic — remote cache only works if builds are reproducible</td></tr>
+</table>
+
+<h3>Metrics to Track</h3>
+<ul>
+  <li><strong>Build time P50/P90:</strong> Target &lt;5 min / &lt;15 min (post remote-cache optimization; the baseline pipeline-health SLO is &lt;10 min / &lt;20 min)</li>
+  <li><strong>Cache hit rate:</strong> Target &gt;70% (below = cache invalidation too aggressive)</li>
+  <li><strong>Build success rate:</strong> &gt;95% (failures from infra, not code)</li>
+  <li><strong>Developer wait time:</strong> Time from "save" to "test result" (includes build + test)</li>
+</ul>
+
+<div class="tip">
+  <p><strong>Interview script:</strong> "The single biggest ROI optimization for build speed is remote caching. At Google-scale with 60-80% cache hit rate, most builds become artifact downloads rather than compilations. For device firmware specifically, C++ compile times dominate — so caching object files per translation unit gives the biggest win."</p>
+</div>
+</div>
+</div>
+
+<!-- ===== EngProd Knowledge ===== -->
+<div class="section" id="knowledge">
+<div class="card">
+<h2>EngProd Domain Knowledge (Crash Course)</h2>
+<p>Key concepts you need to know for the role — not deep expertise, but enough to have informed conversations.</p>
+
+<h3>Flaky Tests</h3>
+<div class="insight">
+  <p><strong>Definition:</strong> A test that sometimes passes and sometimes fails with the same code. Not a bug in the product — a bug in the test (or test environment).</p>
+</div>
+
+<h4>Common Causes</h4>
+<table>
+  <tr><th>Cause</th><th>Example</th><th>Fix</th></tr>
+  <tr><td>Timing / race condition</td><td>Test checks UI element before it renders; test depends on thread scheduling order</td><td>Add explicit waits, use synchronization primitives, don't depend on timing</td></tr>
+  <tr><td>Shared state</td><td>Test A writes to DB, test B reads it — passes when A runs first, fails otherwise</td><td>Isolate test data: each test creates its own data, teardown after</td></tr>
+  <tr><td>Order dependency</td><td>Test assumes previous test set up some state</td><td>Each test must be independently runnable (setup from scratch)</td></tr>
+  <tr><td>External dependency</td><td>Test calls real API that's occasionally slow or down</td><td>Mock external services, use contract testing</td></tr>
+  <tr><td>Resource exhaustion</td><td>Test passes alone but fails when 50 tests run in parallel (port conflict, memory)</td><td>Unique ports per test, proper resource cleanup</td></tr>
+  <tr><td>Non-deterministic data</td><td>Test uses current timestamp, random values, or floating-point comparison</td><td>Inject time/random seed, use epsilon comparison</td></tr>
+  <tr><td>Environment difference</td><td>Passes on Mac, fails on Linux CI (path separator, locale, timezone)</td><td>Standardize CI environment, test in container matching CI</td></tr>
+</table>
+
+<h4>How to Detect Flaky Tests</h4>
+<ul>
+  <li><strong>Re-run failed tests:</strong> If it passes on retry without code change → flaky</li>
+  <li><strong>Track pass rate per test:</strong> If a test has 80% pass rate over last 20 runs → flaky</li>
+  <li><strong>Correlation analysis:</strong> Fails only at certain time / only on certain machine / only with certain parallel tests</li>
+</ul>
+
+<h4>How to Handle Flaky Tests (as EM)</h4>
+<ol>
+  <li><strong>Detect:</strong> Automated flaky detection (track pass/fail per test per commit)</li>
+  <li><strong>Quarantine:</strong> Move flaky test out of critical path (don't block merges/releases)</li>
+  <li><strong>Notify owner:</strong> Auto-assign bug to test owner with flake data</li>
+  <li><strong>SLA:</strong> Flaky tests must be fixed within 1 week or deleted</li>
+  <li><strong>Metrics:</strong> Track flaky rate as team KPI (target: &lt;2%)</li>
+</ol>
+
+<div class="warning">
+  <p><strong>Why flaky tests are dangerous:</strong> Engineers start ignoring test failures ("probably just flaky"). Then a real bug slips through because nobody looked. Flaky tests erode trust in CI — once trust is gone, CI becomes useless.</p>
+</div>
+
+<h4>Real-World Stats (use in interview for credibility)</h4>
+<table>
+  <tr><th>Company</th><th>Stat</th><th>Source</th></tr>
+  <tr><td>Google</td><td><strong>84%</strong> of pass-to-fail transitions are flaky, not real bugs. 16% of all tests exhibit some flakiness.</td><td>Google Testing Blog 2016</td></tr>
+  <tr><td>Atlassian</td><td><strong>150,000 developer hours/year</strong> wasted on flaky tests before their management system</td><td>Atlassian Engineering Blog</td></tr>
+  <tr><td>Slack</td><td><strong>57%</strong> of build failures caused by test job failures (mix of flaky + real)</td><td>Slack Engineering 2022</td></tr>
+  <tr><td>Microsoft</td><td>Built comprehensive flaky test management: infer → triage → quarantine pipeline</td><td>MS Engineering Blog</td></tr>
+</table>
+
+<h4>Industry Best Practices</h4>
+<ul>
+  <li><strong>Google:</strong> Auto-detect via re-run correlation. Quarantine flaky tests from presubmit (still run in postsubmit). Teams have flake SLO — exceed budget and your tests get auto-disabled.</li>
+  <li><strong>Meta:</strong> ML model predicts which tests are likely flaky based on historical data. Skip re-running them for known-flaky patterns.</li>
+  <li><strong>Netflix:</strong> Test health scorecards per team. Gamification: "flake-free streak" badge. Blameless postmortems for new flakes.</li>
+  <li><strong>Spotify:</strong> Ownership model — every test has an owner. Flaky test auto-creates a P2 bug assigned to owner. 1-week SLA to fix or delete.</li>
+</ul>
+
+<div class="tip">
+  <p><strong>Interview power move:</strong> When discussing flaky tests, drop one stat: "At Google, 84% of pass-to-fail transitions are flaky — so any test system without flake management is basically unusable at scale." This shows you've researched the problem space.</p>
+</div>
+
+<h3>Test Pyramid</h3>
+<svg viewBox="0 0 600 280" style="width:100%;max-width:600px;margin:16px auto;display:block;" xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif">
+  <!-- Pyramid -->
+  <polygon points="300,20 500,250 100,250" fill="#f1f3f5" stroke="#dee2e6" stroke-width="1.5"/>
+  <!-- E2E layer -->
+  <polygon points="300,20 370,100 230,100" fill="#ffe3e3" stroke="#c92a2a" stroke-width="1"/>
+  <text x="300" y="65" text-anchor="middle" font-size="11" font-weight="600" fill="#c92a2a">E2E / Device</text>
+  <text x="300" y="82" text-anchor="middle" font-size="9" fill="#495057">Few, Slow, Expensive, Flaky</text>
+  <!-- Integration layer -->
+  <polygon points="230,100 370,100 435,175 165,175" fill="#fff3bf" stroke="#a65600" stroke-width="1"/>
+  <text x="300" y="135" text-anchor="middle" font-size="11" font-weight="600" fill="#a65600">Integration</text>
+  <text x="300" y="152" text-anchor="middle" font-size="9" fill="#495057">Moderate, Multi-service, Real DB</text>
+  <!-- Unit layer -->
+  <polygon points="165,175 435,175 500,250 100,250" fill="#d3f9d8" stroke="#247834" stroke-width="1"/>
+  <text x="300" y="210" text-anchor="middle" font-size="11" font-weight="600" fill="#247834">Unit Tests</text>
+  <text x="300" y="227" text-anchor="middle" font-size="9" fill="#495057">Many, Fast (ms), Cheap, Deterministic</text>
+  <!-- Labels on right -->
+  <text x="510" y="65" font-size="9" fill="#c92a2a">~5% of tests</text>
+  <text x="510" y="140" font-size="9" fill="#a65600">~15% of tests</text>
+  <text x="510" y="215" font-size="9" fill="#247834">~80% of tests</text>
+  <!-- Arrow on left -->
+  <text x="60" y="60" font-size="9" fill="#666d75">Slow</text>
+  <text x="60" y="245" font-size="9" fill="#666d75">Fast</text>
+  <line x1="75" y1="70" x2="75" y2="235" stroke="#666d75" stroke-width="1" marker-end="url(#arr5)"/>
+</svg>
+
+<table>
+  <tr><th>Level</th><th>Speed</th><th>Reliability</th><th>Coverage</th><th>Cost to Fix</th></tr>
+  <tr><td>Unit</td><td>ms</td><td>Very high (deterministic)</td><td>Logic only</td><td>Low</td></tr>
+  <tr><td>Integration</td><td>seconds</td><td>High</td><td>Service interactions</td><td>Medium</td></tr>
+  <tr><td>E2E / Device</td><td>minutes</td><td>Low (often flaky)</td><td>Full user flow</td><td>High</td></tr>
+</table>
+
+<div class="tip">
+  <p><strong>EM insight:</strong> Most teams have too many E2E tests and not enough unit tests. E2E tests are slow, flaky, and expensive to maintain. Push teams to move coverage DOWN the pyramid — more unit tests, fewer E2E. Only use E2E for critical user paths.</p>
+</div>
+
+<h3>CI/CD Concepts</h3>
+
+<h4>Continuous Integration (CI)</h4>
+<ul>
+  <li>Every code push triggers: build → lint → unit test → integration test</li>
+  <li>Goal: catch problems within minutes of commit, not days later</li>
+  <li>Key metric: <strong>time from push to green/red signal</strong> (target: &lt;10 min for unit, &lt;30 min for full)</li>
+</ul>
+
+<h4>Continuous Deployment (CD)</h4>
+<ul>
+  <li>After CI passes: auto-deploy to staging → canary → production</li>
+  <li>Gate: only deploy if all tests pass + no open P0 bugs</li>
+  <li>Rollback: auto-rollback if error rate spikes after deploy</li>
+</ul>
+
+<h4>Pipeline Health Metrics</h4>
+<table>
+  <tr><th>Metric</th><th>What it means</th><th>Target</th></tr>
+  <tr><td>Build success rate</td><td>% of builds that pass</td><td>&gt;95%</td></tr>
+  <tr><td>Build time P50/P90</td><td>How long a build takes</td><td>&lt;10 min / &lt;20 min</td></tr>
+  <tr><td>Flaky rate</td><td>% of test runs that are flaky</td><td>&lt;2%</td></tr>
+  <tr><td>MTTR (Mean Time to Recover)</td><td>Time from break to fix</td><td>&lt;1 hour</td></tr>
+  <tr><td>Deploy frequency</td><td>How often code reaches production</td><td>Daily+</td></tr>
+  <tr><td>Lead time</td><td>Commit to production</td><td>&lt;1 day</td></tr>
+</table>
+
+<h3>Test Automation Framework Concepts</h3>
+
+<h4>What a Good Test Framework Provides</h4>
+<ul>
+  <li><strong>Test runner:</strong> Discover, execute, and report tests</li>
+  <li><strong>Assertions:</strong> Verify expected vs actual results</li>
+  <li><strong>Fixtures / Setup-Teardown:</strong> Prepare environment before, cleanup after</li>
+  <li><strong>Mocking:</strong> Replace real dependencies with controllable fakes</li>
+  <li><strong>Parameterization:</strong> Run same test with different inputs</li>
+  <li><strong>Reporting:</strong> Pass/fail summary, failure details, screenshots/logs</li>
+  <li><strong>Retry:</strong> Automatic retry for flaky-prone tests</li>
+  <li><strong>Parallelization:</strong> Run tests concurrently to reduce total time</li>
+</ul>
+
+<h4>Device-Specific Test Challenges</h4>
+<table>
+  <tr><th>Challenge</th><th>Why it's hard</th><th>How to handle</th></tr>
+  <tr><td>Physical device availability</td><td>Can't spin up a new phone like a VM</td><td>Device lab with scheduler (see design section)</td></tr>
+  <tr><td>Flashing firmware</td><td>Takes 2-5 min per flash, can brick device</td><td>Only flash when version differs, recovery mode</td></tr>
+  <tr><td>Non-deterministic hardware</td><td>Bluetooth/WiFi/GPS signal varies</td><td>Control environment (Faraday cage, WiFi AP), retry with threshold</td></tr>
+  <tr><td>Long test cycles</td><td>Boot device + flash + test = 10-30 min per run</td><td>Parallelize across devices, incremental testing</td></tr>
+  <tr><td>Device state pollution</td><td>Previous test left device in bad state</td><td>Factory reset between test suites, or use checkpoint/restore</td></tr>
+</table>
+
+<h3>Code Coverage</h3>
+
+<h4>Types</h4>
+<ul>
+  <li><strong>Line coverage:</strong> % of lines executed by tests (most common, easy to game)</li>
+  <li><strong>Branch coverage:</strong> % of if/else branches taken (better signal)</li>
+  <li><strong>Mutation testing:</strong> Inject bugs → check if tests catch them (best signal, expensive)</li>
+</ul>
+
+<h4>EM Perspective on Coverage</h4>
+<div class="warning">
+  <p><strong>Coverage is a lagging indicator, not a goal.</strong> 80% coverage with meaningful assertions > 95% coverage with trivial tests. Don't mandate a number — mandate that every PR includes tests for the new logic. Review test quality in code review, not just coverage %.</p>
+</div>
+
+<h3>Developer Experience (DX) Metrics</h3>
+<table>
+  <tr><th>Metric</th><th>How to measure</th><th>What it tells you</th></tr>
+  <tr><td>Inner loop time</td><td>Time from code change to seeing result locally</td><td>If &gt;30s, developers lose flow state</td></tr>
+  <tr><td>Outer loop time</td><td>Time from push to CI result</td><td>If &gt;30 min, developers context-switch and forget</td></tr>
+  <tr><td>Onboarding time</td><td>Days for new engineer to submit first PR</td><td>If &gt;1 week, tooling/docs need work</td></tr>
+  <tr><td>Support requests</td><td>Slack messages asking for help with tools</td><td>If high, tools aren't self-service enough</td></tr>
+  <tr><td>Developer satisfaction</td><td>Quarterly survey: "How productive do you feel?"</td><td>Subjective but catches things metrics miss</td></tr>
+</table>
+
+<h3>Google-Specific Testing Concepts (to know about)</h3>
+<table>
+  <tr><th>Term</th><th>What it is</th></tr>
+  <tr><td>TAP (Test Automation Platform)</td><td>Google's internal CI system — runs tests on every commit across entire monorepo</td></tr>
+  <tr><td>Blaze / Forge</td><td>Blaze is Google's internal build system (Bazel is its open-source version); Forge is Google's distributed / remote-execution backend that runs Blaze build actions</td></tr>
+  <tr><td>Sponge</td><td>Test result storage and visualization</td></tr>
+  <tr><td>Test size (small/medium/large)</td><td>Google categorizes tests by resource needs: small=unit (1 thread, no I/O), medium=integration, large=E2E</td></tr>
+  <tr><td>Hermetic tests</td><td>Tests that don't depend on external state — completely self-contained and reproducible</td></tr>
+  <tr><td>Test flake SLO</td><td>Teams have a flake budget — exceed it and your tests get auto-disabled</td></tr>
+  <tr><td>Presubmit vs Postsubmit</td><td>Presubmit = runs before merge (blocks). Postsubmit = runs after merge (detects, doesn't block)</td></tr>
+</table>
+
+<div class="tip">
+  <p><strong>Interview tip:</strong> You don't need to know Google internal tools. But if asked "how would you categorize tests?" — mention small/medium/large classification. If asked about flake handling — mention quarantine + SLO. These show you've read about Google's testing culture.</p>
+</div>
+
+</div>
+</div>
+
+<!-- ===== Selling Points ===== -->
+<div class="section" id="selling">
+<div class="card">
+<h2>Selling Points — How to Build and Deliver Yours</h2>
+<p>Strong candidates walk in with a short, memorized list of selling points mapped to what the role needs. The categories below are a template — fill each one with your own concrete evidence (a system you owned, a metric you moved, a team you grew).</p>
+
+<h3>Organize Selling Points by Category</h3>
+<p>For an EngProd / test-infra EM role, prepare one or two crisp stories in each of these buckets:</p>
+<ul>
+  <li><strong>Test automation / infra ownership:</strong> a system you took over or built, plus a hard number (cost reduction, coverage %, setup time). Example strength: migrating an undocumented system to a modern platform with a measurable cost cut and one-command setup.</li>
+  <li><strong>AI tooling for engineering:</strong> where you applied LLMs / RAG / function calling / semantic caching to a real developer-productivity problem, and the adoption or ramp-up it drove.</li>
+  <li><strong>People management:</strong> team size and shape, a promotion you drove, a turnaround you led.</li>
+  <li><strong>Device / hardware adjacency:</strong> any firmware, IoT, or protocol-level work (e.g., TLV / binary serialization) that shows you're comfortable near hardware.</li>
+  <li><strong>Systematic debugging / RCA:</strong> a gnarly cross-service root cause you found, ideally one others had missed (e.g., a cascading failure or a stale-image pipeline block).</li>
+</ul>
+<div class="tip">
+  <p><strong>Rule:</strong> every selling point needs one concrete artifact or number attached. "Improved test coverage" is weak; "took an undocumented system to one-command setup and 70% unit coverage" is strong.</p>
+</div>
+
+<h3>Handling a Non-Linear Career Narrative (Manager → IC → Manager)</h3>
+<div class="warning">
+  <p><strong>If your path zig-zags between IC and management, expect to be asked about it. Have a clean narrative ready.</strong></p>
+</div>
+<p>Frame it as a deliberate choice, not drift. A strong narrative: you're comfortable in both modes, you stayed technical even while managing (coding, design review, on-call), and you optimize for interesting, impactful work over title. Tie it back to the role — show that the job description matches what you already do well: test automation, CI/CD, AI-powered developer tools.</p>
+
+<h4>If pressed: "But this is specifically a manager role, are you sure?"</h4>
+<p>Emphasize that having been deep in the code recently is an advantage: you won't get disconnected from the technical work, you'll still review code and prototype tools, and your team can't over-estimate complexity because you know what's actually hard and what isn't.</p>
+
+<h4>Other career questions</h4>
+<table>
+  <tr><th>Question</th><th>How to approach</th></tr>
+  <tr><td>"Why leave your current company?"</td><td>Give a forward-looking, non-negative reason (growth, impact, logistics such as commute) — never bad-mouth the current employer.</td></tr>
+  <tr><td>"Why this role / Why this company?"</td><td>Connect the role to what you already do well (test infra, CI/CD, AI tools) and to where the company or platform is heading. If the org is a birthplace of the discipline (e.g., TAP, Forge) or building an emerging platform, name that.</td></tr>
+  <tr><td>"How technical are you as a manager?"</td><td>Be concrete: you review design docs, prototype tools yourself, and can jump into an urgent cross-service debugging task when needed. Stay close to the code.</td></tr>
+</table>
+
+<h3>Addressing a Platform / Domain Gap</h3>
+<div class="tip">
+  <p><strong>How to address "no direct experience with platform X (e.g., Android / Linux)":</strong><br><br>
+  Reframe around the layer you do work at. Test infrastructure and developer tooling sit above the OS, so you can build test automation for a device without writing its firmware. The domain knowledge can be ramped up quickly; the engineering-productivity and management skills are what take years to build and transfer across platforms.</p>
+</div>
+</div>
+</div>
+
+<!-- ===== Terminology & Acronyms ===== -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>EngProd</strong></td><td>Engineering Productivity &mdash; internal teams that build tooling, CI/CD, and test infra so other engineers ship faster.</td></tr>
+<tr><td><strong>CI/CD</strong></td><td>Continuous Integration and Continuous Deployment; the automated build &rarr; test &rarr; release pipeline.</td></tr>
+<tr><td><strong>MTTR / MTTD</strong></td><td>Mean Time to Recover from a regression; MTTD is the separately tracked mean time to detect it.</td></tr>
+<tr><td><strong>QPS</strong></td><td>Queries Per Second; a request-rate measure of system load.</td></tr>
+<tr><td><strong>SLA / SLO</strong></td><td>Service Level Agreement / Objective — here, the flake budget or fix deadline a team commits to (e.g. fix a flaky test within a week, or exceed the flake budget and tests get auto-disabled).</td></tr>
+<tr><td><strong>Idempotency key</strong></td><td>Client-supplied token that lets a request be safely retried without creating duplicate work.</td></tr>
+<tr><td><strong>Flaky test</strong></td><td>A test that passes and fails on the same code &mdash; a test/environment bug, not a product bug.</td></tr>
+<tr><td><strong>Quarantine</strong></td><td>Pulling a flaky test or unhealthy device off the critical path so it stops blocking merges or releases.</td></tr>
+<tr><td><strong>RAG</strong></td><td>Retrieval-Augmented Generation; giving an LLM freshly retrieved context instead of relying on stale training data.</td></tr>
+<tr><td><strong>LLM</strong></td><td>Large Language Model; the model behind the bug-triage and agent systems.</td></tr>
+<tr><td><strong>MCP</strong></td><td>Model Context Protocol; a session-based JSON-RPC protocol that exposes tools to an agent.</td></tr>
+<tr><td><strong>SSE</strong></td><td>Server-Sent Events; one-way server-to-client streaming used for real-time progress and chat updates.</td></tr>
+<tr><td><strong>Sub-agent</strong></td><td>A full autonomous agent invoked as a tool by a parent agent for reasoning too complex for a single tool call.</td></tr>
+<tr><td><strong>Canary</strong></td><td>Rolling a release to a small fraction of targets first to limit blast radius before full rollout.</td></tr>
+<tr><td><strong>Soak test</strong></td><td>A long-duration run that surfaces slow failures (leaks, instability) only visible over time.</td></tr>
+<tr><td><strong>Predictive test selection</strong></td><td>Using ML to run the tests most likely to fail for a change rather than all dependent tests.</td></tr>
+<tr><td><strong>TAP</strong></td><td>Test Automation Platform; Google's internal CI system that runs tests across the monorepo.</td></tr>
+<tr><td><strong>Bazel / Blaze</strong></td><td>Blaze is Google's internal build system; Bazel is its open-source release &mdash; both dependency-graph-based.</td></tr>
+<tr><td><strong>Hermetic</strong></td><td>A test or build that is fully self-contained and reproducible, with no dependency on external or host state.</td></tr>
+<tr><td><strong>Presubmit / postsubmit</strong></td><td>Presubmit runs before merge and blocks it; postsubmit runs after merge and only detects failures.</td></tr>
+</table>
+</div>
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="map_system_design.html">‹ Map &amp; Geospatial System Design</a><a class="bkc" href="index.html">📖 Contents</a><a href="test_automation_design.html">Test Automation at Scale ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

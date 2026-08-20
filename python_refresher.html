@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python Refresher — Object Model, Data Structures & Interview Idioms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1050px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 20px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.nav { display: flex; justify-content: center; gap: 7px; flex-wrap: wrap; margin: 18px 0 32px; position: sticky; top: 0; background: var(--bg); padding: 14px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; transition: all .2s; font-family: 'Inter', sans-serif; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue); border-color: var(--blue); }
+.section { display: none; }
+.section.active { display: block; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+h2 { font-size: 23px; font-weight: 700; margin: 28px 0 14px; color: var(--blue); }
+h3 { font-size: 17px; font-weight: 600; margin: 22px 0 10px; }
+h4 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 14px 18px; overflow-x: auto; margin: 10px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.55; color: #cdd6f4; white-space: pre; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+pre .kw { color: #cba6f7; } pre .cm { color: #7f849c; font-style: italic; }
+pre .str { color: #a6e3a1; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.warn p { color: #a85700; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.old { background: var(--red-l); border-left: 3px solid var(--red); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+.old p { color: #8a1c1c; margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 18px; padding: 22px 26px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th, td { padding: 9px 12px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.qa { border-left: 3px solid var(--purple); padding: 4px 0 4px 16px; margin: 16px 0; }
+.qa .q { font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.tag { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--purple-l); color:var(--purple); margin-left:6px; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } .nav { position: static; flex-direction: column; } .nav-btn { text-align: center; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VIII · Chapter 6 — <b>Python Refresher</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Python Refresher</h1>
+  <div class="sub">Python for interviews and real work — the object model, core data structures, comprehensions &amp; generators, decorators, the GIL, common traps, and the stdlib that wins coding rounds. With notes for readers coming from Java/C++.</div>
+</header>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection(event,'objectmodel')">Object model</button>
+  <button class="nav-btn" onclick="showSection(event,'datastructures')">Data structures</button>
+  <button class="nav-btn" onclick="showSection(event,'comprehensions')">Comprehensions &amp; generators</button>
+  <button class="nav-btn" onclick="showSection(event,'functions')">Functions &amp; closures</button>
+  <button class="nav-btn" onclick="showSection(event,'decorators')">Decorators &amp; iterators</button>
+  <button class="nav-btn" onclick="showSection(event,'concurrency')">GIL &amp; concurrency</button>
+  <button class="nav-btn" onclick="showSection(event,'stdlib')">Stdlib &amp; typing</button>
+  <button class="nav-btn" onclick="showSection(event,'gotchas')">Traps &amp; interview</button>
+</div>
+
+<!-- OBJECT MODEL -->
+<div class="section active" id="objectmodel">
+<div class="card">
+<h2>The object model — names, objects, and references</h2>
+<p>Start with the one sentence that unlocks Python: <strong>everything is an object</strong> — integers, strings, functions, classes, modules, even types themselves. And a variable is not a box that holds a value; it is a <strong>name tag</strong> stuck onto an object that lives somewhere else.</p>
+
+<div class="insight"><p><strong>Analogy:</strong> a name is a sticky label, an object is a balloon. <code>a = b</code> doesn't copy the balloon — it puts a second label on the same balloon. Whether you can change what's inside the balloon depends on whether the balloon is <em>mutable</em>.</p></div>
+
+<h3>Tiny runnable example</h3>
+<pre><span class="kw">import</span> sys
+x = <span class="num">256</span>
+y = <span class="num">256</span>
+<span class="fn">print</span>(x <span class="kw">is</span> y)        <span class="cm"># True  — small ints are cached &amp; shared</span>
+<span class="fn">print</span>(x == y)        <span class="cm"># True  — equal values</span>
+
+a = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+b = a                <span class="cm"># b is a SECOND name for the SAME list</span>
+b.append(<span class="num">4</span>)
+<span class="fn">print</span>(a)             <span class="cm"># [1, 2, 3, 4]  — aliasing: a sees b's change</span>
+<span class="fn">print</span>(a <span class="kw">is</span> b)        <span class="cm"># True  — same object</span></pre>
+
+<h3>Names vs objects (the picture)</h3>
+<p>Names live in a namespace and point at objects on the heap. Assignment <em>rebinds a name</em>; it never copies the object. This single idea explains aliasing, the mutable-default-argument trap, and why <code>is</code> differs from <code>==</code>.</p>
+
+<svg viewBox="0 0 640 300" style="max-width:100%;height:auto" role="img" aria-label="Names pointing to objects: two names alias one mutable list, a third name points to an immutable int">
+  <style>
+    .nm{fill:#1971c2;font:600 14px 'JetBrains Mono',monospace}
+    .obj{fill:#fff;stroke:#adb5bd;stroke-width:1.5;rx:8}
+    .objlbl{fill:#212529;font:600 13px 'JetBrains Mono',monospace}
+    .cap{fill:#63676f;font:500 11px Inter,sans-serif}
+    .arw{stroke:#7048e8;stroke-width:2;fill:none;marker-end:url(#ah)}
+    .box{fill:#f1f3f5;stroke:#dee2e6;stroke-width:1.5}
+  </style>
+  <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#7048e8"/></marker></defs>
+  <!-- namespace column -->
+  <text x="30" y="30" class="cap">NAMESPACE (names)</text>
+  <rect x="30" y="45" width="90" height="34" class="box" rx="6"/><text x="52" y="67" class="nm">a</text>
+  <rect x="30" y="105" width="90" height="34" class="box" rx="6"/><text x="52" y="127" class="nm">b</text>
+  <rect x="30" y="200" width="90" height="34" class="box" rx="6"/><text x="52" y="222" class="nm">x</text>
+  <!-- objects column -->
+  <text x="380" y="30" class="cap">OBJECTS (heap)</text>
+  <rect x="360" y="55" width="275" height="70" class="obj" rx="8" fill="#d3f9d8" stroke="#2f9e44"/>
+  <text x="375" y="80" class="objlbl">list  [1, 2, 3, 4]</text>
+  <text x="375" y="105" class="cap">MUTABLE — contents can change in place</text>
+  <rect x="360" y="195" width="275" height="55" class="obj" rx="8" fill="#fff3bf" stroke="#e67700"/>
+  <text x="375" y="220" class="objlbl">int  256</text>
+  <text x="375" y="240" class="cap">IMMUTABLE — rebinding only moves the label</text>
+  <!-- arrows -->
+  <path class="arw" d="M120 62 L358 82"/>
+  <path class="arw" d="M120 122 L358 96"/>
+  <path class="arw" d="M120 217 L358 220"/>
+  <text x="150" y="160" class="cap">a and b alias the SAME list → b.append(4) is visible through a</text>
+</svg>
+
+<h3>Replayable: variable-as-reference stepper</h3>
+<p>Step through the classic aliasing sequence and watch when two names share an object, when mutation is visible through both, and when rebinding splits them apart.</p>
+
+<div class="card" style="background:#1e1e2e;color:#cdd6f4;border:none">
+  <div id="pyom-code" style="font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.9"></div>
+  <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:14px">
+    <div style="flex:1 1 200px">
+      <div style="color:#89b4fa;font:600 11px Inter,sans-serif;letter-spacing:.5px;margin-bottom:6px">STATE</div>
+      <div id="pyom-state" style="font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.8"></div>
+    </div>
+    <div style="flex:1 1 200px">
+      <div style="color:#89b4fa;font:600 11px Inter,sans-serif;letter-spacing:.5px;margin-bottom:6px">WHAT HAPPENED</div>
+      <div id="pyom-note" style="color:#bac2de;font:500 12.5px Inter,sans-serif;line-height:1.6"></div>
+    </div>
+  </div>
+  <div style="margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <button id="pyom-step" style="padding:8px 18px;border-radius:8px;border:none;background:#7aa2f7;color:#1a1b26;font:600 13px Inter,sans-serif;cursor:pointer">Step ▶</button>
+    <button id="pyom-reset" style="padding:8px 18px;border-radius:8px;border:1px solid #45475a;background:transparent;color:#cdd6f4;font:600 13px Inter,sans-serif;cursor:pointer">Reset ↺</button>
+    <span id="pyom-counter" style="color:#9aa0bd;font:500 12px Inter,sans-serif"></span>
+  </div>
+</div>
+
+<script>
+(function(){
+  var lines = [
+    "a = [1, 2, 3]",
+    "b = a",
+    "b.append(4)",
+    "a = a + [5]",
+    "b.append(99)"
+  ];
+  var steps = [
+    {hi:-1, a:"—", b:"—", same:null, note:"Nothing bound yet. Press Step to run one line at a time."},
+    {hi:0, a:"[1, 2, 3]", b:"—", same:null, note:"A new list object is created; the name a is a label on it."},
+    {hi:1, a:"[1, 2, 3]", b:"[1, 2, 3]", same:true, note:"b = a copies the LABEL, not the list. Both names now point to the same object (a is b → True)."},
+    {hi:2, a:"[1, 2, 3, 4]", b:"[1, 2, 3, 4]", same:true, note:"append mutates the shared list in place — the change is visible through a too. This is aliasing."},
+    {hi:3, a:"[1, 2, 3, 4, 5]", b:"[1, 2, 3, 4]", same:false, note:"a + [5] builds a NEW list and rebinds a to it. b still points at the old object. The alias is broken (a is b → False)."},
+    {hi:4, a:"[1, 2, 3, 4, 5]", b:"[1, 2, 3, 4, 99]", same:false, note:"Now b.append only affects b's list; a is untouched. Separate objects, separate mutations."}
+  ];
+  var i = 0;
+  var codeEl = document.getElementById('pyom-code');
+  var stateEl = document.getElementById('pyom-state');
+  var noteEl = document.getElementById('pyom-note');
+  var counterEl = document.getElementById('pyom-counter');
+  function render(){
+    var s = steps[i];
+    codeEl.innerHTML = lines.map(function(ln, idx){
+      var on = idx === s.hi;
+      return '<div style="padding:1px 8px;border-radius:5px;'+
+        (on ? 'background:#45475a;color:#f9e2af;' : 'color:#9aa0bd;')+'">'+
+        (on ? '&#9654; ' : '&nbsp;&nbsp;')+ln+'</div>';
+    }).join('');
+    var sameTxt = s.same === null ? '' :
+      (s.same ? '<span style="color:#a6e3a1">a is b → True</span>'
+              : '<span style="color:#f38ba8">a is b → False</span>');
+    stateEl.innerHTML = 'a = <span style="color:#a6e3a1">'+s.a+'</span><br>'+
+                        'b = <span style="color:#a6e3a1">'+s.b+'</span><br>'+sameTxt;
+    noteEl.textContent = s.note;
+    counterEl.textContent = 'step '+i+' / '+(steps.length-1);
+  }
+  document.getElementById('pyom-step').addEventListener('click', function(){
+    if(i < steps.length-1){ i++; render(); }
+  });
+  document.getElementById('pyom-reset').addEventListener('click', function(){
+    i = 0; render();
+  });
+  render();
+})();
+</script>
+
+<h3>Mutable vs immutable — the dividing line</h3>
+<table>
+<tr><th>Immutable (can't change contents)</th><th>Mutable (can change in place)</th></tr>
+<tr><td><code>int</code>, <code>float</code>, <code>bool</code>, <code>str</code>, <code>bytes</code>, <code>tuple</code>, <code>frozenset</code></td><td><code>list</code>, <code>dict</code>, <code>set</code>, <code>bytearray</code>, most custom classes</td></tr>
+</table>
+<p>What lets an object be a <code>dict</code> key / <code>set</code> member is <em>hashability</em>, not immutability. Most immutable built-ins are hashable and can be safely shared; the mutable built-in containers (<code>list</code>, <code>dict</code>, <code>set</code>, <code>bytearray</code>) are unhashable and can't be keys; a <code>tuple</code> is hashable only if everything inside it is (a tuple holding a list is not); and custom objects are hashable by default (identity-based) and can be keys even though they're mutable. Mutable containers are also the source of most aliasing surprises. A <code>tuple</code> is just an immutable list — reach for it when the collection shouldn't change.</p>
+
+<div class="old"><p><strong>Note for Java/C++ folks:</strong> Python has no primitives-vs-objects split — <code>3</code> is a full object. There is nothing like a C++ copy constructor on plain assignment: <code>b = a</code> is always a pointer copy (reference), like assigning a Java reference. To actually copy, use <code>list(a)</code>, <code>a.copy()</code>, or <code>copy.deepcopy(a)</code>. And <code>==</code> is like Java's <code>.equals()</code> (value), while <code>is</code> is Java's <code>==</code> (identity).</p></div>
+
+<div class="insight"><p><strong>Interview angle:</strong> Expect "what does this print?" aliasing puzzles and "difference between <code>==</code> and <code>is</code>?". Answer crisply: <code>==</code> compares values (calls <code>__eq__</code>); <code>is</code> compares identity (same object, same <code>id()</code>). Never use <code>is</code> to compare values — the sole idiomatic uses are <code>x is None</code>, <code>is True</code>/<code>is False</code>. Mention that assignment binds names and never copies; copies are explicit.</p></div>
+</div>
+</div>
+
+<!-- DATA STRUCTURES -->
+<div class="section" id="datastructures">
+<div class="card">
+<h2>Core data structures — and the dict that runs everything</h2>
+<p>Four built-ins cover almost every coding problem. If you internalize their operations and Big-O, you can implement most interview solutions on reflex.</p>
+
+<h3>The four, at a glance</h3>
+<pre>nums   = [<span class="num">3</span>, <span class="num">1</span>, <span class="num">2</span>]                 <span class="cm"># list  — ordered, mutable, dupes OK</span>
+point  = (<span class="num">4</span>, <span class="num">5</span>)                    <span class="cm"># tuple — ordered, immutable, hashable</span>
+seen   = {<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>}                 <span class="cm"># set   — unordered, unique, O(1) membership</span>
+counts = {<span class="str">"a"</span>: <span class="num">1</span>, <span class="str">"b"</span>: <span class="num">2</span>}         <span class="cm"># dict  — key -&gt; value, O(1) avg lookup</span></pre>
+
+<h3>dict — the go-to structure</h3>
+<p>The dict is the most important structure in Python. It backs objects (<code>__dict__</code>), keyword args, namespaces, and JSON. Since 3.7 it <strong>preserves insertion order</strong> as a language guarantee. Master these idioms:</p>
+<pre>d = {}
+d[<span class="str">"x"</span>] = <span class="num">1</span>                       <span class="cm"># insert / overwrite</span>
+d.get(<span class="str">"y"</span>, <span class="num">0</span>)                    <span class="cm"># safe read with default (no KeyError)</span>
+d.setdefault(<span class="str">"z"</span>, []).append(<span class="num">9</span>)  <span class="cm"># get-or-create pattern</span>
+<span class="kw">for</span> k, v <span class="kw">in</span> d.items(): ...        <span class="cm"># iterate pairs</span>
+<span class="str">"x"</span> <span class="kw">in</span> d                         <span class="cm"># membership test on KEYS, O(1)</span>
+d.pop(<span class="str">"x"</span>, <span class="kw">None</span>)                 <span class="cm"># remove without KeyError</span>
+merged = {**d1, **d2}             <span class="cm"># merge (3.5+); or d1 | d2 (3.9+)</span>
+
+<span class="cm"># counting — a common interview idiom</span>
+freq = {}
+<span class="kw">for</span> c <span class="kw">in</span> text:
+    freq[c] = freq.get(c, <span class="num">0</span>) + <span class="num">1</span>
+<span class="cm"># ...or just: from collections import Counter; Counter(text)</span></pre>
+
+<h3>Complexity cheat-sheet</h3>
+<table>
+<tr><th>Operation</th><th>list</th><th>dict / set</th><th>deque</th></tr>
+<tr><td>Index / key lookup</td><td>O(1)</td><td>O(1) avg</td><td>O(n)</td></tr>
+<tr><td>Membership <code>x in s</code></td><td>O(n)</td><td>O(1) avg</td><td>O(n)</td></tr>
+<tr><td>Append / add</td><td>O(1) amortized</td><td>O(1) avg</td><td>O(1) both ends</td></tr>
+<tr><td>Insert / delete at front</td><td>O(n)</td><td>—</td><td>O(1)</td></tr>
+<tr><td>Pop from end</td><td>O(1)</td><td>—</td><td>O(1)</td></tr>
+<tr><td>Search unsorted</td><td>O(n)</td><td>O(1) avg</td><td>O(n)</td></tr>
+</table>
+<div class="tip"><p>When a solution feels O(n²) because of an <code>x in list</code> check inside a loop, swap the list for a <code>set</code> or <code>dict</code> → membership drops to O(1) and the whole thing becomes O(n). This one move fixes a large share of "too slow" problems.</p></div>
+
+<h3>list vs tuple</h3>
+<ul>
+  <li><strong>list</strong> — mutable, use for a growing/changing homogeneous sequence.</li>
+  <li><strong>tuple</strong> — immutable, use for fixed records (a coordinate, a return of several values), and anywhere you need a hashable key: <code>seen.add((r, c))</code>, <code>dp[(i, j)]</code>.</li>
+</ul>
+<pre>r, c = divmod(idx, cols)     <span class="cm"># tuple unpacking</span>
+visited = set()
+visited.add((r, c))          <span class="cm"># tuple as set member — lists can't do this</span></pre>
+
+<h3>set — dedup and math</h3>
+<pre>a, b = {<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>}, {<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>}
+a &amp; b     <span class="cm"># {2, 3}   intersection</span>
+a | b     <span class="cm"># {1,2,3,4} union</span>
+a - b     <span class="cm"># {1}      difference</span>
+a ^ b     <span class="cm"># {1, 4}   symmetric difference</span></pre>
+
+<div class="old"><p><strong>Note for Java/C++ folks:</strong> <code>list</code> ≈ <code>ArrayList</code>/<code>std::vector</code>, <code>dict</code> ≈ <code>HashMap</code>/<code>unordered_map</code>, <code>set</code> ≈ <code>HashSet</code>/<code>unordered_set</code>, <code>tuple</code> ≈ an immutable struct/record. There's no built-in ordered tree map — use a sorted list plus <code>bisect</code>, or a heap, when you need ordering.</p></div>
+
+<div class="insight"><p><strong>Interview angle:</strong> Say the Big-O out loud as you code ("membership on a set is O(1) average, so this loop is O(n)"). Reaching for a dict/set to collapse a nested loop is a strong signal. Know the average-vs-worst nuance: hash operations are O(1) average, O(n) worst under pathological collisions — fine to mention, rarely the bottleneck.</p></div>
+</div>
+</div>
+
+<!-- COMPREHENSIONS & GENERATORS -->
+<div class="section" id="comprehensions">
+<div class="card">
+<h2>Comprehensions &amp; generators — build fast, evaluate lazily</h2>
+<p>Comprehensions are Python's signature way to build a collection in one readable expression. Generators are their lazy cousins: they produce items one at a time instead of materializing the whole thing in memory.</p>
+
+<h3>Comprehensions</h3>
+<pre>squares  = [x*x <span class="kw">for</span> x <span class="kw">in</span> range(<span class="num">10</span>)]              <span class="cm"># list</span>
+evens    = [x <span class="kw">for</span> x <span class="kw">in</span> range(<span class="num">20</span>) <span class="kw">if</span> x % <span class="num">2</span> == <span class="num">0</span>]   <span class="cm"># with filter</span>
+by_len   = {w: len(w) <span class="kw">for</span> w <span class="kw">in</span> words}          <span class="cm"># dict comprehension</span>
+uniq     = {c <span class="kw">for</span> c <span class="kw">in</span> text}                     <span class="cm"># set comprehension</span>
+grid     = [[<span class="num">0</span>]*cols <span class="kw">for</span> _ <span class="kw">in</span> range(rows)]      <span class="cm"># 2-D grid, one list per row</span></pre>
+<div class="warn"><p><strong>Trap:</strong> <code>grid = [[0]*cols]*rows</code> makes <code>rows</code> references to <em>one</em> shared inner list — mutating <code>grid[0][0]</code> changes every row. Use the comprehension form above instead. (Same aliasing rule from the object-model section.)</p></div>
+
+<h3>Generator expressions &amp; lazy evaluation</h3>
+<p>Swap the brackets for parentheses and you get a <strong>generator</strong>: nothing is computed until you iterate, and only one item exists at a time. This is how you process a 10 GB file with a few KB of memory.</p>
+<pre><span class="cm"># list comp: builds ALL 10 million ints in memory (~400 MB)</span>
+total = sum([x*x <span class="kw">for</span> x <span class="kw">in</span> range(<span class="num">10_000_000</span>)])
+
+<span class="cm"># generator expr: computes one at a time, ~constant memory</span>
+total = sum(x*x <span class="kw">for</span> x <span class="kw">in</span> range(<span class="num">10_000_000</span>))   <span class="cm"># note: no inner brackets</span></pre>
+
+<h3>Generator functions with <code>yield</code></h3>
+<pre><span class="kw">def</span> <span class="fn">read_lines</span>(path):
+    <span class="kw">with</span> open(path) <span class="kw">as</span> f:
+        <span class="kw">for</span> line <span class="kw">in</span> f:          <span class="cm"># the file object is itself lazy</span>
+            <span class="kw">yield</span> line.rstrip()   <span class="cm"># pauses here, resumes on next()</span>
+
+<span class="kw">def</span> <span class="fn">countdown</span>(n):
+    <span class="kw">while</span> n &gt; <span class="num">0</span>:
+        <span class="kw">yield</span> n
+        n -= <span class="num">1</span>
+
+<span class="kw">for</span> x <span class="kw">in</span> countdown(<span class="num">3</span>):     <span class="cm"># 3, 2, 1  — state is preserved between yields</span>
+    <span class="fn">print</span>(x)</pre>
+<p>Each <code>yield</code> suspends the function, handing a value to the caller and freezing all local state; the next <code>next()</code> resumes right after the <code>yield</code>. A generator is a one-shot iterator — once exhausted, it's done.</p>
+
+<div class="tip"><p><strong>Idiom:</strong> chain lazy steps into a pipeline that never materializes intermediates: <code>total = sum(len(line) for line in read_lines(path) if line)</code>. Reads the file, filters blanks, sums lengths — in constant memory.</p></div>
+
+<div class="old"><p><strong>Note for Java folks:</strong> generators are like a lazily-evaluated <code>Stream</code> / <code>Iterator</code> that you write imperatively with <code>yield</code>. There's no separate "stream" type — laziness is built into the iterator protocol itself.</p></div>
+
+<div class="insight"><p><strong>Interview angle:</strong> When asked to "process a huge/infinite stream" or "reduce memory," reach for a generator and say "lazy evaluation — constant memory, one item at a time." Know that a generator can only be consumed once, that <code>sum()</code>/<code>any()</code>/<code>max()</code> accept generator expressions directly (drop the brackets), and that <code>yield from subgen</code> delegates to a sub-generator.</p></div>
+</div>
+</div>
+
+<!-- FUNCTIONS & CLOSURES -->
+<div class="section" id="functions">
+<div class="card">
+<h2>Functions &amp; closures — first-class, flexible, and full of traps</h2>
+<p>Functions are objects: you can pass them, return them, and store them in data structures. That power brings two of the most common traps in Python.</p>
+
+<h3>Arguments: positional, keyword, defaults</h3>
+<pre><span class="kw">def</span> <span class="fn">connect</span>(host, port=<span class="num">443</span>, *, timeout=<span class="num">30</span>):   <span class="cm"># * → timeout is keyword-only</span>
+    ...
+connect(<span class="str">"api"</span>)                       <span class="cm"># port=443, timeout=30</span>
+connect(<span class="str">"api"</span>, <span class="num">80</span>, timeout=<span class="num">5</span>)         <span class="cm"># timeout must be named</span></pre>
+
+<h3>*args and **kwargs</h3>
+<pre><span class="kw">def</span> <span class="fn">log</span>(*args, **kwargs):
+    <span class="cm"># args   → tuple of extra positional args</span>
+    <span class="cm"># kwargs → dict of extra keyword args</span>
+    <span class="fn">print</span>(args, kwargs)
+
+log(<span class="num">1</span>, <span class="num">2</span>, level=<span class="str">"warn"</span>)          <span class="cm"># (1, 2) {'level': 'warn'}</span>
+
+<span class="cm"># unpacking at the call site (the mirror image)</span>
+nums = [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>]
+<span class="fn">print</span>(*nums)                     <span class="cm"># same as print(1, 2, 3)</span>
+opts = {<span class="str">"sep"</span>: <span class="str">"-"</span>}
+<span class="fn">print</span>(*nums, **opts)             <span class="cm"># 1-2-3</span></pre>
+
+<h3 id="mutable-default">Gotcha #1: the mutable default argument</h3>
+<pre><span class="kw">def</span> <span class="fn">bad</span>(item, bucket=[]):        <span class="cm"># default list is created ONCE, at def time</span>
+    bucket.append(item)
+    <span class="kw">return</span> bucket
+
+bad(<span class="num">1</span>)   <span class="cm"># [1]</span>
+bad(<span class="num">2</span>)   <span class="cm"># [1, 2]  ← surprise! same list persists across calls</span>
+
+<span class="kw">def</span> <span class="fn">good</span>(item, bucket=<span class="kw">None</span>):     <span class="cm"># the correct pattern</span>
+    <span class="kw">if</span> bucket <span class="kw">is</span> <span class="kw">None</span>:
+        bucket = []
+    bucket.append(item)
+    <span class="kw">return</span> bucket</pre>
+<div class="warn"><p>Default argument values are evaluated <strong>once</strong>, when the <code>def</code> statement runs — not on each call. A mutable default (list/dict/set) is therefore shared by every call. Default to <code>None</code> and build the real object inside.</p></div>
+
+<h3 id="late-binding">Gotcha #2: late binding in closures</h3>
+<pre>funcs = [<span class="kw">lambda</span>: i <span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">3</span>)]
+[f() <span class="kw">for</span> f <span class="kw">in</span> funcs]           <span class="cm"># [2, 2, 2]  — NOT [0, 1, 2]</span></pre>
+<p>A closure captures the <em>variable</em> <code>i</code>, not its value at creation time. By the time the lambdas run, the loop has finished and <code>i == 2</code>. Fix by binding the current value as a default argument (evaluated eagerly):</p>
+<pre>funcs = [<span class="kw">lambda</span> i=i: i <span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">3</span>)]
+[f() <span class="kw">for</span> f <span class="kw">in</span> funcs]           <span class="cm"># [0, 1, 2]</span></pre>
+
+<h3>Closures done right</h3>
+<pre><span class="kw">def</span> <span class="fn">make_counter</span>(start=<span class="num">0</span>):
+    count = start
+    <span class="kw">def</span> <span class="fn">tick</span>():
+        <span class="kw">nonlocal</span> count       <span class="cm"># rebind the enclosing variable</span>
+        count += <span class="num">1</span>
+        <span class="kw">return</span> count
+    <span class="kw">return</span> tick               <span class="cm"># tick "closes over" count</span>
+
+c = make_counter()
+c(); c(); c()                <span class="cm"># 1, 2, 3 — state lives in the closure</span></pre>
+<p>Without <code>nonlocal</code>, assigning <code>count</code> inside <code>tick</code> would create a new <em>local</em> variable and shadow the outer one. Reading is fine without it; rebinding needs it.</p>
+
+<div class="old"><p><strong>Note for Java/C++ folks:</strong> closures capture variables by reference to the enclosing scope, unlike a Java lambda's effectively-final capture or a C++ <code>[=]</code> value capture. That reference semantics is exactly why the late-binding trap exists. <code>nonlocal</code> is the "I really mean the outer one" keyword; <code>global</code> is its module-level sibling.</p></div>
+
+<div class="insight"><p><strong>Interview angle:</strong> The mutable-default and late-binding traps are classic trick questions — be able to predict the output <em>and</em> explain the mechanism (def-time evaluation; capture of the variable, not the value). Bonus points for knowing <code>*</code> forces keyword-only args and <code>/</code> forces positional-only (3.8+).</p></div>
+</div>
+</div>
+
+<!-- DECORATORS & ITERATORS -->
+<div class="section" id="decorators">
+<div class="card">
+<h2>Decorators &amp; iterators — wrapping behavior, producing sequences</h2>
+
+<h3>Decorators: a function that wraps a function</h3>
+<p>A decorator takes a function and returns a replacement, usually adding behavior around the original. Because functions are objects, this is just higher-order functions plus the <code>@</code> sugar.</p>
+<pre><span class="kw">import</span> functools, time
+
+<span class="kw">def</span> <span class="fn">timed</span>(func):
+    @functools.wraps(func)          <span class="cm"># preserve name/docstring of func</span>
+    <span class="kw">def</span> <span class="fn">wrapper</span>(*args, **kwargs):
+        t0 = time.perf_counter()
+        result = func(*args, **kwargs)
+        <span class="fn">print</span>(f<span class="str">"{func.__name__} took {time.perf_counter()-t0:.4f}s"</span>)
+        <span class="kw">return</span> result
+    <span class="kw">return</span> wrapper
+
+@timed
+<span class="kw">def</span> <span class="fn">work</span>(n):
+    <span class="kw">return</span> sum(range(n))
+<span class="cm"># @timed is exactly:  work = timed(work)</span></pre>
+<div class="tip"><p>Always use <code>@functools.wraps(func)</code> on the wrapper — without it, the decorated function loses its <code>__name__</code>, docstring, and signature, which breaks introspection, logging, and debuggers.</p></div>
+
+<h3>Decorators that take arguments</h3>
+<p>Add one more layer: a factory that returns the actual decorator.</p>
+<pre><span class="kw">def</span> <span class="fn">retry</span>(times):
+    <span class="kw">def</span> <span class="fn">decorator</span>(func):
+        @functools.wraps(func)
+        <span class="kw">def</span> <span class="fn">wrapper</span>(*args, **kwargs):
+            <span class="kw">for</span> attempt <span class="kw">in</span> range(times):
+                <span class="kw">try</span>:
+                    <span class="kw">return</span> func(*args, **kwargs)
+                <span class="kw">except</span> Exception:
+                    <span class="kw">if</span> attempt == times - <span class="num">1</span>:
+                        <span class="kw">raise</span>
+        <span class="kw">return</span> wrapper
+    <span class="kw">return</span> decorator
+
+@retry(<span class="num">3</span>)
+<span class="kw">def</span> <span class="fn">flaky</span>(): ...</pre>
+<p>Handy built-in decorators worth knowing: <code>@property</code>, <code>@staticmethod</code>, <code>@classmethod</code>, <code>@functools.lru_cache</code> (memoization — huge for recursive DP (dynamic-programming) interview problems), and <code>@dataclasses.dataclass</code>.</p>
+<pre>@functools.lru_cache(maxsize=<span class="kw">None</span>)
+<span class="kw">def</span> <span class="fn">fib</span>(n):
+    <span class="kw">return</span> n <span class="kw">if</span> n &lt; <span class="num">2</span> <span class="kw">else</span> fib(n-<span class="num">1</span>) + fib(n-<span class="num">2</span>)   <span class="cm"># memoized → O(n)</span></pre>
+
+<h3>Iterables vs iterators (the protocol)</h3>
+<ul>
+  <li>An <strong>iterable</strong> can produce an iterator: it defines <code>__iter__()</code>. (Lists, dicts, strings, files.)</li>
+  <li>An <strong>iterator</strong> produces the next item: it defines <code>__next__()</code> and raises <code>StopIteration</code> when exhausted. It's also its own iterable (<code>__iter__</code> returns <code>self</code>).</li>
+</ul>
+<pre><span class="cm"># what a for-loop actually does under the hood:</span>
+it = iter([<span class="num">10</span>, <span class="num">20</span>])     <span class="cm"># calls list.__iter__() → an iterator</span>
+next(it)               <span class="cm"># 10</span>
+next(it)               <span class="cm"># 20</span>
+next(it)               <span class="cm"># raises StopIteration → loop ends</span>
+
+<span class="kw">class</span> <span class="fn">Countdown</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, n): self.n = n
+    <span class="kw">def</span> <span class="fn">__iter__</span>(self): <span class="kw">return</span> self
+    <span class="kw">def</span> <span class="fn">__next__</span>(self):
+        <span class="kw">if</span> self.n &lt;= <span class="num">0</span>:
+            <span class="kw">raise</span> StopIteration
+        self.n -= <span class="num">1</span>
+        <span class="kw">return</span> self.n + <span class="num">1</span></pre>
+<p>In practice you rarely hand-write <code>__next__</code> — a generator function gives you the whole protocol for free, which is why generators are the go-to way to build custom iterators.</p>
+
+<div class="insight"><p><strong>Interview angle:</strong> Be able to explain "iterable vs iterator" and sketch the <code>for</code>-loop desugaring (<code>iter()</code> then repeated <code>next()</code> until <code>StopIteration</code>). For decorators, explain that <code>@d</code> is sugar for <code>f = d(f)</code>, why <code>functools.wraps</code> matters, and reach for <code>@lru_cache</code> to memoize recursive solutions on the spot.</p></div>
+</div>
+</div>
+
+<!-- GIL & CONCURRENCY -->
+<div class="section" id="concurrency">
+<div class="card">
+<h2>The GIL and choosing a concurrency model</h2>
+<p>The <strong>Global Interpreter Lock</strong> is a mutex in CPython that lets only <em>one</em> thread execute Python bytecode at a time. It makes the interpreter's memory management simple and single-threaded code fast, but it means threads don't give you parallel CPU speedup.</p>
+
+<div class="insight"><p><strong>Analogy:</strong> the GIL is a single microphone in a meeting room. Many people (threads) are present, but only the one holding the mic can speak (run Python). It gets passed around quickly, so it <em>looks</em> concurrent — but two people can never speak at the same instant. To truly speak in parallel, you need separate rooms (processes).</p></div>
+
+<h3>The picture</h3>
+<svg viewBox="0 0 640 260" style="max-width:100%;height:auto" role="img" aria-label="GIL: threads share one interpreter lock and interleave on one core; processes each have their own interpreter and run on separate cores">
+  <style>
+    .t{font:600 12px 'JetBrains Mono',monospace;fill:#212529}
+    .lbl{font:600 13px Inter,sans-serif;fill:#1971c2}
+    .cap2{font:500 10.5px Inter,sans-serif;fill:#63676f}
+    .core{fill:#f1f3f5;stroke:#dee2e6;stroke-width:1.5}
+    .run{fill:#d3f9d8;stroke:#2f9e44;stroke-width:1.5}
+    .wait{fill:#ffe3e3;stroke:#c92a2a;stroke-width:1.5}
+  </style>
+  <text x="20" y="24" class="lbl">Threads + GIL (one core actually runs Python)</text>
+  <text x="20" y="52" class="cap2">time →</text>
+  <!-- thread A timeline -->
+  <text x="20" y="80" class="t">T-A</text>
+  <rect x="55" y="66" width="70" height="20" class="run"/><rect x="125" y="66" width="70" height="20" class="wait"/><rect x="195" y="66" width="70" height="20" class="run"/><rect x="265" y="66" width="70" height="20" class="wait"/>
+  <!-- thread B timeline -->
+  <text x="20" y="112" class="t">T-B</text>
+  <rect x="55" y="98" width="70" height="20" class="wait"/><rect x="125" y="98" width="70" height="20" class="run"/><rect x="195" y="98" width="70" height="20" class="wait"/><rect x="265" y="98" width="70" height="20" class="run"/>
+  <text x="360" y="80" class="cap2">green = holds GIL / runs</text>
+  <text x="360" y="100" class="cap2">red = waiting for the GIL</text>
+  <text x="360" y="120" class="cap2">never both green at once</text>
+
+  <text x="20" y="168" class="lbl">Multiprocessing (real parallelism)</text>
+  <rect x="55" y="184" width="120" height="46" class="core"/><text x="70" y="205" class="t">Core 1</text><rect x="70" y="210" width="90" height="14" class="run"/><text x="200" y="212" class="cap2">Process 1 · own GIL</text>
+  <rect x="55" y="184" width="120" height="46" class="core" transform="translate(300,0)"/><text x="370" y="205" class="t">Core 2</text><rect x="370" y="210" width="90" height="14" class="run"/><text x="500" y="212" class="cap2">Process 2 · own GIL</text>
+</svg>
+
+<h3>Pick the right tool</h3>
+<table>
+<tr><th>Model</th><th>Best for</th><th>Parallel CPU?</th><th>Cost / notes</th></tr>
+<tr><td><code>threading</code></td><td>I/O-bound (network, disk, DB calls)</td><td>No (GIL)</td><td>Cheap; GIL is released during blocking I/O, so threads overlap waits</td></tr>
+<tr><td><code>multiprocessing</code></td><td>CPU-bound (crunching, image/number work)</td><td>Yes — separate interpreters</td><td>Heavier; data crosses processes via pickling/IPC (inter-process communication)</td></tr>
+<tr><td><code>asyncio</code></td><td>Massive I/O concurrency (thousands of sockets)</td><td>No (single thread)</td><td>One thread, cooperative <code>await</code>; needs async libraries end-to-end</td></tr>
+</table>
+
+<pre><span class="cm"># I/O-bound → threads (GIL released while waiting on the network)</span>
+<span class="kw">from</span> concurrent.futures <span class="kw">import</span> ThreadPoolExecutor
+<span class="kw">with</span> ThreadPoolExecutor() <span class="kw">as</span> ex:
+    results = list(ex.map(fetch_url, urls))
+
+<span class="cm"># CPU-bound → processes (true parallelism across cores)</span>
+<span class="kw">from</span> concurrent.futures <span class="kw">import</span> ProcessPoolExecutor
+<span class="kw">with</span> ProcessPoolExecutor() <span class="kw">as</span> ex:
+    results = list(ex.map(crunch, chunks))
+
+<span class="cm"># high-concurrency I/O → asyncio</span>
+<span class="kw">import</span> asyncio
+<span class="kw">async def</span> <span class="fn">main</span>():
+    results = <span class="kw">await</span> asyncio.gather(*(fetch(u) <span class="kw">for</span> u <span class="kw">in</span> urls))
+asyncio.run(main())</pre>
+
+<div class="warn"><p>The rule of thumb: <strong>I/O-bound → threads or asyncio; CPU-bound → multiprocessing.</strong> Using threads for a CPU-bound loop gives near-zero speedup (often slightly slower, due to GIL contention).</p></div>
+
+<div class="old"><p><strong>Note for Java/C++ folks:</strong> unlike JVM threads or C++ <code>std::thread</code>, Python threads can't run CPU work in parallel because of the GIL. The workaround is processes, not threads. (CPython 3.13 ships an experimental free-threaded "no-GIL" build, and 3.12+ adds per-interpreter GILs via sub-interpreters — worth mentioning as "the GIL is being chipped away," but the mental model above is still what you code to today.)</p></div>
+
+<div class="insight"><p><strong>Interview angle:</strong> Expect "what is the GIL and why does it matter?" Answer: one thread runs Python bytecode at a time, so threads help I/O-bound work (GIL is released during blocking calls) but not CPU-bound work — for that, use multiprocessing. Then name asyncio as the single-threaded cooperative option for very high I/O concurrency. Showing you match the model to the workload is the whole point.</p></div>
+</div>
+</div>
+
+<!-- STDLIB & TYPING -->
+<div class="section" id="stdlib">
+<div class="card">
+<h2>Stdlib power tools &amp; typing hints</h2>
+<p>"Batteries included" is real. Three modules win coding rounds; typing hints make real-world code maintainable.</p>
+
+<h3>collections</h3>
+<pre><span class="kw">from</span> collections <span class="kw">import</span> Counter, defaultdict, deque, namedtuple
+
+Counter(<span class="str">"mississippi"</span>)          <span class="cm"># {'i':4,'s':4,'p':2,'m':1}</span>
+Counter(words).most_common(<span class="num">3</span>)   <span class="cm"># top-3 (value, count) pairs</span>
+
+g = defaultdict(list)          <span class="cm"># missing key auto-creates []</span>
+g[u].append(v)                 <span class="cm"># no setdefault needed — great for graphs</span>
+
+dq = deque([<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>])            <span class="cm"># O(1) at BOTH ends — use for BFS queues</span>
+dq.appendleft(<span class="num">0</span>); dq.popleft()   <span class="cm"># list.pop(0) is O(n); deque is O(1)</span>
+
+Point = namedtuple(<span class="str">"Point"</span>, <span class="str">"x y"</span>)
+p = Point(<span class="num">1</span>, <span class="num">2</span>); p.x          <span class="cm"># lightweight immutable record</span></pre>
+
+<h3>itertools — lazy combinatorics</h3>
+<pre><span class="kw">from</span> itertools <span class="kw">import</span> (product, permutations, combinations,
+                       accumulate, groupby, chain, count, cycle, islice)
+
+permutations([<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>])          <span class="cm"># all orderings</span>
+combinations([<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>], <span class="num">2</span>)       <span class="cm"># all 2-subsets</span>
+product([<span class="num">0</span>,<span class="num">1</span>], repeat=<span class="num">3</span>)         <span class="cm"># all 3-bit tuples</span>
+list(accumulate([<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>]))     <span class="cm"># running sums → [1, 3, 6, 10]</span>
+list(chain([<span class="num">1</span>,<span class="num">2</span>], [<span class="num">3</span>,<span class="num">4</span>]))       <span class="cm"># flatten → [1, 2, 3, 4]</span>
+list(islice(count(), <span class="num">5</span>))         <span class="cm"># take 5 from an infinite counter</span></pre>
+
+<h3>heapq — the priority queue for interviews</h3>
+<pre><span class="kw">import</span> heapq
+h = [<span class="num">3</span>, <span class="num">1</span>, <span class="num">2</span>]
+heapq.heapify(h)               <span class="cm"># O(n), in place → MIN-heap</span>
+heapq.heappush(h, <span class="num">0</span>)
+heapq.heappop(h)               <span class="cm"># 0  — smallest first</span>
+heapq.nlargest(<span class="num">3</span>, data)          <span class="cm"># top-3 without full sort</span>
+heapq.nsmallest(<span class="num">3</span>, data)
+
+<span class="cm"># max-heap trick: negate the values</span>
+maxh = []
+<span class="kw">for</span> x <span class="kw">in</span> data: heapq.heappush(maxh, -x)
+largest = -heapq.heappop(maxh)</pre>
+<div class="tip"><p><code>heapq</code> is a <strong>min-heap only</strong>. For a max-heap, push negated values (numbers) or wrap items in a <code>(priority, item)</code> tuple with negated priority. This is the standard trick for "top-K" and Dijkstra (shortest-path algorithm) questions.</p></div>
+
+<h3>Typing hints</h3>
+<p>Hints are optional and don't affect runtime, but they document intent and let tools (mypy, pyright, IDEs) catch bugs before you run the code.</p>
+<pre><span class="kw">from</span> typing <span class="kw">import</span> Optional, Callable
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+
+<span class="kw">def</span> <span class="fn">total</span>(nums: list[int]) -&gt; int:         <span class="cm"># 3.9+ builtin generics</span>
+    <span class="kw">return</span> sum(nums)
+
+<span class="kw">def</span> <span class="fn">find</span>(key: str) -&gt; Optional[str]:        <span class="cm"># same as str | None; in 3.10+ you can write the annotation as str | None</span>
+    ...
+
+handler: Callable[[int], bool]           <span class="cm"># takes int, returns bool</span>
+
+@dataclass
+<span class="kw">class</span> <span class="fn">User</span>:
+    name: str
+    age: int = <span class="num">0</span>                        <span class="cm"># auto __init__/__repr__/__eq__</span></pre>
+
+<div class="old"><p><strong>Note for Java/C++ folks:</strong> type hints are <em>not</em> enforced at runtime — Python stays dynamically typed. They're closer to documentation checked by a separate tool. A <code>@dataclass</code> is the Python answer to a POJO (plain old Java object) / struct with boilerplate generated for you (like a Java <code>record</code>).</p></div>
+
+<div class="insight"><p><strong>Interview angle:</strong> Knowing <code>Counter</code>, <code>defaultdict(list)</code> for graphs, <code>deque</code> for BFS, and <code>heapq</code> for top-K/Dijkstra lets you skip boilerplate and go straight to the algorithm — a strong signal of Python fluency. Mention type hints + dataclasses when asked about writing maintainable production code.</p></div>
+</div>
+</div>
+
+<!-- GOTCHAS & INTERVIEW -->
+<div class="section" id="gotchas">
+<div class="card">
+<h2>Traps &amp; interview Q&amp;A</h2>
+
+<h3>The classic traps, collected</h3>
+<table>
+<tr><th>Trap</th><th>Why / fix</th></tr>
+<tr><td>Mutable default arg <code>def f(x=[])</code></td><td>Default made once at def time and shared. Use <code>x=None</code> then build inside.</td></tr>
+<tr><td>Late binding in loops/closures</td><td>Closures capture the variable, not its value. Bind with <code>lambda i=i:</code>.</td></tr>
+<tr><td><code>[[0]*n]*m</code> grid</td><td>All rows are the same list. Use <code>[[0]*n for _ in range(m)]</code>.</td></tr>
+<tr><td>Modifying a list while iterating it</td><td>Skips elements / corrupts iteration. Iterate a copy <code>for x in lst[:]</code> or build a new list.</td></tr>
+<tr><td><code>is</code> vs <code>==</code></td><td><code>is</code> = identity, <code>==</code> = value. Only use <code>is</code> for <code>None</code>/<code>True</code>/<code>False</code>.</td></tr>
+<tr><td>Integer / identity caching</td><td>Small ints (−5…256) &amp; some strings are interned/cached, so <code>is</code> "works" by accident. Never rely on it. Use <code>==</code>.</td></tr>
+<tr><td>Shallow vs deep copy</td><td><code>b = a[:]</code>/<code>a.copy()</code> copies one level; nested objects still shared. Use <code>copy.deepcopy</code> for full copies.</td></tr>
+<tr><td>Truthiness of empty containers</td><td><code>[]</code>, <code>{}</code>, <code>""</code>, <code>0</code>, <code>None</code> are all falsy. <code>if not items:</code> is idiomatic.</td></tr>
+<tr><td>Float equality</td><td><code>0.1 + 0.2 != 0.3</code>. Use <code>math.isclose(a, b)</code>.</td></tr>
+</table>
+
+<h3>The integer / identity caching gotcha in detail</h3>
+<pre>a = <span class="num">256</span>; b = <span class="num">256</span>
+a <span class="kw">is</span> b        <span class="cm"># True  — 256 is in CPython's small-int cache (−5..256)</span>
+x = <span class="num">257</span>; y = <span class="num">257</span>
+x <span class="kw">is</span> y        <span class="cm"># typically False — outside the cache, two distinct objects</span>
+x == y       <span class="cm"># True — always compare VALUE with ==</span></pre>
+<div class="warn"><p>This is a CPython implementation detail, not a language guarantee. The lesson isn't the boundary number — it's <strong>never use <code>is</code> to compare values</strong>. It only ever seems to work because of caching.</p></div>
+
+<h3>Interview Q&amp;A</h3>
+<div class="qa"><div class="q">"What's the difference between a list and a tuple?"</div>
+<p>Lists are mutable and ordered; tuples are immutable and hashable. Use a tuple for fixed records and as dict keys / set members; use a list for a collection that changes. Tuples are also slightly lighter and signal "don't modify this."</p></div>
+
+<div class="qa"><div class="q">"Explain the GIL."</div>
+<p>A mutex allowing one thread to run Python bytecode at a time in CPython. It helps I/O-bound threading (the GIL releases during blocking I/O) but prevents CPU-bound parallelism in threads — use multiprocessing for that, or asyncio for high-concurrency I/O on one thread.</p></div>
+
+<div class="qa"><div class="q">"How do generators save memory?"</div>
+<p>They're lazy: values are produced one at a time via <code>yield</code>, and local state is frozen between yields. Nothing is materialized, so you can process huge or infinite streams in near-constant memory. A generator is consumed once.</p></div>
+
+<div class="qa"><div class="q">"Why does <code>def f(x=[])</code> misbehave?"</div>
+<p>The default list is created once when the <code>def</code> runs and reused across calls, so it accumulates state. Default to <code>None</code> and create the list inside the function.</p></div>
+
+<div class="qa"><div class="q">"<code>==</code> vs <code>is</code>?"</div>
+<p><code>==</code> compares values via <code>__eq__</code>; <code>is</code> compares object identity (same <code>id()</code>). Use <code>is</code> only for singletons like <code>None</code>. Small-int/string caching can make <code>is</code> appear to work on values — don't rely on it.</p></div>
+
+<div class="qa"><div class="q">"What is a decorator?"</div>
+<p>A callable that takes a function and returns a replacement, adding behavior around it. <code>@d</code> above a function is sugar for <code>f = d(f)</code>. Use <code>functools.wraps</code> to preserve metadata; <code>@lru_cache</code> to memoize.</p></div>
+
+<div class="qa"><div class="q">"How do you make a shallow vs deep copy?"</div>
+<p>Shallow: <code>list(a)</code>, <code>a.copy()</code>, or <code>a[:]</code> — copies the top level, nested objects stay shared. Deep: <code>copy.deepcopy(a)</code> — recursively copies everything.</p></div>
+
+<div class="insight"><p><strong>Interview angle / closing:</strong> Python interviews reward fluency more than trivia — reach for the right data structure, name the Big-O, use comprehensions and the stdlib idioms, and be ready to explain the object model, the GIL, and the mutable-default / late-binding traps from first principles. If you come from Java/C++, highlight that systems depth and treat Python's dynamic, reference-based model and rich stdlib as the fast part to pick up.</p></div>
+</div>
+</div>
+
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Mutable / immutable</strong></td><td>Mutable objects (<code>list</code>, <code>dict</code>, <code>set</code>) can change in place; immutable ones (<code>int</code>, <code>str</code>, <code>tuple</code>) cannot.</td></tr>
+<tr><td><strong>Identity vs equality (<code>is</code> vs <code>==</code>)</strong></td><td><code>is</code> tests whether two names point at the same object (same <code>id()</code>); <code>==</code> tests equal value via <code>__eq__</code>.</td></tr>
+<tr><td><strong>Aliasing</strong></td><td>Two names bound to the same mutable object, so a change made through one is visible through the other.</td></tr>
+<tr><td><strong>Hashable</strong></td><td>Has a stable hash value, so it can serve as a <code>dict</code> key or <code>set</code> member.</td></tr>
+<tr><td><strong>Big-O</strong></td><td>Notation for how an operation's cost grows with input size (e.g., O(1), O(n), O(n&#178;)).</td></tr>
+<tr><td><strong><code>deque</code></strong></td><td>Double-ended queue; O(1) append and pop at both ends — ideal for BFS queues.</td></tr>
+<tr><td><strong>Comprehension</strong></td><td>Concise expression that builds a list, dict, or set in one readable line.</td></tr>
+<tr><td><strong>Generator</strong></td><td>Lazy iterator that produces values one at a time via <code>yield</code>, in near-constant memory.</td></tr>
+<tr><td><strong>Lazy evaluation</strong></td><td>Computing values only as they are needed rather than all upfront, saving memory.</td></tr>
+<tr><td><strong>Closure</strong></td><td>Inner function that captures and remembers variables from its enclosing scope.</td></tr>
+<tr><td><strong>Late binding</strong></td><td>Closures capture the variable itself, not its value at creation time — it is read when the closure runs.</td></tr>
+<tr><td><strong>Decorator</strong></td><td>Callable that wraps a function to add behavior; <code>@d</code> above <code>f</code> means <code>f = d(f)</code>.</td></tr>
+<tr><td><strong>Memoization (<code>@lru_cache</code>)</strong></td><td>Caching a function's return values by arguments to avoid recomputation; <code>functools.lru_cache</code> does it automatically (LRU = least-recently-used).</td></tr>
+<tr><td><strong>Iterable / iterator</strong></td><td>An iterable defines <code>__iter__</code> and yields an iterator; an iterator returns items via <code>__next__</code> until <code>StopIteration</code>.</td></tr>
+<tr><td><strong>GIL — Global Interpreter Lock</strong></td><td>CPython mutex that lets only one thread execute Python bytecode at a time.</td></tr>
+<tr><td><strong>CPython</strong></td><td>The reference Python implementation, written in C; the one the GIL applies to.</td></tr>
+<tr><td><strong>IPC — inter-process communication</strong></td><td>Passing data between separate processes (via pickling), needed to share results in <code>multiprocessing</code>.</td></tr>
+<tr><td><strong><code>asyncio</code></strong></td><td>Single-threaded, cooperative concurrency using <code>async</code>/<code>await</code> for high-volume I/O.</td></tr>
+<tr><td><strong>Type hints</strong></td><td>Optional annotations documenting expected types; checked by tools (mypy, pyright), not enforced at runtime.</td></tr>
+<tr><td><strong><code>@dataclass</code></strong></td><td>Decorator that auto-generates <code>__init__</code>, <code>__repr__</code>, and <code>__eq__</code> from class annotations.</td></tr>
+</table>
+</div>
+</div>
+<script>
+function showSection(evt, id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  evt.target.classList.add('active');
+  window.scrollTo({ top: 0, behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="java_refresher.html">‹ Java Refresher</a><a class="bkc" href="index.html">📖 Contents</a><a href="ai_assisted_engineering_prep.html">AI-Assisted Engineering ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

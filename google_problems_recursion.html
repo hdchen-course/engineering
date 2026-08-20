@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recursion &amp; Backtracking — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 8 — <b>Recursion &amp; Backtracking</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Recursion &amp; Backtracking</h1>
+  <div class="sub">Six Google-style recursion &amp; backtracking problems &bull; original framing, execution-tested solutions, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+<div class="tip" style="margin-bottom:24px;"><p><strong>How to read this chapter:</strong> every worked example uses inputs invented for this book, and each stated output was produced by <em>compiling and running</em> the accompanying Java &mdash; for the large result sets, the printed <em>count</em> and a few members were read straight off the program&rsquo;s output. Beyond hand-picked edge cases (an empty input, single-element inputs, the leading-zero and odd-length cases, and dictionary words absent from the board) each solution was cross-checked against an <strong>independent brute force</strong>: the parenthesis, strobogrammatic, and unlock-pattern counts were differentially tested against exhaustive enumerators, and Word Search II / Word Squares against thousands of random boards and dictionaries. The recurring idea below is the backtracking skeleton &mdash; <strong>choose, recurse, undo</strong> &mdash; sharpened by <strong>pruning</strong> (only extend states that can still succeed) and by <strong>state structures</strong> (a Trie, a prefix index, or a &ldquo;skip&rdquo; table) that make each choice cheap and each dead end obvious.</p></div>
+
+
+<!-- PROBLEM: Generate Parentheses -->
+<div class="card">
+<h2>Generate Parentheses</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a count <code>n</code>, produce <em>every</em> string of <code>n</code> pairs of parentheses that is well-formed &mdash; every open bracket eventually closed, and never a closing bracket without a matching open before it.</p>
+<ul>
+  <li>Each output has length <code>2n</code> and uses exactly <code>n</code> <code>'('</code> and <code>n</code> <code>')'</code>.</li>
+  <li>The number of valid strings is the <strong>n-th Catalan number</strong>, so the result set grows fast: 1, 1, 2, 5, 14, 42, &hellip;</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>n = 3</code> the code prints all <code>5</code> combinations (computed by running it): <code>((()))</code>, <code>(()())</code>, <code>(())()</code>, <code>()(())</code>, <code>()()()</code>. That count matches <code>Catalan(3) = 5</code>; for <code>n = 4</code> the program returns <code>14</code> strings, again equal to <code>Catalan(4)</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Backtrack while tracking two counters</strong> &mdash; how many <code>'('</code> and how many <code>')'</code> we have placed so far. The two rules that keep every prefix valid are simple: we may add an open bracket whenever <code>open &lt; n</code>, and we may add a close bracket only when <code>close &lt; open</code> (there is an unmatched open waiting for it). When the string reaches length <code>2n</code> it is guaranteed well-formed, so we record it. Because we only ever build <em>legal</em> prefixes, there's no wasted work and no validity check at the end &mdash; the constraints <em>are</em> the pruning.</p>
+
+<pre><span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">String</span>&gt; <span class="fn">generateParenthesis</span>(<span class="kw">int</span> n) {
+    <span class="type">List</span>&lt;<span class="type">String</span>&gt; res = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+    <span class="fn">backtrack</span>(res, <span class="kw">new</span> <span class="type">StringBuilder</span>(), <span class="num">0</span>, <span class="num">0</span>, n);
+    <span class="kw">return</span> res;
+}
+<span class="cm">// open = '(' placed so far, close = ')' placed so far</span>
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">backtrack</span>(<span class="type">List</span>&lt;<span class="type">String</span>&gt; res, <span class="type">StringBuilder</span> sb,
+                       <span class="kw">int</span> open, <span class="kw">int</span> close, <span class="kw">int</span> n) {
+    <span class="kw">if</span> (sb.<span class="fn">length</span>() == <span class="num">2</span> * n) {          <span class="cm">// used all 2n slots -&gt; a valid combo</span>
+        res.<span class="fn">add</span>(sb.<span class="fn">toString</span>());
+        <span class="kw">return</span>;
+    }
+    <span class="kw">if</span> (open &lt; n) {                        <span class="cm">// still room to open a new pair</span>
+        sb.<span class="fn">append</span>(<span class="str">'('</span>);
+        <span class="fn">backtrack</span>(res, sb, open + <span class="num">1</span>, close, n);
+        sb.<span class="fn">deleteCharAt</span>(sb.<span class="fn">length</span>() - <span class="num">1</span>);  <span class="cm">// undo the choice (backtrack)</span>
+    }
+    <span class="kw">if</span> (close &lt; open) {                    <span class="cm">// close only if an open is unmatched</span>
+        sb.<span class="fn">append</span>(<span class="str">')'</span>);
+        <span class="fn">backtrack</span>(res, sb, open, close + <span class="num">1</span>, n);
+        sb.<span class="fn">deleteCharAt</span>(sb.<span class="fn">length</span>() - <span class="num">1</span>);
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(Catalan(n) &middot; n)</code> &mdash; there are <code>Catalan(n) = C(2n, n)/(n+1)</code> valid strings and each costs <code>O(n)</code> to build and copy; asymptotically that is <code>O(4<sup>n</sup> / &radic;n)</code>. Space <code>O(n)</code> for the recursion depth and the working buffer (excluding the output list).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>The close guard is <code>close &lt; open</code>, not <code>close &lt; n</code>.</strong> Gating a close on the number of unmatched opens is what keeps every prefix legal; comparing against <code>n</code> would emit strings like <code>())(</code>. <strong>Undo after recursing.</strong> A single shared <code>StringBuilder</code> is efficient, but you must delete the last char after each branch or sibling calls inherit stale characters. <strong>The count is Catalan(n).</strong> A great sanity check &mdash; if your output size is not <code>1, 1, 2, 5, 14, &hellip;</code> you are either duplicating or missing states. <strong>Don&rsquo;t generate-then-filter.</strong> Producing all <code>2<sup>2n</sup></code> bracket strings and validating each is exponentially wasteful; the two counters prune illegal branches at the root.</p></div>
+</div>
+
+
+<!-- PROBLEM: Letter Combinations of a Phone Number -->
+<div class="card">
+<h2>Letter Combinations of a Phone Number</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a string of digits <code>2&ndash;9</code>, return every letter combination the number could spell on a classic phone keypad, where <code>2&rarr;abc</code>, <code>3&rarr;def</code>, &hellip;, <code>7&rarr;pqrs</code>, <code>8&rarr;tuv</code>, <code>9&rarr;wxyz</code>.</p>
+<ul>
+  <li>Each digit contributes one letter to each combination, so the answer count is the product of the digits&rsquo; letter-set sizes.</li>
+  <li><strong>Empty input maps to an empty list</strong> &mdash; not a list containing the empty string.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>"29"</code> the code returns all <code>12</code> combinations (computed by running it): <code>aw, ax, ay, az, bw, bx, by, bz, cw, cx, cy, cz</code> &mdash; digit <code>2</code> offers <code>{a,b,c}</code> and <code>9</code> offers <code>{w,x,y,z}</code>, so <code>3 &times; 4 = 12</code>. For <code>"7"</code> alone the output is <code>[p, q, r, s]</code>, and for the empty string <code>""</code> the output is the empty list <code>[]</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Backtrack across digit positions.</strong> Keep a lookup from each digit to its letters. Process the digits left to right; at position <code>i</code>, loop over that digit&rsquo;s letters, append one, recurse to position <code>i + 1</code>, then remove it. When the index reaches the end of the string, one letter has been chosen for every digit, so the buffer is a complete combination. The recursion tree has one level per digit and one branch per available letter &mdash; a clean Cartesian product.</p>
+
+<pre><span class="kw">private</span> <span class="kw">static</span> <span class="kw">final</span> <span class="type">String</span>[] PAD = {
+    <span class="str">""</span>, <span class="str">""</span>, <span class="str">"abc"</span>, <span class="str">"def"</span>, <span class="str">"ghi"</span>,
+    <span class="str">"jkl"</span>, <span class="str">"mno"</span>, <span class="str">"pqrs"</span>, <span class="str">"tuv"</span>, <span class="str">"wxyz"</span>
+};
+<span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">String</span>&gt; <span class="fn">letterCombinations</span>(<span class="type">String</span> digits) {
+    <span class="type">List</span>&lt;<span class="type">String</span>&gt; res = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+    <span class="kw">if</span> (digits == <span class="kw">null</span> || digits.<span class="fn">isEmpty</span>()) <span class="kw">return</span> res;  <span class="cm">// empty -&gt; empty list</span>
+    <span class="fn">backtrack</span>(digits, <span class="num">0</span>, <span class="kw">new</span> <span class="type">StringBuilder</span>(), res);
+    <span class="kw">return</span> res;
+}
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">backtrack</span>(<span class="type">String</span> digits, <span class="kw">int</span> i,
+                       <span class="type">StringBuilder</span> sb, <span class="type">List</span>&lt;<span class="type">String</span>&gt; res) {
+    <span class="kw">if</span> (i == digits.<span class="fn">length</span>()) {          <span class="cm">// one letter chosen per digit</span>
+        res.<span class="fn">add</span>(sb.<span class="fn">toString</span>());
+        <span class="kw">return</span>;
+    }
+    <span class="type">String</span> letters = PAD[digits.<span class="fn">charAt</span>(i) - <span class="str">'0'</span>];
+    <span class="kw">for</span> (<span class="kw">int</span> k = <span class="num">0</span>; k &lt; letters.<span class="fn">length</span>(); k++) {
+        sb.<span class="fn">append</span>(letters.<span class="fn">charAt</span>(k));   <span class="cm">// choose a letter for digit i</span>
+        <span class="fn">backtrack</span>(digits, i + <span class="num">1</span>, sb, res);
+        sb.<span class="fn">deleteCharAt</span>(sb.<span class="fn">length</span>() - <span class="num">1</span>);  <span class="cm">// undo</span>
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(4<sup>d</sup> &middot; d)</code> where <code>d</code> is the number of digits &mdash; up to <code>4</code> letters per digit and <code>O(d)</code> to materialise each of the up-to-<code>4<sup>d</sup></code> strings. Space <code>O(d)</code> for the recursion depth and buffer, plus the output.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Empty input is a special case.</strong> Returning a list with one empty string (because the base case fires immediately) is the classic off-by-one; guard <code>digits.isEmpty()</code> up front and return an <em>empty</em> list. <strong>Index the pad by <code>digit - '0'</code>.</strong> A common slip is indexing by the character or forgetting that <code>0</code> and <code>1</code> carry no letters. <strong>Undo after each branch.</strong> As with all backtracking over a shared buffer, remove the appended letter before trying the next. <strong>Output size = product of set sizes.</strong> A quick check: <code>"238"</code> maps to <code>{a,b,c} &times; {d,e,f} &times; {t,u,v}</code>, so <code>3 &times; 3 &times; 3 = 27</code> combinations &mdash; remember that <code>7</code> and <code>9</code> carry four letters while every other digit carries three.</p></div>
+</div>
+
+
+<!-- PROBLEM: Strobogrammatic Number II -->
+<div class="card">
+<h2>Strobogrammatic Number II</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>A number is <em>strobogrammatic</em> if it reads the same after being rotated <code>180&deg;</code> (turned upside down). Given a length <code>n</code>, return all strobogrammatic numbers of exactly that many digits, as strings.</p>
+<ul>
+  <li>The only digits that survive a rotation are <code>0&harr;0</code>, <code>1&harr;1</code>, <code>8&harr;8</code>, and the swap pair <code>6&harr;9</code>.</li>
+  <li>No <strong>leading zero</strong> at the full width (so <code>"0"</code> is valid for <code>n = 1</code>, but <code>"00"</code> and <code>"010"</code> are not valid answers for <code>n = 2, 3</code>).</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>n = 2</code> the code returns <code>[11, 69, 88, 96]</code> (computed by running it) &mdash; note <code>00</code> is excluded as a leading zero. For <code>n = 3</code> it returns <code>12</code> numbers, including <code>101, 111, 181, 609, 619, 689, 808, 818, 888, 906, 916, 986</code>; the middle digit is one of <code>{0, 1, 8}</code> (the self-rotating digits), while <code>6</code>/<code>9</code> may only appear as an outer pair.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Build from the outside in, two digits at a time.</strong> Recurse on the length: a length-<code>0</code> core is the single empty string, a length-<code>1</code> core is <code>{0, 1, 8}</code> (the only digits that are their own rotation, valid as a middle digit). For any larger width, first solve the inner core of length <code>len - 2</code>, then wrap each inner string with a rotation pair placed on the far left and far right &mdash; one of <code>(0,0), (1,1), (6,9), (8,8), (9,6)</code>. The single subtlety is the leading zero: track the <em>final</em> target length and, when the current wrap is the outermost layer (<code>len == total</code>), skip the <code>(0,0)</code> pair so the number never starts with <code>0</code>.</p>
+
+<pre><span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">String</span>&gt; <span class="fn">findStrobogrammatic</span>(<span class="kw">int</span> n) {
+    <span class="kw">return</span> <span class="fn">build</span>(n, n);   <span class="cm">// len = width being built; total = final width</span>
+}
+<span class="cm">// Returns all strobogrammatic strings of length `len`.</span>
+<span class="kw">private</span> <span class="type">List</span>&lt;<span class="type">String</span>&gt; <span class="fn">build</span>(<span class="kw">int</span> len, <span class="kw">int</span> total) {
+    <span class="kw">if</span> (len == <span class="num">0</span>) <span class="kw">return</span> <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;(<span class="type">List</span>.<span class="fn">of</span>(<span class="str">""</span>));           <span class="cm">// even base</span>
+    <span class="kw">if</span> (len == <span class="num">1</span>) <span class="kw">return</span> <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;(<span class="type">List</span>.<span class="fn">of</span>(<span class="str">"0"</span>, <span class="str">"1"</span>, <span class="str">"8"</span>));  <span class="cm">// odd middle</span>
+    <span class="type">List</span>&lt;<span class="type">String</span>&gt; inner = <span class="fn">build</span>(len - <span class="num">2</span>, total);       <span class="cm">// solve the core first</span>
+    <span class="type">List</span>&lt;<span class="type">String</span>&gt; res = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+    <span class="cm">// rotate-by-180 pairs: {outside-left, outside-right}</span>
+    <span class="kw">int</span>[][] pairs = {{<span class="num">0</span>,<span class="num">0</span>}, {<span class="num">1</span>,<span class="num">1</span>}, {<span class="num">6</span>,<span class="num">9</span>}, {<span class="num">8</span>,<span class="num">8</span>}, {<span class="num">9</span>,<span class="num">6</span>}};
+    <span class="kw">for</span> (<span class="type">String</span> s : inner) {
+        <span class="kw">for</span> (<span class="kw">int</span>[] p : pairs) {
+            <span class="cm">// no leading zero once we are at the full width</span>
+            <span class="kw">if</span> (len == total &amp;&amp; p[<span class="num">0</span>] == <span class="num">0</span>) <span class="kw">continue</span>;
+            res.<span class="fn">add</span>(p[<span class="num">0</span>] + s + p[<span class="num">1</span>]);
+        }
+    }
+    <span class="kw">return</span> res;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n &middot; 5<sup>n/2</sup>)</code> &mdash; there are on the order of <code>5<sup>n/2</sup></code> results (four choices at the outermost layer, five at each inner layer) and each string of length <code>n</code> is assembled in linear time. Space <code>O(n)</code> recursion depth plus the output.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Leading zero only at the top layer.</strong> <code>(0,0)</code> is perfectly legal in the <em>interior</em> (e.g. the <code>0</code>s in <code>1001</code> or <code>609</code>) &mdash; suppress it <em>only</em> when <code>len == total</code>. That is why the recursion threads the final <code>total</code> through, rather than deciding from <code>len</code> alone. <strong>Odd length needs the <code>{0,1,8}</code> middle.</strong> For odd <code>n</code> the center digit must map to itself, so <code>6</code> and <code>9</code> are forbidden there; the length-<code>1</code> base case encodes exactly this. <strong>6 and 9 swap.</strong> The outer-left <code>6</code> pairs with an outer-right <code>9</code> and vice-versa &mdash; getting the orientation backwards produces numbers that fail the rotation. <strong>The empty-core base case matters.</strong> For even <code>n</code> the recursion bottoms out at length <code>0</code> returning <code>[""]</code>; returning an empty list there would wipe out every even-length answer.</p></div>
+</div>
+
+
+<!-- PROBLEM: Android Unlock Patterns -->
+<div class="card">
+<h2>Android Unlock Patterns</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>On a <code>3&times;3</code> grid of keys numbered <code>1&ndash;9</code>, an unlock pattern is a sequence of distinct keys. Count how many valid patterns use between <code>m</code> and <code>n</code> keys (inclusive), obeying the phone&rsquo;s <strong>skip rule</strong>.</p>
+<ul>
+  <li>The <strong>skip rule:</strong> to move directly from key <code>a</code> to key <code>b</code>, if a third key lies exactly on the straight segment between them (e.g. <code>2</code> sits between <code>1</code> and <code>3</code>), that middle key must have <em>already been visited</em>.</li>
+  <li>Keys cannot repeat within a pattern.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>m = 1, n = 2</code> the code returns <code>65</code> (computed by running it): all <code>9</code> single-key patterns, plus <code>56</code> two-key patterns. Why <code>56</code> and not <code>9 &times; 8 = 72</code>? Sixteen ordered pairs are blocked because a key sits between them with nothing visited yet &mdash; the <strong>twelve</strong> straight jumps (the six lines with a key in the middle: rows <code>1&ndash;3, 4&ndash;6, 7&ndash;9</code> and columns <code>1&ndash;7, 2&ndash;8, 3&ndash;9</code>, each direction) plus the <strong>four</strong> diagonals through the center (<code>1&ndash;9, 3&ndash;7</code>, each direction) &mdash; 12 + 4 = <code>16</code>, leaving <code>72 - 16 = 56</code>. Summing every length from <code>1</code> to <code>9</code> gives <code>389497</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>DFS from each starting key, pruning with a &ldquo;skip&rdquo; table.</strong> Precompute <code>skip[a][b]</code> = the key that lies on the straight line strictly between <code>a</code> and <code>b</code> (0 if none). During the walk, a move to an unvisited <code>next</code> is legal when either no key lies between (<code>skip == 0</code>) or the in-between key is already visited. <strong>Exploit symmetry to cut the work by roughly 3&times; (three representative starts instead of nine):</strong> the four corners are interchangeable, as are the four edge-midpoints, so we only DFS from key <code>1</code> (a corner), key <code>2</code> (an edge), and key <code>5</code> (the center), then multiply the corner and edge totals by <code>4</code>.</p>
+
+<pre><span class="kw">private</span> <span class="kw">int</span>[][] skip = <span class="kw">new</span> <span class="kw">int</span>[<span class="num">10</span>][<span class="num">10</span>];
+<span class="kw">private</span> <span class="kw">boolean</span>[] visited = <span class="kw">new</span> <span class="kw">boolean</span>[<span class="num">10</span>];
+
+<span class="kw">public</span> <span class="kw">int</span> <span class="fn">numberOfPatterns</span>(<span class="kw">int</span> m, <span class="kw">int</span> n) {
+    <span class="cm">// skip[a][b] = the key lying on the straight segment between a and b</span>
+    skip[<span class="num">1</span>][<span class="num">3</span>] = skip[<span class="num">3</span>][<span class="num">1</span>] = <span class="num">2</span>;
+    skip[<span class="num">1</span>][<span class="num">7</span>] = skip[<span class="num">7</span>][<span class="num">1</span>] = <span class="num">4</span>;
+    skip[<span class="num">3</span>][<span class="num">9</span>] = skip[<span class="num">9</span>][<span class="num">3</span>] = <span class="num">6</span>;
+    skip[<span class="num">7</span>][<span class="num">9</span>] = skip[<span class="num">9</span>][<span class="num">7</span>] = <span class="num">8</span>;
+    skip[<span class="num">2</span>][<span class="num">8</span>] = skip[<span class="num">8</span>][<span class="num">2</span>] = <span class="num">5</span>;
+    skip[<span class="num">4</span>][<span class="num">6</span>] = skip[<span class="num">6</span>][<span class="num">4</span>] = <span class="num">5</span>;
+    skip[<span class="num">1</span>][<span class="num">9</span>] = skip[<span class="num">9</span>][<span class="num">1</span>] = <span class="num">5</span>;
+    skip[<span class="num">3</span>][<span class="num">7</span>] = skip[<span class="num">7</span>][<span class="num">3</span>] = <span class="num">5</span>;
+    <span class="kw">int</span> total = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> len = m; len &lt;= n; len++) {
+        <span class="cm">// symmetry: 1 stands for all 4 corners, 2 for all 4 edges</span>
+        total += <span class="fn">dfs</span>(<span class="num">1</span>, len - <span class="num">1</span>) * <span class="num">4</span>;
+        total += <span class="fn">dfs</span>(<span class="num">2</span>, len - <span class="num">1</span>) * <span class="num">4</span>;
+        total += <span class="fn">dfs</span>(<span class="num">5</span>, len - <span class="num">1</span>);      <span class="cm">// center is unique</span>
+    }
+    <span class="kw">return</span> total;
+}
+<span class="cm">// remaining = how many more keys still to place after `cur`</span>
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">dfs</span>(<span class="kw">int</span> cur, <span class="kw">int</span> remaining) {
+    <span class="kw">if</span> (remaining == <span class="num">0</span>) <span class="kw">return</span> <span class="num">1</span>;      <span class="cm">// reached the target length</span>
+    visited[cur] = <span class="kw">true</span>;
+    <span class="kw">int</span> count = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> next = <span class="num">1</span>; next &lt;= <span class="num">9</span>; next++) {
+        <span class="kw">int</span> mid = skip[cur][next];
+        <span class="cm">// legal if unvisited AND (nothing between, or the middle is visited)</span>
+        <span class="kw">if</span> (!visited[next] &amp;&amp; (mid == <span class="num">0</span> || visited[mid]))
+            count += <span class="fn">dfs</span>(next, remaining - <span class="num">1</span>);
+    }
+    visited[cur] = <span class="kw">false</span>;             <span class="cm">// backtrack</span>
+    <span class="kw">return</span> count;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n!)</code> in the worst case over the <code>9</code> keys (the search tree of distinct-key sequences up to length <code>n</code>), but with a tiny constant &mdash; only <code>9</code> keys, and the <code>&times;4</code> symmetry cuts the explored subtrees to three roots. Space <code>O(1)</code> beyond recursion depth (the fixed <code>10&times;10</code> skip table and <code>visited</code> flags).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>The skip rule is the whole problem.</strong> A move is blocked <em>only</em> when a key lies exactly between and is not yet visited; adjacent keys and knight-style moves (e.g. <code>1&rarr;6</code>) never skip anything. Forgetting the <code>visited[mid]</code> exception over-blocks and undercounts. <strong>Center diagonals skip the center.</strong> <code>1&harr;9</code> and <code>3&harr;7</code> pass through <code>5</code> &mdash; a commonly missed entry in the skip table. <strong>Symmetry factor is 4, applied to corners and edges only.</strong> The center (<code>5</code>) is its own class and must <em>not</em> be multiplied. Getting this wrong is the top source of off-by-a-factor bugs; verify against a brute force. <strong>Reset <code>visited</code> on the way out.</strong> Because the counts for different starting keys share the array, the DFS must unmark <code>cur</code> before returning.</p></div>
+</div>
+
+
+<!-- PROBLEM: Word Search II -->
+<div class="card">
+<h2>Word Search II</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a grid of letters and a dictionary of words, return every dictionary word that can be spelled by a path of orthogonally adjacent cells (up/down/left/right), where no single cell is reused within one word.</p>
+<ul>
+  <li>Different words may reuse the same cells; the no-reuse rule applies within a single word&rsquo;s path.</li>
+  <li>Each found word should appear once in the result even if it can be formed by multiple paths.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for the board</p>
+<pre>o a t h
+e t a e
+i h k r
+n d x v</pre>
+<p>and the dictionary <code>["oath", "eat", "hker", "rvxk", "zzz", "oa"]</code>, the code returns <code>[eat, oa, oath, rvxk]</code> (computed by running it, then sorted for display). <code>oath</code> snakes <code>o(0,0)&rarr;a(0,1)&rarr;t(1,1)&rarr;h(2,1)</code>; <code>rvxk</code> walks <code>r(2,3)&rarr;v(3,3)&rarr;x(3,2)&rarr;k(2,2)</code>. <code>hker</code> is absent (no adjacent path) and <code>zzz</code> has no matching cells.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Load the dictionary into a Trie, then DFS the board once.</strong> A Trie lets a single traversal test <em>all</em> words simultaneously: as we step to a neighbouring cell we descend the Trie by that letter, and if there is no such child we abandon the branch immediately. When a Trie node marks the end of a word, we record it and null out its marker so it is never added twice. We mark a visited cell with a sentinel (<code>'#'</code>) before recursing and restore it afterward &mdash; classic backtracking. A final optimisation <strong>prunes</strong> exhausted Trie leaves (no children, no word) so later starting cells skip dead branches.</p>
+
+<pre><span class="kw">class</span> <span class="type">TrieNode</span> {
+    <span class="type">TrieNode</span>[] children = <span class="kw">new</span> <span class="type">TrieNode</span>[<span class="num">26</span>];
+    <span class="type">String</span> word = <span class="kw">null</span>;   <span class="cm">// non-null only at a word's last letter</span>
+}
+<span class="kw">private</span> <span class="type">TrieNode</span> <span class="fn">buildTrie</span>(<span class="type">String</span>[] words) {
+    <span class="type">TrieNode</span> root = <span class="kw">new</span> <span class="type">TrieNode</span>();
+    <span class="kw">for</span> (<span class="type">String</span> w : words) {
+        <span class="type">TrieNode</span> cur = root;
+        <span class="kw">for</span> (<span class="kw">char</span> c : w.<span class="fn">toCharArray</span>()) {
+            <span class="kw">int</span> idx = c - <span class="str">'a'</span>;
+            <span class="kw">if</span> (cur.children[idx] == <span class="kw">null</span>) cur.children[idx] = <span class="kw">new</span> <span class="type">TrieNode</span>();
+            cur = cur.children[idx];
+        }
+        cur.word = w;   <span class="cm">// store the whole word at its terminal node</span>
+    }
+    <span class="kw">return</span> root;
+}
+<span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">String</span>&gt; <span class="fn">findWords</span>(<span class="kw">char</span>[][] board, <span class="type">String</span>[] words) {
+    <span class="type">List</span>&lt;<span class="type">String</span>&gt; res = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+    <span class="type">TrieNode</span> root = <span class="fn">buildTrie</span>(words);
+    <span class="kw">for</span> (<span class="kw">int</span> r = <span class="num">0</span>; r &lt; board.length; r++)
+        <span class="kw">for</span> (<span class="kw">int</span> c = <span class="num">0</span>; c &lt; board[<span class="num">0</span>].length; c++)
+            <span class="fn">dfs</span>(board, r, c, root, res);
+    <span class="kw">return</span> res;
+}
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">dfs</span>(<span class="kw">char</span>[][] b, <span class="kw">int</span> r, <span class="kw">int</span> c,
+                 <span class="type">TrieNode</span> node, <span class="type">List</span>&lt;<span class="type">String</span>&gt; res) {
+    <span class="kw">char</span> ch = b[r][c];
+    <span class="kw">if</span> (ch == <span class="str">'#'</span>) <span class="kw">return</span>;               <span class="cm">// already on the current path</span>
+    <span class="type">TrieNode</span> nxt = node.children[ch - <span class="str">'a'</span>];
+    <span class="kw">if</span> (nxt == <span class="kw">null</span>) <span class="kw">return</span>;             <span class="cm">// no dictionary word goes this way</span>
+    <span class="kw">if</span> (nxt.word != <span class="kw">null</span>) {              <span class="cm">// a full word ends here</span>
+        res.<span class="fn">add</span>(nxt.word);
+        nxt.word = <span class="kw">null</span>;                 <span class="cm">// clear -&gt; automatic de-duplication</span>
+    }
+    b[r][c] = <span class="str">'#'</span>;                       <span class="cm">// mark visited</span>
+    <span class="kw">if</span> (r &gt; <span class="num">0</span>)               <span class="fn">dfs</span>(b, r - <span class="num">1</span>, c, nxt, res);
+    <span class="kw">if</span> (r &lt; b.length - <span class="num">1</span>)    <span class="fn">dfs</span>(b, r + <span class="num">1</span>, c, nxt, res);
+    <span class="kw">if</span> (c &gt; <span class="num">0</span>)               <span class="fn">dfs</span>(b, r, c - <span class="num">1</span>, nxt, res);
+    <span class="kw">if</span> (c &lt; b[<span class="num">0</span>].length - <span class="num">1</span>) <span class="fn">dfs</span>(b, r, c + <span class="num">1</span>, nxt, res);
+    b[r][c] = ch;                        <span class="cm">// restore (backtrack)</span>
+    <span class="cm">// prune a dead leaf so later starts skip it</span>
+    <span class="kw">boolean</span> empty = <span class="kw">true</span>;
+    <span class="kw">for</span> (<span class="type">TrieNode</span> t : nxt.children) <span class="kw">if</span> (t != <span class="kw">null</span>) { empty = <span class="kw">false</span>; <span class="kw">break</span>; }
+    <span class="kw">if</span> (empty &amp;&amp; nxt.word == <span class="kw">null</span>) node.children[ch - <span class="str">'a'</span>] = <span class="kw">null</span>;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(M &middot; N &middot; 4 &middot; 3<sup>L-1</sup>)</code> where the board is <code>M &times; N</code> and <code>L</code> is the longest word: each of the <code>M&middot;N</code> starts branches to <code>4</code> neighbours and then <code>3</code> (can&rsquo;t revisit the cell it came from) up to depth <code>L</code>. Space <code>O(K)</code> for the Trie (<code>K</code> = total letters in the dictionary) plus <code>O(L)</code> recursion depth.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Restore the cell after recursing.</strong> The <code>b[r][c] = '#'</code> / <code>b[r][c] = ch</code> pair is the backtracking heart; forgetting to restore corrupts other words&rsquo; paths and silently drops answers. <strong>De-duplicate at the node, not with a post-filter.</strong> Setting <code>nxt.word = null</code> after collecting keeps the result unique without a separate <code>Set</code>. <strong>Trie beats per-word DFS.</strong> Searching each word independently is <code>O(W &middot; M &middot; N &middot; 4<sup>L</sup>)</code>; the shared Trie traverses the board once and prunes across all words at once. <strong>Prune exhausted branches.</strong> Nulling dead leaves keeps the Trie shrinking as words are found &mdash; a real speedup on large dictionaries and a favourite follow-up. <strong>Store the word at the terminal node</strong> so you don&rsquo;t have to reconstruct the path string on every hit.</p></div>
+</div>
+
+
+<!-- PROBLEM: Word Squares -->
+<div class="card">
+<h2>Word Squares</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a list of same-length words, build every <em>word square</em>: a sequence of words arranged as rows so that the <code>k</code>-th row and the <code>k</code>-th column read as the same word. A square of <code>k</code>-letter words has <code>k</code> rows.</p>
+<ul>
+  <li>Words may repeat within a square unless the input list forbids it (this version allows reuse, since the same word can legitimately be several rows).</li>
+  <li>The symmetry constraint means once the first <code>t</code> rows are fixed, the required prefix of every later row is determined by the columns already laid down.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>["area", "lead", "wall", "lady", "ball"]</code> the code returns <code>2</code> squares (computed by running it):</p>
+<pre>w a l l      b a l l
+a r e a      a r e a
+l e a d      l e a d
+l a d y      l a d y</pre>
+<p>Read either grid down the columns and you get the same four words as across the rows. Both squares share the tail <code>area / lead / lady</code>; only the first row differs (<code>wall</code> vs <code>ball</code>), because column <code>0</code> must itself spell a listed word (<code>wall</code> or <code>ball</code>).</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Backtrack row by row, using a prefix index to propose only viable next rows.</strong> Precompute a map from every prefix (including the empty prefix) to the list of words having it. When we are about to place row <code>step</code>, the symmetry constraint fixes its required prefix: reading down column <code>step</code> across the rows already placed spells the first <code>step</code> letters that the new row must begin with. We query the prefix map for exactly those words &mdash; no scanning the whole dictionary &mdash; try each, recurse, and undo. When <code>step</code> reaches the word length, all columns are automatically words too, so we record the square.</p>
+
+<pre><span class="kw">private</span> <span class="type">Map</span>&lt;<span class="type">String</span>, <span class="type">List</span>&lt;<span class="type">String</span>&gt;&gt; prefixIndex;
+
+<span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">List</span>&lt;<span class="type">String</span>&gt;&gt; <span class="fn">wordSquares</span>(<span class="type">String</span>[] words) {
+    prefixIndex = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();
+    <span class="kw">for</span> (<span class="type">String</span> w : words)                      <span class="cm">// map every prefix -&gt; words</span>
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt;= w.<span class="fn">length</span>(); i++)
+            prefixIndex
+                .<span class="fn">computeIfAbsent</span>(w.<span class="fn">substring</span>(<span class="num">0</span>, i), k -&gt; <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;())
+                .<span class="fn">add</span>(w);
+    <span class="type">List</span>&lt;<span class="type">List</span>&lt;<span class="type">String</span>&gt;&gt; res = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+    <span class="kw">int</span> len = words[<span class="num">0</span>].<span class="fn">length</span>();
+    <span class="type">List</span>&lt;<span class="type">String</span>&gt; square = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+    <span class="kw">for</span> (<span class="type">String</span> w : words) {                    <span class="cm">// any word can be row 0</span>
+        square.<span class="fn">add</span>(w);
+        <span class="fn">backtrack</span>(square, len, res);
+        square.<span class="fn">remove</span>(square.<span class="fn">size</span>() - <span class="num">1</span>);
+    }
+    <span class="kw">return</span> res;
+}
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">backtrack</span>(<span class="type">List</span>&lt;<span class="type">String</span>&gt; square, <span class="kw">int</span> len,
+                       <span class="type">List</span>&lt;<span class="type">List</span>&lt;<span class="type">String</span>&gt;&gt; res) {
+    <span class="kw">int</span> step = square.<span class="fn">size</span>();
+    <span class="kw">if</span> (step == len) {                        <span class="cm">// all rows placed -&gt; columns are words too</span>
+        res.<span class="fn">add</span>(<span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;(square));
+        <span class="kw">return</span>;
+    }
+    <span class="cm">// column `step` read down the placed rows is the next row's prefix</span>
+    <span class="type">StringBuilder</span> pre = <span class="kw">new</span> <span class="type">StringBuilder</span>();
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; step; i++) pre.<span class="fn">append</span>(square.<span class="fn">get</span>(i).<span class="fn">charAt</span>(step));
+    <span class="kw">for</span> (<span class="type">String</span> cand : prefixIndex.<span class="fn">getOrDefault</span>(pre.<span class="fn">toString</span>(), <span class="type">List</span>.<span class="fn">of</span>())) {
+        square.<span class="fn">add</span>(cand);
+        <span class="fn">backtrack</span>(square, len, res);
+        square.<span class="fn">remove</span>(square.<span class="fn">size</span>() - <span class="num">1</span>);  <span class="cm">// undo</span>
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(W &middot; L &middot; 26<sup>L</sup>)</code> in the worst case for <code>W</code> words of length <code>L</code>, but the prefix index makes it far faster in practice by only ever proposing words that fit the fixed prefix. Space <code>O(W &middot; L)</code> for the prefix index (each word contributes <code>L + 1</code> prefixes) plus <code>O(L)</code> recursion depth.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>The next-row prefix comes from the column.</strong> At step <code>t</code> the prefix is <code>square[0].charAt(t), &hellip;, square[t-1].charAt(t)</code> &mdash; reading <em>down column <code>t</code></em>, not along a row. Mixing up the index (using <code>charAt(i)</code> instead of <code>charAt(step)</code>) is the signature bug. <strong>Index prefixes, don&rsquo;t rescan.</strong> Filtering the whole word list at each step is <code>O(W)</code> per node; the prefix map (or a Trie) turns candidate lookup into <code>O(1)</code>-ish and is the point of the problem. <strong>Copy the square when recording.</strong> Add <code>new ArrayList&lt;&gt;(square)</code>, not the live list, or every stored result mutates as backtracking continues. <strong>Include the empty prefix.</strong> Indexing <code>i</code> from <code>0</code> means the empty string maps to all words &mdash; harmless here since row 0 is seeded by the outer loop, but essential if you instead start backtracking from an empty square.</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_problems_sorting.html">&lsaquo; Sorting &amp; Searching</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_linkedlists.html">Linked Lists &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

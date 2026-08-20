@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mobile System Design — Offline-First, Sync &amp; Conflict Resolution</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --sw: 260px;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+#sb {
+  width: var(--sw);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; bottom: 0;
+  overflow-y: auto; z-index: 100;
+  transition: width .3s ease;
+}
+#sb::-webkit-scrollbar { width: 4px; }
+#sb::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.sbh {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.sbt { font-size: 13px; font-weight: 700; color: var(--blue-d); text-transform: uppercase; letter-spacing: 1px; }
+.sbs { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.ng { padding: 12px 8px 0; }
+.ngl { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 6px; }
+.ni {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: var(--text2);
+  transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+}
+.ni:hover { background: var(--bg3); color: var(--text); }
+.ni.active { background: var(--blue-l); color: var(--blue-d); font-weight: 600; }
+.ni-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.ni-text { flex: 1; font-size: 12px; }
+.badge { margin-left: auto; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+.bh { background: var(--red-l); color: var(--red); }
+.bg { background: var(--green-l); color: var(--green); }
+.bp { background: var(--purple-l); color: var(--purple); }
+.bt { background: var(--teal-l); color: var(--teal); }
+.bo { background: var(--orange-l); color: var(--orange); }
+
+/* MAIN — normal document flow, centered like the rest of the book */
+#main { background: var(--bg); }
+.container { max-width: 1080px; margin: 0 auto; padding: 20px 20px 0; }
+
+/* TOP SECTION NAV (site style, sticky) */
+.nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; position: sticky; top: 0; z-index: 100; background: var(--bg); padding: 14px 0; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+.nav-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-size: 12.5px; font-weight: 600; font-family: 'Inter', sans-serif; transition: all .2s; }
+.nav-btn:hover { background: var(--bg3); color: var(--text); }
+.nav-btn.active { background: var(--blue-l); color: var(--blue-d); border-color: var(--blue); }
+
+/* HEADER */
+.ph {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px;
+  border-radius: var(--r);
+  margin: 8px 0 4px;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #93c5fd; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 650px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+.sec { padding: 28px 4px; display: none; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: #fff; border-radius: var(--r); margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--blue-l); color: var(--blue-d); font-size: 11px; font-weight: 500; margin: 2px; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* INTERVIEW QUOTE */
+.iq {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--text2);
+  font-size: 13px;
+  position: relative;
+}
+.iq::before {
+  content: 'SAY THIS';
+  position: absolute;
+  top: -8px; left: 14px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  background: var(--blue);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+h4.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* SKILL BOX */
+.skill-box {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 18px; margin: 10px 0; box-shadow: var(--shadow-sm);
+}
+.skill-box h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.skill-box ul { padding-left: 18px; font-size: 13px; color: var(--text2); }
+.skill-box li { margin-bottom: 4px; }
+
+/* SVG CONTAINERS */
+.svg-container {
+  margin: 20px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+.svg-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* PROGRESS */
+.prog { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.pc { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow-sm); text-align: center; }
+.pc .num { font-size: 28px; font-weight: 800; color: var(--blue-d); }
+.pc .lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg3); padding: 1px 5px; border-radius: 4px; color: var(--blue-d); }
+
+pre, pre.codeblock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+  line-height: 1.6;
+  color: var(--text2);
+  white-space: pre;
+}
+pre code { background: none; padding: 0; color: inherit; font-size: 12px; }
+
+/* LIST STYLING */
+.content-list { padding-left: 20px; margin: 8px 0; }
+.content-list li { margin-bottom: 6px; font-size: 13px; color: var(--text2); }
+.content-list li strong { color: var(--text); }
+
+/* DECISION GRID */
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.decision-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.decision-item h5 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-d);
+  margin-bottom: 6px;
+}
+.decision-item p {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.decision-item .di-key {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+@media (max-width: 768px) {
+  #sb { width: 0; overflow: hidden; }
+  #main { left: 0; }
+  .sec { padding: 20px 16px; }
+  .ph { padding: 24px 16px; }
+}
+a.lc { color: var(--blue); text-decoration: none; font-weight: 500; }
+a.lc:hover { text-decoration: underline; color: var(--blue-d); }
+</style>
+
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<style id="msd-code">
+/* Namespaced syntax highlight — scoped to pre elements so it never clashes with .pc .num etc. */
+pre .kw{color:#7c3aed;font-weight:600}
+pre .cm{color:#64748b;font-style:italic}
+pre .str{color:#0d9488}
+pre .num{color:#ea580c}
+pre .fn{color:#2563eb}
+/* Stepper (namespaced msd_) */
+#msd-stepper{border:1px solid var(--border);border-radius:var(--r);background:#fff;box-shadow:var(--shadow-sm);padding:16px;margin:16px 0}
+#msd-stepper .msd-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+#msd-stepper button{padding:8px 16px;border-radius:8px;border:1px solid var(--blue);background:var(--blue);color:#fff;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer}
+#msd-stepper button.msd-sec{background:#fff;color:var(--blue-d)}
+#msd-stepper button:disabled{opacity:.45;cursor:not-allowed}
+#msd-stepper .msd-progress{font-size:11px;color:var(--text3);font-weight:600;margin-left:auto}
+#msd-stepper .msd-readouts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+#msd-stepper .msd-ro{border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--bg3)}
+#msd-stepper .msd-ro .k{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text3)}
+#msd-stepper .msd-ro .v{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);margin-top:3px;word-break:break-word}
+#msd-stepper .msd-caption{border-left:4px solid var(--blue);background:var(--blue-l);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);min-height:40px}
+#msd-stepper .msd-node{transition:all .25s}
+#msd-stepper .msd-node.on rect{stroke-width:3}
+@media (max-width:768px){#msd-stepper .msd-readouts{grid-template-columns:1fr}}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part IX · Chapter 3 — <b>Mobile System Design</b></span><span class="bkspacer"></span></nav>
+
+<div id="main">
+<div class="container">
+
+<div class="ph">
+  <div class="htag">Mobile Engineering &middot; System Design</div>
+  <div class="ht">Designing <span>Mobile-Backed</span> Systems &mdash; Offline-First, Sync &amp; the Flaky-Network Reality</div>
+  <div class="hd">A phone is not a small server. It has a battery, a patchy network, limited RAM, and an app-store release cycle measured in days. This chapter ties the System Design Playbook to the mobile client: offline-first storage, background sync with conflict resolution, push, media upload, mobile-shaped APIs (BFF), secure token storage, and a full worked "offline notes / chat" design.</div>
+  <div class="hm">
+    <div class="chip">Design Tabs <b>9</b></div>
+    <div class="chip">Signature <b>Offline-first</b></div>
+    <div class="chip">Twist <b>Conflict resolution</b></div>
+    <div class="chip">Level <b>L5 / L6</b></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="go('mobile')">What Makes Mobile Different</button>
+  <button class="nav-btn" onclick="go('offline')">Offline-First Architecture</button>
+  <button class="nav-btn" onclick="go('sync')">Data Sync &amp; Pagination</button>
+  <button class="nav-btn" onclick="go('push')">Push Notifications</button>
+  <button class="nav-btn" onclick="go('media')">Media &amp; Image Upload</button>
+  <button class="nav-btn" onclick="go('api')">API Design for Mobile</button>
+  <button class="nav-btn" onclick="go('auth')">Auth &amp; Token Storage</button>
+  <button class="nav-btn" onclick="go('obs')">Observability</button>
+  <button class="nav-btn" onclick="go('design')">Worked Design: Chat / Notes</button>
+</nav>
+
+<!-- ============================ TAB 1: MOBILE ============================ -->
+<div class="sec active" id="tab-mobile">
+<h2 class="stitle">What Makes Mobile Different</h2>
+<div class="sdesc">Before any boxes-and-arrows, name the constraints a phone forces on you that a browser or another backend service never would. Get these out loud and the interviewer knows you actually ship mobile.</div>
+
+<p><strong>The analogy:</strong> a backend service is an office worker at a desk with fibre internet and unlimited coffee. A mobile client is a hiker &mdash; sometimes on WiFi at base camp, sometimes on one bar in a tunnel, sometimes fully offline in the woods &mdash; carrying a battery that must last all day and a backpack (RAM/disk) that's already half full of other apps. You cannot design for the hiker the way you design for the office worker.</p>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Every mobile design decision traces back to one of five constraints: <strong>flaky networks, battery, limited resources, app-store release latency, and version fragmentation.</strong> If you can recite these and show which one is driving each choice, you sound senior. If you design as if the phone is a reliable always-connected client, you sound like a backend engineer who has never owned a crash-rate dashboard.</p></div>
+
+<h3 class="sub">The five constraints (and what each forces)</h3>
+<table class="tbl">
+<thead><tr><th>Constraint</th><th>Reality on a phone</th><th>What it forces in the design</th></tr></thead>
+<tbody>
+<tr><td><strong>Flaky networks</strong></td><td>Latency 20ms&ndash;5s, drops mid-request, captive portals, radio wakes cost battery. Handoff WiFi&harr;cellular changes your IP.</td><td>Offline-first store, idempotent writes, retries with backoff + jitter, request coalescing, timeouts &amp; cancellation.</td></tr>
+<tr><td><strong>Battery</strong></td><td>Radio and CPU are the biggest drains. Waking the modem every few seconds destroys standby time.</td><td>Batch network calls, coalesce syncs, use OS schedulers (WorkManager / BGTaskScheduler), push instead of poll.</td></tr>
+<tr><td><strong>Limited resources</strong></td><td>RAM pressure kills backgrounded apps; disk is shared; CPU throttles under heat.</td><td>Paginate everything, bound caches, stream media, never hold the whole dataset in memory.</td></tr>
+<tr><td><strong>Release latency</strong></td><td>App-store review + user upgrade means a bug can live for <em>weeks</em>. You cannot "just deploy a fix" like a service.</td><td>Server-driven config &amp; feature flags, kill switches, forced-upgrade gates, backward-compatible APIs.</td></tr>
+<tr><td><strong>Version fragmentation</strong></td><td>At any moment many app versions and OS versions are live in the wild simultaneously.</td><td>Never break old clients: additive schema changes, versioned endpoints, capability negotiation.</td></tr>
+</tbody>
+</table>
+
+<h3 class="sub">Where the mobile client sits in the system</h3>
+<div class="svg-container">
+<svg viewBox="0 0 820 300" width="100%" role="img" aria-label="Mobile client, edge, and backend context diagram">
+  <defs>
+    <marker id="msd-ah" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#586479"/></marker>
+  </defs>
+  <!-- Device -->
+  <rect x="20" y="70" width="150" height="160" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="95" y="60" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">MOBILE CLIENT</text>
+  <rect x="38" y="90" width="114" height="30" rx="6" fill="#dbeafe" stroke="#2563eb"/><text x="95" y="109" text-anchor="middle" font-size="10" fill="#1e40af">UI (Compose / SwiftUI)</text>
+  <rect x="38" y="128" width="114" height="30" rx="6" fill="#dcfce7" stroke="#16a34a"/><text x="95" y="147" text-anchor="middle" font-size="9" fill="#166534">Local DB (source of truth)</text>
+  <rect x="38" y="166" width="114" height="30" rx="6" fill="#fef3c7" stroke="#d97706"/><text x="95" y="185" text-anchor="middle" font-size="10" fill="#92400e">Sync engine + outbox</text>
+  <rect x="38" y="204" width="114" height="18" rx="4" fill="#ede9fe" stroke="#7c3aed"/><text x="95" y="216" text-anchor="middle" font-size="9" fill="#5b21b6">secure token store</text>
+
+  <!-- flaky network -->
+  <path d="M175 150 q 30 -25 60 0 q 30 25 60 0" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="5 4"/>
+  <text x="235" y="128" text-anchor="middle" font-size="10" fill="#b91c1c">flaky network</text>
+
+  <!-- Edge / BFF -->
+  <rect x="300" y="95" width="150" height="110" rx="12" fill="#faf5ff" stroke="#7c3aed" stroke-width="2"/>
+  <text x="375" y="85" text-anchor="middle" font-size="12" font-weight="700" fill="#5b21b6">EDGE</text>
+  <rect x="315" y="108" width="120" height="26" rx="6" fill="#ede9fe" stroke="#7c3aed"/><text x="375" y="125" text-anchor="middle" font-size="9.5" fill="#5b21b6">CDN / TLS termination</text>
+  <rect x="315" y="140" width="120" height="26" rx="6" fill="#ede9fe" stroke="#7c3aed"/><text x="375" y="157" text-anchor="middle" font-size="9.5" fill="#5b21b6">BFF (mobile gateway)</text>
+  <rect x="315" y="172" width="120" height="26" rx="6" fill="#ede9fe" stroke="#7c3aed"/><text x="375" y="189" text-anchor="middle" font-size="9.5" fill="#5b21b6">auth / rate limit</text>
+
+  <!-- Backend -->
+  <rect x="500" y="70" width="150" height="160" rx="12" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="575" y="60" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">BACKEND</text>
+  <rect x="515" y="82" width="120" height="26" rx="6" fill="#dcfce7" stroke="#16a34a"/><text x="575" y="99" text-anchor="middle" font-size="9.5" fill="#166534">microservices</text>
+  <rect x="515" y="114" width="120" height="26" rx="6" fill="#dcfce7" stroke="#16a34a"/><text x="575" y="131" text-anchor="middle" font-size="9.5" fill="#166534">primary datastore</text>
+  <rect x="515" y="146" width="120" height="26" rx="6" fill="#dcfce7" stroke="#16a34a"/><text x="575" y="163" text-anchor="middle" font-size="9.5" fill="#166534">object store (media)</text>
+  <rect x="515" y="178" width="120" height="26" rx="6" fill="#dcfce7" stroke="#16a34a"/><text x="575" y="195" text-anchor="middle" font-size="9.5" fill="#166534">event bus</text>
+
+  <!-- Push provider -->
+  <rect x="700" y="110" width="100" height="80" rx="12" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="750" y="100" text-anchor="middle" font-size="11" font-weight="700" fill="#9a3412">PUSH</text>
+  <text x="750" y="145" text-anchor="middle" font-size="10" fill="#9a3412">APNs</text>
+  <text x="750" y="165" text-anchor="middle" font-size="10" fill="#9a3412">FCM</text>
+
+  <!-- arrows -->
+  <line x1="295" y1="150" x2="298" y2="150" stroke="#586479" marker-end="url(#msd-ah)"/>
+  <line x1="452" y1="150" x2="498" y2="150" stroke="#586479" marker-end="url(#msd-ah)"/>
+  <path d="M650 120 C 680 120, 690 130, 698 140" fill="none" stroke="#ea580c" marker-end="url(#msd-ah)"/>
+  <path d="M700 165 C 700 320, 440 220, 150 210" fill="none" stroke="#ea580c" stroke-dasharray="4 3" marker-end="url(#msd-ah)"/>
+  <text x="420" y="262" text-anchor="middle" font-size="9" fill="#9a3412">push wakes the app / delivers notification</text>
+</svg>
+</div>
+
+<div class="tip"><div class="tipl">TIP</div><p>Open a mobile design round by <em>partitioning responsibility</em>: "The phone owns local state and the UX; the edge/BFF owns shaping data for this client; the backend owns the source-of-truth business logic. Most of the hard problems live at the seam between the phone's local store and the backend's store &mdash; that's where sync and conflicts live." That sentence frames the whole interview.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Treating the network as reliable.</strong> The classic no-hire move is a design where the tap handler calls the API synchronously and shows a spinner. On a phone that spinner becomes a 5-second hang, a lost write on a dropped connection, and a duplicate write on the retry. If your write path doesn't survive "the request succeeded on the server but the response never came back," you haven't designed for mobile.</p></div>
+
+<div class="iq">"A phone is a partially-connected, resource-constrained client on a release cycle I can't hot-fix. So I design offline-first, make every write idempotent and retriable, batch to save battery, and keep the API additively versioned so old app versions in the wild never break."</div>
+
+<h3 class="sub">Interview angle</h3>
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Interviewers use "design X for mobile" to see whether you reach for the phone's constraints unprompted. Lead with the five constraints, then let them drive your architecture. The strongest candidates spell out their reasoning: "The reason I'm making the local DB the source of truth is the flaky-network constraint; the reason I'm batching is battery; the reason the API is additive-only is release latency." Mapping each choice to a constraint is the L5&rarr;L6 signal.</p></div>
+</div>
+
+<!-- ============================ TAB 2: OFFLINE ============================ -->
+<div class="sec" id="tab-offline">
+<h2 class="stitle">Offline-First Architecture</h2>
+<div class="sdesc">The single most important mobile pattern: the UI reads and writes the <em>local</em> store, and a background sync engine reconciles with the backend. The network becomes an optimization, not a dependency.</div>
+
+<p><strong>The analogy:</strong> think of the local database as your personal notebook and the server as the shared team wiki. You always write in your own notebook first (instant, works in a tunnel). Later, when you have signal, a helper copies your new pages up to the wiki and brings down anything others changed. You never make the user wait for the wiki to load before they can write a note.</p>
+
+<div class="ins"><div class="insl">INSIGHT</div><p><strong>Local store = source of truth for the UI.</strong> The UI never calls the network directly; it observes the local DB. Writes go to the local DB <em>and</em> an append-only <strong>outbox</strong> (mutation queue). A sync engine drains the outbox to the server and applies server changes back into the local DB. Result: the app is fully usable offline, feels instant (optimistic UI), and the network is just a background reconciler.</p></div>
+
+<h3 class="sub">The building blocks</h3>
+<div class="g2">
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">1</span><span class="ct">Local store</span><span class="db de">SQLITE</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>A real embedded DB &mdash; Room (Android) or Core Data / SwiftData / GRDB (iOS), both on SQLite. The UI observes it via a reactive stream (<code>Flow</code> / <code>@Query</code> / <code>NSFetchedResultsController</code>) so any local write instantly re-renders the screen.</p>
+</div></div>
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">2</span><span class="ct">Outbox / mutation queue</span><span class="db dm">DURABLE</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>An append-only table of pending changes, each with a client-generated <code>mutation_id</code> (idempotency key), the entity id, the base version it was made against, and a payload. Survives app kill. Drained in order.</p>
+</div></div>
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">3</span><span class="ct">Sync engine</span><span class="db dh">BACKGROUND</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Triggered by connectivity, app foreground, or an OS scheduler (WorkManager / BGTaskScheduler). Pushes the outbox, pulls a delta, resolves conflicts, updates local DB, clears applied mutations. Retries with backoff.</p>
+</div></div>
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">4</span><span class="ct">Sync metadata</span><span class="db de">CURSORS</span><span class="chv">&#9654;</span></div><div class="cb">
+<p>Per-entity <code>version</code> / <code>updated_at</code> and a <code>sync_token</code> (server cursor) so the next pull only fetches what changed. Covered in the Data Sync tab.</p>
+</div></div>
+</div>
+
+<h3 class="sub">Data flow — write path vs sync path</h3>
+<div class="svg-container">
+<svg viewBox="0 0 820 340" width="100%" role="img" aria-label="Offline-first write path and sync path">
+  <defs>
+    <marker id="msd-ah2" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#586479"/></marker>
+    <marker id="msd-ahg" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#16a34a"/></marker>
+  </defs>
+  <text x="20" y="30" font-size="12" font-weight="700" fill="#1e40af">WRITE PATH (synchronous, local, instant)</text>
+  <rect x="20" y="45" width="120" height="46" rx="8" fill="#dbeafe" stroke="#2563eb"/><text x="80" y="66" text-anchor="middle" font-size="10" fill="#1e40af">User taps</text><text x="80" y="80" text-anchor="middle" font-size="10" fill="#1e40af">"edit note"</text>
+  <rect x="190" y="45" width="130" height="46" rx="8" fill="#dcfce7" stroke="#16a34a"/><text x="255" y="66" text-anchor="middle" font-size="10" fill="#166534">Local DB write</text><text x="255" y="80" text-anchor="middle" font-size="10" fill="#166534">(optimistic)</text>
+  <rect x="370" y="45" width="130" height="46" rx="8" fill="#fef3c7" stroke="#d97706"/><text x="435" y="66" text-anchor="middle" font-size="10" fill="#92400e">Append to outbox</text><text x="435" y="80" text-anchor="middle" font-size="10" fill="#92400e">(mutation_id)</text>
+  <rect x="550" y="45" width="130" height="46" rx="8" fill="#dbeafe" stroke="#2563eb"/><text x="615" y="66" text-anchor="middle" font-size="10" fill="#1e40af">UI re-renders</text><text x="615" y="80" text-anchor="middle" font-size="10" fill="#1e40af">from local DB</text>
+  <line x1="140" y1="68" x2="188" y2="68" stroke="#586479" marker-end="url(#msd-ah2)"/>
+  <line x1="320" y1="68" x2="368" y2="68" stroke="#586479" marker-end="url(#msd-ah2)"/>
+  <line x1="500" y1="68" x2="548" y2="68" stroke="#586479" marker-end="url(#msd-ah2)"/>
+  <text x="360" y="112" text-anchor="middle" font-size="10" fill="#b91c1c" font-style="italic">No network on this path &mdash; works fully offline, returns in milliseconds.</text>
+
+  <line x1="20" y1="130" x2="800" y2="130" stroke="#e2e8f0"/>
+
+  <text x="20" y="160" font-size="12" font-weight="700" fill="#166534">SYNC PATH (asynchronous, background, network-dependent)</text>
+  <rect x="20" y="180" width="120" height="50" rx="8" fill="#fef3c7" stroke="#d97706"/><text x="80" y="200" text-anchor="middle" font-size="10" fill="#92400e">Sync engine</text><text x="80" y="215" text-anchor="middle" font-size="10" fill="#92400e">(on connectivity)</text>
+  <rect x="180" y="180" width="120" height="50" rx="8" fill="#fef3c7" stroke="#d97706"/><text x="240" y="200" text-anchor="middle" font-size="10" fill="#92400e">PUSH outbox</text><text x="240" y="215" text-anchor="middle" font-size="10" fill="#92400e">to server</text>
+  <rect x="340" y="180" width="140" height="50" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="410" y="200" text-anchor="middle" font-size="10" fill="#5b21b6">Server applies +</text><text x="410" y="215" text-anchor="middle" font-size="10" fill="#5b21b6">resolves conflicts</text>
+  <rect x="520" y="180" width="120" height="50" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="580" y="200" text-anchor="middle" font-size="10" fill="#5b21b6">PULL delta</text><text x="580" y="215" text-anchor="middle" font-size="10" fill="#5b21b6">since cursor</text>
+  <rect x="680" y="180" width="120" height="50" rx="8" fill="#dcfce7" stroke="#16a34a"/><text x="740" y="200" text-anchor="middle" font-size="10" fill="#166534">Merge into</text><text x="740" y="215" text-anchor="middle" font-size="10" fill="#166534">local DB</text>
+  <line x1="140" y1="205" x2="178" y2="205" stroke="#16a34a" marker-end="url(#msd-ahg)"/>
+  <line x1="300" y1="205" x2="338" y2="205" stroke="#16a34a" marker-end="url(#msd-ahg)"/>
+  <line x1="480" y1="205" x2="518" y2="205" stroke="#16a34a" marker-end="url(#msd-ahg)"/>
+  <line x1="640" y1="205" x2="678" y2="205" stroke="#16a34a" marker-end="url(#msd-ahg)"/>
+  <path d="M740 230 C 740 300, 255 300, 255 92" fill="none" stroke="#16a34a" stroke-dasharray="4 3" marker-end="url(#msd-ahg)"/>
+  <text x="470" y="292" text-anchor="middle" font-size="9" fill="#166534">reconciled values flow back into the same local DB the UI observes</text>
+</svg>
+</div>
+
+<h3 class="sub">Replayable walkthrough — an edit made offline, queued, then synced with a conflict</h3>
+<p>Press <strong>Step</strong> to advance one stage at a time. This is the exact story to narrate in an interview: an offline edit races an edit from another device, and the server resolves the conflict on sync. Watch the local value, the server value, and the outbox.</p>
+
+<div id="msd-stepper">
+  <div class="msd-controls">
+    <button id="msd-step" type="button">Step &rsaquo;</button>
+    <button id="msd-reset" class="msd-sec" type="button">Reset</button>
+    <label style="font-size:12px;color:var(--text2);display:inline-flex;align-items:center;gap:6px;">
+      Strategy:
+      <select id="msd-strategy" style="font-family:'Inter',sans-serif;font-size:12px;padding:4px 6px;border-radius:6px;border:1px solid var(--border);">
+        <option value="lww">Last-write-wins</option>
+        <option value="merge">Merge (version vectors)</option>
+      </select>
+    </label>
+    <span class="msd-progress" id="msd-prog">Step 0 / 6</span>
+  </div>
+
+  <div class="svg-container" style="margin:6px 0">
+  <svg viewBox="0 0 760 150" width="100%" role="img" aria-label="Offline sync stepper diagram">
+    <g id="msd-n-device" class="msd-node on"><rect x="15" y="35" width="150" height="80" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+      <text x="90" y="30" text-anchor="middle" font-size="10" font-weight="700" fill="#1e40af">DEVICE A (local)</text></g>
+    <g id="msd-n-outbox" class="msd-node"><rect x="215" y="35" width="150" height="80" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+      <text x="290" y="30" text-anchor="middle" font-size="10" font-weight="700" fill="#92400e">OUTBOX</text></g>
+    <g id="msd-n-net" class="msd-node"><rect x="415" y="35" width="150" height="80" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <text x="490" y="30" text-anchor="middle" font-size="10" font-weight="700" fill="#586479">NETWORK</text></g>
+    <g id="msd-n-server" class="msd-node"><rect x="615" y="35" width="130" height="80" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+      <text x="680" y="30" text-anchor="middle" font-size="10" font-weight="700" fill="#166534">SERVER</text></g>
+    <text id="msd-t-device" x="90" y="80" text-anchor="middle" font-size="10" fill="#1e40af">v1 "Buy milk"</text>
+    <text id="msd-t-outbox" x="290" y="80" text-anchor="middle" font-size="10" fill="#92400e">(empty)</text>
+    <text id="msd-t-net" x="490" y="80" text-anchor="middle" font-size="10" fill="#586479">online</text>
+    <text id="msd-t-server" x="680" y="80" text-anchor="middle" font-size="10" fill="#166534">v1 "Buy milk"</text>
+  </svg>
+  </div>
+
+  <div class="msd-readouts">
+    <div class="msd-ro"><div class="k">Local value</div><div class="v" id="msd-ro-local">v1 &middot; "Buy milk"</div></div>
+    <div class="msd-ro"><div class="k">Outbox</div><div class="v" id="msd-ro-queue">empty</div></div>
+    <div class="msd-ro"><div class="k">Server value</div><div class="v" id="msd-ro-server">v1 &middot; "Buy milk"</div></div>
+  </div>
+
+  <div class="msd-caption" id="msd-cap">Start state: Device A and the server agree on <b>v1 "Buy milk"</b>. Device is online, outbox empty. Press <b>Step</b> to begin.</div>
+</div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>The stepper shows the case people forget: a <em>second</em> device changes the same record while Device A is offline. When A reconnects it pushes a mutation whose <code>base_version</code> (v1) no longer matches the server (now v2). That mismatch is a conflict &mdash; and how you resolve it is the whole interview.</p></div>
+
+<h3 class="sub">Conflict resolution strategies</h3>
+<table class="tbl">
+<thead><tr><th>Strategy</th><th>How it decides</th><th>Good for</th><th>The catch</th></tr></thead>
+<tbody>
+<tr><td><strong>Last-write-wins (LWW)</strong></td><td>Highest timestamp (or highest version) wins; the other write is dropped.</td><td>Single-user-owned data, presence, "last known setting".</td><td>Silent data loss; clock skew makes "last" ambiguous across devices.</td></tr>
+<tr><td><strong>Field-level merge</strong></td><td>Merge non-overlapping fields; only truly co-edited fields conflict.</td><td>Records with independent fields (profile: name vs. avatar).</td><td>Needs per-field version tracking; two edits to the <em>same</em> field still conflict.</td></tr>
+<tr><td><strong>Version vectors</strong></td><td>Per-replica counters detect whether one edit <em>descends</em> from the other or they truly diverged.</td><td>True multi-device concurrency where you must detect, not guess.</td><td>Metadata grows with replicas; you still need a merge rule for genuine divergence.</td></tr>
+<tr><td><strong>CRDTs</strong></td><td>Data types (counters, sets, RGA text) mathematically merge with no conflict.</td><td>Collaborative text, counters, sets, shared docs.</td><td>Larger payloads/metadata; not every data shape has a natural CRDT.</td></tr>
+<tr><td><strong>Manual / user-choice</strong></td><td>Surface both versions, let the human pick or merge.</td><td>High-value irreplaceable content (a long note, a document).</td><td>UX cost; only worth it when losing data is unacceptable.</td></tr>
+</tbody>
+</table>
+
+<div class="note"><div class="notel">NOTE — LWW vs version vectors, the crisp difference</div><p>LWW asks <em>"which edit is newer?"</em> and throws the older one away. Version vectors ask a different question first: <em>"did these two edits actually happen concurrently, or did one build on the other?"</em> If one descends from the other, there's no conflict at all &mdash; just apply the newer. Only when the vectors are incomparable (genuine concurrent divergence) do you invoke a merge rule. LWW skips that detection step, which is why it can silently discard a legitimate change.</p></div>
+
+<pre><span class="cm">// Version-vector conflict detection (server-side, illustrative)</span>
+<span class="cm">// vv maps replicaId -&gt; counter. "dominates" = knows everything the other knows, and strictly more.</span>
+<span class="kw">fun</span> <span class="fn">resolve</span>(incoming: Change, current: Change): Resolution {
+    <span class="kw">val</span> inc = incoming.versionVector
+    <span class="kw">val</span> cur = current.versionVector
+    <span class="kw">return when</span> {
+        inc.<span class="fn">sameAs</span>(cur) -&gt; Resolution.<span class="fn">Ignore</span>              <span class="cm">// identical resend: no-op, idempotent</span>
+        inc.<span class="fn">dominates</span>(cur) -&gt; Resolution.<span class="fn">Accept</span>(incoming)   <span class="cm">// incoming is strictly newer</span>
+        cur.<span class="fn">dominates</span>(inc) -&gt; Resolution.<span class="fn">Ignore</span>            <span class="cm">// server already has a superset</span>
+        <span class="kw">else</span> -&gt; Resolution.<span class="fn">Conflict</span>(<span class="fn">merge</span>(incoming, current))     <span class="cm">// concurrent: must merge</span>
+    }
+}
+
+<span class="cm">// Compare over the union of keys, treating a missing replica as 0 &mdash; never structural equality.</span>
+<span class="kw">fun</span> VersionVector.<span class="fn">sameAs</span>(other: VersionVector): Boolean =
+    (<span class="kw">this</span>.keys + other.keys).<span class="fn">all</span> { (<span class="kw">this</span>[it] ?: <span class="num">0</span>) == (other[it] ?: <span class="num">0</span>) }
+
+<span class="cm">// dominates: mine &gt;= other on every replica (missing = 0) AND strictly greater somewhere.</span>
+<span class="kw">fun</span> VersionVector.<span class="fn">dominates</span>(other: VersionVector): Boolean {
+    <span class="kw">val</span> keys = <span class="kw">this</span>.keys + other.keys
+    <span class="kw">return</span> keys.<span class="fn">all</span> { (<span class="kw">this</span>[it] ?: <span class="num">0</span>) &gt;= (other[it] ?: <span class="num">0</span>) } &amp;&amp;
+           keys.<span class="fn">any</span> { (<span class="kw">this</span>[it] ?: <span class="num">0</span>) &gt; (other[it] ?: <span class="num">0</span>) }
+}
+</pre>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>"Just use LWW with the client timestamp."</strong> Client clocks are not trustworthy &mdash; they drift, users change time zones, some are set wrong by minutes. LWW keyed on client wall-clock lets a device with a fast clock always win and can resurrect deleted data. If you use LWW, key it on a <em>server-assigned</em> monotonic version or a hybrid logical clock, and state that explicitly. Naked client-timestamp LWW is a correctness bug, not a strategy.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Deletes are the sneakiest conflict.</strong> If a delete on one device races an edit on another, LWW may "win" the edit and the record comes back from the dead &mdash; or the delete wins and silently eats an edit. Use <strong>tombstones</strong> (soft-delete rows with their own version) so a delete is a normal versioned change that participates in conflict detection, and GC tombstones only after all replicas have seen them.</p></div>
+
+<div class="iq">"Local DB is the UI's source of truth; writes also append to a durable outbox keyed by a client-generated mutation_id so retries are idempotent. A background sync engine pushes the outbox with the base_version, and the server detects conflicts. For user-owned single records I'd use server-versioned last-write-wins; for genuinely concurrent multi-device edits I'd track version vectors and fall back to a field-level merge, surfacing a manual choice only for irreplaceable content."</div>
+
+<h3 class="sub">Interview angle</h3>
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>The interviewer often injects a conflict ("what if two devices edit the same note offline?"). Weak candidates hand-wave "the server decides." Strong candidates (1) name the <em>idempotency key</em> that makes retries safe, (2) distinguish <em>detecting</em> a conflict from <em>resolving</em> it, (3) pick a strategy matched to the data shape and justify it, and (4) call out deletes/tombstones and clock-skew unprompted. Say "there is no single right strategy &mdash; it depends on whether the data is single-owner, field-partitioned, or truly co-edited," then map each.</p></div>
+</div>
+
+<!-- ============================ TAB 3: SYNC ============================ -->
+<div class="sec" id="tab-sync">
+<h2 class="stitle">Data Sync &amp; Pagination</h2>
+<div class="sdesc">How the phone pulls "everything that changed since last time" cheaply, and how it lists large collections without loading them into RAM.</div>
+
+<p><strong>The analogy:</strong> you don't re-read the entire newspaper every morning &mdash; you read today's new pages. Delta sync is the same: the client remembers a bookmark (cursor) and asks the server only for changes since that bookmark.</p>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Two problems, two mechanisms. <strong>Delta sync</strong> = "give me everything that changed since my cursor" (a <code>sync_token</code> / high-water mark). <strong>Pagination</strong> = "give me this collection in bounded chunks" (cursor-based, never offset-based on mobile). Both exist to keep payloads small, memory bounded, and battery cheap.</p></div>
+
+<h3 class="sub">Delta sync with a sync token</h3>
+<ul class="content-list">
+<li><strong>High-water mark:</strong> the client stores the largest <code>updated_at</code> / server version it has seen. The pull request sends it; the server returns only rows changed after it, plus a new token.</li>
+<li><strong>Opaque cursor beats raw timestamp:</strong> return an opaque <code>sync_token</code> the server controls, so you can change the underlying implementation (add sharding, change the clock) without breaking clients in the wild.</li>
+<li><strong>Deletes must be explicit:</strong> a delta pull can't express "row X is gone" by omission &mdash; the client would keep the stale row forever. Return <strong>tombstones</strong> in the delta.</li>
+<li><strong>Idempotent + resumable:</strong> if the app is killed mid-sync, re-requesting the same token yields the same delta. Only advance the stored token after the batch is durably applied.</li>
+</ul>
+
+<pre><span class="cm">// Delta pull response — small, resumable, tombstone-aware</span>
+{
+  <span class="str">"changed"</span>: [
+    { <span class="str">"id"</span>: <span class="str">"note_42"</span>, <span class="str">"version"</span>: <span class="num">7</span>, <span class="str">"title"</span>: <span class="str">"Buy oat milk"</span>, <span class="str">"deleted"</span>: <span class="kw">false</span> }
+  ],
+  <span class="str">"tombstones"</span>: [
+    { <span class="str">"id"</span>: <span class="str">"note_17"</span>, <span class="str">"version"</span>: <span class="num">4</span>, <span class="str">"deleted"</span>: <span class="kw">true</span> }
+  ],
+  <span class="str">"next_sync_token"</span>: <span class="str">"eyJ2IjoxMDI0fQ"</span>,   <span class="cm">// opaque; advance ONLY after apply</span>
+  <span class="str">"has_more"</span>: <span class="kw">true</span>                        <span class="cm">// server chunks large deltas</span>
+}
+</pre>
+
+<h3 class="sub">Pagination: cursor, not offset</h3>
+<table class="tbl">
+<thead><tr><th></th><th>Offset pagination (<code>?page=3</code>)</th><th>Cursor / keyset (<code>?after=cursor</code>)</th></tr></thead>
+<tbody>
+<tr><td>Stable under inserts?</td><td>No &mdash; a new row shifts everything; users see duplicates or skips</td><td>Yes &mdash; anchored to a real row key</td></tr>
+<tr><td>Cost at deep pages</td><td>O(offset) &mdash; DB scans and discards N rows</td><td>O(log n) index seek</td></tr>
+<tr><td>Infinite scroll fit</td><td>Poor</td><td>Excellent</td></tr>
+<tr><td>Jump to page N?</td><td>Easy</td><td>Not directly (rarely needed on mobile)</td></tr>
+</tbody>
+</table>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Feeds are almost always cursor/keyset-paginated on mobile. Offset pagination on an infinite-scroll feed produces the notorious "I saw that post twice / a post vanished" bug whenever items are inserted at the head between page loads.</p></div>
+
+<h3 class="sub">Full-sync vs delta-sync — and the reset case</h3>
+<ul class="content-list">
+<li><strong>Initial / cold start:</strong> a bounded full sync (paginated) to hydrate the local DB, then switch to deltas.</li>
+<li><strong>Token too old / server pruned history:</strong> the server can reply "token expired &mdash; do a full resync." Clients must handle this gracefully (rehydrate, don't crash).</li>
+<li><strong>Compaction:</strong> the server can't keep every historical change forever; define a retention window for the change log and a full-resync fallback beyond it.</li>
+</ul>
+
+<div class="tip"><div class="tipl">TIP</div><p>Sync on the right triggers, not a timer: app foreground, connectivity regained, a push "something changed" ping (silent push), and a user-initiated pull-to-refresh. Polling on a fixed interval is a battery anti-pattern &mdash; prefer server-signalled sync.</p></div>
+
+<h3 class="sub">Interview angle</h3>
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Expect "how does the client know what changed?" and "how do you paginate the feed?" Nail three things: an <strong>opaque server-controlled cursor</strong> (not a raw timestamp), <strong>tombstones for deletes</strong> (omission can't express deletion in a delta), and <strong>advance-token-only-after-apply</strong> for crash safety. For lists, say "keyset, not offset" and give the duplicate-post reason. Bonus: mention the "token expired &rarr; full resync" fallback &mdash; it shows you've operated a real sync system.</p></div>
+</div>
+
+<!-- ============================ TAB 4: PUSH ============================ -->
+<div class="sec" id="tab-push">
+<h2 class="stitle">Push Notifications (APNs / FCM)</h2>
+<div class="sdesc">How a server wakes an app or shows a banner without the phone polling &mdash; the battery-friendly way to say "something happened."</div>
+
+<p><strong>The analogy:</strong> polling is calling the post office every five minutes to ask "any mail?"; push is the postman ringing your bell only when mail arrives. Push exists because polling drains the battery and wastes the radio.</p>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>You never talk to the device's radio directly. You hand a payload to the platform push service &mdash; <strong>APNs</strong> (Apple) or <strong>FCM</strong> (Firebase/Android) &mdash; which owns a single persistent, battery-optimized connection to every device and delivers on your behalf. Your job is: manage <em>device tokens</em>, and send the right payload to the right token.</p></div>
+
+<h3 class="sub">End-to-end architecture</h3>
+<div class="svg-container">
+<svg viewBox="0 0 800 250" width="100%" role="img" aria-label="Push notification architecture">
+  <defs><marker id="msd-ahp" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#586479"/></marker></defs>
+  <rect x="15" y="90" width="130" height="60" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/><text x="80" y="115" text-anchor="middle" font-size="10" fill="#1e40af">App registers,</text><text x="80" y="130" text-anchor="middle" font-size="10" fill="#1e40af">gets device token</text>
+  <rect x="195" y="90" width="130" height="60" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/><text x="260" y="110" text-anchor="middle" font-size="10" fill="#166534">Your backend</text><text x="260" y="125" text-anchor="middle" font-size="10" fill="#166534">token registry</text><text x="260" y="140" text-anchor="middle" font-size="9" fill="#166534">(token &rarr; userId)</text>
+  <rect x="375" y="90" width="130" height="60" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/><text x="440" y="115" text-anchor="middle" font-size="10" fill="#9a3412">Push service</text><text x="440" y="130" text-anchor="middle" font-size="10" fill="#9a3412">APNs / FCM</text>
+  <rect x="555" y="90" width="130" height="60" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/><text x="620" y="115" text-anchor="middle" font-size="10" fill="#1e40af">Device OS</text><text x="620" y="130" text-anchor="middle" font-size="10" fill="#1e40af">shows / wakes app</text>
+  <path d="M80 90 C 80 40, 620 40, 620 88" fill="none" stroke="#2563eb" stroke-dasharray="4 3" marker-end="url(#msd-ahp)"/><text x="350" y="34" text-anchor="middle" font-size="9" fill="#2563eb">1. token issued by OS, uploaded to backend</text>
+  <line x1="145" y1="120" x2="193" y2="120" stroke="#586479" marker-end="url(#msd-ahp)"/>
+  <line x1="325" y1="120" x2="373" y2="120" stroke="#586479" marker-end="url(#msd-ahp)"/><text x="349" y="112" text-anchor="middle" font-size="9" fill="#586479">2. send</text>
+  <line x1="505" y1="120" x2="553" y2="120" stroke="#586479" marker-end="url(#msd-ahp)"/><text x="529" y="112" text-anchor="middle" font-size="9" fill="#586479">3. deliver</text>
+  <text x="400" y="200" text-anchor="middle" font-size="10" fill="#b91c1c" font-style="italic">Tokens rotate &amp; expire. Push service returns "unregistered" &rarr; you must prune dead tokens.</text>
+</svg>
+</div>
+
+<h3 class="sub">Notification vs data (silent) push</h3>
+<ul class="content-list">
+<li><strong>Alert / notification push:</strong> OS shows a banner even if the app is dead. Best-effort, may be throttled/coalesced by the OS. Use for user-facing messages.</li>
+<li><strong>Silent / data push:</strong> no banner; wakes the app briefly to sync in the background ("you have new data, come pull it"). Heavily rate-limited by the OS; never rely on 100% delivery.</li>
+<li><strong>Pattern &mdash; push to notify, pull to fetch:</strong> keep payloads tiny and send an ID, not the content. The app then does an authenticated delta sync to fetch the real data. This keeps secrets out of the push channel and survives dropped pushes (the next foreground sync catches up).</li>
+</ul>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Treating push as a reliable message queue.</strong> Push is best-effort: the OS may drop, delay, coalesce, or throttle it; the device may be off for days; tokens rotate. If your feature <em>requires</em> the payload to arrive, you've built a correctness bug. Push is a <em>hint to sync</em>, and the durable state lives in your backend + the client's delta pull. Say this and you avoid the most common push anti-pattern.</p></div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Token hygiene is a real operational task: tokens change on reinstall/restore/OS-update, and sending to a dead token wastes quota. Store <code>token &rarr; userId &rarr; platform</code>, handle the "unregistered/invalid token" response by deleting the row, and de-dupe when one user has many devices (fan-out to all their tokens).</p></div>
+
+<div class="iq">"I register the device token on login and store token&rarr;user&rarr;platform. To notify, I look up the user's tokens and send a small payload &mdash; an event id, not the content &mdash; through APNs/FCM. The client treats the push as a signal to run a delta sync. Push is best-effort, so correctness never depends on delivery; the foreground sync is the backstop. I prune tokens on 'unregistered' responses."</div>
+
+<h3 class="sub">Interview angle</h3>
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>The trap the interviewer is fishing for: do you think push is reliable? Volunteer "push is best-effort; I use it as a sync trigger, not a delivery guarantee, and keep the payload to an id so the client pulls the real content over an authenticated channel." Then show operational awareness: token registry, rotation, pruning dead tokens, per-user multi-device fan-out, and OS throttling of silent pushes. That combination reads as someone who has actually run push at scale.</p></div>
+</div>
+
+<!-- ============================ TAB 5: MEDIA ============================ -->
+<div class="sec" id="tab-media">
+<h2 class="stitle">Media &amp; Image Upload / Handling</h2>
+<div class="sdesc">Photos and video are big, uploads happen on flaky links, and every screen wants a different size. Design the pipeline so a 12 MB photo survives a tunnel and a thumbnail costs kilobytes.</div>
+
+<p><strong>The analogy:</strong> shipping a large parcel. You don't hand the whole thing to a courier in one go over a shaky handoff &mdash; you get a shipping label first (pre-signed URL), send it in trackable segments (chunked/resumable), and the warehouse makes small catalogue photos (server-side variants) so browsers don't download the full-res original.</p>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Three moves define good mobile media: <strong>(1) upload directly to object storage via a pre-signed URL</strong> (don't proxy bytes through your API servers), <strong>(2) make uploads resumable and idempotent</strong> so a dropped connection resumes instead of restarting, and <strong>(3) generate size variants server-side + serve via CDN</strong> so the client fetches the smallest image that fits the view.</p></div>
+
+<h3 class="sub">Upload path</h3>
+<ol class="content-list">
+<li><strong>Client asks backend for a pre-signed upload URL</strong> (backend does auth, quota, content-type checks, returns a URL + an <code>asset_id</code>).</li>
+<li><strong>Client compresses/downscales locally first</strong> &mdash; never upload a 12 MP original when the product needs 1080px. Saves battery, data, and time.</li>
+<li><strong>Client uploads directly to object storage</strong> using chunked/resumable upload; on drop, resume from the last acked byte range.</li>
+<li><strong>Storage fires an event</strong> &rarr; a worker validates, strips EXIF/GPS, transcodes, and generates variants (thumb / medium / full, or HLS renditions for video). Close the loop on the retained original: either overwrite it in place with the sanitized copy once processing succeeds, or keep the raw original in a private bucket that is <em>never</em> served to clients &mdash; only the stripped variants get a CDN URL &mdash; so GPS/location can't leak from the original you held onto.</li>
+<li><strong>Client polls or gets a push</strong> that the asset is "ready"; the record now references the CDN URL.</li>
+</ol>
+
+<div class="svg-container">
+<svg viewBox="0 0 800 210" width="100%" role="img" aria-label="Media upload pipeline">
+  <defs><marker id="msd-ahm" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#586479"/></marker></defs>
+  <rect x="10" y="80" width="120" height="50" rx="8" fill="#dbeafe" stroke="#2563eb"/><text x="70" y="100" text-anchor="middle" font-size="10" fill="#1e40af">Client:</text><text x="70" y="115" text-anchor="middle" font-size="9" fill="#1e40af">downscale + chunk</text>
+  <rect x="165" y="80" width="120" height="50" rx="8" fill="#f0fdf4" stroke="#16a34a"/><text x="225" y="100" text-anchor="middle" font-size="10" fill="#166534">Backend:</text><text x="225" y="115" text-anchor="middle" font-size="9" fill="#166534">pre-signed URL</text>
+  <rect x="320" y="80" width="120" height="50" rx="8" fill="#fef3c7" stroke="#d97706"/><text x="380" y="100" text-anchor="middle" font-size="10" fill="#92400e">Object store</text><text x="380" y="115" text-anchor="middle" font-size="9" fill="#92400e">(resumable PUT)</text>
+  <rect x="475" y="80" width="120" height="50" rx="8" fill="#ede9fe" stroke="#7c3aed"/><text x="535" y="97" text-anchor="middle" font-size="10" fill="#5b21b6">Worker: strip EXIF,</text><text x="535" y="111" text-anchor="middle" font-size="9" fill="#5b21b6">transcode, variants</text><text x="535" y="123" text-anchor="middle" font-size="9" fill="#5b21b6"></text>
+  <rect x="630" y="80" width="120" height="50" rx="8" fill="#fff7ed" stroke="#ea580c"/><text x="690" y="100" text-anchor="middle" font-size="10" fill="#9a3412">CDN</text><text x="690" y="115" text-anchor="middle" font-size="9" fill="#9a3412">serves variants</text>
+  <line x1="130" y1="105" x2="163" y2="105" stroke="#586479" marker-end="url(#msd-ahm)"/><text x="147" y="97" text-anchor="middle" font-size="8" fill="#586479">1</text>
+  <line x1="285" y1="105" x2="318" y2="105" stroke="#586479" marker-end="url(#msd-ahm)"/><text x="302" y="97" text-anchor="middle" font-size="8" fill="#586479">2</text>
+  <line x1="440" y1="105" x2="473" y2="105" stroke="#586479" marker-end="url(#msd-ahm)"/><text x="457" y="97" text-anchor="middle" font-size="8" fill="#586479">3 event</text>
+  <line x1="595" y1="105" x2="628" y2="105" stroke="#586479" marker-end="url(#msd-ahm)"/>
+  <path d="M690 130 C 690 178, 70 178, 70 132" fill="none" stroke="#ea580c" stroke-dasharray="4 3" marker-end="url(#msd-ahm)"/><text x="380" y="200" text-anchor="middle" font-size="9" fill="#9a3412">client fetches the smallest variant that fits the view</text>
+</svg>
+</div>
+
+<h3 class="sub">Serving &amp; display</h3>
+<ul class="content-list">
+<li><strong>Multiple variants:</strong> thumbnail, list, full. Request by size; never download full-res for a 100px avatar.</li>
+<li><strong>Progressive / blurhash placeholder:</strong> show a tiny blurred preview or dominant color instantly while the real image streams &mdash; perceived performance.</li>
+<li><strong>Client cache with bounds:</strong> disk-cache decoded images with an LRU size cap; the phone will evict your app if you hoard.</li>
+<li><strong>Video = HLS/DASH:</strong> adaptive bitrate so a weak connection drops to a lower rendition instead of stalling.</li>
+</ul>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Proxying upload bytes through your API tier.</strong> Streaming multi-megabyte uploads through your application servers burns their bandwidth, memory, and connection slots, and couples upload throughput to your API's capacity. Upload direct-to-storage with a pre-signed URL; your API only issues the URL and records metadata. Also: <strong>strip EXIF/GPS server-side</strong> &mdash; users don't expect a shared photo to leak their home coordinates.</p></div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Make uploads survive the app dying mid-transfer: an upload is a durable outbox item too. Use the OS background transfer (URLSession background / WorkManager) with a resumable, idempotent upload keyed by <code>asset_id</code> so a re-attempt continues rather than duplicating.</p></div>
+
+<h3 class="sub">Interview angle</h3>
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>"Design photo upload" is a rich prompt because it touches storage, CDN, background work, and privacy at once. Hit: pre-signed direct-to-storage upload, client-side downscale, resumable/idempotent transfer, server-side variant generation + CDN delivery, and EXIF stripping. The senior touch is treating the upload as a durable background task (survives app kill) and picking the smallest variant per view &mdash; connecting media back to the battery/resource constraints from tab 1.</p></div>
+</div>
+
+<!-- ============================ TAB 6: API ============================ -->
+<div class="sec" id="tab-api">
+<h2 class="stitle">API Design for Mobile</h2>
+<div class="sdesc">Chatty, generic APIs punish a phone with round-trips and over-fetching. Shape the API for the client: fewer round-trips, exactly the fields the screen needs, and a contract old app versions can't break on.</div>
+
+<p><strong>The analogy:</strong> a generic backend API is a wholesale warehouse &mdash; you'd have to visit five aisles (five calls) and haul home crates you don't need (over-fetching). A <strong>Backend-for-Frontend (BFF)</strong> is a personal shopper who knows exactly what this screen needs and hands you one ready bag.</p>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Every network round-trip on a phone can cost hundreds of milliseconds and a radio wake. The goal is <strong>one round-trip per screen</strong> with <strong>exactly the fields that screen renders</strong>. Three tools get you there: a <strong>BFF</strong> that composes/aggregates per screen, <strong>batching</strong>, and <strong>GraphQL</strong> (client picks fields) &mdash; each with trade-offs.</p></div>
+
+<h3 class="sub">The options</h3>
+<table class="tbl">
+<thead><tr><th>Approach</th><th>Wins</th><th>Costs</th><th>Use when</th></tr></thead>
+<tbody>
+<tr><td><strong>REST (generic)</strong></td><td>Simple, cacheable (HTTP), ubiquitous</td><td>Chatty; over/under-fetch; N calls per screen</td><td>Simple resources, strong HTTP caching needs</td></tr>
+<tr><td><strong>BFF</strong></td><td>One call per screen; server composes; shields client from backend churn</td><td>Another service to own; per-platform BFFs can drift</td><td>Complex screens aggregating many services</td></tr>
+<tr><td><strong>GraphQL</strong></td><td>Client picks exact fields; one endpoint; great for varied clients/versions</td><td>Caching is harder; N+1 resolver risk; query-cost governance</td><td>Many client versions with divergent field needs</td></tr>
+<tr><td><strong>Batch endpoint</strong></td><td>Coalesce many requests into one round-trip</td><td>Partial failures; loses per-request HTTP caching</td><td>Startup "hydrate everything" bursts</td></tr>
+</tbody>
+</table>
+
+<div class="note"><div class="notel">NOTE — why the BFF fits mobile release latency</div><p>Because you can't hot-fix an app in the wild, the BFF becomes your <em>steering wheel</em>: it absorbs backend changes so clients don't have to update, and it can reshape responses, add fields, or fan out to new services without an app release. That directly addresses the release-latency constraint from tab 1.</p></div>
+
+<pre><span class="cm">// Over-fetching / chatty (BAD on mobile): 3 round-trips for one screen</span>
+GET /users/42
+GET /users/42/orders
+GET /users/42/recommendations
+
+<span class="cm">// One screen, one round-trip, exactly the fields rendered (GraphQL or BFF)</span>
+{
+  user(id: <span class="str">"42"</span>) {
+    name
+    orders(last: <span class="num">3</span>) { id total status }
+    recommendations(limit: <span class="num">5</span>) { id title thumbUrl }
+  }
+}
+</pre>
+
+<h3 class="sub">Cross-cutting API rules for mobile</h3>
+<ul class="content-list">
+<li><strong>Additive, backward-compatible changes only:</strong> never remove/rename a field an old client reads. Version the endpoint or negotiate capabilities. Old versions live for weeks.</li>
+<li><strong>Idempotency keys on writes:</strong> the client sends a key so a retried request after a dropped response doesn't double-charge / double-post.</li>
+<li><strong>Pagination + partial responses:</strong> bounded pages, sparse fieldsets; let the client ask for less.</li>
+<li><strong>Compression + efficient encoding:</strong> gzip/br; consider protobuf for hot paths. Fewer bytes = less battery.</li>
+<li><strong>Server-driven UI / config for the un-fixable:</strong> feature flags and kill switches so you can disable a broken feature without an app release.</li>
+</ul>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>GraphQL "solves over-fetching" &mdash; and quietly adds N+1 and caching pain.</strong> A naive resolver fetches related objects one-by-one (N+1); you need dataloaders/batching. And you lose simple HTTP/CDN caching because every query is a POST to one endpoint &mdash; you need persisted queries + application caching. Don't present GraphQL as free; name the mitigations.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Per-platform BFFs drift.</strong> Separate iOS and Android BFFs sound clean but duplicate logic and diverge over time. Options: one shared BFF with light per-platform shaping, or a single GraphQL layer. Call the trade-off out rather than spawning a BFF per client blindly.</p></div>
+
+<div class="iq">"I'd put a BFF in front so each screen is one round-trip with exactly the fields it renders &mdash; that minimizes radio wakes and shields the app from backend changes I can't hot-fix. Writes carry an idempotency key so a retry after a dropped response is safe. All API changes are additive because many app versions are always live. If field needs vary a lot across versions, I'd consider GraphQL, but I'd budget for N+1 (dataloaders) and persisted-query caching."</div>
+
+<h3 class="sub">Interview angle</h3>
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>The question behind "REST or GraphQL?" is really "do you optimize round-trips and think about version fragmentation?" Frame it as round-trip minimization + backward compatibility, not framework preference. Volunteer idempotency keys (retry safety), additive-only schema evolution (release latency), and the BFF-as-steering-wheel point. If you pick GraphQL, immediately name N+1 and caching costs &mdash; that honesty is the senior signal.</p></div>
+</div>
+
+<!-- ============================ TAB 7: AUTH ============================ -->
+<div class="sec" id="tab-auth">
+<h2 class="stitle">Auth &amp; Secure Token Storage</h2>
+<div class="sdesc">A phone gets lost and stolen. Store credentials in hardware-backed secure storage, keep access tokens short-lived, and rotate refresh tokens so a leaked token has a short blast radius.</div>
+
+<p><strong>The analogy:</strong> a long-lived password on the device is like leaving your house key under the mat forever. Instead, keep a well-guarded master key in a safe (the Keychain/Keystore), and use it to mint short-lived day passes (access tokens). If a day pass leaks, it expires in minutes; the safe stays shut.</p>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Two rules cover most of it: <strong>(1) store secrets in the platform's secure storage</strong> &mdash; iOS <strong>Keychain</strong> / Android <strong>Keystore</strong>, whose encryption keys are protected by hardware (<strong>Secure Enclave</strong> on iOS, <strong>TEE/StrongBox</strong> on supported Android devices) so secrets are encrypted at rest and never persisted as plaintext &mdash; never in plain files, <code>SharedPreferences</code>, or <code>UserDefaults</code>; and <strong>(2) use short-lived access tokens + long-lived rotating refresh tokens</strong> so a stolen access token dies fast and a stolen refresh token can be detected and revoked.</p></div>
+
+<h3 class="sub">The token model</h3>
+<table class="tbl">
+<thead><tr><th>Token</th><th>Lifetime</th><th>Stored where</th><th>Job</th></tr></thead>
+<tbody>
+<tr><td><strong>Access token</strong></td><td>Minutes (e.g. 5&ndash;60 min)</td><td>Memory; optionally Keychain/Keystore</td><td>Sent on each API call; expires fast so leaks are low-impact</td></tr>
+<tr><td><strong>Refresh token</strong></td><td>Days&ndash;weeks, <em>rotating</em></td><td>Keychain / Keystore only</td><td>Exchanged for a new access token; rotated on every use</td></tr>
+</tbody>
+</table>
+
+<h3 class="sub">Refresh-token rotation &amp; reuse detection</h3>
+<ul class="content-list">
+<li><strong>Rotate on every refresh:</strong> each refresh returns a <em>new</em> refresh token and invalidates the old one.</li>
+<li><strong>Reuse = theft signal:</strong> if an old (already-rotated) refresh token is presented again, assume it was stolen &mdash; revoke the whole token family and force re-login.</li>
+<li><strong>Bind + scope:</strong> tie tokens to a device id; keep scopes minimal. Support server-side revocation (logout-all-devices).</li>
+</ul>
+
+<pre><span class="cm">// iOS — store the refresh token in the Keychain, gated by device unlock</span>
+<span class="kw">let</span> query: [String: Any] = [
+    kSecClass <span class="kw">as</span> String: kSecClassGenericPassword,
+    kSecAttrAccount <span class="kw">as</span> String: <span class="str">"refresh_token"</span>,
+    kSecValueData <span class="kw">as</span> String: token.<span class="fn">data</span>(using: .utf8)!,
+    <span class="cm">// only readable when the device is unlocked; never migrates to backups/other devices</span>
+    kSecAttrAccessible <span class="kw">as</span> String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+]
+SecItemAdd(query <span class="kw">as</span> CFDictionary, <span class="kw">nil</span>)
+</pre>
+
+<pre><span class="cm">// Android — hardware-backed storage via Jetpack Security EncryptedSharedPreferences</span>
+<span class="kw">val</span> masterKey = MasterKey.<span class="fn">Builder</span>(context)
+    .<span class="fn">setKeyScheme</span>(MasterKey.KeyScheme.AES256_GCM)   <span class="cm">// key lives in the Android Keystore</span>
+    .<span class="fn">build</span>()
+
+<span class="kw">val</span> securePrefs = EncryptedSharedPreferences.<span class="fn">create</span>(
+    context, <span class="str">"auth"</span>, masterKey,
+    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+)
+securePrefs.<span class="fn">edit</span>().<span class="fn">putString</span>(<span class="str">"refresh_token"</span>, token).<span class="fn">apply</span>()
+</pre>
+
+<div class="warn"><div class="warnl">CURRENCY</div><p>Jetpack Security Crypto (<code>EncryptedSharedPreferences</code>/<code>MasterKey</code>) was deprecated by Google in 2024, so for new work prefer wrapping encryption yourself with <strong>Google Tink</strong> (or a hardware-backed Keystore key) and persisting the ciphertext via <code>DataStore</code> — the underlying hardware-backed Android Keystore approach shown here remains the recommended concept.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Storing tokens in <code>UserDefaults</code> / <code>SharedPreferences</code> / a plain file.</strong> These are not encrypted and are readable on a rooted/jailbroken device or via a backup. Refresh tokens especially must live in Keychain/Keystore. Also: don't log tokens, don't put them in analytics, and use certificate pinning on the auth endpoint if the threat model warrants it.</p></div>
+
+<div class="warn"><div class="warnl">WATCH</div><p>Concurrency bug to preempt: many in-flight requests all 401 at once when the access token expires. Without care they trigger N parallel refreshes and rotate each other into invalidation. Use a <strong>single-flight refresh</strong>: one refresh runs, the others await its result. This is a very common real-world mobile auth bug &mdash; naming it is a strong signal.</p></div>
+
+<div class="iq">"Access tokens are short-lived and sent per request; the refresh token lives only in the Keychain/Keystore, hardware-backed and device-only. Refresh tokens rotate on every use, and reuse of a rotated token triggers family revocation as a theft signal. On expiry I do a single-flight refresh so concurrent 401s don't stampede. Logout and 'sign out all devices' are server-side revocations."</div>
+
+<h3 class="sub">Interview angle</h3>
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Say the storage location by name &mdash; "Keychain on iOS, Keystore-backed encryption on Android" &mdash; and explain <em>why</em> (hardware-backed, encrypted at rest, survives device theft better than plaintext). Then cover the token lifecycle: short access + rotating refresh + reuse detection + server revocation. The two details that separate strong candidates: <strong>refresh-token rotation with reuse detection</strong> and the <strong>single-flight refresh</strong> for concurrent 401s. Tie it to the lost-phone threat model.</p></div>
+</div>
+
+<!-- ============================ TAB 8: OBSERVABILITY ============================ -->
+<div class="sec" id="tab-obs">
+<h2 class="stitle">Observability for Mobile</h2>
+<div class="sdesc">You can't SSH into a user's phone. Observability is your only window &mdash; and it has to be battery-cheap, privacy-safe, and resilient to the same flaky network everything else fights.</div>
+
+<p><strong>The analogy:</strong> a backend gives you live logs on tap; a phone is a black box in someone's pocket. Mobile observability is like a flight recorder &mdash; the device records events locally and periodically ships a batched black-box report when it has signal.</p>
+
+<div class="ins"><div class="insl">INSIGHT</div><p>Mobile telemetry is <strong>offline-first too</strong>: buffer events in a local queue, batch-upload on connectivity/foreground, and sample to protect battery and data. The signals that matter most differ from backend: <strong>crash-free rate, ANR/hang rate, cold/warm start time, network success by radio type, and app-version adoption</strong> &mdash; because your fix ships through the store, adoption <em>is</em> a reliability metric.</p></div>
+
+<h3 class="sub">The four mobile signal groups</h3>
+<div class="g2">
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">1</span><span class="ct">Stability</span><span class="db dh">CRITICAL</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list"><li><strong>Crash-free sessions/users %</strong> &mdash; the headline mobile SLI.</li><li><strong>ANR / hang rate</strong> (main-thread blocked).</li><li>Symbolicated stack traces, grouped by build.</li></ul>
+</div></div>
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">2</span><span class="ct">Performance</span><span class="db dm">UX</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list"><li>Cold / warm <strong>startup time</strong>.</li><li>Frame drops / jank, scroll smoothness.</li><li>Screen render + time-to-interactive.</li></ul>
+</div></div>
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">3</span><span class="ct">Network</span><span class="db de">FLAKY</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list"><li>Request success/error rate <strong>by radio type</strong> (WiFi vs cellular).</li><li>Latency percentiles from the <em>client's</em> vantage point.</li><li>Sync success, outbox depth, conflict rate.</li></ul>
+</div></div>
+<div class="card"><div class="ch" onclick="toggle(this)"><span class="cn">4</span><span class="ct">Adoption &amp; resources</span><span class="db de">FLEET</span><span class="chv">&#9654;</span></div><div class="cb">
+<ul class="content-list"><li><strong>App-version &amp; OS distribution</strong> (how fast fixes roll out).</li><li>Battery / memory footprint, background wake counts.</li><li>Feature-flag exposure &amp; funnel.</li></ul>
+</div></div>
+</div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Client latency &ne; server latency.</strong> Your backend p99 can look great while users suffer &mdash; the extra time is DNS, TLS setup, radio wake, and last-mile RTT that server-side metrics never see. Measure from the client — Real User Monitoring (RUM), telemetry gathered from actual devices in the field. Also: measure success <em>by radio type</em>, because "5% error rate" might be "0.5% on WiFi, 20% on cellular" &mdash; two very different bugs.</p></div>
+
+<div class="trap"><div class="trapl">TRAP</div><p><strong>Telemetry that ignores its own constraints.</strong> Shipping every event immediately drains battery and data and fails offline. Buffer locally, batch, back off, and <em>sample</em>. And scrub PII on-device &mdash; don't let a crash breadcrumb ship someone's email or auth token. Privacy and battery are first-class here, not afterthoughts.</p></div>
+
+<div class="iq">"On mobile I can't inspect the device, so I instrument it: crash-free rate and ANRs for stability, startup and jank for performance, network success by radio type from the client's vantage, and version adoption because a fix only helps once it's installed. Telemetry is offline-first &mdash; buffered, batched, sampled, PII-scrubbed &mdash; so observing the app doesn't violate the same battery and privacy constraints the app respects."</div>
+
+<h3 class="sub">Interview angle</h3>
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Reuse the backend observability vocabulary (SLIs, percentiles, error budgets) but prove you know what's <em>mobile-specific</em>: crash-free rate as the headline SLI, client-side RUM (server metrics miss last-mile), success-by-radio-type, and version adoption as a reliability metric because releases are slow. Close with the meta-point: telemetry itself must be offline-first, sampled, and privacy-scrubbed &mdash; observing the app can't break the app's own constraints.</p></div>
+</div>
+
+<!-- ============================ TAB 9: DESIGN ============================ -->
+<div class="sec" id="tab-design">
+<h2 class="stitle">Worked Design: Offline-Capable Chat / Notes</h2>
+<div class="sdesc">Putting every tab together in one end-to-end answer. Prompt: "Design a mobile chat (or offline notes) app that works offline, syncs across devices, and feels instant." Here's how to drive it in ~40 minutes.</div>
+
+<h3 class="sub">Step 1 — Clarify &amp; scope (state assumptions, don't stall)</h3>
+<ul class="content-list">
+<li><strong>Scale:</strong> assume 50M users, 1&ndash;3 devices each, 1:1 + small group chats, messages mostly text with occasional images. State it, invite correction.</li>
+<li><strong>Requirements:</strong> send/receive offline, messages appear instantly (optimistic), sync across a user's devices, ordered per conversation, delivery/read receipts, media attachments.</li>
+<li><strong>Non-goals (bound it):</strong> not designing E2E crypto internals, not video calls &mdash; say so to control scope.</li>
+</ul>
+
+<h3 class="sub">Step 2 — Client architecture (offline-first)</h3>
+<ul class="content-list">
+<li>Local SQLite DB is the source of truth: <code>conversations</code>, <code>messages</code>, <code>outbox</code>. UI observes it reactively so sends render instantly.</li>
+<li>Sending a message = write to local DB (status <code>pending</code>) + append to outbox with a client-generated <code>message_id</code> (idempotency key + client sort key).</li>
+<li>Sync engine drains the outbox over a persistent channel; on ack, flips status <code>pending &rarr; sent</code>.</li>
+</ul>
+
+<h3 class="sub">Step 3 — Transport &amp; delivery</h3>
+<ul class="content-list">
+<li><strong>Foreground:</strong> a persistent connection (WebSocket) for low-latency send/receive.</li>
+<li><strong>Background / app killed:</strong> push notification wakes a sync (push-to-notify, pull-to-fetch &mdash; payload carries an id, not the message body).</li>
+<li><strong>Fan-out:</strong> server writes the message to the conversation log and fans out to each recipient device's inbox; each device delta-syncs its inbox.</li>
+</ul>
+
+<h3 class="sub">Step 4 — Ordering &amp; the multi-device sync</h3>
+<ul class="content-list">
+<li><strong>Server assigns a per-conversation sequence number</strong> on receipt &mdash; the canonical order. Clients sort by it; the local client sort key is provisional until the server seq arrives.</li>
+<li>Each device keeps a per-conversation <code>sync_token</code> and delta-pulls new messages + receipts.</li>
+<li><strong>Idempotency:</strong> the client <code>message_id</code> dedupes the "sent but response dropped, so I retried" case &mdash; the server recognizes the id and returns the existing message instead of creating a duplicate.</li>
+</ul>
+
+<div class="svg-container">
+<svg viewBox="0 0 800 260" width="100%" role="img" aria-label="Chat end-to-end architecture">
+  <defs><marker id="msd-ahc" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#586479"/></marker></defs>
+  <rect x="15" y="90" width="140" height="90" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="85" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#1e40af">DEVICE (sender)</text>
+  <rect x="28" y="100" width="114" height="22" rx="5" fill="#dcfce7" stroke="#16a34a"/><text x="85" y="115" text-anchor="middle" font-size="9" fill="#166534">local DB (truth)</text>
+  <rect x="28" y="126" width="114" height="22" rx="5" fill="#fef3c7" stroke="#d97706"/><text x="85" y="141" text-anchor="middle" font-size="9" fill="#92400e">outbox (message_id)</text>
+  <rect x="28" y="152" width="114" height="22" rx="5" fill="#dbeafe" stroke="#2563eb"/><text x="85" y="167" text-anchor="middle" font-size="9" fill="#1e40af">WebSocket / sync</text>
+
+  <rect x="330" y="70" width="150" height="130" rx="10" fill="#faf5ff" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="405" y="62" text-anchor="middle" font-size="10" font-weight="700" fill="#5b21b6">CHAT BACKEND</text>
+  <rect x="343" y="80" width="124" height="22" rx="5" fill="#ede9fe" stroke="#7c3aed"/><text x="405" y="95" text-anchor="middle" font-size="9" fill="#5b21b6">assign seq #, dedupe</text>
+  <rect x="343" y="106" width="124" height="22" rx="5" fill="#ede9fe" stroke="#7c3aed"/><text x="405" y="121" text-anchor="middle" font-size="9" fill="#5b21b6">conversation log</text>
+  <rect x="343" y="132" width="124" height="22" rx="5" fill="#ede9fe" stroke="#7c3aed"/><text x="405" y="147" text-anchor="middle" font-size="9" fill="#5b21b6">fan-out to inboxes</text>
+  <rect x="343" y="158" width="124" height="22" rx="5" fill="#ede9fe" stroke="#7c3aed"/><text x="405" y="173" text-anchor="middle" font-size="9" fill="#5b21b6">push on offline recip.</text>
+
+  <rect x="640" y="90" width="145" height="90" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="712" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#1e40af">DEVICES (recipients)</text>
+  <rect x="653" y="100" width="119" height="22" rx="5" fill="#dcfce7" stroke="#16a34a"/><text x="712" y="115" text-anchor="middle" font-size="9" fill="#166534">delta-sync inbox</text>
+  <rect x="653" y="126" width="119" height="22" rx="5" fill="#dbeafe" stroke="#2563eb"/><text x="712" y="141" text-anchor="middle" font-size="9" fill="#1e40af">sort by server seq</text>
+  <rect x="653" y="152" width="119" height="22" rx="5" fill="#fff7ed" stroke="#ea580c"/><text x="712" y="167" text-anchor="middle" font-size="9" fill="#9a3412">push wakes sync</text>
+
+  <line x1="155" y1="135" x2="328" y2="135" stroke="#586479" marker-end="url(#msd-ahc)"/><text x="240" y="127" text-anchor="middle" font-size="9" fill="#586479">send (idempotent)</text>
+  <line x1="480" y1="135" x2="638" y2="135" stroke="#586479" marker-end="url(#msd-ahc)"/><text x="560" y="127" text-anchor="middle" font-size="9" fill="#586479">deliver / fan-out</text>
+  <text x="400" y="235" text-anchor="middle" font-size="10" fill="#b91c1c" font-style="italic">Same pattern as notes: local truth + outbox + delta sync; chat just adds a persistent channel and server sequencing.</text>
+</svg>
+</div>
+
+<h3 class="sub">Step 5 — Media, receipts, and conflicts</h3>
+<ul class="content-list">
+<li><strong>Images:</strong> pre-signed direct upload (tab 5); the message references the <code>asset_id</code> and shows a local thumbnail immediately while the upload runs as a background task.</li>
+<li><strong>Receipts:</strong> delivered/read are small delta-synced state changes, coalesced to save battery.</li>
+<li><strong>Conflicts:</strong> chat messages are append-only &mdash; naturally conflict-free (each has a unique id; order is server-assigned). Editable content (notes, message edits) uses the tab-2 strategy: LWW on server version for single-owner, merge/version-vectors for true co-editing.</li>
+</ul>
+
+<h3 class="sub">Step 6 — Scale, failure, and the constraints tie-back</h3>
+<table class="tbl">
+<thead><tr><th>Concern</th><th>Mechanism</th><th>Constraint it serves</th></tr></thead>
+<tbody>
+<tr><td>Feels instant</td><td>Optimistic local write, UI observes local DB</td><td>Flaky network</td></tr>
+<tr><td>No dupes on retry</td><td>Client <code>message_id</code> idempotency key</td><td>Flaky network</td></tr>
+<tr><td>Works offline</td><td>Local DB truth + durable outbox</td><td>Flaky network</td></tr>
+<tr><td>Battery-cheap delivery</td><td>Push-to-notify, pull-to-fetch; coalesced receipts</td><td>Battery</td></tr>
+<tr><td>Bounded memory</td><td>Cursor-paginated conversation history</td><td>Limited resources</td></tr>
+<tr><td>Ship fixes safely</td><td>Additive API + server-driven flags/kill switch</td><td>Release latency</td></tr>
+<tr><td>Old clients keep working</td><td>Backward-compatible schema, capability negotiation</td><td>Version fragmentation</td></tr>
+</tbody>
+</table>
+
+<div class="tip"><div class="tipl">TIP</div><p>Notice notes and chat are the <em>same</em> design: local store as truth + outbox + delta sync + conflict policy. Chat adds a persistent channel and server sequence numbers; notes add richer conflict resolution. Saying "these are the same backbone with two knobs turned" reads as pattern mastery, not memorized answers.</p></div>
+
+<h3 class="sub">Interview angle</h3>
+<div class="ins"><div class="insl">INTERVIEW ANGLE</div><p>Drive the room: clarify scope, state assumptions, then build outward from the offline-first backbone rather than starting at the server. Explicitly map each decision back to one of the five constraints (the table above is your closing move). The strongest finish is the meta-observation that chat and notes share one backbone &mdash; it demonstrates you learned a <em>pattern</em>, not a rehearsed answer. If time allows, volunteer the two hard sub-problems worth raising: message ordering (server sequence) and the send-retry duplicate (idempotency key).</p></div>
+</div>
+
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>Offline-first</strong></td><td>Architecture where the UI reads/writes the local store and background sync reconciles with the server; the network is an optimization, not a dependency.</td></tr>
+<tr><td><strong>BFF</strong></td><td>Backend-for-Frontend &mdash; a per-client gateway that composes/aggregates backend calls into one response tailored to each screen.</td></tr>
+<tr><td><strong>Outbox</strong></td><td>Durable, append-only queue of pending local mutations, each with an idempotency key, drained to the server by the sync engine.</td></tr>
+<tr><td><strong>Idempotency key</strong></td><td>Client-generated id (e.g. a mutation_id) that lets the server dedupe a retried write so it is applied only once.</td></tr>
+<tr><td><strong>Sync engine</strong></td><td>Background component that pushes the outbox, pulls a delta, resolves conflicts, and merges results into the local DB.</td></tr>
+<tr><td><strong>LWW</strong></td><td>Last-write-wins &mdash; conflict rule where the highest version or timestamp wins and the other write is discarded.</td></tr>
+<tr><td><strong>Version vectors</strong></td><td>Per-replica counters that detect whether two edits are causally ordered or genuinely concurrent.</td></tr>
+<tr><td><strong>CRDT</strong></td><td>Conflict-free Replicated Data Type &mdash; a data type (counter, set, text) that merges concurrent edits with no conflict.</td></tr>
+<tr><td><strong>Tombstone</strong></td><td>Soft-delete marker with its own version, so a deletion participates in conflict detection and delta sync instead of vanishing by omission.</td></tr>
+<tr><td><strong>Delta sync</strong></td><td>Fetching only the records that changed since the client's last cursor, rather than the full dataset.</td></tr>
+<tr><td><strong>Sync token</strong></td><td>Opaque, server-controlled cursor (high-water mark) that marks how far a client has synced; advanced only after a batch is applied.</td></tr>
+<tr><td><strong>Keyset pagination</strong></td><td>Cursor-based paging anchored to a real row key; stable under inserts, with a seek cost independent of page depth (an O(log n) index lookup) — unlike offset paging, which scans O(offset) rows.</td></tr>
+<tr><td><strong>APNs / FCM</strong></td><td>Apple Push Notification service / Firebase Cloud Messaging &mdash; platform services that deliver push messages to devices.</td></tr>
+<tr><td><strong>Silent push</strong></td><td>Data-only notification that wakes the app to sync in the background, with no user-visible banner; heavily rate-limited by the OS.</td></tr>
+<tr><td><strong>Pre-signed URL</strong></td><td>Time-limited URL that lets a client upload directly to object storage without proxying the bytes through the API tier.</td></tr>
+<tr><td><strong>EXIF</strong></td><td>Exchangeable Image File Format &mdash; photo metadata (including GPS coordinates) that should be stripped server-side before serving.</td></tr>
+<tr><td><strong>HLS / DASH</strong></td><td>HTTP Live Streaming / Dynamic Adaptive Streaming over HTTP &mdash; adaptive-bitrate protocols that adjust video quality to the connection.</td></tr>
+<tr><td><strong>Keychain / Keystore</strong></td><td>iOS / Android secure storage for secrets, encrypted at rest with hardware-protected keys.</td></tr>
+<tr><td><strong>Secure Enclave / TEE</strong></td><td>Apple's secure coprocessor / Trusted Execution Environment &mdash; isolated hardware that protects encryption keys (StrongBox on supported Android).</td></tr>
+<tr><td><strong>Access / refresh token</strong></td><td>Short-lived credential sent per API call / long-lived rotating credential (stored in Keychain/Keystore) exchanged for new access tokens.</td></tr>
+<tr><td><strong>Single-flight refresh</strong></td><td>Coalescing concurrent token refreshes so only one runs while the others await its result, avoiding a refresh stampede on expiry.</td></tr>
+<tr><td><strong>ANR</strong></td><td>Application Not Responding &mdash; an Android hang where the main thread is blocked too long; a key stability signal.</td></tr>
+<tr><td><strong>RUM</strong></td><td>Real User Monitoring &mdash; performance and reliability telemetry gathered from real devices in the field, not synthetic tests.</td></tr>
+</table>
+
+</div>
+</div>
+
+<script>
+function go(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  if (typeof event !== 'undefined' && event && event.currentTarget) event.currentTarget.classList.add('active');
+  window.scrollTo(0, 0);
+}
+function toggle(el) {
+  const body = el.nextElementSibling;
+  const chevron = el.querySelector('.chv');
+  body.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open');
+}
+</script>
+
+<script>
+/* Offline-first sync stepper — namespaced IIFE, unique msd_ ids, no clash with go()/toggle()/handbook-nav */
+(function(){
+  var stepBtn  = document.getElementById('msd-step');
+  var resetBtn = document.getElementById('msd-reset');
+  var stratSel = document.getElementById('msd-strategy');
+  var prog = document.getElementById('msd-prog');
+  var cap  = document.getElementById('msd-cap');
+  if(!stepBtn) return; // stepper not on page
+
+  var roLocal  = document.getElementById('msd-ro-local');
+  var roQueue  = document.getElementById('msd-ro-queue');
+  var roServer = document.getElementById('msd-ro-server');
+  var tDevice  = document.getElementById('msd-t-device');
+  var tOutbox  = document.getElementById('msd-t-outbox');
+  var tNet     = document.getElementById('msd-t-net');
+  var tServer  = document.getElementById('msd-t-server');
+  var nDevice  = document.getElementById('msd-n-device');
+  var nOutbox  = document.getElementById('msd-n-outbox');
+  var nNet     = document.getElementById('msd-n-net');
+  var nServer  = document.getElementById('msd-n-server');
+
+  var i = 0;
+  var TOTAL = 6;
+
+  function highlight(nodes){
+    [nDevice,nOutbox,nNet,nServer].forEach(function(n){ if(n) n.classList.remove('on'); });
+    nodes.forEach(function(n){ if(n) n.classList.add('on'); });
+  }
+
+  // Steps 0..6. Step 5 (resolve) branches on the selected strategy.
+  function render(){
+    var lww = stratSel.value === 'lww';
+    switch(i){
+      case 0:
+        setState('v1 · "Buy milk"', 'empty', 'v1 · "Buy milk"',
+                 'v1 "Buy milk"', '(empty)', 'online', 'v1 "Buy milk"', [nDevice,nServer],
+                 'Start state: Device A and the server agree on <b>v1 "Buy milk"</b>. Online, outbox empty.');
+        break;
+      case 1:
+        setState('v1 · "Buy milk"', 'empty', 'v1 · "Buy milk"',
+                 'v1 "Buy milk"', '(empty)', 'OFFLINE', 'v1 "Buy milk"', [nDevice,nNet],
+                 'Device A goes <b>offline</b> (tunnel). The app stays fully usable — reads/writes hit the local DB.');
+        break;
+      case 2:
+        setState('v2* · "Buy oat milk"', '1 pending (base v1)', 'v1 · "Buy milk"',
+                 'v2* "Buy oat milk"', '1 pending', 'OFFLINE', 'v1 "Buy milk"', [nDevice,nOutbox],
+                 'User edits the note to <b>"Buy oat milk"</b>. Local DB updates instantly (optimistic, shown as v2*) and the change is appended to the <b>outbox</b> with base_version=v1 and a client mutation_id.');
+        break;
+      case 3:
+        setState('v2* · "Buy oat milk"', '1 pending (base v1)', 'v2 · "Buy almond milk"',
+                 'v2* "Buy oat milk"', '1 pending', 'OFFLINE', 'v2 "Buy almond milk"', [nServer],
+                 'Meanwhile <b>Device B</b> (same user, another phone) edits the same note online → server is now <b>v2 "Buy almond milk"</b>. A conflict is brewing: A\'s pending change was based on v1.');
+        break;
+      case 4:
+        setState('v2* · "Buy oat milk"', 'syncing (base v1)', 'v2 · "Buy almond milk"',
+                 'v2* "Buy oat milk"', 'syncing…', 'ONLINE', 'v2 "Buy almond milk"', [nDevice,nOutbox,nNet,nServer],
+                 'Device A regains signal. The sync engine <b>pushes the outbox</b> mutation (base_version=v1, mutation_id). The server sees base v1 but it is already at v2 → <b>conflict detected</b>.');
+        break;
+      case 5:
+        if(lww){
+          setState('v3 · "Buy oat milk"', 'empty (applied)', 'v3 · "Buy oat milk"',
+                   'v3 "Buy oat milk"', '(empty)', 'ONLINE', 'v3 "Buy oat milk"', [nServer],
+                   '<b>Last-write-wins:</b> A\'s edit has the newer server-assigned version, so it wins and becomes <b>v3</b>. ⚠ Device B\'s "almond milk" edit is <b>silently discarded</b> — the classic LWW data-loss risk.');
+        } else {
+          setState('v3 · "Buy oat + almond milk"', 'empty (applied)', 'v3 · "Buy oat + almond milk"',
+                   'v3 merged', '(empty)', 'ONLINE', 'v3 merged', [nServer],
+                   '<b>Merge (version vectors):</b> the vectors are incomparable → truly concurrent. Both edits touch the <em>same</em> field, so this is genuine divergence — the server applies an <b>app-defined merge rule</b> (here, concatenating the two values) producing <b>v3 "Buy oat + almond milk"</b>. No edit is lost.');
+        }
+        break;
+      case 6:
+        var v = lww ? 'v3 · "Buy oat milk"' : 'v3 · "Buy oat + almond milk"';
+        var t = lww ? 'v3 "Buy oat milk"' : 'v3 merged';
+        setState(v, 'empty', v, t, '(empty)', 'online', t, [nDevice,nServer],
+                 'Resolved value is <b>pulled back into Device A\'s local DB</b>, the outbox mutation is cleared, and all replicas converge on v3. Press <b>Reset</b> to replay — try switching the strategy first.');
+        break;
+    }
+    prog.textContent = 'Step ' + i + ' / ' + TOTAL;
+    stepBtn.disabled = (i >= TOTAL);
+  }
+
+  function setState(local, queue, server, dTxt, oTxt, nTxt, sTxt, nodes, caption){
+    roLocal.textContent = local; roQueue.textContent = queue; roServer.textContent = server;
+    tDevice.textContent = dTxt; tOutbox.textContent = oTxt; tNet.textContent = nTxt; tServer.textContent = sTxt;
+    highlight(nodes);
+    cap.innerHTML = caption;
+  }
+
+  stepBtn.addEventListener('click', function(){ if(i < TOTAL){ i++; render(); } });
+  resetBtn.addEventListener('click', function(){ i = 0; render(); });
+  // Re-render current step if strategy changes at/after the resolve step so the branch updates live.
+  stratSel.addEventListener('change', function(){ if(i >= 5) render(); });
+
+  render();
+})();
+</script>
+
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="ios_engineering.html">&lsaquo; iOS Engineering</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_arrays_strings.html">Arrays &amp; Strings (Google-style) &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

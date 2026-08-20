@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>String Simulation &amp; Scanning — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 2 — <b>String Simulation &amp; Scanning</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>String Simulation &amp; Scanning &mdash; Google-style Problems</h1>
+  <div class="sub">Six Google-style string-simulation &amp; array-scanning problems &bull; original framing, execution-tested solutions, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+
+<!-- PROBLEM: Expressive Words -->
+<div class="card">
+<h2>Expressive Words</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>When people type with feeling they "stretch" letters, repeating a character many times &mdash; <code>"go"</code> might be typed <code>"gooo"</code>. A group of one or more identical adjacent letters is <em>extendable</em> if, after stretching, its length becomes <strong>3 or more</strong>. Given a target string <code>s</code> and a list of <code>words</code>, count how many words can be made equal to <code>s</code> by extending zero or more of their letter groups.</p>
+<ul>
+  <li>You may only <em>lengthen</em> a group, never shorten it, and a group can be extended only if the resulting run has length &ge; 3.</li>
+  <li>A group already of length &ge; 3 in <code>s</code> may match a shorter word group; a length-1 or length-2 target group can only be matched by an equal-length word group (there is nothing to stretch into).</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>s = "ggghhh"</code> and <code>words = ["gh", "ggh", "gggh", "ghhh", "ghg"]</code> the answer is <code>4</code>. The target groups are <code>g&times;3</code> and <code>h&times;3</code>, both stretchable, so the first four words all extend to <code>"ggghhh"</code>; <code>"ghg"</code> fails because its three groups (<code>g, h, g</code>) can never line up with the target's two.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Walk both strings group by group, in step. For each aligned pair of runs, let <code>l</code> be the target run length and <code>r</code> the word run length. The pair is compatible only when the letters match <em>and</em> one of two things holds: the lengths are already equal (no stretch needed), or the target run is strictly longer <em>and</em> at least 3 (so it could have been stretched from the shorter word run). Any of the failing conditions &mdash; letters differ, the word run is longer than the target (<code>l &lt; r</code>), or the target is longer but under 3 (<code>l &gt; r &amp;&amp; l &lt; 3</code>) &mdash; rejects the word. The word matches only if both strings are fully consumed at the same time.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">expressiveWords</span>(<span class="type">String</span> s, <span class="type">String</span>[] words) {
+    <span class="kw">char</span>[] cs = s.toCharArray();
+    <span class="kw">int</span> res = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="type">String</span> word : words)
+        <span class="kw">if</span> (<span class="fn">stretchesTo</span>(cs, word.toCharArray())) res++;   <span class="cm">// count each matching word</span>
+    <span class="kw">return</span> res;
+}
+
+<span class="cm">// Can the run structure of 'ct' (a word) be stretched into 'cs' (the target)?</span>
+<span class="kw">private</span> <span class="kw">boolean</span> <span class="fn">stretchesTo</span>(<span class="kw">char</span>[] cs, <span class="kw">char</span>[] ct) {
+    <span class="kw">int</span> m = cs.length, n = ct.length, i = <span class="num">0</span>, j = <span class="num">0</span>;
+    <span class="kw">while</span> (i &lt; m &amp;&amp; j &lt; n) {
+        <span class="kw">int</span> i0 = <span class="fn">endOfRun</span>(cs, i), j0 = <span class="fn">endOfRun</span>(ct, j);
+        <span class="kw">int</span> l = i0 - i, r = j0 - j;             <span class="cm">// lengths of the two aligned runs</span>
+        <span class="cm">// Reject if: word run longer than target (can't shrink);</span>
+        <span class="cm">//            target longer but under 3 (nothing could stretch into it);</span>
+        <span class="cm">//            or the two run characters differ.</span>
+        <span class="kw">if</span> (l &lt; r || (l &gt; r &amp;&amp; l &lt; <span class="num">3</span>) || cs[i] != ct[j]) <span class="kw">return</span> <span class="kw">false</span>;
+        i = i0; j = j0;                        <span class="cm">// jump both cursors past the runs</span>
+    }
+    <span class="kw">return</span> i == m &amp;&amp; j == n;                     <span class="cm">// both strings exhausted together</span>
+}
+
+<span class="cm">// Return the index one past the run of equal chars starting at i.</span>
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">endOfRun</span>(<span class="kw">char</span>[] cs, <span class="kw">int</span> i) {
+    <span class="kw">int</span> j = i, n = cs.length;
+    <span class="kw">while</span> (j &lt; n &amp;&amp; cs[i] == cs[j]) j++;
+    <span class="kw">return</span> j;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(W&middot;|s| + &sum;|word|)</code> (<code>W</code> = number of words) &mdash; the target run <code>s</code> is re-scanned once per word, and each word's characters are visited once. Space <code>O(1)</code> beyond the input (a few cursors).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) The asymmetry is the whole problem: <code>l &gt; r</code> is allowed <em>only</em> when <code>l &gt;= 3</code>, but <code>l &lt; r</code> is never allowed &mdash; you can stretch a group longer, never squeeze it shorter. (2) A target run of length 1 or 2 must be matched exactly; forgetting the <code>l &lt; 3</code> guard wrongly accepts words like <code>"xy"</code> against <code>"xxyy"</code>. (3) The final <code>i == m &amp;&amp; j == n</code> check rejects words whose <em>group pattern</em> differs (extra or reordered groups such as <code>"ghg"</code>), even when a prefix matched. (4) Both cursors must advance by whole runs; comparing character-by-character loses the group-length information the decision depends on.</p></div>
+</div>
+
+<!-- PROBLEM: Find And Replace in String -->
+<div class="card">
+<h2>Find And Replace in String</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You are given a string <code>s</code> and three parallel arrays: <code>indices</code>, <code>sources</code>, and <code>targets</code>. Each entry <code>k</code> describes a potential edit: if the substring of the <em>original</em> <code>s</code> starting at <code>indices[k]</code> exactly equals <code>sources[k]</code>, replace that occurrence with <code>targets[k]</code>; otherwise leave that spot untouched. All checks are made against the original string, all replacements are applied simultaneously, and the edits are guaranteed not to overlap. Return the resulting string.</p>
+<ul>
+  <li>The <code>indices</code> may arrive in any order and are not sorted.</li>
+  <li>A source that runs past the end of <code>s</code>, or that does not match character-for-character, is skipped.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>s = "codebase"</code>, <code>indices = [4, 0]</code>, <code>sources = ["base", "code"]</code>, <code>targets = ["X", "Y"]</code>, both checks succeed &mdash; <code>"code"</code> at index 0 and <code>"base"</code> at index 4 &mdash; giving <code>"YX"</code>. With <code>s = "abcabc"</code>, <code>indices = [0, 3]</code>, <code>sources = ["ab", "xy"]</code>, <code>targets = ["Z", "W"]</code>, only the first matches (<code>"ab"</code> at 0), while <code>"xy"</code> does not match <code>"ab"</code> at index 3, so the result is <code>"Zcabc"</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Because indices can be out of order, first sort a permutation of edit-indices by their position in <code>s</code>. Then sweep <code>s</code> left to right with a write cursor <code>i</code> and an edit cursor <code>j</code>. When <code>i</code> reaches the next edit's start position, verify the source still matches the original text there; if so, emit the target and jump <code>i</code> past the whole source (the loop's <code>++i</code> supplies the final step), otherwise emit the single original character. Every other position is copied verbatim. Matching against the original array (never a partially rebuilt string) is what makes the "simultaneous" semantics fall out naturally.</p>
+
+<pre><span class="kw">public</span> <span class="type">String</span> <span class="fn">findReplaceString</span>(<span class="type">String</span> s, <span class="kw">int</span>[] indices,
+                                <span class="type">String</span>[] sources, <span class="type">String</span>[] targets) {
+    <span class="kw">char</span>[] cs = s.toCharArray();
+    <span class="kw">int</span> m = indices.length, n = cs.length;
+    <span class="type">Integer</span>[] idx = <span class="kw">new</span> <span class="type">Integer</span>[m];              <span class="cm">// a permutation of edit ids</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; m; ++i) idx[i] = i;
+    <span class="type">Arrays</span>.<span class="fn">sort</span>(idx, (a, b) -&gt; indices[a] - indices[b]); <span class="cm">// order edits by position</span>
+
+    <span class="type">StringBuilder</span> sb = <span class="kw">new</span> <span class="type">StringBuilder</span>();
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>, j = <span class="num">0</span>; i &lt; n; ++i) {
+        <span class="kw">if</span> (j &lt; m &amp;&amp; i == indices[idx[j]]) {         <span class="cm">// an edit begins at this index</span>
+            <span class="kw">if</span> (<span class="fn">matchesAt</span>(cs, i, sources[idx[j]])) {
+                sb.append(targets[idx[j]]);        <span class="cm">// source matched: write the target</span>
+                i += sources[idx[j]].length() - <span class="num">1</span>;  <span class="cm">// skip the rest of the source</span>
+            } <span class="kw">else</span> sb.append(cs[i]);                  <span class="cm">// no match: keep original char</span>
+            j++;                                   <span class="cm">// this edit is now resolved</span>
+        } <span class="kw">else</span> sb.append(cs[i]);                      <span class="cm">// ordinary character, copy as-is</span>
+    }
+    <span class="kw">return</span> sb.toString();
+}
+
+<span class="cm">// Does the original text at cs[i..] start with the source string t?</span>
+<span class="kw">private</span> <span class="kw">boolean</span> <span class="fn">matchesAt</span>(<span class="kw">char</span>[] cs, <span class="kw">int</span> i, <span class="type">String</span> t) {
+    <span class="kw">char</span>[] ct = t.toCharArray();
+    <span class="kw">int</span> m = cs.length, j = <span class="num">0</span>;
+    <span class="kw">while</span> (i &lt; m &amp;&amp; j &lt; ct.length &amp;&amp; cs[i] == ct[j]) { i++; j++; }
+    <span class="kw">return</span> j == ct.length;                          <span class="cm">// true only if all of t was consumed</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(m log m + n + &sum;|source|)</code> &mdash; the sort dominates the edit count, plus one sweep of <code>s</code> and the match checks. Space <code>O(m + n)</code> for the index permutation and the output buffer.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) <strong>Never mutate <code>s</code> in place</strong> and re-check against the changed text &mdash; all matches are defined against the original, which the char-array approach preserves for free. (2) Sorting is essential because <code>indices</code> is unsorted; a naive left-to-right assumption breaks on inputs like <code>indices = [4, 0]</code>. (3) The <code>i += len - 1</code> step relies on the loop's own <code>++i</code>; using <code>i += len</code> skips one character too many. (4) The match must stop at the end of <code>s</code> (the <code>i &lt; m</code> guard) so a source longer than the remaining text fails cleanly instead of throwing. A common follow-up is to guarantee overlaps or to apply edits as a single left-to-right pass with a merged, pre-sorted event list.</p></div>
+</div>
+
+<!-- PROBLEM: Missing Ranges -->
+<div class="card">
+<h2>Missing Ranges</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a sorted array <code>nums</code> whose values all lie within the inclusive bounds <code>[lower, upper]</code>, report every maximal range of integers in <code>[lower, upper]</code> that is <em>absent</em> from <code>nums</code>. Each missing range is formatted as <code>"a-&gt;b"</code>, or just <code>"a"</code> when it is a single number.</p>
+<ul>
+  <li>The array may be empty; it may also cover the whole interval, in which case nothing is missing.</li>
+  <li>Values are assumed to fall inside <code>[lower, upper]</code>; duplicates are harmless.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>nums = [2, 5, 6, 9]</code>, <code>lower = 1</code>, <code>upper = 10</code> the missing numbers are 1, 3, 4, 7, 8, 10, which collapse to <code>["1", "3-&gt;4", "7-&gt;8", "10"]</code>. For an empty <code>nums</code> with <code>lower = 3</code>, <code>upper = 7</code> the whole span is missing: <code>["3-&gt;7"]</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Keep a moving frontier <code>lower</code> that marks the smallest integer not yet accounted for. Sweep the sorted array: if the current value equals <code>lower</code>, the frontier simply advances by one (nothing missing there). If the current value is strictly greater than <code>lower</code>, everything from <code>lower</code> up to <code>value - 1</code> is a gap &mdash; emit it as a single number or a range &mdash; then jump the frontier just past this value. After the sweep, any remaining span from <code>lower</code> to <code>upper</code> is the final missing range (or single number when they coincide).</p>
+
+<pre><span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">String</span>&gt; <span class="fn">findMissingRanges</span>(<span class="kw">int</span>[] nums, <span class="kw">int</span> lower, <span class="kw">int</span> upper) {
+    <span class="type">List</span>&lt;<span class="type">String</span>&gt; res = <span class="kw">new</span> <span class="type">LinkedList</span>&lt;&gt;();
+    <span class="kw">for</span> (<span class="kw">int</span> i : nums) {
+        <span class="kw">if</span> (i == lower) lower++;               <span class="cm">// value fills the frontier: no gap</span>
+        <span class="kw">else if</span> (lower &lt; i) {                   <span class="cm">// a gap [lower, i-1] opened up</span>
+            <span class="kw">if</span> (lower == i - <span class="num">1</span>) res.add(<span class="str">""</span> + lower);          <span class="cm">// gap is one number</span>
+            <span class="kw">else</span> res.add(lower + <span class="str">"-&gt;"</span> + (i - <span class="num">1</span>));            <span class="cm">// gap is a range</span>
+            lower = i + <span class="num">1</span>;                    <span class="cm">// advance past this value</span>
+        }
+        <span class="cm">// (values below the frontier, e.g. duplicates, are ignored)</span>
+    }
+    <span class="cm">// trailing gap between the frontier and the upper bound</span>
+    <span class="kw">if</span> (lower &lt; upper) res.add(<span class="type">String</span>.<span class="fn">format</span>(<span class="str">"%d-&gt;%d"</span>, lower, upper));
+    <span class="kw">else if</span> (lower == upper) res.add(<span class="str">""</span> + lower);
+    <span class="kw">return</span> res;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; a single pass over the sorted array. Space <code>O(1)</code> beyond the output list.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> (1) The single-number vs range distinction (<code>lower == i - 1</code>) is easy to miss &mdash; a lone missing value should print as <code>"4"</code>, not <code>"4-&gt;4"</code>. (2) The trailing check after the loop is mandatory: gaps at the top of the interval (and the all-empty case) are only emitted there. (3) <strong>Integer-overflow trap</strong> &mdash; when the bounds reach the 32-bit extremes, <code>i - 1</code> or <code>i + 1</code> can wrap; a common test input is <code>upper = Integer.MAX_VALUE</code>, so widen to <code>long</code> or reorder the arithmetic if that is in scope. (4) Advancing with <code>lower = i + 1</code> (not <code>lower = i</code>) is what skips the value just consumed; forgetting it re-reports that number. The natural follow-up asks to merge this with a live stream or to output the count of missing integers instead of the ranges.</p></div>
+</div>
+<!-- PROBLEM: Maximize Distance to Closest Person -->
+<div class="card">
+<h2>Maximize Distance to Closest Person</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>A row of seats is given as an array where <code>1</code> marks an occupied seat and <code>0</code> an empty one. Alex wants to sit in some empty seat so that the distance to the nearest already-seated person is as large as possible. Return that maximum possible distance, measured in seats.</p>
+<ul>
+  <li>There is at least one person and at least one empty seat.</li>
+  <li>Distance is the absolute difference of indices; only the single closest neighbour matters.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>[0, 0, 1, 0, 0, 0, 0, 1, 0]</code> the answer is <code>2</code> &mdash; sitting at index 4 or 5 sits three seats from the farther occupant but the nearer one is 2 away (the interior gap between indices 2 and 7 gives <code>floor((7-2)/2) = 2</code>, matching the leading run's distance of 2 and beating the trailing run of 1). For <code>[1, 0, 0, 0, 0]</code> the answer is <code>4</code>: sit at the far right end.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Every empty seat's best value comes from exactly one of three situations: a <em>leading</em> empty run before the first person (sit at the far left, distance = its index), an <em>interior</em> run between two people (sit in the middle, so <code>floor((gap)/2)</code>), or a <em>trailing</em> run after the last person (sit at the far right, distance = end minus last person). Sweep once, remembering <code>j</code> = the index of the previous occupied seat. Each time you meet a person, score the run that just closed; at the final index, score any trailing run.</p>
+
+<pre><span class="cm">// j = index of the previous occupied seat (-1 until we meet the first person).</span>
+<span class="cm">// Each occupied seat closes an empty run whose best seat we score here.</span>
+<span class="kw">public</span> <span class="kw">int</span> <span class="fn">maxDistToClosest</span>(<span class="kw">int</span>[] seats) {
+    <span class="kw">int</span> n = seats.length, res = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>, j = -<span class="num">1</span>; i &lt; n; ++i) {
+        <span class="kw">if</span> (<span class="num">1</span> == seats[i]) {                          <span class="cm">// an occupied seat</span>
+            <span class="cm">// leading run: sit far left, distance i</span>
+            <span class="kw">if</span> (-<span class="num">1</span> == j) res = <span class="type">Math</span>.<span class="fn">max</span>(res, i);
+            <span class="cm">// interior run: sit in the middle, floor(gap/2)</span>
+            <span class="kw">else</span> res = <span class="type">Math</span>.<span class="fn">max</span>(res, (i - j) &gt;&gt; <span class="num">1</span>);
+            j = i;                                   <span class="cm">// remember this occupant</span>
+        } <span class="kw">else</span> <span class="kw">if</span> (i + <span class="num">1</span> == n &amp;&amp; -<span class="num">1</span> != j) {  <span class="cm">// trailing run ends at last seat</span>
+            res = <span class="type">Math</span>.<span class="fn">max</span>(res, i - j);              <span class="cm">// sit far right, distance i - j</span>
+        }
+    }
+    <span class="kw">return</span> res;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; a single left-to-right pass. Space <code>O(1)</code>.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Three distinct cases, not one formula</strong> &mdash; the leading and trailing runs are scored with the full length (you sit at the end), while an interior run is halved because a neighbour bounds you on both sides. Collapsing them into one rule is the classic bug. <strong>The <code>&gt;&gt; 1</code> is floor-division by two</strong> &mdash; for an odd interior gap the middle seat is one closer on the tighter side, which is exactly what the floor captures. <strong>Reconcile with the input contract</strong> &mdash; the code assumes at least one person exists; with an all-empty row <code>j</code> would stay <code>-1</code>, neither branch that lifts <code>res</code> fires, and it returns <code>0</code> rather than <code>n</code>. That is fine under the stated guarantee, but if the guarantee is dropped you must special-case it. A frequent follow-up asks for the actual seat index, or for a circular row.</p></div>
+</div>
+
+<!-- PROBLEM: Next Closest Time -->
+<div class="card">
+<h2>Next Closest Time</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given a 24-hour time as a string <code>"HH:MM"</code>, form the closest later time that reuses <em>only</em> the four digits already present (any digit may be reused any number of times). If no later time can be built today, wrap around to the earliest time of the next day. Return it as <code>"HH:MM"</code>.</p>
+<ul>
+  <li>The input is a valid time, so hours are <code>00..23</code> and minutes <code>00..59</code>.</li>
+  <li>"Closest later" is measured forward in minutes, wrapping past midnight if necessary.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>"13:55"</code> &rarr; <code>"15:11"</code> &mdash; no minute above 55 can be built from {1,3,5}, so the hour advances to the next reachable value 15 and the minutes reset to the smallest pair 11. And <code>"22:29"</code> &rarr; <code>"22:22"</code>: nothing larger fits today (digits are {2,2,2,9}), so it wraps to the smallest time of tomorrow.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Because only four digits are in play, the search space is tiny. Try to bump the <em>minutes</em> first while keeping the hour: find the smallest two-digit value, built from the available digits, that is strictly greater than the current minute and still below 60. If that fails, bump the <em>hour</em> the same way (below 24) and reset the minutes to the smallest possible pair. If even the hour can't advance, the whole clock has peaked, so wrap to the smallest digit repeated in all four slots.</p>
+
+<pre><span class="cm">// Advance MINUTES first (same hour); else advance HOURS and reset minutes to</span>
+<span class="cm">// the smallest; else wrap to the earliest time of the next day. Every field</span>
+<span class="cm">// is rebuilt only from the four input digits.</span>
+<span class="kw">public</span> <span class="type">String</span> <span class="fn">nextClosestTime</span>(<span class="type">String</span> time) {
+    <span class="type">String</span>[] ss = time.split(<span class="str">":"</span>);
+    <span class="kw">int</span> hour = <span class="type">Integer</span>.<span class="fn">parseInt</span>(ss[<span class="num">0</span>]), minute = <span class="type">Integer</span>.<span class="fn">parseInt</span>(ss[<span class="num">1</span>]);
+    <span class="kw">int</span>[] digit = <span class="kw">new</span> <span class="kw">int</span>[]{hour / <span class="num">10</span>, hour % <span class="num">10</span>, minute / <span class="num">10</span>, minute % <span class="num">10</span>};
+    <span class="type">Arrays</span>.<span class="fn">sort</span>(digit);                                <span class="cm">// ascending: digit[0] is the smallest</span>
+
+    <span class="type">String</span> nextMin = <span class="fn">next</span>(digit, minute, <span class="num">60</span>);         <span class="cm">// a larger valid minute, same hour?</span>
+    <span class="kw">if</span> (<span class="kw">null</span> != nextMin) <span class="kw">return</span> ss[<span class="num">0</span>] + <span class="str">":"</span> + nextMin;
+
+    <span class="type">String</span> nextHour = <span class="fn">next</span>(digit, hour, <span class="num">24</span>);         <span class="cm">// else a larger valid hour...</span>
+    <span class="kw">if</span> (<span class="kw">null</span> != nextHour)                  <span class="cm">// ...minutes reset to smallest pair</span>
+        <span class="kw">return</span> nextHour + <span class="str">":"</span> + <span class="type">String</span>.<span class="fn">format</span>(<span class="str">"%d%d"</span>, digit[<span class="num">0</span>], digit[<span class="num">0</span>]);
+
+    <span class="cm">// Nothing bigger today: wrap to the smallest representable time.</span>
+    <span class="kw">return</span> <span class="type">String</span>.<span class="fn">format</span>(<span class="str">"%d%d:%d%d"</span>, digit[<span class="num">0</span>], digit[<span class="num">0</span>], digit[<span class="num">0</span>], digit[<span class="num">0</span>]);
+}
+
+<span class="cm">// Smallest two-digit number (from the sorted digits, repeats allowed) that is</span>
+<span class="cm">// strictly greater than `target` and strictly less than `limit`; null if none.</span>
+<span class="kw">private</span> <span class="type">String</span> <span class="fn">next</span>(<span class="kw">int</span>[] digit, <span class="kw">int</span> target, <span class="kw">int</span> limit) {
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; digit.length; ++i) {
+        <span class="kw">if</span> (<span class="num">0</span> &lt; i &amp;&amp; digit[i] == digit[i - <span class="num">1</span>]) <span class="kw">continue</span>;   <span class="cm">// skip duplicate tens digit</span>
+        <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; digit.length; ++j) {
+            <span class="kw">if</span> (<span class="num">0</span> &lt; j &amp;&amp; digit[j] == digit[j - <span class="num">1</span>]) <span class="kw">continue</span>;   <span class="cm">// skip duplicate units digit</span>
+            <span class="kw">int</span> res = digit[i] * <span class="num">10</span> + digit[j];
+            <span class="kw">if</span> (res &gt;= limit) <span class="kw">continue</span>;               <span class="cm">// out of range (>= 60 or >= 24)</span>
+            <span class="kw">if</span> (res &gt; target) <span class="kw">return</span> <span class="type">String</span>.<span class="fn">format</span>(<span class="str">"%02d"</span>, res);
+        }
+    }
+    <span class="kw">return</span> <span class="kw">null</span>;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(1)</code> &mdash; each <code>next</code> call examines at most <code>4 &times; 4</code> digit pairs and there are two calls, all independent of input size. Space <code>O(1)</code>.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Why the first hit is the minimum</strong> &mdash; the digits are sorted ascending and the tens digit dominates the value, so scanning tens-then-units in order returns the smallest value that clears <code>target</code>; returning any later match would be wrong. <strong>Two different limits</strong> &mdash; minutes are capped at 60 and hours at 24; reusing one cap for both yields impossible clocks like <code>"25:00"</code> or <code>"xx:70"</code>. <strong>Reset, don't retain</strong> &mdash; when the hour rolls forward the minutes must drop to the smallest pair, not keep the old value. <strong>The wrap is always valid</strong> &mdash; the smallest digit of any legal <code>HH:MM</code> is at most 2 (the hour's tens digit is 0, 1, or 2), so <code>digit[0]digit[0] &le; 22 &lt; 60</code>; no special-casing needed. The duplicate-digit <code>continue</code>s are a minor speedup, not required for correctness. A common follow-up is to compute the elapsed-minute distance explicitly, or to allow a chosen subset of digits.</p></div>
+</div>
+
+<!-- PROBLEM: Read N Characters Given Read4 II - Call multiple times -->
+<div class="card">
+<h2>Read N Characters Given Read4 II &mdash; Call Multiple Times</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>You are given a lower-level API <code>read4(char[] buf4)</code> that copies up to four characters from a file into <code>buf4</code> and returns how many it actually read (<code>0</code> at end of file). Using only <code>read4</code>, implement <code>read(char[] buf, int n)</code> that fills <code>buf</code> with up to <code>n</code> characters and returns the count read. Crucially, <code>read</code> may be called <em>many times</em> on the same file, so leftover characters fetched by an earlier <code>read4</code> must survive between calls.</p>
+<ul>
+  <li><code>buf</code> is guaranteed large enough to hold the characters returned by that call.</li>
+  <li>Once the file is exhausted, every subsequent call must return <code>0</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for the file <code>"greenhouse"</code> and the call sequence <code>read(2), read(2), read(3), read(4)</code> the returns are <code>2, 2, 3, 3</code> filling <code>"gr"</code>, <code>"ee"</code>, <code>"nho"</code>, <code>"use"</code>. Note the second <code>read(2)</code> is served entirely from the <code>"ee"</code> chunk the first call left buffered (the opening <code>read4</code> fetched <code>"gree"</code> and only <code>"gr"</code> was handed out) &mdash; no new <code>read4</code> happens &mdash; and the final <code>read(4)</code> returns only <code>3</code> because the file ran out, after which every further call returns <code>0</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>The single-call version can just loop <code>read4</code> into <code>buf</code>. The "call multiple times" twist is that one <code>read4</code> may over-fetch: if the caller asked for 2 but <code>read4</code> grabbed 4, the extra 2 characters must be remembered for the next <code>read</code>. So promote the 4-char scratch buffer, a read cursor <code>pos</code>, and a remaining-count <code>cnt</code> to <em>instance fields</em>. Each call first drains any leftover buffered characters, and only refills via <code>read4</code> when the request is still unmet.</p>
+
+<pre><span class="cm">/**
+ * read4(char[] buf4) is provided by the parent class Reader4: it copies up to
+ * 4 characters into buf4 and returns how many it read (0 at end of file).
+ * Because read() is called repeatedly, leftover characters from a previous
+ * read4 must persist between calls -- hence the instance fields below.
+ */</span>
+<span class="kw">public class</span> <span class="type">Solution</span> <span class="kw">extends</span> <span class="type">Reader4</span> {
+    <span class="kw">private</span> <span class="kw">char</span>[] buffer = <span class="kw">new</span> <span class="kw">char</span>[<span class="num">4</span>];   <span class="cm">// last chunk fetched by read4</span>
+    <span class="kw">private</span> <span class="kw">int</span> pos;                       <span class="cm">// next unread index within buffer (0..3)</span>
+    <span class="kw">private</span> <span class="kw">int</span> cnt;                       <span class="cm">// unread characters still left in buffer</span>
+
+    <span class="kw">public</span> <span class="kw">int</span> <span class="fn">read</span>(<span class="kw">char</span>[] buf, <span class="kw">int</span> n) {
+        <span class="kw">int</span> i = <span class="num">0</span>, res = <span class="num">0</span>;             <span class="cm">// i = write index into buf, res = total copied</span>
+        <span class="kw">while</span> (<span class="num">0</span> &lt; n) {
+            <span class="kw">int</span> k = <span class="type">Math</span>.<span class="fn">min</span>(cnt, n);     <span class="cm">// take as many buffered chars as we still need</span>
+            <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j &lt; k; ++j, pos = (pos + <span class="num">1</span>) &amp; <span class="num">3</span>) {
+                buf[i++] = buffer[pos];    <span class="cm">// (pos + 1) &amp; 3 wraps 3 -&gt; 0 (buffer is 4 wide)</span>
+            }
+            cnt -= k;                      <span class="cm">// consumed k buffered chars...</span>
+            n   -= k;                      <span class="cm">// ...satisfying k of the request</span>
+            res += k;
+            <span class="kw">if</span> (<span class="num">0</span> &lt; n) {                     <span class="cm">// still hungry: refill from the file</span>
+                pos = <span class="num">0</span>;
+                <span class="kw">if</span> (<span class="num">0</span> == (cnt = <span class="fn">read4</span>(buffer))) <span class="kw">break</span>;   <span class="cm">// end of file: stop</span>
+            }
+        }
+        <span class="kw">return</span> res;
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> per call &mdash; every returned character is copied exactly once and <code>read4</code> is invoked proportionally to the characters consumed. Space <code>O(1)</code> &mdash; a fixed 4-character buffer plus two integers, retained across calls.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>State must persist</strong> &mdash; the entire difficulty over the single-call variant is that <code>buffer</code>, <code>pos</code>, and <code>cnt</code> are <em>instance</em> fields; making them locals silently drops the over-fetched tail and corrupts the next call. <strong>Reset the cursor only before a fresh fetch</strong> &mdash; <code>pos = 0</code> belongs immediately before <code>read4</code>, never after merely draining leftovers, or you would re-read stale characters. <strong>Stop at EOF</strong> &mdash; once <code>read4</code> returns 0 you must <code>break</code>; looping again while <code>n &gt; 0</code> would spin forever. <strong>Honour partial reads</strong> &mdash; requesting more than the file holds returns the true smaller count, and every later call returns 0. The <code>&amp; 3</code> is just a fast <code>% 4</code>. A natural follow-up asks to make the class thread-safe, which requires synchronising the shared cursor state.</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_problems_arrays_strings.html">&lsaquo; Arrays &amp; Strings</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_heaps_topk.html">Heaps, Top-K &amp; Greedy &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

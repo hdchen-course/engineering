@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Protection &amp; Broadcast Encryption — Notes (AACS ↔ Titan)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --border: #dee2e6;
+  --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 980px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 32px; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+.crumb { text-align:center; margin-bottom: 24px; font-size: 13px; color: var(--text3); }
+.crumb a { color: var(--blue); text-decoration: none; }
+h2 { font-size: 23px; font-weight: 700; margin: 32px 0 14px; color: var(--blue); }
+h3 { font-size: 17px; font-weight: 600; margin: 22px 0 10px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; white-space: pre-wrap; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code, td code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: #114f8c; margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: #1d6b2e; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warn p { color: #a85700; margin: 0; }
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+.svg-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; margin: 20px 0; text-align: center; overflow-x: auto; }
+.iv { background: var(--purple-l); border-left: 3px solid var(--purple); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.iv p { color: #4a2fa8; margin: 0; }
+@media (max-width: 768px) { .container { padding: 20px 12px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VII · Chapter 7 — <b>Content Protection &amp; Broadcast Encryption</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Content Protection &amp; Broadcast Encryption</h1>
+  <div class="sub">Beginner notes — symmetric vs asymmetric, how AACS lets many keys open one disc, and how it bridges to Titan / HSM per-device identity</div>
+</header>
+<div class="crumb">📚 <a href="google_security_index.html">Google Security Systems — Overview</a> &nbsp;›&nbsp; Content Protection (bridge note)</div>
+
+<div class="card">
+<h2>Why this note exists</h2>
+<p>A quick, honest primer that connects <strong>content-protection key management</strong> (the <strong>AACS</strong> — Advanced Access Content System — / Blu-ray world) to the <strong>per-device hardware identity</strong> world (Titan, <strong>HSM</strong> (Hardware Security Module — a dedicated tamper-resistant device that stores and uses keys without ever exposing them) based device provisioning). It answers a natural question — <em>"can one encrypted file be opened by many different keys?"</em> — and shows why "shared software key" is fragile while "per-device key" is not. Useful as an interview bridge: the same problem (protecting a secret against copying, and revoking it when it leaks) shows up across a whole career.</p>
+</div>
+
+<div class="card">
+<h2>In one picture: the big idea</h2>
+<p><strong>The whole chapter in one sentence:</strong> encrypt something <em>once</em>, let <strong>millions of different keys</strong> open it, and still be able to <strong>cancel one stolen key</strong> without disturbing anyone else.</p>
+<div class="insight"><p><strong>Everyday analogy — the stadium turnstile.</strong> A concert prints one show, but every fan carries a <em>different</em> ticket barcode. All barcodes open the <em>same</em> gates. If someone photocopies their ticket and posts it online, security adds just that one barcode to a "do-not-admit" list at the next show — everyone else walks straight in. Broadcast encryption is that turnstile done with math: one encrypted movie, a different secret key in every player, and a clean way to blacklist a leaked key on future discs.</p></div>
+<p><strong>Tiny concrete example:</strong> imagine only 4 players in the world, with keys K1–K4. The disc encrypts the movie with a single <em>Media Key</em>, then stores that Media Key four times — locked once under K1, once under K2, once under K3, once under K4. Your player uses <em>its</em> key to open <em>its</em> copy of the Media Key, then plays. If K3 leaks, tomorrow's discs simply skip the "locked under K3" copy — K1, K2, K4 players never notice; the K3 player is dead.</p>
+<div class="svg-wrap">
+<svg viewBox="0 0 680 220" width="100%" style="max-width:760px" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <text x="340" y="22" text-anchor="middle" fill="#212529" font-size="14" font-weight="bold">Encrypt once · open with any valid key · blacklist a leaked one</text>
+  <rect x="18" y="70" width="150" height="64" rx="8" fill="#d0ebff" stroke="#1971c2"/>
+  <text x="93" y="98" text-anchor="middle" fill="#114f8c" font-size="12" font-weight="bold">Encrypt the</text>
+  <text x="93" y="115" text-anchor="middle" fill="#114f8c" font-size="12" font-weight="bold">movie ONCE</text>
+  <line x1="168" y1="102" x2="222" y2="102" stroke="#868e96" stroke-width="1.6" marker-end="url(#bi)"/>
+  <rect x="224" y="66" width="176" height="72" rx="8" fill="#e5dbff" stroke="#7048e8"/>
+  <text x="312" y="90" text-anchor="middle" fill="#4a2fa8" font-size="12" font-weight="bold">MKB: the Media Key,</text>
+  <text x="312" y="107" text-anchor="middle" fill="#4a2fa8" font-size="11">wrapped once per</text>
+  <text x="312" y="123" text-anchor="middle" fill="#4a2fa8" font-size="11">device-key family</text>
+  <line x1="400" y1="90"  x2="470" y2="58"  stroke="#868e96" stroke-width="1.4" marker-end="url(#bi)"/>
+  <line x1="400" y1="100" x2="470" y2="98"  stroke="#868e96" stroke-width="1.4" marker-end="url(#bi)"/>
+  <line x1="400" y1="110" x2="470" y2="138" stroke="#868e96" stroke-width="1.4" marker-end="url(#bi)"/>
+  <line x1="400" y1="120" x2="470" y2="178" stroke="#868e96" stroke-width="1.4" marker-end="url(#bi)"/>
+  <rect x="472" y="44"  width="190" height="26" rx="5" fill="#d3f9d8" stroke="#2f9e44"/>
+  <text x="567" y="61" text-anchor="middle" fill="#1d6b2e" font-size="11" font-weight="bold">Player K1 → opens ✓</text>
+  <rect x="472" y="84"  width="190" height="26" rx="5" fill="#d3f9d8" stroke="#2f9e44"/>
+  <text x="567" y="101" text-anchor="middle" fill="#1d6b2e" font-size="11" font-weight="bold">Player K2 → opens ✓</text>
+  <rect x="472" y="124" width="190" height="26" rx="5" fill="#ffe3e3" stroke="#c92a2a"/>
+  <text x="567" y="141" text-anchor="middle" fill="#c92a2a" font-size="11" font-weight="bold">Player K3 (leaked) → ✗</text>
+  <rect x="472" y="164" width="190" height="26" rx="5" fill="#d3f9d8" stroke="#2f9e44"/>
+  <text x="567" y="181" text-anchor="middle" fill="#1d6b2e" font-size="11" font-weight="bold">…millions more → open ✓</text>
+  <defs><marker id="bi" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#868e96"/></marker></defs>
+</svg>
+</div>
+<p>Two properties are in tension, and the rest of this note is really about how one clever tree gets <strong>both</strong> at once: <strong>scale</strong> (millions of keys open the same disc) and <strong>revocation</strong> (cut off exactly one leaked key, hurt no one else).</p>
+</div>
+
+<div class="card">
+<h2>1. First, the basics: symmetric vs. asymmetric (ECC)</h2>
+<table>
+  <tr><th>Type</th><th>How keys work</th><th>Example</th></tr>
+  <tr><td><strong>Symmetric</strong></td><td><strong>Same key</strong> encrypts and decrypts. One key, one lock.</td><td>AES</td></tr>
+  <tr><td><strong>Asymmetric</strong></td><td>A <strong>pair</strong>: public key encrypts → the <em>matching</em> private key decrypts (or: private signs → public verifies).</td><td>RSA, <strong>ECC / elliptic-curve</strong></td></tr>
+</table>
+<div class="insight"><p><strong>What ECC (elliptic-curve) actually is:</strong> just a <em>method</em> for doing asymmetric crypto that needs a <strong>much shorter key</strong> for the same strength (a 256-bit ECC key ≈ a 3072-bit RSA key). It's still "a matched pair of keys," not "any key opens it." Great for small/embedded devices — which is why modern IoT device certs commonly use Ed25519 / P-256 (both elliptic curves).</p></div>
+<p><strong>So can one encrypted file be opened by many <em>different</em> keys?</strong> In plain symmetric or asymmetric crypto — <strong>no</strong>. One key (or one matched pair) per lock. To get "many different keys can open the same disc," you need a special scheme layered on top: <em>broadcast encryption</em>.</p>
+<div class="iv"><p><strong>Interview angle:</strong> have the crisp one-liner ready — <em>symmetric = one shared key; asymmetric = a matched public/private pair; ECC just makes that pair small enough for tiny devices.</em> Being able to say <em>why</em> a 256-bit ECC key rivals a 3072-bit RSA key shows you think in security-per-bit, not just acronyms.</p></div>
+</div>
+
+<div class="card">
+<h2>2. Broadcast encryption — how AACS lets many keys open one disc</h2>
+<p>This is the Blu-ray / AACS model. The goal: press <strong>one</strong> disc, and let <strong>millions of different players</strong> (each with its own key) play it — while still being able to <strong>cut off</strong> any player whose key gets stolen.</p>
+<div class="svg-wrap">
+<svg viewBox="0 0 720 260" width="100%" style="max-width:820px" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <text x="360" y="24" text-anchor="middle" fill="#212529" font-size="14" font-weight="bold">One disc, many device keys</text>
+  <!-- disc -->
+  <rect x="40" y="50" width="230" height="150" rx="10" fill="#f1f3f5" stroke="#dee2e6"/>
+  <text x="155" y="72" text-anchor="middle" fill="#212529" font-size="12" font-weight="bold">The Blu-ray disc</text>
+  <rect x="58" y="86" width="194" height="42" rx="6" fill="#e5dbff" stroke="#7048e8"/>
+  <text x="155" y="104" text-anchor="middle" fill="#4a2fa8" font-size="11" font-weight="bold">Movie: Title Keys, unlocked via</text>
+  <text x="155" y="120" text-anchor="middle" fill="#4a2fa8" font-size="11">ONE Media Key + Volume ID</text>
+  <rect x="58" y="138" width="194" height="52" rx="6" fill="#fff3bf" stroke="#e67700"/>
+  <text x="155" y="157" text-anchor="middle" fill="#a85700" font-size="11" font-weight="bold">MKB (Media Key Block):</text>
+  <text x="155" y="173" text-anchor="middle" fill="#a85700" font-size="10">the Media Key, wrapped separately</text>
+  <text x="155" y="185" text-anchor="middle" fill="#a85700" font-size="10">for thousands of device keys</text>
+  <!-- players -->
+  <line x1="270" y1="164" x2="330" y2="120" stroke="#868e96" stroke-width="1.5" marker-end="url(#bc)"/>
+  <line x1="270" y1="164" x2="330" y2="164" stroke="#868e96" stroke-width="1.5" marker-end="url(#bc)"/>
+  <line x1="270" y1="164" x2="330" y2="208" stroke="#868e96" stroke-width="1.5" marker-end="url(#bc)"/>
+  <rect x="335" y="100" width="345" height="40" rx="6" fill="#d0ebff" stroke="#1971c2"/>
+  <text x="507" y="118" text-anchor="middle" fill="#114f8c" font-size="11" font-weight="bold">PS5 (its device key) → unwraps → Media Key → plays</text>
+  <text x="507" y="133" text-anchor="middle" fill="#114f8c" font-size="10">&nbsp;</text>
+  <rect x="335" y="144" width="345" height="40" rx="6" fill="#d3f9d8" stroke="#2f9e44"/>
+  <text x="507" y="162" text-anchor="middle" fill="#1d6b2e" font-size="11" font-weight="bold">Panasonic player (different key) → same Media Key</text>
+  <text x="507" y="177" text-anchor="middle" fill="#1d6b2e" font-size="10">different key in, SAME media key out</text>
+  <rect x="335" y="188" width="345" height="34" rx="6" fill="#ffe3e3" stroke="#c92a2a"/>
+  <text x="507" y="209" text-anchor="middle" fill="#c92a2a" font-size="11" font-weight="bold">Revoked player → new MKB omits its key → can't unwrap</text>
+  <defs><marker id="bc" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#868e96"/></marker></defs>
+</svg>
+</div>
+<ol>
+  <li>The movie is encrypted with per-title <strong>Title Keys</strong>, which are unlocked by a Volume Unique Key derived from <strong>one Media Key</strong> plus the disc's <strong>Volume ID</strong>. (One Media Key generation can cover many titles, not just one.)</li>
+  <li>The disc carries an <strong>MKB</strong> — the Media Key <em>wrapped separately for thousands of different device keys</em>.</li>
+  <li>Each player uses <strong>its own device key</strong> to unwrap the <em>same</em> Media Key from the MKB, combines it with the Volume ID to get the Title Keys, then decrypts the movie.</li>
+</ol>
+<p class="fine" style="font-size:0.85em;color:var(--text3)">Simplification note: for clarity the diagram shows the Media Key "unlocking the movie" directly. In real AACS there is an extra layer — the Media Key (with the Volume ID) yields a Volume Unique Key that unwraps the Title Keys that actually encrypt the content.</p>
+<p>So the answer to "can many different keys open one file?" is <strong>yes — via this indirection</strong>: many device keys → each unwraps the <em>same</em> content key → opens the same file.</p>
+<div class="tip"><p><strong>Revocation is the standout feature:</strong> if a device's key leaks, future discs are pressed with a new MKB that simply <em>leaves that key out</em>. The cracked device can't play new titles anymore (old discs still work). This is the same idea Titan calls <em>remediation</em> (re-establishing trust in only the good devices).</p></div>
+<div class="iv"><p><strong>Interview angle:</strong> explain the <em>indirection</em> in one breath — content is encrypted with a content key; the MKB wraps that key many ways so any valid device key can unwrap it. The shared idea with <em>envelope encryption</em> (e.g. AWS KMS) is "encrypt the data once with a content key, then protect that content key separately." The MKB extends this to the <em>multi-recipient / broadcast-encryption</em> case by wrapping the same content key under many different device keys — flagging both connections (and the distinction between them) is what interviewers are listening for.</p></div>
+</div>
+
+<div class="card">
+<h2>3. "Doesn't issuing a key per device fail to scale?" — good instinct</h2>
+<p>Exactly the right question. Two ways to hand out device keys:</p>
+<table>
+  <tr><th>Approach</th><th>Scale?</th><th>Reality</th></tr>
+  <tr><td><strong>One unique key per physical unit</strong> (per PS5)</td><td>❌ poor</td><td>The MKB would need a slot for every single unit — billions of them. AACS does <em>not</em> do this.</td></tr>
+  <tr><td><strong>One key set per <em>model</em> / product line / firmware version</strong></td><td>✅ workable</td><td>What AACS actually does. All copies of "PowerDVD v12," or all units of one player model, share a key set. The MKB only has to cover tens of thousands of <em>models/vendors</em>, not billions of units.</td></tr>
+</table>
+<p>The intuition — <em>"some devices are probably on the same key"</em> — is right: the sharing unit is a <strong>model / product line</strong>, not each individual unit.</p>
+<h3>How it stays revocable despite sharing: the complete-subtree cover</h3>
+<p>The clever trick that makes "shared <em>and</em> individually revocable" possible: each device gets <strong>a set of keys</strong> corresponding to its position on a giant binary tree.</p>
+<ul>
+  <li>Because keys map to <em>subsets</em> of the tree, <strong>many devices share the upper-level keys</strong> → the MKB stays small (scales).</li>
+  <li>But the MKB can <strong>precisely cut off one model / one batch</strong> from the tree without affecting anyone else → revocation.</li>
+</ul>
+<div class="insight"><p><strong>Two NNL variants — this note shows the simpler one.</strong> The animation below demonstrates the <strong>complete-subtree (CS)</strong> method: the cover is built only from whole subtrees, so revoking a single leaf can still cost several wrapped keys (about <code>log₂ N</code>). AACS actually uses the more advanced <strong>subset-difference (SD)</strong> refinement from the same Naor–Naor–Lotspiech paper, which encodes "this subtree <em>minus</em> that smaller one" as a single subset — so revoking one device needs on the order of just <strong>one</strong> header entry, not <code>log N</code>. CS is easier to picture; SD is what ships.</p></div>
+
+<h3>Watch it happen: subset-cover revocation</h3>
+<p>Picture 8 receivers as the leaves of a binary tree. Every receiver secretly stores the keys of <em>every node on its path up to the root</em>. To reach a group of receivers, the broadcaster wraps the Media Key under the <strong>highest node key that covers exactly that group</strong> — so covering everyone can cost just <em>one</em> key (the root). Revoking one leaf means finding a small "cover" of subtree keys that skips the bad leaf. Step through it:</p>
+<div class="svg-wrap">
+<svg viewBox="0 0 720 330" width="100%" style="max-width:820px" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <!-- edges (drawn first, behind nodes) -->
+  <g stroke="#7c848c" stroke-width="1.6">
+    <line x1="360" y1="60" x2="180" y2="128"/><line x1="360" y1="60" x2="540" y2="128"/>
+    <line x1="180" y1="128" x2="90"  y2="196"/><line x1="180" y1="128" x2="270" y2="196"/>
+    <line x1="540" y1="128" x2="450" y2="196"/><line x1="540" y1="128" x2="630" y2="196"/>
+    <line x1="90"  y1="196" x2="45"  y2="266"/><line x1="90"  y1="196" x2="135" y2="266"/>
+    <line x1="270" y1="196" x2="225" y2="266"/><line x1="270" y1="196" x2="315" y2="266"/>
+    <line x1="450" y1="196" x2="405" y2="266"/><line x1="450" y1="196" x2="495" y2="266"/>
+    <line x1="630" y1="196" x2="585" y2="266"/><line x1="630" y1="196" x2="675" y2="266"/>
+  </g>
+  <!-- internal node keys -->
+  <circle id="cpbeN_root" cx="360" cy="60"  r="17" fill="#f1f3f5" stroke="#adb5bd" stroke-width="1.6"/>
+  <text x="360" y="64" text-anchor="middle" font-size="11" font-weight="bold" fill="#495057">root</text>
+  <circle id="cpbeN_L" cx="180" cy="128" r="15" fill="#f1f3f5" stroke="#adb5bd" stroke-width="1.6"/>
+  <circle id="cpbeN_R" cx="540" cy="128" r="15" fill="#f1f3f5" stroke="#adb5bd" stroke-width="1.6"/>
+  <circle id="cpbeN_A" cx="90"  cy="196" r="13" fill="#f1f3f5" stroke="#adb5bd" stroke-width="1.6"/>
+  <circle id="cpbeN_B" cx="270" cy="196" r="13" fill="#f1f3f5" stroke="#adb5bd" stroke-width="1.6"/>
+  <circle id="cpbeN_C" cx="450" cy="196" r="13" fill="#f1f3f5" stroke="#adb5bd" stroke-width="1.6"/>
+  <circle id="cpbeN_D" cx="630" cy="196" r="13" fill="#f1f3f5" stroke="#adb5bd" stroke-width="1.6"/>
+  <!-- leaves (receivers) -->
+  <g font-size="10" font-weight="bold">
+    <g><rect id="cpbeL_0" x="23"  y="250" width="44" height="32" rx="5" fill="#e7f5ff" stroke="#1971c2" stroke-width="1.6"/><text x="45"  y="270" text-anchor="middle" fill="#114f8c">R0</text></g>
+    <g><rect id="cpbeL_1" x="113" y="250" width="44" height="32" rx="5" fill="#e7f5ff" stroke="#1971c2" stroke-width="1.6"/><text x="135" y="270" text-anchor="middle" fill="#114f8c">R1</text></g>
+    <g><rect id="cpbeL_2" x="203" y="250" width="44" height="32" rx="5" fill="#e7f5ff" stroke="#1971c2" stroke-width="1.6"/><text x="225" y="270" text-anchor="middle" fill="#114f8c">R2</text></g>
+    <g><rect id="cpbeL_3" x="293" y="250" width="44" height="32" rx="5" fill="#e7f5ff" stroke="#1971c2" stroke-width="1.6"/><text x="315" y="270" text-anchor="middle" fill="#114f8c">R3</text></g>
+    <g><rect id="cpbeL_4" x="383" y="250" width="44" height="32" rx="5" fill="#e7f5ff" stroke="#1971c2" stroke-width="1.6"/><text x="405" y="270" text-anchor="middle" fill="#114f8c">R4</text></g>
+    <g><rect id="cpbeL_5" x="473" y="250" width="44" height="32" rx="5" fill="#e7f5ff" stroke="#1971c2" stroke-width="1.6"/><text x="495" y="270" text-anchor="middle" fill="#114f8c">R5</text><text id="cpbeLock5" x="495" y="299" text-anchor="middle" font-size="13" opacity="0">🔒</text></g>
+    <g><rect id="cpbeL_6" x="563" y="250" width="44" height="32" rx="5" fill="#e7f5ff" stroke="#1971c2" stroke-width="1.6"/><text x="585" y="270" text-anchor="middle" fill="#114f8c">R6</text></g>
+    <g><rect id="cpbeL_7" x="653" y="250" width="44" height="32" rx="5" fill="#e7f5ff" stroke="#1971c2" stroke-width="1.6"/><text x="675" y="270" text-anchor="middle" fill="#114f8c">R7</text></g>
+  </g>
+  <!-- legend -->
+  <g font-size="10">
+    <circle cx="470" cy="24" r="6" fill="#d3f9d8" stroke="#2f9e44" stroke-width="1.4"/><text x="482" y="28" fill="#495057">key used to wrap Media Key</text>
+    <rect x="640" y="18" width="12" height="12" rx="3" fill="#ffe3e3" stroke="#c92a2a" stroke-width="1.4"/><text x="656" y="28" fill="#495057">revoked</text>
+  </g>
+</svg>
+</div>
+<div style="text-align:center;margin:4px 0 2px;">
+  <button id="cpbeBtnStep" type="button" style="background:#1971c2;color:#fff;border:none;border-radius:8px;padding:9px 18px;font:600 13px 'Inter',sans-serif;cursor:pointer;margin:0 4px;">Step ▶</button>
+  <button id="cpbeBtnReset" type="button" style="background:#f1f3f5;color:#495057;border:1px solid #dee2e6;border-radius:8px;padding:9px 18px;font:600 13px 'Inter',sans-serif;cursor:pointer;margin:0 4px;">Reset ↺</button>
+</div>
+<div id="cpbeStatus" class="insight" style="min-height:44px;"><p><em>Step 0 —</em> Press <strong>Step ▶</strong> to begin.</p></div>
+<script>
+(function(){
+  var NODES=['cpbeN_root','cpbeN_L','cpbeN_R','cpbeN_A','cpbeN_B','cpbeN_C','cpbeN_D'];
+  var LEAVES=['cpbeL_0','cpbeL_1','cpbeL_2','cpbeL_3','cpbeL_4','cpbeL_5','cpbeL_6','cpbeL_7'];
+  var NEUTRAL_N={fill:'#f1f3f5',stroke:'#adb5bd'};
+  var COVER={fill:'#d3f9d8',stroke:'#2f9e44'};
+  var STRUCK={fill:'#ffe3e3',stroke:'#c92a2a'};
+  var LEAF_NEUTRAL={fill:'#e7f5ff',stroke:'#1971c2'};
+  var LEAF_OK={fill:'#d3f9d8',stroke:'#2f9e44'};
+  var LEAF_BAD={fill:'#ffe3e3',stroke:'#c92a2a'};
+  function $(id){return document.getElementById(id);}
+  function paint(id,c){var e=$(id);if(!e)return;e.setAttribute('fill',c.fill);e.setAttribute('stroke',c.stroke);}
+  function reset(){
+    NODES.forEach(function(n){paint(n,NEUTRAL_N);});
+    LEAVES.forEach(function(l){paint(l,LEAF_NEUTRAL);});
+    var lk=$('cpbeLock5'); if(lk) lk.setAttribute('opacity','0');
+  }
+  var steps=[
+    function(){ // 0
+      reset(); paint('cpbeN_root',COVER);
+      say('Step 0 — Reach EVERYONE with one key','Every receiver stores the keys along its path up to the <b>root</b>. Because the root sits above all 8 leaves, the broadcaster wraps the Media Key under the single root key — the header is one entry, and all 8 receivers can unwrap it.');
+    },
+    function(){ // 1
+      reset(); paint('cpbeN_root',STRUCK); paint('cpbeL_5',LEAF_BAD);
+      var lk=$('cpbeLock5'); if(lk) lk.setAttribute('opacity','1');
+      say('Step 1 — R5’s key leaks','R5’s device key is posted online. We must keep serving R0–R4, R6, R7 but lock out R5. The <b>root key is now poisoned</b>: using it would still admit R5, so it can no longer be the cover.');
+    },
+    function(){ // 2
+      reset();
+      // chosen cover: L (covers R0-R3), R4's own leaf key, D (covers R6-R7)
+      paint('cpbeN_L',COVER);
+      paint('cpbeL_4',LEAF_OK);
+      paint('cpbeN_D',COVER);
+      paint('cpbeN_root',STRUCK); paint('cpbeL_5',LEAF_BAD);
+      var lk=$('cpbeLock5'); if(lk) lk.setAttribute('opacity','1');
+      say('Step 2 — Build a subset cover that skips R5','Choose the fewest subtree keys that cover everyone except R5: the <b>left half</b> (R0–R3), <b>R4 by itself</b>, and the <b>R6–R7 pair</b>. The Media Key is wrapped 3 times instead of once — with this complete-subtree cover the header grows mainly with the number of <i>revocations</i>, plus a small log factor in the number of devices (the tighter “revocations only” bound is the subset-difference refinement noted above).');
+    },
+    function(){ // 3
+      reset();
+      paint('cpbeN_L',COVER); paint('cpbeN_D',COVER); paint('cpbeL_4',LEAF_OK);
+      ['cpbeL_0','cpbeL_1','cpbeL_2','cpbeL_3','cpbeL_4','cpbeL_6','cpbeL_7'].forEach(function(l){paint(l,LEAF_OK);});
+      paint('cpbeL_5',LEAF_BAD);
+      var lk=$('cpbeLock5'); if(lk) lk.setAttribute('opacity','1');
+      say('Step 3 — Everyone else decrypts; R5 stays out','Each surviving receiver holds one of the three cover keys, unwraps the same Media Key, and plays. R5 holds <b>none</b> of them, so it is cleanly excluded — no other device was re-keyed or disturbed. That is subset-cover revocation.');
+    }
+  ];
+  var i=-1;
+  function say(t,b){var s=$('cpbeStatus');if(s)s.innerHTML='<p><em>'+t+'</em><br>'+b+'</p>';}
+  function step(){ i=(i+1)%steps.length; steps[i](); }
+  function full(){ i=-1; reset(); var s=$('cpbeStatus'); if(s)s.innerHTML='<p><em>Step 0 —</em> Press <strong>Step ▶</strong> to begin.</p>'; }
+  var bs=$('cpbeBtnStep'), br=$('cpbeBtnReset');
+  if(bs) bs.addEventListener('click',step);
+  if(br) br.addEventListener('click',full);
+})();
+</script>
+
+<div class="insight"><p><strong>One line:</strong> sharing is for scale; the tree structure is what lets you still revoke precisely under that sharing. The cost: crack the shared key set and the <em>whole model</em> goes down together (and gets revoked together).</p></div>
+<div class="iv"><p><strong>Interview angle:</strong> the tree is the crucial question — <em>"How do you revoke without re-keying millions of innocent devices?"</em> Answer: subset cover. A leaked key just splits the covering set into a few smaller subtrees that skip the bad leaf, so header size grows with the number of <em>revocations</em>, not the number of devices.</p></div>
+</div>
+
+<div class="card">
+<h2>4. The real point: shared-software-key vs per-device-key (blast radius)</h2>
+<p>This is the same "bound the blast radius" idea from the KMS/Titan notes — seen from the content-protection side.</p>
+<table>
+  <tr><th></th><th>Software player (e.g. a PC app)</th><th>Physical device (console / hardware player)</th></tr>
+  <tr><td>Where the key lives</td><td><strong>In the software — same key in every copy</strong></td><td><strong>Burned per unit/model into hardware</strong> (a <em>secure element</em> — a tamper-resistant chip whose keys can't be read back out)</td></tr>
+  <tr><td>Crack it once →</td><td>Extract the key → <strong>every copy is broken</strong></td><td>Breaks only that unit/model — and it can be revoked</td></tr>
+  <tr><td>Blast radius</td><td><strong>Huge</strong> (one break = everything)</td><td><strong>Small</strong> (contained)</td></tr>
+  <tr><td>So the defense is…</td><td><strong>Anti-debugging, obfuscation</strong> (deliberately scrambling the code so it resists reverse-engineering)<strong>, kernel-mode (Ring 0) protection</strong> — make it painfully hard to pull the shared key out</td><td>Hardware hides the key; being per-device is already the defense</td></tr>
+</table>
+<div class="warn"><p><strong>Honest scope note:</strong> in a software-player role, the job is usually the <em>software-side mitigations</em> — anti-debug / obfuscation / tamper protection to defend a key that, by design, is shared across all copies. The broadcast-encryption/MKB/tree machinery is a separate layer (the disc-format + licensing side). Knowing how they fit together is the value; there is no need to have built the MKB tree to explain why per-device beats shared-software keys.</p></div>
+<div class="iv"><p><strong>Interview angle:</strong> frame everything as <em>blast radius</em>. A shared software key means one break = total break; a per-device key means one break = one device. Reach for containment (per-device keys, revocation) first and obfuscation second — interviewers want the architecture answer before the cat-and-mouse tricks.</p></div>
+</div>
+
+<div class="card">
+<h2>5. Bridge to the modern per-device world (Titan / HSM)</h2>
+<table>
+  <tr><th></th><th>AACS device key</th><th>Titan / HSM device provisioning</th></tr>
+  <tr><td>Issued per</td><td><strong>Model / product line</strong> (shared)</td><td><strong>Each unit / chip</strong> (unique)</td></tr>
+  <tr><td>How it scales</td><td>Subset-cover <strong>tree</strong> (complete-subtree, or AACS's subset-difference refinement) lets shared keys still be revoked</td><td>Keys are <strong>generated on the production line by each unit itself</strong> — no central authority hands out billions of keys</td></tr>
+  <tr><td>Crack cost</td><td>Whole model revoked together</td><td>Only that one unit fails</td></tr>
+  <tr><td>Revocation</td><td>New MKB omits the key</td><td>CA (Certificate Authority — the trusted issuer that vouches for who is genuine) re-issues so only patched/genuine units are trusted (Titan "remediation")</td></tr>
+</table>
+<div class="insight"><p><strong>The historical arc:</strong> AACS is a <em>math</em> workaround (subset tree) invented <em>before</em> cheap per-device secure elements existed — it approximates per-device revocation using shared keys. Titan/HSM is the <em>hardware</em> answer that arrived once every device could cheaply carry a secure element and generate its own key — so "one key per unit" finally scales, because each unit makes its own key instead of a central authority issuing them.</p></div>
+<div class="iv"><p><strong>Interview angle:</strong> tell the arc as an engineering trade-off, not trivia — AACS solved per-device revocation with <em>math</em> because secure elements were too expensive; once they got cheap, hardware identity (Titan / HSM) solved it directly. Same requirement, each era's cheapest tool. Naming that force (cost of hardware) is what separates a memorized answer from a real one.</p></div>
+</div>
+
+<div class="card">
+<h2>6. Interview angle</h2>
+<div class="iv"><p>This is a strong, genuine bridge: the same problem — <em>protect a secret from copying, and revoke it cleanly when it leaks</em> — recurs from Blu-ray content protection to data-center hardware roots of trust (a <em>root of trust</em> is the one hardware secret everything else's security is anchored to). This arc — from content protection to hardware roots of trust — makes a compelling narrative to walk through.</p></div>
+<h3>How to say it (honest, not overclaiming)</h3>
+<p>Software content protection — anti-debugging, obfuscation, and kernel-mode techniques that protect the AACS decryption keys inside a player — is a natural topic to connect here. One way to frame it: <em>"A software player's key is shared across every copy, so one successful reverse-engineer breaks everyone — the blast radius is huge. That's exactly the weakness that per-device hardware identity solves: systems like Google's Titan, or HSM-based device provisioning on IoT products, give each unit its own key at manufacture, so a compromise is contained to one device and can be revoked — the same 'revocation' idea Blu-ray did with its MKB, but rooted in hardware instead of a shared software secret."</em></p>
+<h3>Likely follow-ups</h3>
+<ul>
+  <li><strong>"Did you design the AACS key system?"</strong> — It's fine to draw the line honestly: the software-side tamper protection that defends the keys is a separate layer from the broadcast-encryption / key-distribution scheme itself. Understanding that distinction is exactly what shows <em>why</em> shared software keys are fragile and per-device hardware keys aren't.</li>
+  <li><strong>"How do you revoke a compromised key?"</strong> — "Content side: press new media whose key block excludes the leaked key. Hardware side: the CA stops honoring it and re-issues trust only to genuine/patched units. Both are 'exclude the bad one going forward,' just anchored differently."</li>
+  <li><strong>"Why not one key per physical unit for Blu-ray?"</strong> — "Didn't scale at the time — the key block would need a slot per unit. So AACS shared keys per model and used a subset-difference tree to keep precise revocation. Per-unit only became practical once devices could generate their own keys in hardware."</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>Sources / further reading</h2>
+<ul>
+  <li>AACS specification (aacsla.com) — Media Key Block, device keys, revocation</li>
+  <li>Naor–Naor–Lotspiech, "Revocation and Tracing Schemes for Stateless Receivers" (2001) — defines both the complete-subtree method (illustrated above) and the subset-difference method that AACS uses</li>
+  <li>See also the <a href="google_security_titan.html">Titan</a> and <a href="google_security_kms.html">KMS</a> notes for the per-device / envelope-encryption side.</li>
+</ul>
+<p style="color:var(--text3);font-size:13px;">Beginner bridge note. Technical concepts are public/textbook; the interview-angle framing is private prep.</p>
+</div>
+
+<div class="card">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>AACS</strong></td><td>Advanced Access Content System — the content-protection key-management scheme used for Blu-ray discs.</td></tr>
+<tr><td><strong>HSM</strong></td><td>Hardware Security Module — a dedicated tamper-resistant device that stores and uses keys without ever exposing them.</td></tr>
+<tr><td><strong>Titan</strong></td><td>Google's hardware security chip that gives each device a unique hardware identity and supports revocation ("remediation").</td></tr>
+<tr><td><strong>Broadcast encryption</strong></td><td>Encrypting content once so many different device keys can decrypt it, while any single key can still be revoked.</td></tr>
+<tr><td><strong>Media Key</strong></td><td>The single content-protection key that, combined with the Volume ID, unlocks a disc's Title Keys.</td></tr>
+<tr><td><strong>MKB</strong></td><td>Media Key Block — the Media Key wrapped separately for thousands of device keys; a new MKB simply omits revoked keys.</td></tr>
+<tr><td><strong>Title Key</strong></td><td>A per-title key that directly encrypts the movie content, unlocked via the Volume Unique Key.</td></tr>
+<tr><td><strong>Volume ID</strong></td><td>A disc-specific value combined with the Media Key to derive the Volume Unique Key.</td></tr>
+<tr><td><strong>Volume Unique Key</strong></td><td>The per-disc key derived from the Media Key plus the Volume ID; it unwraps the disc's Title Keys.</td></tr>
+<tr><td><strong>Device key</strong></td><td>A key set issued per model / product line, used by a player to unwrap the Media Key from the MKB.</td></tr>
+<tr><td><strong>Revocation</strong></td><td>Excluding a leaked key from future content so a cracked device can no longer play new titles.</td></tr>
+<tr><td><strong>Symmetric encryption</strong></td><td>Same key encrypts and decrypts — one key, one lock (e.g. AES).</td></tr>
+<tr><td><strong>Asymmetric encryption</strong></td><td>A matched public/private key pair: public encrypts, private decrypts (e.g. RSA, ECC).</td></tr>
+<tr><td><strong>ECC</strong></td><td>Elliptic-Curve Cryptography — an asymmetric method needing much shorter keys for the same strength.</td></tr>
+<tr><td><strong>CS method</strong></td><td>Complete-Subtree method — subset-cover revocation built from whole subtrees; revoking one leaf costs about log₂ N wrapped keys.</td></tr>
+<tr><td><strong>SD method</strong></td><td>Subset-Difference method — the refinement AACS uses, encoding "a subtree minus a smaller one" so one revocation needs on the order of one header entry.</td></tr>
+<tr><td><strong>NNL</strong></td><td>Naor–Naor–Lotspiech — authors of the 2001 paper defining the complete-subtree and subset-difference revocation schemes.</td></tr>
+<tr><td><strong>Secure element</strong></td><td>A tamper-resistant chip whose stored keys cannot be read back out.</td></tr>
+<tr><td><strong>Blast radius</strong></td><td>How much breaks when one key is compromised — huge for a shared software key, small for a per-device key.</td></tr>
+<tr><td><strong>Envelope encryption</strong></td><td>Encrypting data once with a content key, then protecting that content key separately (e.g. in KMS).</td></tr>
+<tr><td><strong>CA</strong></td><td>Certificate Authority — the trusted issuer that vouches for which devices are genuine.</td></tr>
+</table>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_security_alts.html">‹ ALTS — Transport Security</a><a class="bkc" href="index.html">📖 Contents</a><a href="security_memory_safety.html">Memory-Safe Languages ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

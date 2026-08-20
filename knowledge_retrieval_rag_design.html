@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Knowledge Retrieval (RAG) — System Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc;
+  --bg2: #ffffff;
+  --bg3: #f1f5f9;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #0f172a;
+  --text2: #334155;
+  --text3: #64748b;
+  --blue: #2563eb;
+  --blue-l: #dbeafe;
+  --blue-d: #1d4ed8;
+  --green: #16a34a;
+  --green-l: #dcfce7;
+  --yellow: #d97706;
+  --yellow-l: #fef3c7;
+  --red: #dc2626;
+  --red-l: #fee2e2;
+  --purple: #7c3aed;
+  --purple-l: #ede9fe;
+  --orange: #ea580c;
+  --orange-l: #ffedd5;
+  --teal: #0d9488;
+  --teal-l: #ccfbf1;
+  --sw: 270px;
+  --r: 12px;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+#sb {
+  width: var(--sw);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  position: fixed; top: 0; left: 0; bottom: 0;
+  overflow-y: auto; z-index: 100;
+  transition: width .3s ease;
+}
+#sb::-webkit-scrollbar { width: 4px; }
+#sb::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+.sbh {
+  padding: 20px 16px 14px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: #fff; z-index: 1;
+}
+.sbt { font-size: 13px; font-weight: 700; color: var(--blue-d); text-transform: uppercase; letter-spacing: 1px; }
+.sbs { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.ng { padding: 12px 8px 0; }
+.ngl { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 6px; }
+.ni {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; color: var(--text2);
+  transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+}
+.ni:hover { background: var(--bg3); color: var(--text); }
+.ni.active { background: var(--blue-l); color: var(--blue-d); font-weight: 600; }
+.ni-icon { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+.ni-text { flex: 1; font-size: 12px; }
+.badge { margin-left: auto; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+.bh { background: var(--red-l); color: var(--red); }
+.bg { background: var(--green-l); color: var(--green); }
+.bp { background: var(--purple-l); color: var(--purple); }
+.bt { background: var(--teal-l); color: var(--teal); }
+.bo { background: var(--orange-l); color: var(--orange); }
+
+/* MAIN */
+#main { position: fixed; top: 0; right: 0; bottom: 0; left: var(--sw); overflow-y: auto; background: var(--bg); }
+
+/* HEADER */
+.ph {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 40%, #3b82f6 100%);
+  padding: 40px 44px;
+}
+.htag { font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.6); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+.ht { font-size: 32px; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+.ht span { color: #93c5fd; }
+.hd { color: rgba(255,255,255,0.8); font-size: 14px; max-width: 650px; }
+.hm { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.chip { font-size: 11px; color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 16px; }
+.chip b { color: #fff; }
+
+/* SECTIONS */
+.sec { padding: 36px 44px; display: none; }
+.sec.active { display: block; }
+.stitle { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.sdesc { color: var(--text3); margin-bottom: 24px; font-size: 13px; }
+
+/* CARDS */
+.card {
+  background: #fff; border-radius: var(--r); margin-bottom: 12px;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border); overflow: hidden;
+}
+.ch {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer; user-select: none; transition: background .15s;
+}
+.ch:hover { background: var(--bg3); }
+.ct { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+.cn { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text3); background: var(--bg3); padding: 2px 7px; border-radius: 5px; }
+.db { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: .5px; }
+.dh { background: var(--red-l); color: var(--red); }
+.dm { background: var(--orange-l); color: var(--orange); }
+.de { background: var(--green-l); color: var(--green); }
+.chv { color: var(--text3); font-size: 11px; transition: transform .2s; }
+.chv.open { transform: rotate(90deg); }
+.cb { padding: 16px 18px; display: none; font-size: 13px; color: var(--text2); line-height: 1.7; border-top: 1px solid var(--bg3); }
+.cb.open { display: block; }
+
+/* CALLOUTS */
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13px; }
+
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13px; }
+
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13px; }
+
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13px; }
+
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 14px; margin: 10px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13px; }
+
+/* TABLES */
+.tbl { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 14px; border-bottom: 1px solid var(--bg3); color: var(--text2); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 14px; background: var(--blue-l); color: var(--blue-d); font-size: 11px; font-weight: 500; margin: 2px; }
+
+/* GRID */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) { .g2, .g3 { grid-template-columns: 1fr; } }
+
+/* INTERVIEW QUOTE */
+.iq {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 14px 0;
+  font-style: italic;
+  color: var(--text2);
+  font-size: 13px;
+  position: relative;
+}
+.iq::before {
+  content: 'SAY THIS';
+  position: absolute;
+  top: -8px; left: 14px;
+  font-size: 9px; font-weight: 700; font-style: normal;
+  background: var(--blue);
+  color: #fff;
+  padding: 1px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+/* SUB HEADINGS */
+h3.sub { font-size: 17px; font-weight: 700; color: var(--text); margin: 28px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+h4.sub2 { font-size: 11px; font-weight: 700; color: var(--text3); margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .8px; }
+
+/* SKILL BOX */
+.skill-box {
+  background: #fff; border: 1px solid var(--border); border-radius: var(--r);
+  padding: 18px; margin: 10px 0; box-shadow: var(--shadow-sm);
+}
+.skill-box h4 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.skill-box ul { padding-left: 18px; font-size: 13px; color: var(--text2); }
+.skill-box li { margin-bottom: 4px; }
+
+/* PROGRESS */
+.prog { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+.pc { flex: 1; min-width: 120px; background: #fff; border: 1px solid var(--border); border-radius: var(--r); padding: 16px; box-shadow: var(--shadow-sm); text-align: center; }
+.pc .num { font-size: 28px; font-weight: 800; color: var(--blue-d); }
+.pc .lbl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg3); padding: 1px 5px; border-radius: 4px; color: var(--blue-d); }
+
+pre.codeblock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+  line-height: 1.6;
+  color: var(--text2);
+}
+
+/* LIST STYLING */
+.content-list { padding-left: 20px; margin: 8px 0; }
+.content-list li { margin-bottom: 6px; font-size: 13px; color: var(--text2); }
+.content-list li strong { color: var(--text); }
+
+/* DECISION GRID */
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+.decision-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.decision-item .dit {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--blue-d);
+  margin-bottom: 6px;
+}
+.decision-item p {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.decision-item .di-key {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+/* TIMELINE */
+.timeline { margin: 16px 0; padding-left: 20px; border-left: 3px solid var(--blue-l); }
+.timeline-item { margin-bottom: 16px; position: relative; padding-left: 16px; }
+.timeline-item::before { content: ''; position: absolute; left: -26px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--blue); border: 2px solid #fff; }
+.timeline-time { font-size: 11px; font-weight: 700; color: var(--blue-d); text-transform: uppercase; letter-spacing: .5px; }
+.timeline-title { font-size: 14px; font-weight: 600; color: var(--text); margin: 2px 0; }
+.timeline-desc { font-size: 12px; color: var(--text2); }
+
+@media (max-width: 768px) {
+  #sb { width: 0; overflow: hidden; }
+  #main { left: 0; }
+  .sec { padding: 20px 16px; }
+  .ph { padding: 24px 16px; }
+}
+a.lc { color: var(--blue); text-decoration: none; font-weight: 500; }
+a.lc:hover { text-decoration: underline; color: var(--blue-d); }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  .page-header{padding:22px 16px 14px !important;}
+  .tab-bar{padding:0 12px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Stack obvious multi-column layouts into a single column where safe */
+  .comparison-grid,.two-col,.tracks,.chapters,.metric-grid,
+  .card-grid,.stat-grid,.grid-2,.two-column,.col-2,.cols{
+    grid-template-columns:1fr !important;}
+
+  /* Nav: keep buttons wrapping with comfortable tap targets */
+  .nav{position:static !important;flex-wrap:wrap !important;
+    padding:12px 0 !important;}
+  .nav-btn{padding:10px 14px !important;min-height:40px;
+    display:inline-flex;align-items:center;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1,.header-title,.cover h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2,.section-title{font-size:20px !important;}
+}
+</style>
+<style id="booknav-unfix">
+/* Book-nav fix: convert the fixed full-viewport app shell into a normal
+   scrolling document so #booknav-top / #booknav-bottom render in flow and
+   "Contents" is reachable. Layout-only; no content is added or removed. */
+html, body { height: auto !important; min-height: 0 !important; overflow: auto !important; overflow-x: hidden !important; }
+/* Sidebar is purely navigational chrome (tab switcher); hide so it cannot
+   overlap the centered column now that the page scrolls normally. */
+#sb { display: none !important; }
+/* Un-fix #main into normal flow, centered in a readable column. */
+#main {
+  position: static !important;
+  inset: auto !important;
+  top: auto !important; right: auto !important; bottom: auto !important; left: auto !important;
+  width: auto !important;
+  max-width: 1050px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+/* Sidebar drove tab switching; with it hidden, reveal every section so all
+   content is reachable by scrolling (a continuous chapter like other pages). */
+#main .sec { display: block !important; }
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part VI · Chapter 2 — <b>Knowledge Retrieval (RAG)</b></span><span class="bkspacer"></span></nav>
+
+<nav id="sb">
+  <div class="sbh">
+    <div class="sbt">Knowledge Retrieval</div>
+    <div class="sbs">RAG System &middot; Interview Prep</div>
+  </div>
+  <div class="ng"><div class="ngl">Foundations</div>
+    <button class="ni active" onclick="go('overview')"><span class="ni-icon">1</span><span class="ni-text">Overview</span><span class="badge bh">Start</span></button>
+    <button class="ni" onclick="go('requirements')"><span class="ni-icon">2</span><span class="ni-text">Requirements &amp; Scale</span><span class="badge bp">Critical</span></button>
+    <button class="ni" onclick="go('architecture')"><span class="ni-icon">3</span><span class="ni-text">High-Level Architecture</span><span class="badge bp">Core</span></button>
+  </div>
+  <div class="ng"><div class="ngl">Deep Dives</div>
+    <button class="ni" onclick="go('ingestion')"><span class="ni-icon">4</span><span class="ni-text">Document Ingestion</span><span class="badge bp">Critical</span></button>
+    <button class="ni" onclick="go('hybrid')"><span class="ni-icon">5</span><span class="ni-text">Hybrid Search</span><span class="badge bh">Must Know</span></button>
+    <button class="ni" onclick="go('elasticsearch')"><span class="ni-icon">6</span><span class="ni-text">Elasticsearch Design</span><span class="badge bp">Core</span></button>
+    <button class="ni" onclick="go('vectordb')"><span class="ni-icon">7</span><span class="ni-text">Vector DB Design</span><span class="badge bt">Semantic</span></button>
+  </div>
+  <div class="ng"><div class="ngl">Infrastructure</div>
+    <button class="ni" onclick="go('query')"><span class="ni-icon">8</span><span class="ni-text">Query &amp; Context</span></button>
+    <button class="ni" onclick="go('generation')"><span class="ni-icon">9</span><span class="ni-text">Reranking &amp; Answer Gen</span></button>
+    <button class="ni" onclick="go('api')"><span class="ni-icon">10</span><span class="ni-text">API Design</span></button>
+    <button class="ni" onclick="go('scaling')"><span class="ni-icon">11</span><span class="ni-text">Scaling &amp; Reliability</span></button>
+  </div>
+  <div class="ng"><div class="ngl">Execution</div>
+    <button class="ni" onclick="go('script')"><span class="ni-icon">12</span><span class="ni-text">Interview Script</span><span class="badge bg">45min</span></button>
+    <button class="ni" onclick="go('experience')"><span class="ni-icon">13</span><span class="ni-text">Relevant Experience</span><span class="badge bo">Apply</span></button>
+    <button class="ni" onclick="go('pitfalls')"><span class="ni-icon">14</span><span class="ni-text">Pitfalls &amp; Follow-ups</span><span class="badge bo">Avoid</span></button>
+  </div>
+</nav>
+
+<div id="main">
+
+<div class="ph">
+  <div class="htag">Contact Center AI &middot; System Design Interview</div>
+  <div class="ht">Knowledge Retrieval <span>(RAG)</span></div>
+  <div class="hd">Design a system that proactively delivers accurate answers from an enterprise knowledge base during live customer conversations. Covers document ingestion, hybrid search (keyword + semantic), reranking, and LLM answer generation — all under 500ms.</div>
+  <div class="hm">
+    <div class="chip">Sections <b>14</b></div>
+    <div class="chip">Latency Target <b>&lt;500ms</b></div>
+    <div class="chip">Focus <b>Search + Retrieval</b></div>
+    <div class="chip">Corpus <b>100K Docs / 2M Chunks</b></div>
+  </div>
+</div>
+
+<!-- ======= SECTION 1: OVERVIEW ======= -->
+<div id="tab-overview" class="sec active">
+<h2 class="stitle">Knowledge Retrieval (RAG) Overview</h2>
+<div class="sdesc">What RAG is, why it matters for contact centers, and what interviewers evaluate.</div>
+
+<h3 class="sub">What Is RAG?</h3>
+<p><strong>RAG = Retrieval-Augmented Generation.</strong> Instead of asking a language model to answer from its own memory (which may be outdated or hallucinated), you first <em>retrieve</em> relevant documents from a trusted knowledge base, then feed those documents to the LLM to <em>generate</em> a grounded answer. The answer is only as good as what you retrieve — which is why the retrieval pipeline (your job) matters more than the LLM (someone else's black box).</p>
+
+<div class="ins">
+  <div class="insl">The Contact Center Angle</div>
+  <p>Agents waste up to <strong>30% of their handle time</strong> searching internal wikis, PDFs, and FAQ databases for the right answer. A RAG system listens to the live conversation and <strong>proactively surfaces the answer before the agent even finishes searching</strong> — turning a 45-second lookup into an instant suggestion.</p>
+</div>
+
+<h3 class="sub">Core Capabilities</h3>
+<div class="skill-box">
+  <h4>What the System Does</h4>
+  <ul>
+    <li><strong>Ingest</strong> enterprise documents (Confluence, SharePoint, PDFs, FAQ DBs) and keep them fresh</li>
+    <li><strong>Index</strong> content for both keyword search (exact terms) and semantic search (meaning)</li>
+    <li><strong>Retrieve</strong> the most relevant passages given the current conversation context</li>
+    <li><strong>Generate</strong> a concise answer with citations back to source documents</li>
+    <li><strong>Proactively trigger</strong> — no explicit query needed; it reads the conversation and searches on its own</li>
+  </ul>
+</div>
+
+<h3 class="sub">What Interviewers Evaluate</h3>
+<div class="decision-grid">
+  <div class="decision-item">
+    <div class="dit">Search Architecture</div>
+    <p>Do you understand keyword vs semantic search, and when to combine them?</p>
+    <div class="di-key">Key: BM25, embeddings, hybrid, RRF</div>
+  </div>
+  <div class="decision-item">
+    <div class="dit">Indexing Strategy</div>
+    <p>How do you chunk documents, generate embeddings, and keep indexes fresh?</p>
+    <div class="di-key">Key: chunking, dual index, incremental update</div>
+  </div>
+  <div class="decision-item">
+    <div class="dit">Relevance & Ranking</div>
+    <p>How do you merge results and rank them so the best answer is on top?</p>
+    <div class="di-key">Key: reranking, score fusion, citations</div>
+  </div>
+  <div class="decision-item">
+    <div class="dit">Latency & Freshness</div>
+    <p>Sub-500ms retrieval while documents update continuously — how?</p>
+    <div class="di-key">Key: caching, async indexing, trade-offs</div>
+  </div>
+</div>
+
+<div class="note">
+  <div class="notel">What's Black Box vs Your Code</div>
+  <p><strong>BLACK BOX (someone else builds):</strong> the embedding model (text → vector), the cross-encoder reranker, and the LLM that writes the final answer. <strong>YOUR CODE:</strong> the ingestion pipeline, the chunking logic, the dual indexing, the hybrid search + fusion, the query assembly, caching, and the API. In an interview, be explicit about this boundary — it shows maturity.</p>
+</div>
+
+<div class="iq">
+  "RAG is a retrieval problem wearing an AI costume. The LLM at the end is a commodity — everyone has access to the same models. The differentiation, and where 90% of the engineering effort goes, is in retrieving the <em>right</em> context. So I'll focus my design on the retrieval pipeline and treat the embedding model and LLM as well-defined black-box interfaces."
+</div>
+</div>
+
+<!-- ======= SECTION 2: REQUIREMENTS & SCALE ======= -->
+<div id="tab-requirements" class="sec">
+<h2 class="stitle">Requirements &amp; Scale</h2>
+<div class="sdesc">Pin down functional and non-functional requirements, then size the system.</div>
+
+<h3 class="sub">Functional Requirements</h3>
+<ul class="content-list">
+  <li><strong>Document ingestion:</strong> pull from Confluence, SharePoint, Google Docs, PDF uploads, FAQ databases</li>
+  <li><strong>Chunking &amp; indexing:</strong> split documents into passages, index for both keyword and semantic search</li>
+  <li><strong>Hybrid retrieval:</strong> combine keyword (exact) and semantic (meaning) search</li>
+  <li><strong>Proactive triggering:</strong> read live conversation context and search without an explicit query</li>
+  <li><strong>Answer generation:</strong> produce a concise answer with citations to source docs</li>
+  <li><strong>Freshness:</strong> reflect document edits within minutes, not hours</li>
+</ul>
+
+<h3 class="sub">Non-Functional Requirements</h3>
+<table class="tbl">
+  <tr><th>Requirement</th><th>Target</th><th>Why</th></tr>
+  <tr><td>Retrieval latency</td><td>&lt; 500 ms (p95)</td><td>Answer must appear while agent is still talking</td></tr>
+  <tr><td>Availability</td><td>99.9%</td><td>If retrieval is down, agents fall back to manual search</td></tr>
+  <tr><td>Freshness</td><td>&lt; 5 min after doc edit</td><td>Stale answers can be compliance violations</td></tr>
+  <tr><td>Relevance</td><td>Top-3 contains answer 90%+ of the time</td><td>Agents lose trust if suggestions are wrong</td></tr>
+  <tr><td>Multi-tenancy</td><td>Isolated per customer</td><td>Company A must never see Company B's docs</td></tr>
+</table>
+
+<h3 class="sub">Back-of-the-Envelope Math</h3>
+<div class="skill-box">
+  <h4>Corpus Size</h4>
+  <ul>
+    <li>100K documents &times; ~10 pages each (blended average of short FAQs + long PDFs/manuals) = <strong>1M pages</strong></li>
+    <li>Each page ~500 words (~650 tokens); chunk at 512 tokens with 100-token overlap &rarr; ~2 chunks per page</li>
+    <li>Total: <strong>~2M chunks</strong></li>
+  </ul>
+</div>
+<div class="skill-box">
+  <h4>Vector Storage</h4>
+  <ul>
+    <li>Embedding dimension: 768 floats &times; 4 bytes = <strong>3 KB per chunk</strong></li>
+    <li>2M chunks &times; 3 KB = <strong>~6 GB of raw vectors</strong> (fits in RAM on a single powerful node)</li>
+    <li>With HNSW index overhead (~1.5&times;): ~9 GB. Still single-node feasible.</li>
+  </ul>
+</div>
+<div class="skill-box">
+  <h4>Query &amp; Update Load</h4>
+  <ul>
+    <li>10K concurrent conversations &times; 1 retrieval per ~10 sec = <strong>~1K queries/sec</strong></li>
+    <li>Document updates: ~100 docs/day = trivial for incremental indexing</li>
+    <li>Each query fans out to Elasticsearch + Vector DB in parallel &rarr; ~2K internal search ops/sec</li>
+  </ul>
+</div>
+
+<div class="ins">
+  <div class="insl">Interview Signal</div>
+  <p>The key realization from this math: <strong>6 GB of vectors fits on one machine.</strong> You don't need a distributed vector database for 2M chunks — say so. Reaching for Pinecone-at-massive-scale when pgvector on one node would work is over-engineering, and interviewers notice.</p>
+</div>
+</div>
+
+<!-- ======= SECTION 3: HIGH-LEVEL ARCHITECTURE ======= -->
+<div id="tab-architecture" class="sec">
+<h2 class="stitle">High-Level Architecture</h2>
+<div class="sdesc">Two pipelines: offline ingestion and real-time retrieval.</div>
+
+<h3 class="sub">The Two-Pipeline Model</h3>
+<p>Every RAG system splits into an <strong>offline ingestion pipeline</strong> (runs when documents change) and a <strong>real-time retrieval pipeline</strong> (runs on every query). Keeping them separate is the single most important architectural decision — ingestion is throughput-bound and can be slow; retrieval is latency-bound and must be fast.</p>
+
+<div style="overflow-x:auto; margin:14px 0;">
+<svg width="760" height="540" viewBox="0 0 760 540" xmlns="http://www.w3.org/2000/svg" style="font-family:Inter,sans-serif; max-width:100%; height:auto;">
+  <defs>
+    <marker id="arr2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <style>
+      .box{fill:#fff;stroke:#cbd5e1;stroke-width:1.5;}
+      .bb{fill:#fef3c7;stroke:#d97706;stroke-width:1.5;}
+      .store{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5;}
+      .lbl{font-size:12px;font-weight:600;fill:#0f172a;}
+      .sub{font-size:10px;fill:#475569;}
+      .tag{font-size:9px;font-weight:700;fill:#a15207;}
+      .flow{stroke:#475569;stroke-width:1.5;fill:none;}
+      .phase{font-size:11px;font-weight:700;fill:#1d4ed8;text-transform:uppercase;}
+    </style>
+  </defs>
+
+  <!-- INGESTION PIPELINE -->
+  <text x="20" y="20" class="phase">Ingestion Pipeline · offline / near-real-time</text>
+  <line x1="20" y1="28" x2="740" y2="28" stroke="#dbeafe" stroke-width="2"/>
+
+  <rect class="box" x="20" y="45" width="120" height="46" rx="8"/>
+  <text x="80" y="65" class="lbl" text-anchor="middle">Source</text>
+  <text x="80" y="80" class="sub" text-anchor="middle">Wiki/PDF/FAQ</text>
+
+  <rect class="box" x="180" y="45" width="100" height="46" rx="8"/>
+  <text x="230" y="72" class="lbl" text-anchor="middle">Crawler</text>
+
+  <rect class="box" x="320" y="45" width="100" height="46" rx="8"/>
+  <text x="370" y="72" class="lbl" text-anchor="middle">Chunker</text>
+
+  <rect class="box bb" x="460" y="42" width="140" height="52" rx="8"/>
+  <text x="530" y="60" class="tag" text-anchor="middle">BLACK BOX</text>
+  <text x="530" y="77" class="lbl" text-anchor="middle">Embedding Model</text>
+
+  <rect class="box store" x="380" y="140" width="140" height="46" rx="8"/>
+  <text x="450" y="160" class="lbl" text-anchor="middle">Vector DB</text>
+  <text x="450" y="175" class="sub" text-anchor="middle">semantic index</text>
+
+  <rect class="box store" x="560" y="140" width="140" height="46" rx="8"/>
+  <text x="630" y="160" class="lbl" text-anchor="middle">Elasticsearch</text>
+  <text x="630" y="175" class="sub" text-anchor="middle">keyword index</text>
+
+  <line class="flow" x1="140" y1="68" x2="180" y2="68" marker-end="url(#arr2)"/>
+  <line class="flow" x1="280" y1="68" x2="320" y2="68" marker-end="url(#arr2)"/>
+  <line class="flow" x1="420" y1="68" x2="460" y2="68" marker-end="url(#arr2)"/>
+  <line class="flow" x1="530" y1="94" x2="450" y2="140" marker-end="url(#arr2)"/>
+  <line class="flow" x1="370" y1="91" x2="630" y2="140" marker-end="url(#arr2)"/>
+
+  <!-- RETRIEVAL PIPELINE -->
+  <text x="20" y="238" class="phase">Retrieval Pipeline · real-time &lt;500ms</text>
+  <line x1="20" y1="246" x2="740" y2="246" stroke="#dbeafe" stroke-width="2"/>
+
+  <rect class="box" x="20" y="265" width="130" height="46" rx="8"/>
+  <text x="85" y="285" class="lbl" text-anchor="middle">Conversation</text>
+  <text x="85" y="300" class="sub" text-anchor="middle">Context</text>
+
+  <rect class="box" x="190" y="265" width="120" height="46" rx="8"/>
+  <text x="250" y="285" class="lbl" text-anchor="middle">Query</text>
+  <text x="250" y="300" class="sub" text-anchor="middle">Processor</text>
+
+  <!-- parallel search -->
+  <rect class="box store" x="360" y="240" width="150" height="40" rx="8"/>
+  <text x="435" y="264" class="lbl" text-anchor="middle">Elasticsearch (BM25)</text>
+  <rect class="box store" x="360" y="296" width="150" height="40" rx="8"/>
+  <text x="435" y="320" class="lbl" text-anchor="middle">Vector DB (cosine)</text>
+
+  <rect class="box" x="560" y="268" width="120" height="40" rx="8"/>
+  <text x="620" y="292" class="lbl" text-anchor="middle">RRF Merger</text>
+
+  <line class="flow" x1="150" y1="288" x2="190" y2="288" marker-end="url(#arr2)"/>
+  <line class="flow" x1="310" y1="285" x2="360" y2="260" marker-end="url(#arr2)"/>
+  <line class="flow" x1="310" y1="291" x2="360" y2="316" marker-end="url(#arr2)"/>
+  <line class="flow" x1="510" y1="260" x2="560" y2="284" marker-end="url(#arr2)"/>
+  <line class="flow" x1="510" y1="316" x2="560" y2="292" marker-end="url(#arr2)"/>
+
+  <!-- rerank + LLM -->
+  <rect class="box bb" x="360" y="375" width="150" height="50" rx="8"/>
+  <text x="435" y="393" class="tag" text-anchor="middle">BLACK BOX</text>
+  <text x="435" y="410" class="lbl" text-anchor="middle">Reranker</text>
+
+  <rect class="box bb" x="360" y="450" width="150" height="52" rx="8"/>
+  <text x="435" y="469" class="tag" text-anchor="middle">BLACK BOX</text>
+  <text x="435" y="486" class="lbl" text-anchor="middle">LLM Generator</text>
+
+  <rect class="box" x="560" y="452" width="150" height="48" rx="8"/>
+  <text x="635" y="472" class="lbl" text-anchor="middle">Answer +</text>
+  <text x="635" y="487" class="sub" text-anchor="middle">Citations</text>
+
+  <line class="flow" x1="620" y1="308" x2="500" y2="375" marker-end="url(#arr2)"/>
+  <line class="flow" x1="435" y1="425" x2="435" y2="450" marker-end="url(#arr2)"/>
+  <line class="flow" x1="510" y1="476" x2="560" y2="476" marker-end="url(#arr2)"/>
+</svg>
+</div>
+
+<h3 class="sub">Component Inventory</h3>
+<table class="tbl">
+  <tr><th>Component</th><th>Responsibility</th><th>Owner</th></tr>
+  <tr><td>Crawler</td><td>Pull documents from sources, detect changes</td><td>Your code</td></tr>
+  <tr><td>Chunker</td><td>Split docs into passages with overlap + metadata</td><td>Your code</td></tr>
+  <tr><td>Embedding Model</td><td>Text &rarr; vector</td><td>Black box (ML)</td></tr>
+  <tr><td>Vector DB</td><td>Store + ANN search over embeddings</td><td>Managed / your config</td></tr>
+  <tr><td>Elasticsearch</td><td>Full-text BM25 keyword search</td><td>Your config</td></tr>
+  <tr><td>Query Processor</td><td>Turn conversation into search query</td><td>Your code</td></tr>
+  <tr><td>Result Merger</td><td>Fuse keyword + semantic results (RRF)</td><td>Your code</td></tr>
+  <tr><td>Reranker</td><td>Cross-encoder re-scoring of top candidates</td><td>Black box (ML)</td></tr>
+  <tr><td>LLM Generator</td><td>Write final answer from retrieved context</td><td>Black box (ML)</td></tr>
+</table>
+
+<div class="tip">
+  <div class="tipl">Latency Budget (500ms total)</div>
+  <p>Query processing 20ms + parallel search (ES ∥ Vector) 80ms + RRF merge 10ms + reranking 120ms + LLM generation 220ms + network/buffer 50ms = <strong>500ms</strong>. Be honest in the interview: the retrieval portion (through rerank) is ~230ms and is genuinely deterministic, but 220ms for LLM generation is only realistic as <em>time-to-first-token on a short, streamed answer</em> — a full multi-sentence completion often exceeds this. That's exactly why we stream tokens (perceived latency) and keep the "skip generation, show top passage" escape hatch (hard latency). Treat &lt;500ms as a budget for <em>useful content on screen</em>, not full answer completion.</p>
+</div>
+</div>
+
+<!-- ======= SECTION 4: DOCUMENT INGESTION ======= -->
+<div id="tab-ingestion" class="sec">
+<h2 class="stitle">Document Ingestion Pipeline</h2>
+<div class="sdesc">How raw enterprise documents become searchable, embedded, indexed chunks.</div>
+
+<h3 class="sub">Source Connectors</h3>
+<p>Enterprise knowledge lives everywhere: Confluence wikis, SharePoint, Google Docs, uploaded PDFs, structured FAQ databases, even Slack threads. Build <strong>pluggable connectors</strong> with a common interface so adding a new source doesn't touch the core pipeline.</p>
+
+<h3 class="sub">Crawling Strategy: Webhook + Periodic Sync</h3>
+<ul class="content-list">
+  <li><strong>Webhook-triggered (instant):</strong> most sources fire an event when a doc changes &mdash; re-index just that doc within seconds</li>
+  <li><strong>Periodic full-sync (safety net):</strong> nightly full crawl catches anything the webhooks missed (deleted docs, failed webhooks)</li>
+</ul>
+<div class="warn">
+  <div class="warnl">Don't Rely on Webhooks Alone</div>
+  <p>Webhooks get dropped, sources go down, edits slip through. The nightly reconciliation sync is what makes freshness <em>reliable</em>. In the interview, mention both — relying only on webhooks is a common junior mistake.</p>
+</div>
+
+<h3 class="sub">Chunking Strategies</h3>
+<table class="tbl">
+  <tr><th>Strategy</th><th>How</th><th>Trade-off</th></tr>
+  <tr><td>Fixed-size</td><td>512 tokens + 100-token overlap</td><td>Simple, predictable; may split mid-thought</td></tr>
+  <tr><td>Semantic</td><td>Split on headers/paragraphs</td><td>Better relevance; complex, variable size</td></tr>
+  <tr><td>Recursive</td><td>Try paragraph, fall back to sentence, then token</td><td>Good balance; more code</td></tr>
+</table>
+<div class="tip">
+  <div class="tipl">Pragmatic Answer</div>
+  <p>"Start with fixed-size 512-token chunks with 100-token overlap. Overlap prevents an answer from being split across a chunk boundary and lost. If retrieval quality is poor, upgrade to semantic chunking. Don't over-engineer chunking before you have a relevance problem."</p>
+</div>
+
+<h3 class="sub">Data Models</h3>
+<pre class="codeblock">type Document struct {
+    ID           string
+    TenantID     string
+    Source       string    // "confluence" | "sharepoint" | "pdf" | "faq"
+    Title        string
+    URL          string
+    ContentHash  string    // detect changes without re-reading full content
+    LastModified time.Time
+    IndexedAt    time.Time
+    Status       string    // "active" | "deleted"
+}
+
+type Chunk struct {
+    ID           string
+    DocumentID   string
+    TenantID     string
+    Content      string
+    ChunkIndex   int       // position within document
+    SectionPath  string    // "Billing &gt; Refunds &gt; Eligibility"
+    Embedding    []float32 // 768 dims (also stored in vector DB)
+    Metadata     map[string]string
+    EmbeddingVersion string // which embedding model produced this
+}</pre>
+
+<h3 class="sub">Dual Indexing</h3>
+<p>Each chunk goes to <strong>both</strong> stores: full text to Elasticsearch (for BM25 keyword search), embedding vector to the Vector DB (for semantic search). They share the same <code>chunk_id</code> so results can be cross-referenced and merged.</p>
+
+<h3 class="sub">Handling Updates &amp; Deletes</h3>
+<ul class="content-list">
+  <li><strong>Update:</strong> compare <code>ContentHash</code>; if changed, re-chunk only the modified sections, re-embed, upsert into both indexes</li>
+  <li><strong>Delete:</strong> soft-delete (mark <code>status = "deleted"</code>), filter out at query time, hard-delete in nightly cleanup</li>
+  <li><strong>Idempotency:</strong> use deterministic chunk IDs (<code>hash(doc_id + chunk_index)</code>) so re-indexing overwrites cleanly instead of duplicating</li>
+</ul>
+</div>
+
+<!-- ======= SECTION 5: HYBRID SEARCH ======= -->
+<div id="tab-hybrid" class="sec">
+<h2 class="stitle">Hybrid Search Deep Dive</h2>
+<div class="sdesc">Why you need both keyword and semantic search — and how to merge them.</div>
+
+<h3 class="sub">Why Hybrid?</h3>
+<p>Neither search type wins alone:</p>
+<table class="tbl">
+  <tr><th>Query</th><th>BM25 (keyword)</th><th>Vector (semantic)</th></tr>
+  <tr><td>"order #12345 status"</td><td>✅ Nails the exact ID</td><td>❌ IDs mean nothing semantically</td></tr>
+  <tr><td>"how do I stop my subscription"</td><td>❌ Doc says "cancel", not "stop"</td><td>✅ Understands "stop" ≈ "cancel"</td></tr>
+  <tr><td>"SKU-889 return policy"</td><td>✅ Exact product code match</td><td>⚠️ May drift to general returns</td></tr>
+  <tr><td>"customer is really upset about fees"</td><td>❌ Too fuzzy for keywords</td><td>✅ Matches "fee dispute" docs</td></tr>
+</table>
+
+<h3 class="sub">BM25: Keyword Relevance</h3>
+<p>BM25 (Elasticsearch's default) builds on <strong>TF-IDF</strong> intuition but adds term-frequency saturation (<code>k1</code>) and document-length normalization (<code>b</code>) — a term that appears often in this document but rarely across the corpus scores high, with diminishing returns for repeated occurrences. It's unbeatable for exact matches: IDs, codes, product names, specific error messages.</p>
+
+<h3 class="sub">Vector Similarity: Semantic Relevance</h3>
+<p>The embedding model maps text to a point in high-dimensional space where <em>meaning</em> is geometry. "Cancel my plan" and "stop my subscription" land close together even with zero shared words. Similarity = <strong>cosine of the angle</strong> between query vector and chunk vector.</p>
+
+<h3 class="sub">Reciprocal Rank Fusion (RRF)</h3>
+<p>The problem: BM25 scores and cosine scores are on totally different scales — you can't just add them. RRF solves this by using <strong>rank position, not raw score</strong>:</p>
+<pre class="codeblock">RRF_score(doc) = Σ  1 / (k + rank_i(doc))
+                 i
+
+  where:
+    k    = 60  (standard constant, dampens the impact of top ranks)
+    rank = position of doc in result list i (1-indexed)
+
+Example — a chunk ranked #1 in BM25 and #3 in vector search:
+    RRF = 1/(60+1) + 1/(60+3)
+        = 1/61 + 1/63
+        = 0.01639 + 0.01587
+        = 0.03226   ← high combined score
+
+A chunk that ranks #1 in ONLY one list scores lower than
+one that ranks well in BOTH — which is exactly what we want.</pre>
+
+<div class="tip">
+  <div class="tipl">Mention RRF by Name</div>
+  <p>Saying "I'd merge with Reciprocal Rank Fusion, k=60" instantly signals you know modern retrieval. It's the standard technique used in production hybrid search (Elasticsearch even has native RRF support now). Cheap, effective, no tuning of score weights needed.</p>
+</div>
+
+<h3 class="sub">When to Weight One Side Higher</h3>
+<ul class="content-list">
+  <li><strong>Boost BM25</strong> when the query contains IDs, error codes, product SKUs, exact phrases</li>
+  <li><strong>Boost vector</strong> for vague, conversational, paraphrased questions ("how do I...", "what happens if...")</li>
+  <li><strong>Detection:</strong> a lightweight regex/classifier on the query decides the weighting — or just use balanced RRF and let it self-correct</li>
+</ul>
+</div>
+
+<!-- ======= SECTION 6: ELASTICSEARCH DESIGN ======= -->
+<div id="tab-elasticsearch" class="sec">
+<h2 class="stitle">Elasticsearch Design</h2>
+<div class="sdesc">Index mapping, analyzers, lifecycle, and relevance tuning for the keyword side.</div>
+
+<h3 class="sub">Index Mapping</h3>
+<pre class="codeblock">{
+  "mappings": {
+    "properties": {
+      "chunk_id":    { "type": "keyword" },
+      "document_id": { "type": "keyword" },
+      "tenant_id":   { "type": "keyword" },
+      "content":     { "type": "text", "analyzer": "custom_analyzer" },
+      "title":       { "type": "text", "analyzer": "custom_analyzer" },
+      "metadata": {
+        "properties": {
+          "source":        { "type": "keyword" },
+          "doc_type":      { "type": "keyword" },
+          "last_modified": { "type": "date" },
+          "section_path":  { "type": "text" }
+        }
+      },
+      "status":               { "type": "keyword" },
+      "embedding_version":    { "type": "keyword" }
+    }
+  }
+}</pre>
+<p>Notes: <code>keyword</code> fields are for exact-match filtering (tenant isolation, status), <code>text</code> fields are analyzed and tokenized for full-text search. A title match is a stronger relevance signal than a match buried in body text, so boost it — but apply the boost <strong>at query time</strong> (e.g. <code>multi_match</code> over <code>["title^2", "content"]</code>), not in the mapping. Index-time <code>boost</code> on a field is deprecated in modern Elasticsearch (removed as an index-time multiplier in 5.0+) and query-time boosting is more flexible anyway — you can tune it without reindexing.</p>
+
+<h3 class="sub">Custom Analyzer</h3>
+<pre class="codeblock">{
+  "analysis": {
+    "analyzer": {
+      "custom_analyzer": {
+        "tokenizer": "standard",
+        "filter": [
+          "lowercase",
+          "domain_synonyms",   // "cancel" ⇄ "terminate" ⇄ "stop"
+          "stop",              // remove "the", "a", "is"
+          "porter_stem"        // "canceling" → "cancel"
+        ]
+      }
+    },
+    "filter": {
+      "domain_synonyms": {
+        "type": "synonym",
+        "synonyms": [
+          "cancel, terminate, stop, end",
+          "refund, reimbursement, money back",
+          "invoice, bill, statement"
+        ]
+      }
+    }
+  }
+}</pre>
+<div class="ins">
+  <div class="insl">Domain Synonyms Matter</div>
+  <p>Enterprise docs use formal language ("terminate service") while customers use casual language ("stop my thing"). Synonym expansion at index time bridges this gap on the keyword side — complementing what the embedding model does on the semantic side.</p>
+</div>
+
+<h3 class="sub">Multi-Tenancy</h3>
+<p>Always filter by <code>tenant_id</code> as a mandatory query clause. Options: shared index with tenant filter (simple, good for many small tenants) vs index-per-tenant (stronger isolation, good for few large tenants). Start shared; split out the largest tenants.</p>
+
+<h3 class="sub">Index Lifecycle Management (ILM)</h3>
+<ul class="content-list">
+  <li><strong>Hot:</strong> current, frequently-queried docs on fast SSD nodes</li>
+  <li><strong>Warm:</strong> older docs, read-only, on cheaper storage</li>
+  <li><strong>Delete:</strong> expired/superseded docs removed automatically</li>
+</ul>
+
+<h3 class="sub">Cluster Sizing</h3>
+<p>For 1K queries/sec over 2M chunks: a <strong>3-node cluster</strong> (1 primary + 2 replicas per shard) with ~32 GB RAM each. Replicas serve reads in parallel and provide failover. Shard count = keep shards 10–50 GB each; 2M small chunks fit in a few shards.</p>
+</div>
+
+<!-- ======= SECTION 7: VECTOR DB DESIGN ======= -->
+<div id="tab-vectordb" class="sec">
+<h2 class="stitle">Vector Database Design</h2>
+<div class="sdesc">Storing and searching embeddings for the semantic side.</div>
+
+<h3 class="sub">Choosing a Vector Store</h3>
+<table class="tbl">
+  <tr><th>Option</th><th>Best For</th><th>Trade-off</th></tr>
+  <tr><td>pgvector (Postgres)</td><td>&lt;10M vectors, need SQL joins &amp; transactions</td><td>Simplest ops; slower at huge scale</td></tr>
+  <tr><td>Milvus / Qdrant</td><td>10M–1B vectors, self-hosted</td><td>Powerful; more infra to run</td></tr>
+  <tr><td>Pinecone (managed)</td><td>Want zero ops, willing to pay</td><td>Fast to ship; vendor lock-in, cost</td></tr>
+</table>
+<div class="tip">
+  <div class="tipl">For This Scale (2M chunks / 6GB)</div>
+  <p>"pgvector on a single Postgres node handles 2M vectors comfortably, and I already store chunk metadata in Postgres — so I keep everything in one system and avoid a separate vector database entirely. I'd only reach for Milvus or Pinecone if the corpus grew past ~10M vectors or query latency degraded." Choosing the <em>simplest thing that works</em> is a strong signal.</p>
+  <p style="margin-top:8px;"><strong>Separate storage from throughput:</strong> 6&nbsp;GB fits in RAM on one node, but ~1K QPS of ANN search is CPU-bound. The primary node handles writes/indexing; fan reads out to 2–3 Postgres read replicas (each with its own HNSW index) behind a load balancer. The query result cache (5-min TTL) absorbs the recurring top questions before they reach Postgres, removing a slice of that ANN read load; the embedding cache separately cuts embedding-model calls (latency and cost of the black-box embed step) but not the HNSW search itself.</p>
+</div>
+
+<h3 class="sub">HNSW: Approximate Nearest Neighbor</h3>
+<p>Exact nearest-neighbor search over 2M vectors is too slow. HNSW (Hierarchical Navigable Small World) builds a layered graph that finds <em>approximate</em> nearest neighbors in logarithmic time — trading a tiny bit of accuracy for a huge speedup.</p>
+<pre class="codeblock">HNSW parameters:
+  M              = 16    // edges per node (higher = better recall, more memory)
+  efConstruction = 200   // build-time search width (higher = better graph, slower build)
+  efSearch       = 100   // query-time search width (higher = better recall, slower query)
+
+Trade-off: efSearch is the knob you tune at query time.
+  efSearch=50  → ~95% recall, fastest
+  efSearch=100 → ~98% recall, balanced   ← good default
+  efSearch=200 → ~99.5% recall, slower</pre>
+
+<h3 class="sub">Distance Metric</h3>
+<ul class="content-list">
+  <li><strong>Cosine similarity:</strong> measures angle, ignores magnitude — the standard choice for text embeddings</li>
+  <li><strong>Dot product:</strong> faster, equivalent to cosine <em>if</em> vectors are normalized to unit length (normalize once at index time and you get cosine speed for free)</li>
+</ul>
+
+<h3 class="sub">Sharding</h3>
+<p>Shard by <code>tenant_id</code> for multi-tenant isolation and query locality — a query only touches one tenant's shard, and one tenant's load doesn't affect others.</p>
+
+<h3 class="sub">The Embedding-Upgrade Problem</h3>
+<div class="warn">
+  <div class="warnl">Model Upgrades Require Full Re-Indexing</div>
+  <p>Embeddings from model v1 and model v2 live in <em>different vector spaces</em> — you cannot compare them. When you upgrade the embedding model, <strong>every chunk must be re-embedded and re-indexed.</strong> For 2M chunks, budget 2–4 hours. Strategy: run old and new indexes in parallel, dual-write during migration, cut over atomically, then drop the old index. The <code>embedding_version</code> field on each chunk tracks which model produced it.</p>
+</div>
+</div>
+
+<!-- ======= SECTIONS 8-14 ======= -->
+<!-- SECTION 8: QUERY PROCESSING -->
+<div id="tab-query" class="sec">
+<h2 class="stitle">Query Processing &amp; Context Assembly</h2>
+<div class="sdesc">Turning a live, messy conversation into an effective search query.</div>
+
+<h3 class="sub">The Proactive Trigger Problem</h3>
+<p>Unlike a search box, there's no explicit query here. The system reads the ongoing conversation and decides <strong>when</strong> to search and <strong>what</strong> to search for. This is the hardest part of the retrieval side.</p>
+
+<h3 class="sub">From Conversation to Query</h3>
+<ul class="content-list">
+  <li><strong>Context window:</strong> take the last N utterances (not the whole call) — recent context is what matters</li>
+  <li><strong>Intent extraction:</strong> the NLP layer already classified intent ("billing_dispute") — use it to scope the search</li>
+  <li><strong>Query reformulation:</strong> "um, so my thing got charged twice" → "duplicate charge refund policy"</li>
+  <li><strong>Entity injection:</strong> pull entities (product name, plan type) into the query for precision</li>
+</ul>
+
+<pre class="codeblock">type QueryContext struct {
+    ConversationID string
+    TenantID       string
+    RecentTurns    []Utterance   // last 3-5 turns
+    CurrentIntent  string        // from NLP pipeline
+    Entities       map[string]string
+    LastQueryAt    time.Time     // debounce: don't re-search every word
+}
+
+// Debounce: only trigger a new search when intent changes
+// or 5+ seconds passed AND a new entity appeared.
+func (q *QueryContext) ShouldSearch(prev *QueryContext) bool {
+    if q.CurrentIntent != prev.CurrentIntent { return true }
+    if time.Since(prev.LastQueryAt) &gt; 5*time.Second &amp;&amp;
+       hasNewEntity(q, prev) { return true }
+    return false
+}</pre>
+
+<div class="warn">
+  <div class="warnl">Don't Search on Every Word</div>
+  <p>Re-running retrieval on every transcript token would overload your search cluster and flood the agent with flickering suggestions. Debounce: trigger only on intent change or meaningful new context. This is a common follow-up worth being ready for.</p>
+</div>
+
+<h3 class="sub">Query Expansion</h3>
+<p>Send the reformulated query to <em>both</em> paths: the raw keywords to Elasticsearch (BM25 handles exact terms), and the full natural-language phrasing to the embedding model (semantics handle paraphrase). Don't pre-strip the query — each side wants different input.</p>
+</div>
+
+<!-- SECTION 9: RERANKING & ANSWER GENERATION -->
+<div id="tab-generation" class="sec">
+<h2 class="stitle">Reranking &amp; Answer Generation</h2>
+<div class="sdesc">From a merged candidate list to a single trustworthy answer.</div>
+
+<h3 class="sub">Why Rerank After RRF?</h3>
+<p>RRF gives you a decent merged list fast, but it only knows <em>rank positions</em>, not deep relevance. A <strong>cross-encoder reranker</strong> (black box) reads the query and each candidate <em>together</em> and scores true relevance — far more accurate, but too slow to run on all 2M chunks. So: retrieve ~50 with hybrid search, rerank the top 50 down to the best 3-5.</p>
+
+<div class="ins">
+  <div class="insl">Two-Stage Retrieval Is Standard</div>
+  <p>Stage 1 (cheap, recall-focused): hybrid search returns 50 candidates. Stage 2 (expensive, precision-focused): cross-encoder reranks to top 5. This "retrieve then rerank" pattern is the backbone of every production RAG system. Name it.</p>
+</div>
+
+<h3 class="sub">Answer Generation with Citations</h3>
+<pre class="codeblock">// Assemble the LLM prompt from reranked chunks
+type GenerationRequest struct {
+    Query      string
+    Context    []RankedChunk   // top 3-5 after reranking
+    TenantID   string
+    MaxTokens  int
+}
+
+// The prompt instructs the LLM to ONLY use provided context
+// and to cite the source chunk for each claim.
+prompt := `Answer the agent's question using ONLY the context below.
+Cite the source document for each fact as [doc_id].
+If the context does not contain the answer, say "No KB match found."
+
+Context:
+{{range .Context}}[{{.DocumentID}}] {{.Content}}
+{{end}}
+Question: {{.Query}}`</pre>
+
+<h3 class="sub">Hallucination Prevention</h3>
+<ul class="content-list">
+  <li><strong>Grounding constraint:</strong> prompt forces "use ONLY provided context"</li>
+  <li><strong>Citation requirement:</strong> every claim must reference a chunk — uncited claims are flagged</li>
+  <li><strong>Confidence floor:</strong> if top reranked score is below threshold, return "No confident answer" instead of guessing</li>
+  <li><strong>Fallback:</strong> if the LLM times out, show the top reranked passage directly (no generation) — still useful to the agent</li>
+</ul>
+
+<div class="tip">
+  <div class="tipl">Latency Escape Hatch</div>
+  <p>LLM generation eats ~220ms of your 500ms budget. For the lowest-latency tier, skip generation entirely and surface the top reranked passage verbatim. The agent reads it themselves. Generation is a quality upgrade, not a hard requirement.</p>
+</div>
+</div>
+
+<!-- SECTION 10: API DESIGN -->
+<div id="tab-api" class="sec">
+<h2 class="stitle">API Design</h2>
+<div class="sdesc">Ingestion (write path) and retrieval (read path) APIs.</div>
+
+<h3 class="sub">Ingestion APIs (Document CRUD)</h3>
+<pre class="codeblock">POST /v1/documents            // register/upsert a document
+  { "tenant_id":"t_1", "source":"confluence", "url":"...", "content":"..." }
+  → 202 { "document_id":"doc_9", "status":"queued_for_indexing" }
+
+DELETE /v1/documents/{id}     // soft-delete, removed from indexes
+  → 204
+
+POST /v1/documents/reindex    // force full re-index (e.g. after model upgrade)
+  { "tenant_id":"t_1" }
+  → 202 { "job_id":"reindex_42" }</pre>
+
+<h3 class="sub">Retrieval API (Read Path)</h3>
+<pre class="codeblock">POST /v1/retrieve
+  {
+    "tenant_id": "t_1",
+    "query": "duplicate charge refund policy",
+    "context": { "intent": "billing_dispute", "entities": {"plan":"pro"} },
+    "top_k": 5,
+    "generate_answer": true
+  }
+  → 200
+  {
+    "answer": "Duplicate charges are refunded within 5 business days [doc_9].",
+    "citations": [
+      { "document_id":"doc_9", "title":"Refund Policy", "url":"...", "score":0.94 }
+    ],
+    "latency_ms": 380
+  }</pre>
+
+<div class="tip">
+  <div class="tipl">Streaming Variant</div>
+  <p>For the lowest perceived latency, expose the retrieve endpoint over Server-Sent Events or WebSocket so the answer streams token-by-token as the LLM generates — the agent starts reading before generation finishes.</p>
+</div>
+</div>
+
+<!-- SECTION 11: SCALING & RELIABILITY -->
+<div id="tab-scaling" class="sec">
+<h2 class="stitle">Scaling &amp; Reliability</h2>
+<div class="sdesc">Caching, cluster sizing, and the freshness-vs-performance trade-off.</div>
+
+<h3 class="sub">Caching Layers</h3>
+<table class="tbl">
+  <tr><th>Cache</th><th>Key</th><th>TTL</th><th>Benefit</th></tr>
+  <tr><td>Query result cache</td><td>hash(query + tenant + intent)</td><td>5 min</td><td>Popular questions served instantly</td></tr>
+  <tr><td>Embedding cache</td><td>hash(query text)</td><td>1 hour</td><td>Skip embedding model call for repeat queries</td></tr>
+  <tr><td>Document metadata</td><td>document_id</td><td>10 min</td><td>Fast citation enrichment</td></tr>
+</table>
+<div class="ins">
+  <div class="insl">The Embedding Cache Wins Big</div>
+  <p>Contact centers have massive query repetition — the same top-50 questions recur constantly. Caching query embeddings skips a black-box model call entirely, cutting latency and cost. Cache hit rate here can exceed 40%.</p>
+</div>
+
+<h3 class="sub">The Freshness vs Performance Trade-off</h3>
+<p>Aggressive caching improves latency but risks serving stale answers after a document updates. Resolution: <strong>invalidate query caches on document change</strong>. When a doc is re-indexed, purge cache entries whose citations reference it. Freshness wins for compliance-sensitive content.</p>
+
+<h3 class="sub">Failure Modes</h3>
+<div class="g2">
+  <div class="skill-box">
+    <h4>Embedding model down</h4>
+    <ul><li>Fall back to BM25-only (keyword) search</li><li>Degraded relevance, but still functional</li></ul>
+  </div>
+  <div class="skill-box">
+    <h4>LLM generator down</h4>
+    <ul><li>Skip generation, return top reranked passage</li><li>Agent reads raw snippet — still helpful</li></ul>
+  </div>
+  <div class="skill-box">
+    <h4>Vector DB down</h4>
+    <ul><li>Fall back to BM25-only</li><li>Semantic queries suffer; exact-match queries fine</li></ul>
+  </div>
+  <div class="skill-box">
+    <h4>Elasticsearch down</h4>
+    <ul><li>Fall back to vector-only</li><li>Lose exact ID/code matching</li></ul>
+  </div>
+</div>
+<div class="tip">
+  <div class="tipl">Graceful Degradation Pattern</div>
+  <p>Because you run two independent search backends, losing one degrades quality but never causes total failure. This redundancy is a feature — mention that hybrid search is also a reliability strategy, not just a relevance one.</p>
+</div>
+</div>
+
+<!-- SECTION 12: INTERVIEW SCRIPT -->
+<div id="tab-script" class="sec">
+<h2 class="stitle">Interview Script — 45 Minutes</h2>
+<div class="sdesc">A timed walkthrough: what to say and when.</div>
+
+<div class="timeline">
+  <div class="timeline-item">
+    <div class="timeline-time">0–5 min · Scope</div>
+    <div class="timeline-title">Frame it as a retrieval problem</div>
+    <div class="timeline-desc">"RAG is a retrieval problem wearing an AI costume. The LLM is a commodity; the differentiation is retrieving the right context. I'll focus on the retrieval pipeline and treat the embedding model and LLM as black boxes with defined interfaces."</div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-time">5–10 min · Requirements + math</div>
+    <div class="timeline-title">Size the corpus</div>
+    <div class="timeline-desc">100K docs → 2M chunks → 6GB vectors. Make the key point: "6GB fits on one node — I don't need a distributed vector DB, so I'll use pgvector." Choosing simple wins points.</div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-time">10–20 min · Two-pipeline architecture</div>
+    <div class="timeline-title">Ingestion vs retrieval</div>
+    <div class="timeline-desc">Draw offline ingestion (crawl→chunk→embed→dual-index) and real-time retrieval (query→parallel search→RRF→rerank→generate). Explain the latency budget with the LLM dominating.</div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-time">20–35 min · Deep dive</div>
+    <div class="timeline-title">Hybrid search + RRF</div>
+    <div class="timeline-desc">This is where you win. Explain BM25 vs vector with concrete examples (order #12345 vs "how to cancel"), then RRF fusion with the formula. Follow with two-stage retrieve-then-rerank.</div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-time">35–43 min · Freshness &amp; failure</div>
+    <div class="timeline-title">Updates, caching, degradation</div>
+    <div class="timeline-desc">Incremental re-indexing on doc change, cache invalidation for freshness, and how losing one search backend degrades but never kills the system.</div>
+  </div>
+  <div class="timeline-item">
+    <div class="timeline-time">43–45 min · Wrap</div>
+    <div class="timeline-title">Summarize + trade-offs</div>
+    <div class="timeline-desc">"Two pipelines, hybrid search with RRF, two-stage rerank, grounded generation with citations. With more time I'd detail the proactive-trigger debounce logic and the embedding-model upgrade migration."</div>
+  </div>
+</div>
+</div>
+
+<!-- SECTION 13: YOUR EXPERIENCE -->
+<div id="tab-experience" class="sec">
+<h2 class="stitle">Relevant Experience</h2>
+<div class="sdesc">Connecting relevant background to this design.</div>
+
+<div class="note">
+  <div class="notel">Elasticsearch / Search Plugin Experience</div>
+  <p>If you've built on Elasticsearch directly — custom analyzers, filter plugins, mapping design, or Kibana work — mention it here. <strong>Talking point:</strong> "I've worked with Elasticsearch internals — custom analyzers, filter plugins, mapping design. The BM25 side of this hybrid search is familiar territory; I understand how tokenization and analyzers affect relevance, not just the query API."</p>
+</div>
+
+<div class="note">
+  <div class="notel">Decoupled / Schema-Driven Pipeline Experience</div>
+  <p>If you've redesigned a data or log pipeline into a generic, schema-driven interface that decoupled teams, tie it in. <strong>Talking point:</strong> "The ingestion pipeline here has the same shape — pluggable source connectors feeding a common indexing interface. I've designed exactly this kind of decoupled ingestion so new sources don't touch the core pipeline."</p>
+</div>
+
+<div class="note">
+  <div class="notel">Extensible Query Architecture Experience</div>
+  <p>If you've built a composable query-processing architecture where new query types extend base classes, draw on it. <strong>Talking point:</strong> "Query processing and reformulation is something I've architected before — building an extensible layer where different query strategies plug in cleanly. That maps directly to the hybrid query processor here."</p>
+</div>
+
+<div class="note">
+  <div class="notel">Event-Driven / Serverless Experience</div>
+  <p>If you've built event-driven pipelines on a cloud platform (e.g. AWS Lambda), mention it. <strong>Talking point:</strong> "The webhook-triggered incremental indexing is a natural serverless workload — a doc-change event fires, a function re-chunks and re-indexes just that document. I've built this event-driven ingestion pattern in production."</p>
+</div>
+</div>
+
+<!-- SECTION 14: PITFALLS & FOLLOW-UPS -->
+<div id="tab-pitfalls" class="sec">
+<h2 class="stitle">Pitfalls &amp; Follow-ups</h2>
+<div class="sdesc">Mistakes to avoid and how to answer the hard questions.</div>
+
+<h3 class="sub">Common Pitfalls</h3>
+<div class="trap">
+  <div class="trapl">Pitfall 1 — Chunks too large</div>
+  <p>Huge chunks dilute relevance (the answer is buried in noise) and exceed the LLM context budget. 512 tokens with overlap is a sane default. Mention the trade-off proactively.</p>
+</div>
+<div class="trap">
+  <div class="trapl">Pitfall 2 — Ignoring freshness</div>
+  <p>Designing ingestion as a one-time batch. Enterprise docs change constantly; stale answers can be compliance violations. Always design incremental updates + cache invalidation.</p>
+</div>
+<div class="trap">
+  <div class="trapl">Pitfall 3 — Vector-only search</div>
+  <p>Assuming embeddings solve everything. They fail on exact IDs, codes, and product names. Hybrid (BM25 + vector) is non-negotiable for enterprise content.</p>
+</div>
+<div class="trap">
+  <div class="trapl">Pitfall 4 — Over-engineering the vector DB</div>
+  <p>Reaching for a distributed Pinecone cluster for 2M vectors that fit in 6GB on one node. Right-size to the data.</p>
+</div>
+
+<h3 class="sub">Likely Follow-up Questions</h3>
+<div class="card">
+  <div class="ch" onclick="toggle(this)"><span class="ct">Q: How do you keep the index fresh when a doc updates?</span><span class="chv">▶</span></div>
+  <div class="cb"><p>Webhook fires on change → re-chunk only modified sections → re-embed → upsert into both ES and vector DB with deterministic chunk IDs → invalidate query caches referencing that doc. Nightly full-sync as a safety net for missed webhooks.</p></div>
+</div>
+<div class="card">
+  <div class="ch" onclick="toggle(this)"><span class="ct">Q: When would BM25 beat vector search?</span><span class="chv">▶</span></div>
+  <div class="cb"><p>Exact identifiers: order numbers, SKUs, error codes, specific product names. Embeddings treat "SKU-889" as semantically meaningless; BM25 nails the exact token. That's precisely why we run both and fuse with RRF.</p></div>
+</div>
+<div class="card">
+  <div class="ch" onclick="toggle(this)"><span class="ct">Q: What happens when you upgrade the embedding model?</span><span class="chv">▶</span></div>
+  <div class="cb"><p>Full re-index — v1 and v2 embeddings live in different vector spaces and can't be compared. Run old + new indexes in parallel, dual-write during migration, cut over atomically, drop the old. The <code>embedding_version</code> field tracks each chunk. Budget 2&ndash;4 hours for 2M chunks.</p></div>
+</div>
+<div class="card">
+  <div class="ch" onclick="toggle(this)"><span class="ct">Q: How do you prevent the LLM from hallucinating?</span><span class="chv">▶</span></div>
+  <div class="cb"><p>Grounding: prompt forces "use ONLY provided context." Citations: every claim references a chunk. Confidence floor: if top reranked score is too low, return "no confident answer" rather than guess. Fallback: on LLM failure, show the raw top passage.</p></div>
+</div>
+<div class="card">
+  <div class="ch" onclick="toggle(this)"><span class="ct">Q: How do you decide when to trigger a search?</span><span class="chv">▶</span></div>
+  <div class="cb"><p>Debounce on the conversation stream: trigger on intent change, or after 5+ seconds when a meaningful new entity appears. Never search on every transcript token — it overloads the cluster and flickers the UI.</p></div>
+</div>
+<div class="card">
+  <div class="ch" onclick="toggle(this)"><span class="ct">Q: How do you measure whether retrieval is actually good?</span><span class="chv">▶</span></div>
+  <div class="cb"><p>Retrieval quality is what the whole system rides on, so measure it explicitly. <strong>Offline:</strong> build a golden set of (query → correct chunk) pairs and track <code>recall@k</code> (is the right chunk in the top-k the reranker sees — this bounds everything downstream), plus <code>nDCG@k</code> / <code>MRR</code> for ranking quality. Run this in CI so a chunking or embedding change can't silently regress relevance. <strong>Online:</strong> agent thumbs-up/down on suggestions, click-through / suggestion-accept rate, and "no KB match" rate. This maps directly to the "top-3 contains the answer 90%+" SLO — that number needs a measurement pipeline behind it, not just a target.</p></div>
+</div>
+</div>
+
+<!-- ======= GLOSSARY: TERMINOLOGY & ACRONYMS ======= -->
+<div class="sec">
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>RAG (Retrieval-Augmented Generation)</strong></td><td>Retrieve relevant documents from a trusted knowledge base, then feed them to an LLM to generate a grounded answer.</td></tr>
+<tr><td><strong>LLM (Large Language Model)</strong></td><td>The model that writes the final answer from retrieved context; treated here as a black box.</td></tr>
+<tr><td><strong>Embedding</strong></td><td>A numeric vector representation of text where geometric closeness reflects similarity in meaning.</td></tr>
+<tr><td><strong>Chunk / Chunking</strong></td><td>Splitting a document into passages (~512 tokens with overlap); the chunk is the unit that gets indexed and retrieved.</td></tr>
+<tr><td><strong>Hybrid search</strong></td><td>Running keyword (BM25) and semantic (vector) search together, then fusing the two result lists.</td></tr>
+<tr><td><strong>BM25 (Best Match 25)</strong></td><td>Elasticsearch's default keyword-ranking function: TF-IDF-based with term-frequency saturation and document-length normalization.</td></tr>
+<tr><td><strong>TF-IDF (Term Frequency&ndash;Inverse Document Frequency)</strong></td><td>Weighting that scores a term higher when it is frequent in a document but rare across the corpus.</td></tr>
+<tr><td><strong>Semantic search</strong></td><td>Retrieval by meaning via embedding vectors, matching paraphrases even with no shared words.</td></tr>
+<tr><td><strong>RRF (Reciprocal Rank Fusion)</strong></td><td>Merges result lists by rank position, not raw score, summing 1/(k+rank) with k=60.</td></tr>
+<tr><td><strong>Cosine similarity</strong></td><td>Similarity measured as the cosine of the angle between two vectors; the standard metric for text embeddings.</td></tr>
+<tr><td><strong>Vector database</strong></td><td>A store that holds embeddings and performs approximate nearest-neighbor search over them.</td></tr>
+<tr><td><strong>pgvector</strong></td><td>A Postgres extension adding vector storage and similarity search, letting one database serve both metadata and vectors.</td></tr>
+<tr><td><strong>ANN (Approximate Nearest Neighbor)</strong></td><td>Search that trades a little accuracy for large speedups when finding the closest vectors.</td></tr>
+<tr><td><strong>HNSW (Hierarchical Navigable Small World)</strong></td><td>A layered-graph ANN index that finds approximate nearest neighbors in logarithmic time.</td></tr>
+<tr><td><strong>Cross-encoder reranker</strong></td><td>A model that scores query and candidate together for precise relevance, re-ordering the top hybrid-search candidates.</td></tr>
+<tr><td><strong>ILM (Index Lifecycle Management)</strong></td><td>Elasticsearch policy that moves indices through hot, warm, and delete phases by age and usage.</td></tr>
+<tr><td><strong>Multi-tenancy</strong></td><td>Isolating each customer's documents so one tenant can never see another tenant's data.</td></tr>
+<tr><td><strong>p95 latency</strong></td><td>The 95th-percentile response time &mdash; 95% of requests complete faster than this value.</td></tr>
+<tr><td><strong>Recall@k</strong></td><td>Fraction of queries whose correct chunk appears within the top-k retrieved results.</td></tr>
+<tr><td><strong>nDCG / MRR</strong></td><td>Ranking-quality metrics: nDCG rewards relevant results placed higher; MRR averages 1/rank of the first relevant result.</td></tr>
+</table>
+</div>
+
+</div><!-- end #main -->
+
+<script>
+function go(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('tab-' + id);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('active'));
+  if (event && event.currentTarget) event.currentTarget.classList.add('active');
+  document.getElementById('main').scrollTop = 0;
+}
+
+function toggle(el) {
+  const body = el.nextElementSibling;
+  const chevron = el.querySelector('.chv');
+  body.classList.toggle('open');
+  if (chevron) chevron.classList.toggle('open');
+}
+</script>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="cloud_ai_ml_infra.html">‹ Cloud AI/ML Infrastructure</a><a class="bkc" href="index.html">📖 Contents</a><a href="realtime_agent_assist_design.html">Real-time Agent Assist ›</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

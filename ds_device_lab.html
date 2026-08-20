@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design a Device Lab / Test-Farm Platform — Applied System Design &amp; Emerging Topics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9; --bg4: #e2e8f0;
+  --border: #cbd5e1; --text: #0f172a; --text2: #334155; --text3: #64748b;
+  --blue: #2563eb; --blue-l: #dbeafe; --blue-d: #1d4ed8;
+  --green: #16a34a; --green-l: #dcfce7;
+  --yellow: #d97706; --yellow-l: #fef3c7;
+  --red: #dc2626; --red-l: #fee2e2;
+  --purple: #7c3aed; --purple-l: #ede9fe;
+  --orange: #ea580c; --orange-l: #ffedd5;
+  --teal: #0d9488; --teal-l: #ccfbf1;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06); --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.75; }
+.container { max-width: 1040px; margin: 0 auto; padding: 0 24px 56px; }
+header.pgh { text-align: left; margin: 24px 0 8px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+header.pgh h1 { font-size: 32px; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+header.pgh .sub { color: var(--text3); font-size: 14px; max-width: 720px; }
+
+h2 { font-size: 23px; font-weight: 800; margin: 40px 0 8px; color: var(--text); padding-top: 8px; }
+h3 { font-size: 17px; font-weight: 700; margin: 26px 0 8px; color: var(--text); border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+h4 { font-size: 13.5px; font-weight: 700; margin: 16px 0 6px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 14px 22px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+.lead { font-size: 15px; color: var(--text2); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.65; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+p code, li code, td code { background: var(--bg3); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--blue-d); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin: 16px 0; padding: 20px 24px; box-shadow: var(--shadow-sm); }
+.card h3 { margin-top: 0; }
+
+.ins { background: var(--blue-l); border-left: 4px solid var(--blue); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.insl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--blue-d); margin-bottom: 4px; }
+.ins p { color: var(--text); font-size: 13.5px; margin: 0; }
+.tip { background: var(--green-l); border-left: 4px solid var(--green); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.tipl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--green); margin-bottom: 4px; }
+.tip p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.warn { background: var(--yellow-l); border-left: 4px solid var(--yellow); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.warnl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--yellow); margin-bottom: 4px; }
+.warn p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.trap { background: var(--red-l); border-left: 4px solid var(--red); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.trapl { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--red); margin-bottom: 4px; }
+.trap p { color: var(--text2); font-size: 13.5px; margin: 0; }
+.note { background: var(--purple-l); border-left: 4px solid var(--purple); border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+.notel { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: var(--purple); margin-bottom: 4px; }
+.note p { color: var(--text2); font-size: 13.5px; margin: 0; }
+
+.formula { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; line-height: 1.7; overflow-x: auto; }
+.formula b { color: #93c5fd; }
+.formula .cm { color: #94a3b8; }
+
+.iq { background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-left: 4px solid var(--blue); border-radius: 8px; padding: 14px 18px; margin: 14px 0; font-style: italic; color: var(--text2); font-size: 13.5px; position: relative; }
+.iq::before { content: 'SAY THIS'; position: absolute; top: -8px; left: 14px; font-size: 9px; font-weight: 700; font-style: normal; background: var(--blue); color: #fff; padding: 1px 8px; border-radius: 4px; letter-spacing: 1px; }
+
+.tbl { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.tbl th { background: var(--bg3); color: var(--text2); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 13px; text-align: left; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 10px 13px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+
+.svg-container { margin: 20px 0; text-align: center; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+.svg-cap { font-size: 11.5px; color: var(--text3); margin-top: 6px; }
+
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 14px 0; }
+@media (max-width: 820px) { .g2 { grid-template-columns: 1fr; } }
+.miniboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+@media (max-width: 820px) { .miniboxes { grid-template-columns: 1fr; } }
+.mb { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.mb .mbh { font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+.mb.pro { border-left: 3px solid var(--green); } .mb.pro .mbh { color: var(--green); }
+.mb.con { border-left: 3px solid var(--red); } .mb.con .mbh { color: var(--red); }
+.mb ul { margin: 0 0 0 18px; font-size: 12.5px; }
+
+@media (max-width: 768px) { .container { padding: 0 12px 40px; } pre { font-size: 11.5px; } header.pgh h1 { font-size: 26px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+  table{display:block !important;width:100% !important;max-width:100% !important;overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+  svg,img{max-width:100% !important;height:auto !important;}
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;font-size:11.5px !important;white-space:pre !important;word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+  .g2,.miniboxes{grid-template-columns:1fr !important;}
+  h1{font-size:26px !important;} h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part XIV · Chapter 1 — <b>Design a Device Lab / Test-Farm Platform</b></span><span class="bkspacer"></span></nav>
+
+<div class="container">
+<header class="pgh">
+  <h1>Design a Device Lab / Test-Farm Platform</h1>
+  <div class="sub">The software platform that drives racks of real, physical devices — phones, IoT gadgets, embedded boards — so they can run automated tests around the clock. This is the orchestration layer, not the firmware or RF: an inventory, a scheduler, and a fleet of hosts wired to hardware. A valuable niche anywhere hardware is built at scale, Taiwan very much included.</div>
+</header>
+
+<div class="ins"><div class="insl">Read this like a story</div><p>Start at the top even if you already run a test rig at your desk — the sections build from "why does a company wire hundreds of phones into a rack" up to "keep a dead board from wedging the whole queue across three sites." The two diagrams (the control-plane/data-plane split and the device state machine) are the spine; everything else hangs off them.</p></div>
+
+<div class="note"><div class="notel">Scope — the software layer, not the RF</div><p>This chapter is about the <strong>software</strong> that schedules, provisions, and observes physical devices for automated testing. It is <em>not</em> about writing firmware, radio/PHY stacks, or bring-up of a single board on your bench. Where it touches hardware — flashing an image, power-cycling a stuck board — we treat that as an operation the platform commands, not as electronics you design. If you have read <a href="test_automation_design.html">Test Automation at Scale</a> and <a href="observability_dashboard.html">Observability &amp; Dashboards</a>, this is the hardware-facing cousin of both.</p></div>
+
+<!-- ══════════════ SECTION 1 ══════════════ -->
+<h2>1. The Problem &amp; Who Does This</h2>
+
+<p class="lead">A phone maker ships an app and an OS that must work on 40 device models across 6 Android versions. A smart-speaker team must prove every firmware build still boots, connects to Wi-Fi, and responds to a wake word. A car-infotainment supplier must run a 4-hour soak test on the actual board that ships in the vehicle. None of this can be faked in a pure emulator — the bugs live in <em>real</em> hardware: a specific SoC, a flaky USB hub, a sensor, a modem. So companies build <strong>device labs</strong>: racks of real devices under test (DUTs) wired to host machines, running automated tests continuously.</p>
+
+<p>The <strong>device-lab / test-farm platform</strong> is the software that makes that rack usable by hundreds of engineers and thousands of CI jobs at once. Without it you get a graveyard of phones taped to a desk, "borrowed" by whoever shouts loudest, half of them bricked and nobody sure which. With it, a developer (or a CI pipeline) says "run this test suite on any Pixel-class device on Android 14" and the platform finds a healthy one, flashes the build, runs the test, streams the logs back, and releases the device — all without a human touching the rack.</p>
+
+<h3>Who builds and runs these — the real roles</h3>
+<p>These are established titles, not invented ones. If you are targeting one, the vocabulary below is what shows up in the job description:</p>
+<ul>
+  <li><strong>Test / Device Lab Infrastructure Engineer</strong> — owns the platform: inventory, scheduler, host agents, dashboards.</li>
+  <li><strong>Test Automation Infrastructure Engineer</strong> / <strong>SDET (infrastructure)</strong> — builds the systems that <em>run</em> tests at scale rather than writing individual test cases.</li>
+  <li><strong>Hardware-in-the-loop (HIL) Software Engineer</strong> — connects real hardware into an automated test loop (common in automotive, robotics, aerospace, consumer electronics).</li>
+  <li><strong>Device Orchestration / Test Platform Engineer</strong> — the scheduling-and-fleet side specifically.</li>
+  <li><strong>Lab / Bench Automation Engineer</strong> — power control, instrument control, physical layer of the rack.</li>
+</ul>
+
+<h3>Why this niche is valuable — especially in a hardware hub</h3>
+<p>Every company that ships physical products at volume needs one of these. Taiwan is a global hub for phones, laptops, networking gear, IoT modules, and board-level manufacturing (ODM/OEM work), so the demand for engineers who can automate validation across <em>many</em> devices is concrete and local. The skill is transferable: the same platform shape serves a phone OEM, a networking-equipment vendor, a wearables startup, or an automotive supplier. It sits at the seam between software engineering and manufacturing/QA — a seam that is hard to offshore because the devices are physically here.</p>
+
+<h3>Grounding in public products</h3>
+<p>You do not have to imagine this from scratch — several public systems solve pieces of it, and naming them shows you know the landscape:</p>
+<table class="tbl">
+  <tr><th>System</th><th>What it is</th><th>What it demonstrates</th></tr>
+  <tr><td><strong>Firebase Test Lab</strong> (Google)</td><td>Runs Android/iOS apps on real production devices <em>and</em> virtual devices hosted in Google data centers.<sup>1</sup></td><td>A managed cloud device lab: real hardware behind an API.</td></tr>
+  <tr><td><strong>AWS Device Farm</strong></td><td>Tests apps on real, physical phones and tablets in the cloud, with parallel automated runs and interactive remote access.<sup>2</sup></td><td>The device-pool / job / run / report vocabulary this chapter uses.</td></tr>
+  <tr><td><strong>DeviceFarmer / STF</strong> (open source)</td><td>A web app to remotely control and manage a farm of real Android devices, with inventory, booking and <code>adb connect</code>.<sup>3</sup></td><td>The self-hosted "smartphone test farm" pattern.</td></tr>
+  <tr><td><strong>LAVA</strong> (open source, Linaro)</td><td>CI system that deploys an OS onto physical/virtual boards and runs tests; scheduler + workers + dispatcher + DUTs.<sup>4</sup></td><td>The embedded/board flavor: deploy → boot → test.</td></tr>
+  <tr><td><strong>Labgrid</strong> (open source)</td><td>Python board-control library: power/reset, serial console, flashing, remote access via exporter/coordinator/client.<sup>5</sup></td><td>The physical-control primitives a host agent needs.</td></tr>
+</table>
+<p class="svg-cap">Sources: <sup>1</sup> Firebase Test Lab docs (firebase.google.com/docs/test-lab). <sup>2</sup> AWS Device Farm developer guide (docs.aws.amazon.com/devicefarm). <sup>3</sup> DeviceFarmer/STF (github.com/DeviceFarmer/stf). <sup>4</sup> LAVA docs (docs.lavasoftware.org). <sup>5</sup> Labgrid docs (labgrid.readthedocs.io). Named factually as public references; the design below is generic and vendor-neutral.</p>
+
+<!-- ══════════════ SECTION 2 ══════════════ -->
+<h2>2. Requirements</h2>
+<p>Pin these down out loud before drawing boxes. The functional list is "what a user can ask the platform to do"; the non-functional list is "what makes it trustworthy at scale."</p>
+
+<h3>Functional requirements</h3>
+<ul>
+  <li><strong>Register &amp; inventory devices.</strong> Enrol a device with its capabilities (model, OS/firmware version, screen, sensors, connectivity) and track where it is physically attached.</li>
+  <li><strong>Provision / flash.</strong> Put a known build/image onto the device and bring it to a clean, known state before a test.</li>
+  <li><strong>Schedule jobs onto suitable devices.</strong> Match a test job's requirements ("Android 14, has NFC") to an available healthy device, honoring priority and team quotas.</li>
+  <li><strong>Run tests &amp; collect everything.</strong> Execute the suite, stream logs, capture screenshots/video, gather performance and device telemetry, and store artifacts.</li>
+  <li><strong>Report results.</strong> Per-job pass/fail with links to artifacts, plus fleet-level dashboards and trends.</li>
+  <li><strong>Interactive access.</strong> Let a human grab a specific device to reproduce a bug (remote screen / shell), the way STF and Device Farm both offer.</li>
+</ul>
+
+<h3>Non-functional requirements</h3>
+<div class="g2">
+<div class="card"><h4 style="margin-top:0">Must be true</h4>
+<ul>
+  <li><strong>High utilization.</strong> Devices are the expensive, finite resource — idle hardware is wasted capital. Target high busy-time.</li>
+  <li><strong>Isolation between jobs.</strong> One job must never leak state (files, accounts, cached Wi-Fi creds) into the next on the same device.</li>
+  <li><strong>Flaky/dead-device detection.</strong> Automatically spot devices that fail everything or stop responding, and <strong>quarantine</strong> them.</li>
+  <li><strong>Scale to thousands of devices</strong> across many hosts and potentially multiple physical sites.</li>
+  <li><strong>Observability.</strong> Know at a glance what every device is doing and why a job failed.</li>
+</ul></div>
+<div class="card"><h4 style="margin-top:0">Explicitly out of scope (say so)</h4>
+<ul>
+  <li>Writing the tests themselves (that's the product teams).</li>
+  <li>Firmware / RF / PHY development.</li>
+  <li>Being a load-testing tool for backends — a device lab tests the <em>device</em>, not your servers (Firebase Test Lab makes the same disclaimer).</li>
+  <li>Emulation as the primary path — emulators complement but do not replace real hardware here.</li>
+</ul></div>
+</div>
+
+<div class="tip"><div class="tipl">The one-liner that frames everything</div><p>"The device is the scarce, unreliable resource." Every design decision below — the scheduler, the state machine, the quarantine policy, the timeouts — exists because physical hardware is finite <em>and</em> flaky in ways stateless cloud VMs are not.</p></div>
+
+<!-- ══════════════ SECTION 3 ══════════════ -->
+<h2>3. High-Level Architecture</h2>
+<p>The clean way to reason about a device lab is the classic split every large fleet system uses: a <strong>control plane</strong> that decides and remembers, and a <strong>data plane</strong> that physically touches the devices. The control plane is ordinary stateless-ish software you scale like any web backend; the data plane is the hard, physical part.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 880 470" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker>
+  </defs>
+
+  <!-- submitters -->
+  <rect x="20" y="196" width="120" height="66" rx="9" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="80" y="222" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Developers</text>
+  <text x="80" y="240" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">&amp; CI pipelines</text>
+  <text x="80" y="255" text-anchor="middle" font-size="9" fill="#526176">submit test jobs</text>
+
+  <!-- control plane box -->
+  <rect x="176" y="24" width="392" height="300" rx="12" fill="#f8fafc" stroke="#2563eb" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text x="192" y="46" font-size="11" font-weight="800" fill="#1d4ed8">CONTROL PLANE — decides &amp; remembers</text>
+
+  <rect x="196" y="60" width="150" height="52" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="271" y="82" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">API / Gateway</text>
+  <text x="271" y="98" text-anchor="middle" font-size="9" fill="#526176">accepts &amp; validates jobs</text>
+
+  <rect x="196" y="130" width="150" height="56" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.4"/>
+  <text x="271" y="152" text-anchor="middle" font-size="11" font-weight="700" fill="#1d4ed8">Job Queue</text>
+  <text x="271" y="168" text-anchor="middle" font-size="9" fill="#526176">pending jobs, by priority</text>
+
+  <rect x="196" y="204" width="150" height="56" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="271" y="226" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">Scheduler</text>
+  <text x="271" y="242" text-anchor="middle" font-size="9" fill="#526176">match job → device</text>
+
+  <rect x="388" y="60" width="160" height="56" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="468" y="82" text-anchor="middle" font-size="11" font-weight="700" fill="#6d28d9">Device Registry</text>
+  <text x="468" y="98" text-anchor="middle" font-size="9" fill="#526176">inventory + state + caps</text>
+
+  <rect x="388" y="204" width="160" height="56" rx="8" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="468" y="226" text-anchor="middle" font-size="11" font-weight="700" fill="#0d7a6f">Result Store</text>
+  <text x="468" y="242" text-anchor="middle" font-size="9" fill="#526176">pass/fail + metadata</text>
+
+  <text x="372" y="290" text-anchor="middle" font-size="9" fill="#526176">scheduler reads the registry to find a healthy, capable, free device</text>
+
+  <!-- data plane box -->
+  <rect x="596" y="24" width="264" height="392" rx="12" fill="#f8fafc" stroke="#0d9488" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text x="612" y="46" font-size="11" font-weight="800" fill="#0d7a6f">DATA PLANE — touches hardware</text>
+
+  <rect x="616" y="60" width="224" height="150" rx="9" fill="#ffffff" stroke="#0d9488" stroke-width="1.5"/>
+  <text x="728" y="80" text-anchor="middle" font-size="11" font-weight="700" fill="#0d7a6f">Device Host + Agent</text>
+  <text x="728" y="95" text-anchor="middle" font-size="9" fill="#526176">flash · run · stream · recover</text>
+  <rect x="632" y="106" width="88" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="676" y="130" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">DUT phone</text>
+  <rect x="736" y="106" width="88" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="780" y="130" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">DUT board</text>
+  <rect x="632" y="156" width="88" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="676" y="180" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">DUT IoT</text>
+  <rect x="736" y="156" width="88" height="40" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="780" y="180" text-anchor="middle" font-size="9.5" font-weight="700" fill="#166534">DUT wear</text>
+
+  <rect x="616" y="336" width="224" height="60" rx="9" fill="#ffedd5" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="728" y="360" text-anchor="middle" font-size="11" font-weight="700" fill="#c2410c">Artifact Store</text>
+  <text x="728" y="376" text-anchor="middle" font-size="9" fill="#526176">logs · screenshots · video · dumps</text>
+
+  <!-- dashboard -->
+  <rect x="196" y="336" width="352" height="60" rx="9" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="372" y="360" text-anchor="middle" font-size="11" font-weight="700" fill="#991b1b">Dashboard &amp; Reporting</text>
+  <text x="372" y="376" text-anchor="middle" font-size="9" fill="#526176">fleet state, job results, trends, flakiness</text>
+
+  <!-- arrows -->
+  <line x1="140" y1="222" x2="192" y2="86" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="150" y="150" text-anchor="middle" font-size="8.5" fill="#526176">submit</text>
+  <line x1="271" y1="112" x2="271" y2="126" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="271" y1="186" x2="271" y2="200" stroke="#5b6b7f" stroke-width="1.5" marker-end="url(#ah)"/>
+  <line x1="346" y1="220" x2="384" y2="200" stroke="#5b6b7f" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#ah)"/>
+  <text x="366" y="196" text-anchor="middle" font-size="8" fill="#526176">reads</text>
+  <!-- scheduler dispatches to host -->
+  <line x1="346" y1="232" x2="612" y2="150" stroke="#d97706" stroke-width="1.7" marker-end="url(#ah)"/>
+  <text x="470" y="176" text-anchor="middle" font-size="9" font-weight="700" fill="#92400e">dispatch job to host</text>
+  <!-- host heartbeats to registry -->
+  <line x1="616" y1="80" x2="552" y2="86" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="584" y="72" text-anchor="middle" font-size="8.5" font-weight="700" fill="#6d28d9">heartbeat</text>
+  <!-- host writes results -->
+  <line x1="616" y1="196" x2="552" y2="228" stroke="#0d9488" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="588" y="214" text-anchor="middle" font-size="8.5" fill="#0d7a6f">results</text>
+  <!-- host writes artifacts -->
+  <line x1="728" y1="210" x2="728" y2="330" stroke="#ea580c" stroke-width="1.5" marker-end="url(#ah)"/>
+  <text x="762" y="276" text-anchor="middle" font-size="8.5" fill="#c2410c">upload</text>
+  <!-- dashboard reads result store -->
+  <line x1="450" y1="260" x2="410" y2="330" stroke="#5b6b7f" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#ah)"/>
+  <text x="392" y="300" text-anchor="middle" font-size="8" fill="#526176">reads results</text>
+  <!-- dashboard reads artifacts -->
+  <line x1="616" y1="366" x2="552" y2="366" stroke="#5b6b7f" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#ah)"/>
+  <text x="584" y="358" text-anchor="middle" font-size="8" fill="#526176">links</text>
+</svg>
+<div class="svg-cap">Control plane (blue/dashed, left) decides and remembers; data plane (teal/dashed, right) physically drives devices. Solid arrows are the request/result path; dashed arrows are reads. The scheduler dispatches to a host agent, which flashes and runs the DUT, heartbeats device state back to the registry, writes results, and uploads artifacts the dashboard links to.</div>
+</div>
+
+<h3>The pieces, in one line each</h3>
+<ul>
+  <li><strong>API / Gateway</strong> — authenticates callers and accepts job submissions; the single front door.</li>
+  <li><strong>Job Queue</strong> — holds pending jobs ordered by priority; decouples submission rate from device availability.</li>
+  <li><strong>Scheduler</strong> — the brain: pulls a job, reads the registry, picks a healthy capable free device, and dispatches (§5).</li>
+  <li><strong>Device Registry / Inventory</strong> — the source of truth for every device: capabilities, current state, which host it's on (§4).</li>
+  <li><strong>Device Host + Agent</strong> — the machine physically wired to devices; the agent flashes, runs, streams, and recovers them (§6).</li>
+  <li><strong>Result Store</strong> — structured pass/fail and metadata per job, queried by dashboards.</li>
+  <li><strong>Artifact Store</strong> — bulky blobs (logs, screenshots, video, crash dumps) in object storage, referenced by URL.</li>
+  <li><strong>Dashboard &amp; Reporting</strong> — fleet health and result trends for humans (§7).</li>
+</ul>
+<div class="note"><div class="notel">Why the plane split matters</div><p>The control plane can be redundant, load-balanced, and restarted freely — it holds no irreplaceable state beyond its databases. The data plane is <em>pinned to physical reality</em>: a given device is reachable from exactly one host, and if that host dies, those devices are unreachable until it recovers. Keeping the two mentally separate is what stops candidates from brushing aside a fundamentally physical problem with a vague "just add more replicas."</p></div>
+
+<!-- ══════════════ SECTION 4 ══════════════ -->
+<h2>4. Device Model &amp; Inventory</h2>
+<p>The registry is the heart of the control plane. Everything the scheduler does is a query against it, so its data model and its <strong>state machine</strong> deserve real thought.</p>
+
+<h3>Capabilities &amp; attributes</h3>
+<p>A device is described by what a job can select on. Split them into stable attributes (rarely change) and dynamic state (changes constantly):</p>
+<table class="tbl">
+  <tr><th>Field</th><th>Example</th><th>Notes</th></tr>
+  <tr><td>device_id</td><td><code>dut-4471</code></td><td>Stable unique handle, printed on the physical label.</td></tr>
+  <tr><td>model / SoC</td><td><code>pixel-8</code>, <code>rpi-cm4</code></td><td>Selectable capability.</td></tr>
+  <tr><td>os / firmware</td><td><code>android-14</code>, <code>fw-2.3.1</code></td><td>Changes when re-flashed.</td></tr>
+  <tr><td>capabilities</td><td><code>{nfc, gps, dual-sim, camera}</code></td><td>Feature labels a job can require.</td></tr>
+  <tr><td>labels</td><td><code>{team=camera, pool=ci}</code></td><td>Free-form tags for pools/quotas.</td></tr>
+  <tr><td>host_id</td><td><code>host-lab-a-07</code></td><td>Which host it's physically attached to.</td></tr>
+  <tr><td>state</td><td><code>available</code></td><td>The state-machine value (below).</td></tr>
+  <tr><td>last_heartbeat</td><td><code>ts</code></td><td>Freshness — drives offline detection.</td></tr>
+  <tr><td>health_score</td><td><code>0.98</code></td><td>Rolling pass/health signal (drives quarantine, §7).</td></tr>
+</table>
+
+<h3>The device state machine</h3>
+<p>A physical device is never simply "up or down." It moves through a small set of states, and the platform's correctness depends on every transition being explicit. This is the second spine diagram of the chapter.</p>
+
+<div class="svg-container">
+<svg viewBox="0 0 860 380" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="ah2" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><polygon points="0 0, 9 3.5, 0 7" fill="#5b6b7f"/></marker>
+  </defs>
+
+  <!-- available -->
+  <rect x="330" y="24" width="180" height="52" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="1.8"/>
+  <text x="420" y="46" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">Available</text>
+  <text x="420" y="62" text-anchor="middle" font-size="9" fill="#526176">healthy, idle, schedulable</text>
+
+  <!-- reserved -->
+  <rect x="330" y="128" width="180" height="52" rx="10" fill="#dbeafe" stroke="#2563eb" stroke-width="1.8"/>
+  <text x="420" y="150" text-anchor="middle" font-size="12" font-weight="700" fill="#1d4ed8">Reserved</text>
+  <text x="420" y="166" text-anchor="middle" font-size="9" fill="#526176">claimed by scheduler for a job</text>
+
+  <!-- running -->
+  <rect x="330" y="232" width="180" height="52" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="1.8"/>
+  <text x="420" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="#92400e">Running</text>
+  <text x="420" y="270" text-anchor="middle" font-size="9" fill="#526176">flashing / executing test</text>
+
+  <!-- unhealthy -->
+  <rect x="612" y="232" width="176" height="52" rx="10" fill="#ffedd5" stroke="#ea580c" stroke-width="1.8"/>
+  <text x="700" y="254" text-anchor="middle" font-size="12" font-weight="700" fill="#c2410c">Unhealthy</text>
+  <text x="700" y="270" text-anchor="middle" font-size="9" fill="#526176">failed health check</text>
+
+  <!-- quarantined -->
+  <rect x="612" y="128" width="176" height="52" rx="10" fill="#fee2e2" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="700" y="150" text-anchor="middle" font-size="12" font-weight="700" fill="#991b1b">Quarantined</text>
+  <text x="700" y="166" text-anchor="middle" font-size="9" fill="#526176">removed from scheduling</text>
+
+  <!-- offline -->
+  <rect x="40" y="128" width="176" height="52" rx="10" fill="#f1f5f9" stroke="#64748b" stroke-width="1.8"/>
+  <text x="128" y="150" text-anchor="middle" font-size="12" font-weight="700" fill="#334155">Offline</text>
+  <text x="128" y="166" text-anchor="middle" font-size="9" fill="#526176">no heartbeat / host down</text>
+
+  <!-- available -> reserved -->
+  <line x1="420" y1="76" x2="420" y2="126" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ah2)"/>
+  <text x="500" y="104" text-anchor="middle" font-size="8.5" fill="#1d4ed8">scheduler claims</text>
+  <!-- reserved -> running -->
+  <line x1="420" y1="180" x2="420" y2="230" stroke="#d97706" stroke-width="1.6" marker-end="url(#ah2)"/>
+  <text x="486" y="208" text-anchor="middle" font-size="8.5" fill="#92400e">job starts</text>
+  <!-- running -> available (success) -->
+  <path d="M 330 250 C 250 250, 250 50, 328 50" fill="none" stroke="#16a34a" stroke-width="1.6" marker-end="url(#ah2)"/>
+  <text x="228" y="152" text-anchor="middle" font-size="8.5" fill="#166534">job done → reset →</text>
+  <text x="228" y="164" text-anchor="middle" font-size="8.5" fill="#166534">clean, release</text>
+  <!-- running -> unhealthy -->
+  <line x1="510" y1="258" x2="610" y2="258" stroke="#ea580c" stroke-width="1.6" marker-end="url(#ah2)"/>
+  <text x="560" y="250" text-anchor="middle" font-size="8.5" fill="#c2410c">check fails</text>
+  <!-- unhealthy -> available (recovered) -->
+  <path d="M 700 232 C 700 210, 545 210, 512 62" fill="none" stroke="#16a34a" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#ah2)"/>
+  <text x="612" y="200" text-anchor="middle" font-size="8.5" fill="#166534">auto-recovered</text>
+  <!-- unhealthy -> quarantined -->
+  <line x1="700" y1="230" x2="700" y2="182" stroke="#dc2626" stroke-width="1.6" marker-end="url(#ah2)"/>
+  <text x="762" y="208" text-anchor="middle" font-size="8.5" fill="#991b1b">repeat fails</text>
+  <!-- quarantined -> available (manual/repair) -->
+  <path d="M 700 128 C 700 96, 512 96, 500 74" fill="none" stroke="#64748b" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#ah2)"/>
+  <text x="612" y="108" text-anchor="middle" font-size="8.5" fill="#334155">repaired / manual</text>
+  <!-- available <-> offline -->
+  <line x1="328" y1="44" x2="180" y2="126" stroke="#64748b" stroke-width="1.4" marker-end="url(#ah2)"/>
+  <text x="238" y="78" text-anchor="middle" font-size="8.5" fill="#334155">heartbeat lost</text>
+  <line x1="216" y1="150" x2="328" y2="60" stroke="#64748b" stroke-width="1.4" stroke-dasharray="4,3" marker-end="url(#ah2)"/>
+  <text x="266" y="128" text-anchor="middle" font-size="8.5" fill="#334155">host back</text>
+</svg>
+<div class="svg-cap">Device state machine. Solid arrows are normal/forced transitions; dashed arrows are recoveries. A device becomes schedulable only in <em>Available</em>; the scheduler moves it to <em>Reserved</em>, the agent to <em>Running</em>, and on a clean finish it resets back to <em>Available</em>. Failed health checks go to <em>Unhealthy</em>; repeated failures escalate to <em>Quarantined</em>. Lost heartbeats mark it <em>Offline</em> regardless of prior state.</div>
+</div>
+
+<ul>
+  <li><strong>Available</strong> — healthy and idle; the only state the scheduler will pick from.</li>
+  <li><strong>Reserved</strong> — the scheduler has claimed it for a specific job (a short-lived lock so two jobs can't grab the same device — the analog of the atomic check in a rate limiter).</li>
+  <li><strong>Running</strong> — the agent is flashing or executing on it.</li>
+  <li><strong>Unhealthy</strong> — a health check failed once; taken out of rotation pending recovery.</li>
+  <li><strong>Quarantined</strong> — it keeps failing; removed from scheduling and flagged for a human, so it stops poisoning jobs (§7).</li>
+  <li><strong>Offline</strong> — no heartbeat (host crashed, USB dropped, power lost); unreachable until it reappears.</li>
+</ul>
+
+<h3>Health checks &amp; heartbeats</h3>
+<p>Two mechanisms keep the registry honest:</p>
+<ul>
+  <li><strong>Heartbeats.</strong> Each host agent periodically reports "these devices are attached and in state X." If a heartbeat is missing for longer than a threshold, the control plane marks those devices <code>offline</code> and requeues any job that was on them. This is what prevents a crashed host from silently holding devices hostage.</li>
+  <li><strong>Health checks.</strong> Between jobs (and on a schedule), the agent runs a cheap probe: is the device reachable, does it boot, is battery/temperature sane, does a trivial command return? A failed probe pushes the device to <code>unhealthy</code>; a passed one after recovery returns it to <code>available</code>.</li>
+</ul>
+<div class="tip"><div class="tipl">Interview signal</div><p>Distinguishing <em>heartbeat</em> (liveness of the host→device link) from <em>health check</em> (fitness of the device to run a test) is a senior distinction. A device can be heartbeating fine yet be unfit (overheating, storage full); it can also be perfectly healthy yet offline because its host crashed.</p></div>
+
+<!-- ══════════════ SECTION 5 ══════════════ -->
+<h2>5. Scheduling</h2>
+<p>The scheduler is where a device lab earns or wastes its money. Its job: take a pending test job and bind it to the <em>best</em> currently-available device, quickly and fairly, without letting one big job starve everyone else.</p>
+
+<h3>Capability matching with label selectors</h3>
+<p>A job doesn't ask for a specific device — it asks for a <em>kind</em> of device, exactly like a Kubernetes pod's <code>nodeSelector</code> (see <a href="td_kubernetes.html">the Kubernetes chapter</a>). The scheduler filters the registry to devices that satisfy the selector <em>and</em> are <code>available</code>:</p>
+<div class="formula">
+<span class="cm"># a job's device requirement</span><br>
+require: model in [pixel-8, pixel-8a]<br>
+require: os == android-14<br>
+require: capabilities ⊇ {nfc}<br>
+prefer:  labels.pool == ci        <span class="cm"># soft preference, not a hard filter</span><br>
+<br>
+candidates = registry.filter(state == available AND matches(require))<br>
+if candidates is empty:  <b>keep job queued</b> (or reject if no such device exists at all)<br>
+else:                    pick by policy → reserve → dispatch
+</div>
+<div class="warn"><div class="warnl">Impossible vs. temporarily-unavailable</div><p>Separate "no device in the whole fleet can ever satisfy this" (fail fast with a clear error) from "all matching devices are busy right now" (keep queued and wait). Conflating them either wedges a job forever or rejects a satisfiable request. This mirrors a pod stuck <code>Pending</code> because no node matches vs. because nodes are full.</p></div>
+
+<h3>Fairness &amp; quotas across teams</h3>
+<p>On a shared lab, one team's 5,000-job nightly run must not lock out another team's single urgent job. Standard levers:</p>
+<ul>
+  <li><strong>Quotas / pools.</strong> Reserve slices of the fleet per team (via labels), or cap concurrent devices per team. Guarantees a minimum even under contention.</li>
+  <li><strong>Fair queuing.</strong> Round-robin across teams' queues rather than strict FIFO, so a burst from one submitter doesn't monopolize devices — the same idea as fair scheduling in a rate limiter.</li>
+  <li><strong>Priority.</strong> Presubmit/CI-blocking jobs outrank best-effort soak tests. Use priority to <em>order</em>, but keep a floor so low-priority work isn't starved forever.</li>
+</ul>
+
+<h3>Bin-packing, batching &amp; head-of-line blocking</h3>
+<ul>
+  <li><strong>Bin-packing for utilization.</strong> When a job needs many devices, prefer packing them onto devices/hosts that maximize overall busy-time, but balance against isolation (don't cram so tightly that one flaky host takes out a whole run).</li>
+  <li><strong>Batching.</strong> A suite that must run across 30 models is one logical job fanned out to 30 device reservations; track it as a parent with children so partial failures are visible.</li>
+  <li><strong>Avoid head-of-line blocking.</strong> A job at the front of the queue that needs a <em>rare</em> device (only two exist, both busy) must not block ready-to-run jobs behind it that want common devices. Let the scheduler look past the head and dispatch any job whose device is free — a queue you can scan, not a strict FIFO.</li>
+</ul>
+<div class="note"><div class="notel">This is a matching problem, not just a queue</div><p>Because jobs are heterogeneous (different device requirements) and devices are heterogeneous (different capabilities), scheduling is a <strong>bipartite matching</strong> between pending jobs and free devices, re-evaluated whenever either side changes (a job arrives, a device frees up). Saying that out loud — and then choosing a pragmatic greedy policy (priority-ordered, skip-the-blocked) rather than a perfect but slow optimum — is the senior answer.</p></div>
+
+<!-- ══════════════ SECTION 6 ══════════════ -->
+<h2>6. The Device Host / Agent</h2>
+<p>The <strong>agent</strong> is a small daemon on the machine physically wired to a set of devices (over USB, serial, or network). It is the data plane's hands: the control plane only ever <em>asks</em>; the agent <em>does</em>. Everything hardware-specific and failure-prone lives here.</p>
+
+<h3>The job lifecycle on a host</h3>
+<div class="formula">
+<span class="cm"># agent receives a dispatched job for one attached device</span><br>
+1. <b>lock</b> the device (confirm the reservation; refuse if not Reserved)<br>
+2. <b>provision / flash</b> the requested build/image → known clean state<br>
+3. <b>health-check</b> post-flash (boots? reachable?) — abort early if not<br>
+4. <b>run</b> the test suite; <b>stream</b> logs &amp; telemetry live to the control plane<br>
+5. <b>collect</b> artifacts (screenshots, video, crash dumps) → artifact store<br>
+6. <b>reset</b> the device (wipe state, clear accounts/caches) for isolation<br>
+7. <b>release</b> → report result → device back to Available (or Unhealthy)
+</div>
+
+<h3>Provision, flash &amp; reset — the physical primitives</h3>
+<p>These are exactly the primitives the open-source tools expose: Labgrid, for instance, provides power/reset control, serial-console interaction, and binary upload/bootstrap over USB; LAVA structures every job as <em>deploy → boot → test</em>. Concretely the agent can:</p>
+<ul>
+  <li><strong>Flash</strong> an OS/firmware image (fastboot, a bootloader over serial, an OTA package).</li>
+  <li><strong>Reset</strong> to a clean state between jobs — factory-wipe a phone, re-flash a board — so job N+1 never inherits job N's leftovers.</li>
+  <li><strong>Recover a stuck device</strong> by escalating: soft reboot → force reboot → <strong>power-cycle</strong> via a controllable power switch/USB hub. The ability to physically cut power to one device is what turns a "bricked, needs a human" into "recovered in 30 seconds."</li>
+</ul>
+
+<h3>Isolation</h3>
+<p>Two dimensions of isolation matter:</p>
+<ul>
+  <li><strong>On the device:</strong> wipe user data and caches between jobs; the reset step (6 above) is the guarantee. Skipping it is the classic source of "passes alone, fails in the farm" bugs.</li>
+  <li><strong>On the host:</strong> if one host drives many devices, run each job's harness in its own sandbox (container/process) so a runaway test can't corrupt a sibling job or the agent itself. Bound each job's CPU/RAM/USB access.</li>
+</ul>
+<div class="trap"><div class="trapl">The agent must be paranoid</div><p>The agent talks to hardware that lies, hangs, and disconnects mid-command. Every operation needs a <strong>timeout</strong> and a defined failure action. An agent that blocks forever on a wedged <code>flash</code> call takes its device — and sometimes its whole host — out of service. "What does the agent do when flash hangs?" is a common probe: answer with timeout → escalate to power-cycle → if still dead, mark <code>unhealthy</code> and move on.</p></div>
+
+<!-- ══════════════ SECTION 7 ══════════════ -->
+<h2>7. Results, Telemetry &amp; Flakiness</h2>
+<p>A test that ran but whose result you can't trust — or can't inspect — is worthless. This section is about turning raw runs into signal, and about the defining pain of hardware labs: <strong>flakiness</strong>.</p>
+
+<h3>What to collect, and where it goes</h3>
+<ul>
+  <li><strong>Structured result</strong> (pass/fail per test, timings, exit codes) → the <em>result store</em> (a queryable database). Small, indexed, drives dashboards.</li>
+  <li><strong>Bulky artifacts</strong> (full logs, screenshots, video, perf traces, crash dumps) → the <em>artifact store</em> (object storage), referenced by URL. Never stuff megabytes of logs into the result database.</li>
+  <li><strong>Device telemetry</strong> (battery, temperature, CPU, memory, connectivity) sampled during the run — both to diagnose failures and to feed the health score.</li>
+</ul>
+<div class="tip"><div class="tipl">Split small-and-structured from big-and-blobby</div><p>This two-store split (queryable metadata vs. object-storage blobs) is the same pattern used across the book — it keeps the hot query path fast while artifacts scale cheaply. See <a href="observability_dashboard.html">Observability &amp; Dashboards</a> for the metrics/logs/traces framing.</p></div>
+
+<h3>Flaky <em>tests</em> vs. flaky <em>devices</em> — the crucial split</h3>
+<p>A <strong>flaky test</strong> is non-deterministic <em>logic</em>: the same test passes and fails on the <em>same healthy device</em> depending on timing, order, or a race. A <strong>flaky (or dead) device</strong> is bad <em>hardware</em>: it fails or degrades <em>many different tests</em> that pass fine elsewhere. Telling them apart is the single most important analysis a device lab does, because the fix is opposite:</p>
+<table class="tbl">
+  <tr><th>Signal</th><th>Flaky TEST</th><th>Flaky DEVICE</th></tr>
+  <tr><td>Fails across many devices?</td><td>Yes — same test, many devices</td><td>No — one device, many tests</td></tr>
+  <tr><td>Same test passes on a rerun on healthy HW?</td><td>Often yes</td><td>Test is fine elsewhere</td></tr>
+  <tr><td>Correlated to one device_id?</td><td>No</td><td>Strongly</td></tr>
+  <tr><td>Fix</td><td>Quarantine/fix the test; the hardware is fine</td><td>Quarantine the <em>device</em>; the test is fine</td></tr>
+</table>
+<div class="formula">
+<span class="cm"># the discriminating question</span><br>
+if one test fails on many different healthy devices → <b>flaky TEST</b><br>
+if one device fails many different tests that pass elsewhere → <b>flaky/dead DEVICE</b>
+</div>
+
+<h3>Quarantine policy</h3>
+<p>Maintain a rolling <strong>health score</strong> per device (e.g. recent pass-rate on a canary/health suite, plus telemetry sanity). When it crosses a threshold — or the device fails a fixed number of consecutive health checks — automatically move it <code>unhealthy</code> → <code>quarantined</code> and page/notify. Symmetrically, a quarantined device that a human repairs (or that recovers and passes a probation run) returns to the pool. Quarantine <em>fast</em>: one bad device left schedulable can silently fail dozens of jobs and get innocent code changes blamed.</p>
+<div class="trap"><div class="trapl">The blame-the-code trap</div><p>The most damaging failure mode of a device lab is a flaky device that stays in rotation: it fails jobs semi-randomly, developers waste hours debugging code that was never broken, and trust in the whole platform collapses. Aggressive automatic quarantine — biased toward pulling a suspect device out rather than risking bad signal — is the antidote. It's better to lose one device's capacity than to emit false failures.</p></div>
+
+<h3>Dashboards</h3>
+<p>Two audiences: <strong>fleet health</strong> (how many devices available/running/quarantined/offline, utilization, per-model capacity) for the lab operators, and <strong>result trends</strong> (pass-rate over time, flaky-test leaderboard, slowest suites) for the product teams. A device stuck quarantined for days, or utilization collapsing, should be visible at a glance.</p>
+
+<!-- ══════════════ SECTION 8 ══════════════ -->
+<h2>8. Reliability &amp; Scale</h2>
+<p>The recurring theme: a device lab must degrade <em>gracefully</em> around unreliable hardware, and grow from one rack to many sites without a rewrite.</p>
+
+<h3>A dead device (or host) must not wedge the queue</h3>
+<p>This is a reliability question interviewers often care about, because it's specific to physical fleets. Defenses, layered:</p>
+<ul>
+  <li><strong>Reservations are leases, not locks.</strong> A device is <code>Reserved</code>/<code>Running</code> with a lease/timeout. If the job doesn't complete or the host stops heartbeating, the lease expires, the device is reclaimed, and the job is requeued — no device is held forever by a crashed job.</li>
+  <li><strong>Per-step timeouts.</strong> Flash, boot, and test each have their own timeout; exceeding one triggers recovery (power-cycle) then failure, rather than an indefinite hang.</li>
+  <li><strong>Auto-recovery before giving up.</strong> Escalate soft reboot → force reboot → power-cycle; only after that fails does the device go <code>unhealthy</code>/<code>quarantined</code> and out of rotation.</li>
+  <li><strong>Requeue idempotently.</strong> A requeued job must be safe to re-run (fresh flash + reset guarantees a clean device), so a mid-run host crash costs a retry, not a corrupt result.</li>
+</ul>
+<div class="iq">"I'd make every device reservation a lease with a timeout and give flash/boot/test their own step timeouts. If a host stops heartbeating, its leases expire, the devices are marked offline, and their jobs requeue automatically — so one wedged device or dead host costs a retry, never a stuck queue. Recovery escalates to a physical power-cycle before I quarantine the device."</div>
+
+<h3>Horizontal scale of hosts</h3>
+<p>Devices scale by adding <em>hosts</em>, and hosts are embarrassingly parallel: each drives its own devices independently, heartbeating to a shared control plane. The control plane (API, scheduler, registry, stores) scales like any stateless-ish backend — replicate it, shard the registry/result store by device or team if needed. The scheduler is the one component to watch: keep its match loop fast (index the registry by capability) so it isn't the bottleneck as the fleet grows to thousands.</p>
+
+<h3>Multi-site labs</h3>
+<p>Real fleets span buildings, cities, or countries (a Taiwan lab plus one overseas). Two workable shapes:</p>
+<div class="miniboxes">
+  <div class="mb pro"><div class="mbh">Regional control planes (federated)</div><ul><li>Each site runs its own scheduler + registry; a thin global layer routes a job to a site that has the device.</li><li>Survives a cross-site network partition — each site keeps working locally.</li><li>Latency to hardware stays local (flashing gigabytes over a WAN is painful).</li></ul></div>
+  <div class="mb con"><div class="mbh">One global control plane</div><ul><li>Single scheduler over all sites — simplest mental model, one queue.</li><li>But a WAN partition can strand a whole site, and every heartbeat/flash command crosses the WAN.</li><li>Fine at two nearby sites; strains as sites and distance grow.</li></ul></div>
+</div>
+<p>The usual answer is <strong>federated</strong>: keep the data plane (hosts, heartbeats, flashing, artifacts) local to each site for latency and partition-tolerance, and put a light global scheduler/inventory on top for cross-site routing and a single unified view.</p>
+
+<!-- ══════════════ SECTION 9 ══════════════ -->
+<h2>9. Trade-offs &amp; Lessons</h2>
+
+<h3>Real vs. emulated / simulated devices</h3>
+<div class="miniboxes">
+  <div class="mb pro"><div class="mbh">Emulators / simulators</div><ul><li>Cheap, infinitely scalable, fast to spin up, no physical maintenance.</li><li>Great for early/functional tests and huge fan-out (Firebase Test Lab offers virtual devices for exactly this).</li></ul></div>
+  <div class="mb con"><div class="mbh">Real devices</div><ul><li>The only way to catch SoC/driver/sensor/modem/thermal/battery bugs — the ones that ship.</li><li>Expensive, finite, flaky, need racks, power, and physical maintenance.</li></ul></div>
+</div>
+<p>The mature answer is a <strong>pyramid</strong>: run the bulk of tests on emulators, and reserve the scarce real devices for the tests that genuinely need hardware (hardware-specific integration, performance, certification). Don't burn a physical device on a test an emulator would catch.</p>
+
+<h3>Buy vs. build</h3>
+<p>Managed clouds (Firebase Test Lab, AWS Device Farm) let you skip owning racks entirely — pay per device-minute. That's ideal when your matrix is mainstream phones and you don't want to run physical infrastructure. You <strong>build</strong> your own lab when you need devices no cloud stocks (pre-release hardware, your own boards, custom peripherals, specific network/RF setups), when volume makes per-minute pricing painful, or when devices can't leave the building for security/compliance. Many hardware companies do both: cloud for app-on-mainstream-phone coverage, in-house lab for their actual product hardware.</p>
+
+<h3>The flaky-hardware reality</h3>
+<p>The lesson every device-lab engineer learns: <strong>hardware fails constantly and unpredictably</strong>. USB ports drop, cables wear out, batteries swell, devices overheat, a firmware bug bricks a unit. The platform's entire reliability design — heartbeats, health checks, leases, timeouts, power-cycle recovery, aggressive quarantine — exists to make an <em>individual</em> device's flakiness invisible to the <em>fleet's</em> users. You are not trying to make hardware reliable; you are building a system that stays trustworthy <em>despite</em> unreliable hardware.</p>
+
+<h3>Utilization vs. isolation</h3>
+<p>The core operational tension. Pack devices tightly and reset lightly, and utilization soars — but state leaks between jobs and results get flaky. Reset thoroughly and sandbox everything, and results are trustworthy — but every job pays a re-flash/wipe tax that lowers utilization. There's no universal right point: a billing-critical or certification suite leans hard toward isolation; a cheap smoke test can afford lighter resets. Making that trade-off <em>explicit per job class</em> is the sign of someone who has actually run a lab.</p>
+
+<!-- ══════════════ SECTION 10 ══════════════ -->
+<h2>10. Interview Framing</h2>
+<p>How to drive the conversation, then the probes an interviewer might throw.</p>
+<ol>
+  <li><strong>Clarify (1–2 min):</strong> What devices (phones / boards / IoT)? Who submits (devs, CI, both)? Real hardware, emulators, or both? One site or many? Scale — dozens or thousands?</li>
+  <li><strong>Split control plane vs. data plane</strong> (§3) — this framing alone signals seniority.</li>
+  <li><strong>Nail the device state machine &amp; registry</strong> (§4) as the source of truth.</li>
+  <li><strong>Scheduler as capability matching + fairness</strong> (§5), then reliability via leases/timeouts (§8).</li>
+  <li><strong>Close on flakiness</strong> (§7) — the thing that makes device labs uniquely hard.</li>
+</ol>
+
+<h3>What interviewers probe (with one-liners)</h3>
+<div class="card">
+<p><strong>Q: How do you schedule a job onto heterogeneous devices?</strong><br>Treat it as bipartite matching: filter the registry to devices that are <code>available</code> and satisfy the job's capability/label selector, then pick by policy (priority, quotas, bin-packing), reserve the device with a short lease, and dispatch. Separate "no device can ever match" (fail fast) from "all matches are busy" (stay queued).</p>
+<p><strong>Q: How do you tell a flaky device from a flaky test?</strong><br>Correlate failures. A test failing across <em>many</em> healthy devices is a flaky <em>test</em> (fix/quarantine the test). A single device failing <em>many</em> different tests that pass elsewhere is a flaky <em>device</em> (quarantine the device via its health score). The discriminator is whether failures cluster by test or by device_id.</p>
+<p><strong>Q: How do you keep a dead device from blocking the queue?</strong><br>Reservations are leases with timeouts, and flash/boot/test each have step timeouts. If a host stops heartbeating or a step hangs, the lease expires, the device is marked offline/unhealthy, and the job requeues idempotently. Recovery escalates to a physical power-cycle before the device is quarantined — so one bad device costs a retry, never a stuck queue.</p>
+<p><strong>Q: Real devices or emulators — how do you choose?</strong><br>A pyramid: emulators for the bulk (cheap, scalable, catch functional bugs), scarce real devices reserved for tests that need actual hardware (SoC/driver/sensor/thermal/performance/certification). Buy managed cloud (Firebase Test Lab, AWS Device Farm) for mainstream phones; build in-house for pre-release or custom hardware that no cloud stocks.</p>
+<p><strong>Q: How do you scale to N sites?</strong><br>Federate: keep the data plane (hosts, heartbeats, flashing, artifacts) local to each site for latency and partition-tolerance, with a light global scheduler/inventory on top for cross-site routing and one unified view. Avoid a single global control plane whose every heartbeat and multi-gigabyte flash crosses the WAN and whose partition strands a whole site.</p>
+<p><strong>Q: What's the hardest part in practice?</strong><br>Hardware is flaky and finite. The whole reliability design — heartbeats, health checks, leases, timeouts, power-cycle recovery, aggressive quarantine, thorough inter-job reset — exists to make one device's unreliability invisible to the fleet's users, and to never emit a false failure that gets innocent code blamed.</p>
+</div>
+
+<div class="note"><div class="notel">One-line summary</div><p>A device lab is a control plane (API, queue, scheduler, registry, result store) driving a data plane of host agents wired to real devices. Model each device as an explicit state machine, schedule by capability + fairness with leased reservations, isolate and reset between jobs, and — above all — detect and quarantine flaky hardware fast so the fleet stays trustworthy despite devices that constantly fail.</p></div>
+
+<!-- ══════════════ GLOSSARY ══════════════ -->
+<h2>Terminology &amp; Acronyms</h2>
+<p class="lead">Quick reference for the key terms in this chapter.</p>
+<table class="tbl">
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><strong>DUT</strong></td><td>Device Under Test — a real physical device (phone, board, IoT gadget) wired into the lab to run automated tests.</td></tr>
+<tr><td><strong>SoC</strong></td><td>System on a Chip — the main processor package in a device; many hardware bugs are SoC-specific.</td></tr>
+<tr><td><strong>ODM / OEM</strong></td><td>Original Design Manufacturer / Original Equipment Manufacturer — firms that design and build hardware, often for other brands.</td></tr>
+<tr><td><strong>HIL</strong></td><td>Hardware-in-the-loop — connecting real hardware into an automated test loop rather than testing purely in software.</td></tr>
+<tr><td><strong>Control plane</strong></td><td>The software that decides and remembers — API, job queue, scheduler, registry, and result store — holding no irreplaceable state beyond its databases.</td></tr>
+<tr><td><strong>Data plane</strong></td><td>The hosts and agents that physically touch and drive devices; pinned to physical reality, unlike the freely replicated control plane.</td></tr>
+<tr><td><strong>Device registry</strong></td><td>The inventory that is the source of truth for every device's capabilities, current state, and host attachment.</td></tr>
+<tr><td><strong>Scheduler</strong></td><td>The component that matches a pending job to a healthy, capable, free device and reserves it.</td></tr>
+<tr><td><strong>Host + agent</strong></td><td>The machine physically wired to devices, plus the daemon on it that flashes, runs, streams, and recovers them.</td></tr>
+<tr><td><strong>Heartbeat</strong></td><td>A periodic host report proving the host&rarr;device link is alive; a missing heartbeat marks devices offline.</td></tr>
+<tr><td><strong>Health check</strong></td><td>A cheap probe of a device's fitness to run a test — does it boot, respond, and have sane battery/temperature.</td></tr>
+<tr><td><strong>Health score</strong></td><td>A rolling per-device pass/health signal that drives automatic quarantine.</td></tr>
+<tr><td><strong>Quarantine</strong></td><td>Removing a repeatedly-failing device from scheduling and flagging it for a human so it stops poisoning jobs.</td></tr>
+<tr><td><strong>Bipartite matching</strong></td><td>Pairing heterogeneous pending jobs with heterogeneous free devices, re-evaluated whenever either side changes.</td></tr>
+<tr><td><strong>Head-of-line blocking</strong></td><td>A queued job needing a rare, busy device stalling ready-to-run jobs behind it that want common devices.</td></tr>
+<tr><td><strong>Flash / provision</strong></td><td>Writing a known OS/firmware image onto a device to bring it to a clean, known state before a test.</td></tr>
+<tr><td><strong>Power-cycle</strong></td><td>Physically cutting and restoring power via a controllable switch/hub to recover a wedged device.</td></tr>
+<tr><td><strong>Lease</strong></td><td>A time-limited device reservation that auto-expires, so a crashed job or host never holds a device forever.</td></tr>
+<tr><td><strong>Flaky test</strong></td><td>Non-deterministic test logic that passes and fails on the same healthy device depending on timing, order, or a race.</td></tr>
+<tr><td><strong>Flaky device</strong></td><td>Bad hardware that fails or degrades many different tests which pass fine on other devices.</td></tr>
+</table>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="td_cloud_networking.html">&lsaquo; Cloud &amp; Data-Center Networking</a><a class="bkc" href="index.html">📖 Contents</a><a href="ds_agent_workflow.html">Designing Agentic AI &amp; Multi-Agent Workflows &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

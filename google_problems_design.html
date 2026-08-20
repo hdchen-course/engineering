@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design &amp; Object-Oriented — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 10 — <b>Design &amp; Object-Oriented</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Design &amp; Object-Oriented</h1>
+  <div class="sub">Six Google-style data-structure-design problems &bull; original framing, execution-tested classes, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+<div class="tip" style="margin-bottom:24px;"><p><strong>How to read this chapter:</strong> these are <strong>data-structure-design</strong> problems &mdash; you build a class with methods rather than a single function, so the interesting behaviour only emerges from a <em>sequence</em> of operations. Every worked example is exactly such a sequence, invented for this book, and each stated output was produced by <em>compiling and running</em> the accompanying Java. Beyond the hand-picked edge cases, each class was cross-checked against an <strong>independent reference model</strong> across tens of thousands of random operation sequences &mdash; the stack against a plain list with a linear <code>min</code>, the LRU cache against an access-ordered <code>LinkedHashMap</code>, the randomized set against a <code>HashSet</code> (plus a 300k-draw uniformity check on <code>getRandom</code>), the logger against a per-message last-allowed map, the tree codec against a structural round-trip signature over random trees with negatives, and the autocomplete trie against a brute-force prefix scan &mdash; asserting identical results and invariants at every step. The recurring idea below is to <strong>trade memory for O(1) operations</strong>: an auxiliary structure (a second stack, a hash map beside an array, a doubly-linked list, a trie) that keeps the expensive query answerable in constant or near-constant time.</p></div>
+
+
+<!-- PROBLEM: Min Stack -->
+<div class="card">
+<h2>Min Stack</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Design a stack that supports <code>push</code>, <code>pop</code>, <code>top</code> and, in addition, a <code>getMin</code> that returns the smallest element currently in the stack &mdash; <strong>all four in O(1)</strong>.</p>
+<ul>
+  <li><code>getMin</code> and <code>top</code> are only ever called on a non-empty stack; every <code>pop</code> matches a prior <code>push</code>.</li>
+  <li>Values may repeat, so the minimum can be held by <strong>several</strong> elements at once &mdash; popping one of them must not lose the min prematurely.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> the sequence <code>push(-2)</code>, <code>push(0)</code>, <code>push(-3)</code>, <code>getMin()</code>, <code>pop()</code>, <code>top()</code>, <code>getMin()</code> produces <code>getMin=-3</code>, then after the pop <code>top=0</code> and <code>getMin=-2</code> (computed by running it). A duplicate-min case &mdash; <code>push(1)</code>, <code>push(1)</code>, <code>getMin()</code>, <code>pop()</code>, <code>getMin()</code> &mdash; keeps <code>getMin=1</code> both times, because the two equal mins are tracked independently.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Carry the running minimum alongside every element with a parallel &ldquo;min stack.&rdquo;</strong> The one hard part of a min-tracking stack is that after a <code>pop</code> the minimum may need to <em>revert</em> to an older, larger value &mdash; and a single scalar cannot remember what the min <em>was</em> before the current one arrived. The fix is a second stack that, at each level, stores the minimum of everything from the bottom up to that level. On <code>push(x)</code> we push <code>min(x, currentMin)</code>; then <code>getMin</code> is just the top of that auxiliary stack, and every <code>pop</code> discards both tops together so the min automatically rolls back. Because each push stores <code>min(x, currentMin)</code>, duplicate minimums roll back correctly on their own &mdash; no special comparison needed. (The <code>&lt;=</code>-vs-<code>&lt;</code> subtlety only bites in the space-optimised variant below.)</p>
+
+<pre><span class="kw">class</span> <span class="type">MinStack</span> {
+    <span class="kw">private</span> <span class="type">Deque</span>&lt;<span class="type">Integer</span>&gt; stack = <span class="kw">new</span> <span class="type">ArrayDeque</span>&lt;&gt;();
+    <span class="kw">private</span> <span class="type">Deque</span>&lt;<span class="type">Integer</span>&gt; mins  = <span class="kw">new</span> <span class="type">ArrayDeque</span>&lt;&gt;();  <span class="cm">// min from bottom up to this level</span>
+
+    <span class="kw">public</span> <span class="kw">void</span> <span class="fn">push</span>(<span class="kw">int</span> x) {
+        stack.push(x);
+        <span class="cm">// push the running minimum for this level (x or the current min, whichever is smaller)</span>
+        <span class="kw">if</span> (mins.isEmpty() || x &lt;= mins.peek()) mins.push(x);
+        <span class="kw">else</span> mins.push(mins.peek());
+    }
+    <span class="kw">public</span> <span class="kw">void</span> <span class="fn">pop</span>() { stack.pop(); mins.pop(); }   <span class="cm">// discard both tops together</span>
+    <span class="kw">public</span> <span class="kw">int</span> <span class="fn">top</span>() { <span class="kw">return</span> stack.peek(); }
+    <span class="kw">public</span> <span class="kw">int</span> <span class="fn">getMin</span>() { <span class="kw">return</span> mins.peek(); }  <span class="cm">// current min in O(1)</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(1)</code> for every operation &mdash; each is a constant number of stack pushes/peeks, no scanning. Space <code>O(n)</code>: the auxiliary min-stack doubles the storage, holding one tracked minimum per element.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Duplicate minimums (space-optimised variant).</strong> The always-push version above sidesteps this, but in the memory-saving variant that pushes only when <code>x &lt;= min</code>, you must use <code>&lt;=</code> (not <code>&lt;</code>): with <code>&lt;</code>, equal minima are pushed only once, so popping the later duplicate wrongly reverts the min. Pushing on <code>&lt;=</code> (so equal values are recorded again) keeps <code>getMin</code> correct until <em>every</em> copy is popped. <strong>Don&rsquo;t recompute the min by scanning.</strong> A <code>getMin</code> that loops over the stack is O(n) and defeats the point; the whole design exists to make it O(1). <strong>Pop both stacks together.</strong> Forgetting to pop the min-stack leaves it misaligned and every later <code>getMin</code> is wrong. <strong>Space-optimised variant.</strong> If asked to avoid storing a min per element, you can push onto the min-stack only when <code>x &lt;= min</code> and pop it only when the popped value equals its top &mdash; same O(1) time, less memory on mostly-increasing inputs.</p></div>
+</div>
+
+
+<!-- PROBLEM: LRU Cache -->
+<div class="card">
+<h2>LRU Cache</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Design a fixed-capacity cache with <strong>O(1)</strong> <code>get</code> and <code>put</code> that evicts the <strong>least-recently-used</strong> entry when it is full. <code>get(key)</code> returns the value or <code>-1</code> if absent; <code>put(key, value)</code> inserts or updates. Both a <code>get</code> and a <code>put</code> count as <em>using</em> a key, refreshing its recency.</p>
+<ul>
+  <li>On a <code>put</code> that exceeds capacity, evict the entry that has gone longest without being read or written.</li>
+  <li>A capacity of <code>0</code> is legal &mdash; the cache stores nothing and every <code>get</code> returns <code>-1</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> with capacity <code>2</code>: <code>put(1,1)</code>, <code>put(2,2)</code>, <code>get(1)&rarr;1</code> (now key&nbsp;1 is most-recent), <code>put(3,3)</code> evicts the least-recent key&nbsp;2, so <code>get(2)&rarr;-1</code>; then <code>put(4,4)</code> evicts key&nbsp;1, so <code>get(1)&rarr;-1</code>, <code>get(3)&rarr;3</code>, <code>get(4)&rarr;4</code> (computed by running it). With capacity <code>0</code>, <code>put(1,1)</code> stores nothing and <code>get(1)&rarr;-1</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>A hash map for O(1) lookup, backed by a doubly-linked list that keeps entries in recency order.</strong> The map takes you from a key to its list node instantly; the list orders nodes from most-recent (front) to least-recent (back). Every access &mdash; both <code>get</code> and <code>put</code> &mdash; unlinks the touched node and re-inserts it at the front, so the back of the list is always the true eviction victim. Two sentinel nodes (a permanent <code>head</code> and <code>tail</code>) remove all the null-checking around the ends: inserting at the front and removing the last real node become branchless pointer swaps. When a fresh insert would exceed capacity, we drop the node just before <code>tail</code> and erase its key from the map.</p>
+
+<pre><span class="kw">class</span> <span class="type">LRUCache</span> {
+    <span class="kw">private</span> <span class="kw">class</span> <span class="type">Node</span> { <span class="kw">int</span> key, val; <span class="type">Node</span> prev, next; <span class="type">Node</span>(<span class="kw">int</span> k, <span class="kw">int</span> v){ key=k; val=v; } }
+    <span class="kw">private</span> <span class="kw">final</span> <span class="kw">int</span> capacity;
+    <span class="kw">private</span> <span class="kw">final</span> <span class="type">Map</span>&lt;<span class="type">Integer</span>,<span class="type">Node</span>&gt; map = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();
+    <span class="kw">private</span> <span class="kw">final</span> <span class="type">Node</span> head = <span class="kw">new</span> <span class="type">Node</span>(<span class="num">0</span>,<span class="num">0</span>), tail = <span class="kw">new</span> <span class="type">Node</span>(<span class="num">0</span>,<span class="num">0</span>);  <span class="cm">// sentinels</span>
+
+    <span class="kw">public</span> <span class="fn">LRUCache</span>(<span class="kw">int</span> capacity) {
+        <span class="kw">this</span>.capacity = capacity;
+        head.next = tail; tail.prev = head;      <span class="cm">// empty list: head &lt;-&gt; tail</span>
+    }
+    <span class="kw">private</span> <span class="kw">void</span> <span class="fn">remove</span>(<span class="type">Node</span> n){ n.prev.next = n.next; n.next.prev = n.prev; }
+    <span class="kw">private</span> <span class="kw">void</span> <span class="fn">addFront</span>(<span class="type">Node</span> n){ n.next = head.next; n.prev = head; head.next.prev = n; head.next = n; }
+
+    <span class="kw">public</span> <span class="kw">int</span> <span class="fn">get</span>(<span class="kw">int</span> key) {
+        <span class="type">Node</span> n = map.get(key);
+        <span class="kw">if</span> (n == <span class="kw">null</span>) <span class="kw">return</span> -<span class="num">1</span>;
+        remove(n); addFront(n);                  <span class="cm">// reading refreshes recency</span>
+        <span class="kw">return</span> n.val;
+    }
+    <span class="kw">public</span> <span class="kw">void</span> <span class="fn">put</span>(<span class="kw">int</span> key, <span class="kw">int</span> value) {
+        <span class="kw">if</span> (capacity &lt;= <span class="num">0</span>) <span class="kw">return</span>;                  <span class="cm">// capacity 0: store nothing</span>
+        <span class="type">Node</span> n = map.get(key);
+        <span class="kw">if</span> (n != <span class="kw">null</span>) { n.val = value; remove(n); addFront(n); <span class="kw">return</span>; }
+        <span class="kw">if</span> (map.size() == capacity) {             <span class="cm">// full: evict least-recently-used</span>
+            <span class="type">Node</span> lru = tail.prev; remove(lru); map.remove(lru.key);
+        }
+        <span class="type">Node</span> fresh = <span class="kw">new</span> <span class="type">Node</span>(key, value); map.put(key, fresh); addFront(fresh);
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(1)</code> for both <code>get</code> and <code>put</code> &mdash; a hash lookup plus a constant number of pointer rewires. Space <code>O(capacity)</code>: one map entry and one list node per stored key.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Refresh recency on <code>get</code> too, not just <code>put</code>.</strong> The most common bug is treating reads as free; then a frequently-read key is wrongly evicted. Every access must move the node to the front. <strong>Capacity 0.</strong> Guard it explicitly &mdash; otherwise <code>put</code> tries to evict from an empty list (<code>tail.prev</code> is the head sentinel) and corrupts the structure. <strong>Update-in-place still counts as a use.</strong> A <code>put</code> on an existing key must both overwrite the value <em>and</em> move it to the front. <strong>Sentinel nodes are worth it.</strong> Without <code>head</code>/<code>tail</code> dummies you special-case inserting into an empty list and removing the only node; the sentinels make every splice uniform. <strong>Why not a <code>LinkedHashMap</code>?</strong> In an interview you implement the map-plus-list by hand to prove you understand the O(1) mechanics; <code>LinkedHashMap</code> with <code>accessOrder=true</code> and <code>removeEldestEntry</code> is the real-world shortcut.</p></div>
+</div>
+
+
+<!-- PROBLEM: Insert Delete GetRandom O(1) -->
+<div class="card">
+<h2>Insert Delete GetRandom O(1)</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Design a set of distinct integers supporting three operations in <strong>average O(1)</strong>: <code>insert(val)</code> (returns <code>true</code> only if the value was newly added), <code>remove(val)</code> (returns <code>true</code> only if it was present), and <code>getRandom()</code> returning an element <strong>uniformly at random</strong> from the current set.</p>
+<ul>
+  <li>The set holds no duplicates; <code>insert</code> of a present value and <code>remove</code> of an absent value both return <code>false</code> and change nothing.</li>
+  <li><code>getRandom</code> is only called when the set is non-empty and must give every element equal probability.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>insert(1)&rarr;true</code>, <code>remove(2)&rarr;false</code> (absent), <code>insert(2)&rarr;true</code>, <code>insert(1)&rarr;false</code> (already present), <code>remove(1)&rarr;true</code>, <code>insert(2)&rarr;false</code> (already present), <code>getRandom()&rarr;2</code> (the only element left) &mdash; all computed by running it. A separate 300,000-draw uniformity check over <code>{10, 20, 30}</code> gave roughly 100,000 hits each (100015 / 100508 / 99477).</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Store the values in a growable array for uniform random indexing, and a hash map from value to its array index for O(1) find and delete.</strong> Random access needs a contiguous array (pick a random index); membership and deletion need a map. The clever part is <code>remove</code>: deleting from the middle of an array is normally O(n), so instead we <strong>swap the doomed element with the last one</strong>, fix the moved element&rsquo;s index in the map, then pop the tail &mdash; all O(1). <code>getRandom</code> then just returns <code>array[random(0, size)]</code>, uniform because the array is dense with no holes.</p>
+
+<pre><span class="kw">class</span> <span class="type">RandomizedSet</span> {
+    <span class="kw">private</span> <span class="kw">final</span> <span class="type">List</span>&lt;<span class="type">Integer</span>&gt; vals = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();       <span class="cm">// dense array of values</span>
+    <span class="kw">private</span> <span class="kw">final</span> <span class="type">Map</span>&lt;<span class="type">Integer</span>,<span class="type">Integer</span>&gt; idx = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;(); <span class="cm">// value -&gt; index in vals</span>
+    <span class="kw">private</span> <span class="kw">final</span> <span class="type">Random</span> rnd = <span class="kw">new</span> <span class="type">Random</span>();
+
+    <span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">insert</span>(<span class="kw">int</span> val) {
+        <span class="kw">if</span> (idx.containsKey(val)) <span class="kw">return</span> <span class="kw">false</span>;   <span class="cm">// already present</span>
+        idx.put(val, vals.size());
+        vals.add(val);
+        <span class="kw">return</span> <span class="kw">true</span>;
+    }
+    <span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">remove</span>(<span class="kw">int</span> val) {
+        <span class="type">Integer</span> i = idx.get(val);
+        <span class="kw">if</span> (i == <span class="kw">null</span>) <span class="kw">return</span> <span class="kw">false</span>;          <span class="cm">// absent</span>
+        <span class="kw">int</span> last = vals.size() - <span class="num">1</span>;
+        <span class="kw">int</span> lastVal = vals.get(last);
+        vals.set(i, lastVal);      <span class="cm">// move the last element into the hole</span>
+        idx.put(lastVal, i);       <span class="cm">// and fix its index in the map</span>
+        vals.remove(last);         <span class="cm">// drop the tail — O(1)</span>
+        idx.remove(val);
+        <span class="kw">return</span> <span class="kw">true</span>;
+    }
+    <span class="kw">public</span> <span class="kw">int</span> <span class="fn">getRandom</span>() { <span class="kw">return</span> vals.get(rnd.nextInt(vals.size())); }
+}</pre>
+
+<p><strong>Complexity:</strong> Time average <code>O(1)</code> for all three &mdash; hash operations are expected constant and the swap-with-last removal avoids shifting. Space <code>O(n)</code>: the array and the index map each hold one entry per element.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Update the moved element&rsquo;s index.</strong> After copying the last value into the hole you <em>must</em> write <code>idx.put(lastVal, i)</code>; forgetting it leaves a stale index and later removals corrupt the array. <strong>Order of the removal steps.</strong> Read the last value before you pop the tail, and erase <code>val</code> from the map last &mdash; and note the edge case where the element being removed <em>is</em> the last one (the overwrite is a harmless self-copy). <strong>Return the booleans faithfully.</strong> Re-inserting a present value returns <code>false</code>; removing an absent value returns <code>false</code>; conflating these with &ldquo;always true&rdquo; is a classic slip. <strong>Uniformity depends on density.</strong> <code>getRandom</code> is only uniform because the array has no gaps &mdash; a design that leaves tombstones would bias the draw. <strong>Follow-up: duplicates allowed.</strong> If the multiset variant is asked, the map&rsquo;s value becomes a <em>set of indices</em> per value, and removal swaps out any one of them.</p></div>
+</div>
+
+
+<!-- PROBLEM: Logger Rate Limiter -->
+<div class="card">
+<h2>Logger Rate Limiter</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Design a logger that decides whether a message may be printed. <code>shouldPrintMessage(timestamp, message)</code> returns <code>true</code> and prints the message only if the <em>same</em> message has not been printed in the last <strong>10 seconds</strong>; otherwise it returns <code>false</code>. Timestamps arrive in non-decreasing order.</p>
+<ul>
+  <li>The 10-second window is per distinct message, not global &mdash; different messages don&rsquo;t interfere.</li>
+  <li>The boundary is inclusive of re-printing: a message last printed at <code>t</code> may print again at exactly <code>t + 10</code>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> <code>(1,"foo")&rarr;true</code>, <code>(2,"bar")&rarr;true</code>, <code>(3,"foo")&rarr;false</code> (only 2s since foo), <code>(8,"bar")&rarr;false</code> (6s since bar), <code>(10,"foo")&rarr;false</code> (9s since foo), <code>(11,"foo")&rarr;true</code> (exactly 10s after its last print at t=1) &mdash; computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Remember only the last timestamp at which each message was allowed.</strong> A hash map from message to its last-allowed time is all the state needed: on a call, if the message is unseen or the gap since its stored time is at least 10, we allow it and overwrite the stored time; otherwise we reject and leave the map untouched. Because we store the last <em>allowed</em> time (not merely the last <em>seen</em> time), rejected calls in between don&rsquo;t slide the window forward &mdash; the window is anchored to the actual print.</p>
+
+<pre><span class="kw">class</span> <span class="type">Logger</span> {
+    <span class="kw">private</span> <span class="kw">final</span> <span class="type">Map</span>&lt;<span class="type">String</span>,<span class="type">Integer</span>&gt; lastAllowed = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;(); <span class="cm">// message -&gt; last printed ts</span>
+
+    <span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">shouldPrintMessage</span>(<span class="kw">int</span> timestamp, <span class="type">String</span> message) {
+        <span class="type">Integer</span> last = lastAllowed.get(message);
+        <span class="cm">// allow if never seen, or &gt;= 10s since last print (exactly 10s prints)</span>
+        <span class="kw">if</span> (last == <span class="kw">null</span> || timestamp - last &gt;= <span class="num">10</span>) {
+            lastAllowed.put(message, timestamp);   <span class="cm">// anchor the window to this print</span>
+            <span class="kw">return</span> <span class="kw">true</span>;
+        }
+        <span class="kw">return</span> <span class="kw">false</span>;
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(1)</code> per call &mdash; a single hash lookup and possible insert. Space <code>O(m)</code> where <code>m</code> is the number of <em>distinct</em> messages ever allowed (the map never shrinks in this simple version).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>The exactly-10-seconds boundary.</strong> Use <code>&gt;= 10</code>, not <code>&gt; 10</code>: a message last printed at <code>t</code> is allowed again at <code>t + 10</code>. Off-by-one here is the single most common bug. <strong>Store last <em>allowed</em>, not last <em>seen</em>.</strong> If you update the timestamp on rejected calls too, a steady stream of the same message keeps pushing the window and it never prints again. <strong>Per-message windows.</strong> The map key is the message, so distinct messages are rate-limited independently. <strong>Unbounded memory follow-up.</strong> The map grows with distinct messages forever; if asked to bound it, evict entries older than the window (e.g. a queue of <code>(ts, message)</code> pairs purged lazily) &mdash; useful when messages are effectively unique. <strong>Concurrency follow-up.</strong> Under real concurrent callers the check-then-put must be atomic (synchronize, or use <code>ConcurrentHashMap</code> with a compare-style update) or two threads can both print.</p></div>
+</div>
+
+
+<!-- PROBLEM: Serialize and Deserialize Binary Tree -->
+<div class="card">
+<h2>Serialize and Deserialize Binary Tree</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Design a codec that turns an arbitrary binary tree into a string and reconstructs the identical tree from that string. The two operations are inverses: <code>deserialize(serialize(root))</code> must yield a tree with the same shape and node values as <code>root</code>.</p>
+<ul>
+  <li>The tree may be empty (a <code>null</code> root), a single node, or wildly unbalanced; node values may be <strong>negative</strong>.</li>
+  <li>The string format is your choice, as long as the round trip is faithful.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> the tree with root <code>1</code>, left child <code>2</code>, right child <code>3</code>, and <code>3</code>&rsquo;s children <code>-4</code> and <code>5</code> serializes to <code>"1,2,#,#,3,-4,#,#,5,#,#,"</code>; deserializing that string and re-serializing it yields the identical string (verified true by running it). The empty tree serializes to <code>"#,"</code> and deserializes back to <code>null</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Preorder traversal with explicit null markers.</strong> Preorder (root, then left subtree, then right subtree) has a decisive property: if every missing child is written as a sentinel such as <code>#</code>, the sequence uniquely determines the tree &mdash; no second traversal is needed to disambiguate. Serialization is a straight recursive walk emitting <code>value,</code> for a node and <code>#,</code> for null. Deserialization consumes those tokens in the same order from a queue: pull a token; if it&rsquo;s <code>#</code> return <code>null</code>, otherwise create the node and recursively build its left then right subtree &mdash; the recursion mirrors the write exactly. Values are parsed as integers, so negatives round-trip for free.</p>
+
+<pre><span class="kw">class</span> <span class="type">TreeNode</span> { <span class="kw">int</span> val; <span class="type">TreeNode</span> left, right; <span class="type">TreeNode</span>(<span class="kw">int</span> v){ val = v; } }
+
+<span class="kw">class</span> <span class="type">Codec</span> {
+    <span class="cm">// --- serialize: preorder with '#' for nulls, comma-separated ---</span>
+    <span class="kw">public</span> <span class="type">String</span> <span class="fn">serialize</span>(<span class="type">TreeNode</span> root) {
+        <span class="type">StringBuilder</span> sb = <span class="kw">new</span> <span class="type">StringBuilder</span>();
+        ser(root, sb);
+        <span class="kw">return</span> sb.toString();
+    }
+    <span class="kw">private</span> <span class="kw">void</span> <span class="fn">ser</span>(<span class="type">TreeNode</span> n, <span class="type">StringBuilder</span> sb) {
+        <span class="kw">if</span> (n == <span class="kw">null</span>) { sb.append(<span class="str">"#,"</span>); <span class="kw">return</span>; }   <span class="cm">// null marker</span>
+        sb.append(n.val).append(<span class="str">','</span>);
+        ser(n.left, sb); ser(n.right, sb);              <span class="cm">// preorder recursion</span>
+    }
+    <span class="cm">// --- deserialize: consume tokens in the same preorder ---</span>
+    <span class="kw">public</span> <span class="type">TreeNode</span> <span class="fn">deserialize</span>(<span class="type">String</span> data) {
+        <span class="type">Deque</span>&lt;<span class="type">String</span>&gt; q = <span class="kw">new</span> <span class="type">ArrayDeque</span>&lt;&gt;(<span class="type">Arrays</span>.asList(data.split(<span class="str">","</span>)));
+        <span class="kw">return</span> de(q);
+    }
+    <span class="kw">private</span> <span class="type">TreeNode</span> <span class="fn">de</span>(<span class="type">Deque</span>&lt;<span class="type">String</span>&gt; q) {
+        <span class="type">String</span> t = q.poll();
+        <span class="kw">if</span> (t.equals(<span class="str">"#"</span>)) <span class="kw">return</span> <span class="kw">null</span>;                  <span class="cm">// rebuild null</span>
+        <span class="type">TreeNode</span> n = <span class="kw">new</span> <span class="type">TreeNode</span>(<span class="type">Integer</span>.parseInt(t)); <span class="cm">// negatives parse fine</span>
+        n.left = de(q); n.right = de(q);                <span class="cm">// same order as writing</span>
+        <span class="kw">return</span> n;
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> for both directions &mdash; each node (and each null slot) is written once and read once. Space <code>O(n)</code> for the string and the token queue, plus the recursion stack up to the tree height <code>O(h)</code>.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Null markers are mandatory.</strong> A preorder <em>without</em> them can&rsquo;t be inverted uniquely (you couldn&rsquo;t tell a left child from a right one); the <code>#</code> sentinels are exactly what make the single traversal reversible. <strong>Negative values.</strong> Parse with a real integer parse and separate tokens with a delimiter &mdash; a scheme that keys off a leading <code>-</code> or concatenates digits without separators mis-reads negatives and multi-digit numbers. <strong>Empty tree.</strong> A <code>null</code> root must serialize to a single marker and rebuild to <code>null</code>; don&rsquo;t special-case it out and crash on the split. <strong>Consume tokens in the write order.</strong> Deserialization must read left before right, matching serialization &mdash; swap them and the tree comes back mirrored. <strong>BFS alternative.</strong> A level-order codec (LeetCode&rsquo;s bracket format) is equally valid; preorder is usually the shortest to write recursively.</p></div>
+</div>
+
+
+<!-- PROBLEM: Design Search Autocomplete System -->
+<div class="card">
+<h2>Design Search Autocomplete System</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Design an autocomplete that learns from history. Initialize with a list of past sentences and their frequencies. Then <code>input(c)</code> streams one character at a time: for an ordinary character, append it to the current query and return the <strong>top 3 historical sentences</strong> that start with the query so far, ranked by frequency (highest first) and breaking ties by ASCII order (lexicographically smaller first). The special character <code>'#'</code> ends the current sentence: record it (adding <code>1</code> to its frequency), reset the query, and return an empty list.</p>
+<ul>
+  <li>Sentences may contain spaces; matching is a strict prefix match on the accumulated query.</li>
+  <li>Return fewer than 3 when fewer match; return an empty list once no historical sentence has the query as a prefix.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> initialized with <code>island(5)</code>, <code>idea(3)</code>, <code>ironman(2)</code>, <code>inbox(2)</code>: <code>input('i')&rarr;[island, idea, inbox]</code> (5&nbsp;&gt;&nbsp;3&nbsp;&gt;&nbsp;then the 2-2 tie broken lexicographically, <code>inbox</code>&nbsp;&lt;&nbsp;<code>ironman</code>); <code>input(' ')&rarr;[]</code> (nothing starts with <code>"i "</code>); <code>input('#')&rarr;[]</code> (commits <code>"i "</code> with frequency 1 and resets). Then <code>input('i')&rarr;[island, idea, inbox]</code>, <code>input('r')&rarr;[ironman]</code>, <code>input('#')&rarr;[]</code> (commits <code>"ir"</code>). All computed by running it.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Store every sentence in a trie, and at each trie node keep a running map of the frequencies of all sentences passing through it.</strong> Walking one character deep in the trie corresponds exactly to extending the query by one character, so answering <code>input(c)</code> is: follow the child edge for <code>c</code>, then read that node&rsquo;s frequency map and pick the top 3. Keeping the frequency table <em>at each node</em> (rather than only at sentence ends) means we never re-scan the subtree &mdash; the candidates for the current prefix are sitting right there. A running <code>StringBuilder</code> accumulates the query; once the walk falls off the trie (a child is missing) we can short-circuit to an empty list because no sentence can match. On <code>'#'</code> we add the accumulated query to the trie with <code>+1</code> frequency, reset the query, and point back at the root.</p>
+
+<pre><span class="kw">class</span> <span class="type">AutocompleteSystem</span> {
+    <span class="kw">private</span> <span class="kw">static</span> <span class="kw">class</span> <span class="type">Node</span> {
+        <span class="type">Map</span>&lt;<span class="type">Character</span>,<span class="type">Node</span>&gt; children = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();
+        <span class="type">Map</span>&lt;<span class="type">String</span>,<span class="type">Integer</span>&gt; counts = <span class="kw">new</span> <span class="type">HashMap</span>&lt;&gt;();  <span class="cm">// freq of every sentence through here</span>
+    }
+    <span class="kw">private</span> <span class="kw">final</span> <span class="type">Node</span> root = <span class="kw">new</span> <span class="type">Node</span>();
+    <span class="kw">private</span> <span class="type">Node</span> curNode = root;                 <span class="cm">// node for the current prefix (null if fallen off)</span>
+    <span class="kw">private</span> <span class="kw">final</span> <span class="type">StringBuilder</span> cur = <span class="kw">new</span> <span class="type">StringBuilder</span>();
+
+    <span class="kw">public</span> <span class="fn">AutocompleteSystem</span>(<span class="type">String</span>[] sentences, <span class="kw">int</span>[] times) {
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; sentences.length; i++) add(sentences[i], times[i]);
+    }
+    <span class="kw">private</span> <span class="kw">void</span> <span class="fn">add</span>(<span class="type">String</span> sentence, <span class="kw">int</span> freq) {
+        <span class="type">Node</span> n = root;
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; sentence.length(); i++) {
+            <span class="kw">char</span> c = sentence.charAt(i);
+            n = n.children.computeIfAbsent(c, k -&gt; <span class="kw">new</span> <span class="type">Node</span>());
+            n.counts.merge(sentence, freq, <span class="type">Integer</span>::sum);   <span class="cm">// bump freq along the path</span>
+        }
+    }
+    <span class="kw">public</span> <span class="type">List</span>&lt;<span class="type">String</span>&gt; <span class="fn">input</span>(<span class="kw">char</span> c) {
+        <span class="kw">if</span> (c == <span class="str">'#'</span>) {                       <span class="cm">// commit the current sentence, reset</span>
+            add(cur.toString(), <span class="num">1</span>);
+            cur.setLength(<span class="num">0</span>);
+            curNode = root;
+            <span class="kw">return</span> <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+        }
+        cur.append(c);
+        <span class="kw">if</span> (curNode != <span class="kw">null</span>) curNode = curNode.children.get(c);   <span class="cm">// walk one char</span>
+        <span class="kw">if</span> (curNode == <span class="kw">null</span>) <span class="kw">return</span> <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();       <span class="cm">// no sentence has this prefix</span>
+        <span class="cm">// rank by frequency desc, then lexicographic asc; take top 3</span>
+        <span class="type">List</span>&lt;<span class="type">Map</span>.<span class="type">Entry</span>&lt;<span class="type">String</span>,<span class="type">Integer</span>&gt;&gt; list = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;(curNode.counts.entrySet());
+        list.sort((x, y) -&gt; x.getValue().equals(y.getValue())
+                ? x.getKey().compareTo(y.getKey())      <span class="cm">// tie -&gt; lexicographic</span>
+                : y.getValue() - x.getValue());         <span class="cm">// else higher freq first</span>
+        <span class="type">List</span>&lt;<span class="type">String</span>&gt; res = <span class="kw">new</span> <span class="type">ArrayList</span>&lt;&gt;();
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; <span class="type">Math</span>.min(<span class="num">3</span>, list.size()); i++) res.add(list.get(i).getKey());
+        <span class="kw">return</span> res;
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Let <code>p</code> be the length of the current prefix and <code>k</code> the number of sentences sharing it. Each ordinary <code>input</code> is <code>O(1)</code> to walk one edge plus <code>O(k log k)</code> to rank the node&rsquo;s candidates (only 3 are kept). A <code>'#'</code> commit is <code>O(L)</code> for a sentence of length <code>L</code> to update the counts along its path. Space is <code>O(total characters &times; distinct sentences per node)</code> in the worst case &mdash; the per-node count maps trade memory for fast queries.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Tie-break direction.</strong> Higher frequency wins, but equal frequencies break to the <em>lexicographically smaller</em> sentence (ascending ASCII) &mdash; reversing this is the most common bug, and why <code>inbox</code> beats <code>ironman</code> at frequency 2. <strong>The <code>'#'</code> commit.</strong> On hash you must add the accumulated query with <code>+1</code> (creating it if new, or bumping an existing sentence), then clear the query and return an empty list &mdash; not the matches. <strong>Reset the walk pointer, not just the string.</strong> After <code>'#'</code> point <code>curNode</code> back at the root; leaving it stale makes the next character walk from the wrong place. <strong>Short-circuit once off the trie.</strong> As soon as a child is missing the answer is empty for the rest of the sentence &mdash; keep <code>curNode == null</code> and return early instead of re-searching. <strong>Spaces are ordinary characters.</strong> They are part of the prefix and sort before letters in ASCII, so don&rsquo;t strip or special-case them. <strong>Storing counts per node vs. at leaves.</strong> Holding the frequency map at every node makes queries fast but costs memory; the leaner alternative stores frequencies only at sentence ends and does a subtree scan per query &mdash; simpler, but slower for hot prefixes.</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_problems_linkedlists.html">&lsaquo; Linked Lists</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_others1.html">Assorted Problems I — Strings &amp; Math &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

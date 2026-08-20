@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linked Lists — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 9 — <b>Linked Lists</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Linked Lists</h1>
+  <div class="sub">Four Google-style linked-list problems &bull; original framing, execution-tested solutions, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+<div class="tip" style="margin-bottom:24px;"><p><strong>How to read this chapter:</strong> every worked example uses inputs invented for this book, and each stated output was produced by <em>compiling and running</em> the accompanying Java. Beyond hand-picked edge cases (empty lists, a single node, removing the head, a final carry that grows the number, and null random pointers) each solution was cross-checked against an <strong>independent brute force</strong> across tens of thousands of random inputs: merge against a collect-and-sort, addition against native integer arithmetic, remove-Nth against array-index deletion, and the random-pointer deep copy against an index-map reconstruction that also asserts the original list is left untouched. The recurring idea below is the <strong>dummy head</strong> &mdash; a throwaway node in front of the real list so the &ldquo;insert&rdquo; and &ldquo;delete the first node&rdquo; cases need no special handling &mdash; together with <strong>two-pointer</strong> walks and careful <strong>pointer rewiring</strong> that never loses the rest of the list.</p></div>
+
+
+<!-- PROBLEM: Merge Two Sorted Lists -->
+<div class="card">
+<h2>Merge Two Sorted Lists</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given the heads of two <strong>already-sorted</strong> singly linked lists (ascending), splice them into one sorted list and return its head. The result should reuse the existing nodes &mdash; no new values are allocated.</p>
+<ul>
+  <li>Either list may be empty; if both are empty the answer is an empty list (<code>null</code> head).</li>
+  <li>The lists need not be the same length &mdash; whichever runs out first leaves a sorted <em>tail</em> on the other that is attached all at once.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> merging <code>[1, 3, 5, 7]</code> and <code>[2, 4, 6]</code> the code returns <code>[1, 2, 3, 4, 5, 6, 7]</code> (computed by running it). When one input is empty &mdash; <code>[]</code> and <code>[2, 4]</code> &mdash; it returns the other list unchanged, <code>[2, 4]</code>; merging two empty lists returns <code>[]</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Walk both lists with a single tail pointer behind a dummy head.</strong> The dummy is a stand-in node whose <code>next</code> will end up being the real answer &mdash; it means we never have to special-case &ldquo;which list owns the first node.&rdquo; At each step compare the two front values, splice the smaller node onto the growing tail, and advance that list. When one list is exhausted, the other is already sorted and its remaining nodes are correctly ordered relative to everything placed so far, so we attach the whole leftover <strong>tail</strong> in one move rather than copying node by node.</p>
+
+<pre><span class="cm">// singly linked list node used throughout this chapter</span>
+<span class="kw">class</span> <span class="type">ListNode</span> {
+    <span class="kw">int</span> val;
+    <span class="type">ListNode</span> next;
+    <span class="type">ListNode</span>(<span class="kw">int</span> v) { val = v; }
+}
+
+<span class="kw">public</span> <span class="type">ListNode</span> <span class="fn">mergeTwoLists</span>(<span class="type">ListNode</span> a, <span class="type">ListNode</span> b) {
+    <span class="type">ListNode</span> dummy = <span class="kw">new</span> <span class="type">ListNode</span>(<span class="num">0</span>), tail = dummy;   <span class="cm">// dummy head simplifies splicing</span>
+    <span class="kw">while</span> (a != <span class="kw">null</span> &amp;&amp; b != <span class="kw">null</span>) {
+        <span class="kw">if</span> (a.val &lt;= b.val) {          <span class="cm">// &lt;= keeps the merge stable</span>
+            tail.next = a; a = a.next;
+        } <span class="kw">else</span> {
+            tail.next = b; b = b.next;
+        }
+        tail = tail.next;             <span class="cm">// advance the growing tail</span>
+    }
+    tail.next = (a != <span class="kw">null</span>) ? a : b;  <span class="cm">// attach the leftover sorted tail</span>
+    <span class="kw">return</span> dummy.next;                <span class="cm">// real head sits just past the dummy</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(m + n)</code> &mdash; every node from each list is visited exactly once. Space <code>O(1)</code>: the merge is done by rewiring existing nodes, with only the dummy and a couple of pointers as overhead (no recursion, no copies).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Attach the leftover tail.</strong> After the loop, exactly one list may still have nodes; forgetting <code>tail.next = (a != null) ? a : b</code> truncates the answer. Because the remainder is already sorted you attach it in <code>O(1)</code>, not with another loop. <strong>Use a dummy head.</strong> Without it you must special-case picking the first node and guard against a null tail on the first splice &mdash; the dummy removes both. <strong>Prefer <code>&lt;=</code> over <code>&lt;</code>.</strong> Both produce a sorted list, but <code>&lt;=</code> keeps equal elements from the first list ahead of the second (stability), which matters when the nodes carry satellite data. <strong>Don&rsquo;t allocate new nodes.</strong> The interviewer usually wants an in-place splice; building a fresh list wastes <code>O(m + n)</code> space for no benefit.</p></div>
+</div>
+
+
+<!-- PROBLEM: Add Two Numbers -->
+<div class="card">
+<h2>Add Two Numbers</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Two non-negative integers are stored as linked lists with their digits in <strong>reverse order</strong> &mdash; the head is the ones digit, the next node the tens digit, and so on. Add the two numbers and return the sum as a linked list in the same reverse-order form.</p>
+<ul>
+  <li>The lists may have <strong>different lengths</strong>; treat a missing digit as <code>0</code>.</li>
+  <li>A carry out of the most significant digit produces a brand-new leading node (e.g. <code>99 + 1 = 100</code> gains a third digit).</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> adding <code>7&rarr;1&rarr;6</code> (which reads as <code>617</code>) and <code>5&rarr;9&rarr;2</code> (which reads as <code>295</code>) the code returns <code>2&rarr;1&rarr;9</code>, i.e. <code>912 = 617 + 295</code> (computed by running it). A pure-carry case, <code>[5] + [5]</code>, returns <code>[0, 1]</code> (the number <code>10</code>); and an unequal-length case with a final carry, <code>9&rarr;9</code> (<code>99</code>) <code>+</code> <code>1</code> (<code>1</code>), returns <code>0&rarr;0&rarr;1</code> (the number <code>100</code>).</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>The addition you learned in school: one node per column, carrying as you go.</strong> Because the digits are already least-significant-first, walking both lists in step visits matching place values together &mdash; no reversal needed. At each step sum the two current digits (using <code>0</code> when a list has ended) plus the incoming carry; the new digit is <code>sum % 10</code> and the outgoing carry is <code>sum / 10</code>. A dummy head lets us append result nodes without special-casing the first one. The single loop condition <code>l1 != null || l2 != null || carry != 0</code> keeps going until <em>both</em> lists are consumed <strong>and</strong> no carry remains, which is exactly what creates the final leading node when needed.</p>
+
+<pre><span class="kw">public</span> <span class="type">ListNode</span> <span class="fn">addTwoNumbers</span>(<span class="type">ListNode</span> l1, <span class="type">ListNode</span> l2) {
+    <span class="type">ListNode</span> dummy = <span class="kw">new</span> <span class="type">ListNode</span>(<span class="num">0</span>), cur = dummy;
+    <span class="kw">int</span> carry = <span class="num">0</span>;
+    <span class="cm">// loop until both lists are done AND nothing is carried over</span>
+    <span class="kw">while</span> (l1 != <span class="kw">null</span> || l2 != <span class="kw">null</span> || carry != <span class="num">0</span>) {
+        <span class="kw">int</span> sum = carry;                       <span class="cm">// start with the incoming carry</span>
+        <span class="kw">if</span> (l1 != <span class="kw">null</span>) { sum += l1.val; l1 = l1.next; }  <span class="cm">// missing digit == 0</span>
+        <span class="kw">if</span> (l2 != <span class="kw">null</span>) { sum += l2.val; l2 = l2.next; }
+        carry = sum / <span class="num">10</span>;                     <span class="cm">// 0 or 1</span>
+        cur.next = <span class="kw">new</span> <span class="type">ListNode</span>(sum % <span class="num">10</span>);   <span class="cm">// the column's digit</span>
+        cur = cur.next;
+    }
+    <span class="kw">return</span> dummy.next;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(max(m, n))</code> &mdash; one iteration per digit of the longer number, plus at most one extra for a trailing carry. Space <code>O(max(m, n))</code> for the result list (the only extra memory besides a few scalars).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Handle the final carry.</strong> The classic bug is stopping when both lists end and dropping a leftover carry &mdash; then <code>99 + 1</code> yields <code>00</code> instead of <code>100</code>. Keeping <code>carry != 0</code> in the loop condition emits that extra leading node automatically. <strong>Unequal lengths.</strong> Guard each read with a null check and treat an exhausted list as contributing <code>0</code>; don&rsquo;t assume the lists are the same length. <strong>Digit vs. carry split.</strong> The node value is <code>sum % 10</code> and the carry is <code>sum / 10</code> &mdash; swapping them is a common slip. <strong>Reverse order is a feature.</strong> Digits stored least-significant-first are precisely what let you add left-to-right without reversing; if the problem instead stored them most-significant-first you would reverse the inputs (or use stacks) before applying this same loop.</p></div>
+</div>
+
+
+<!-- PROBLEM: Remove Nth Node From End of List -->
+<div class="card">
+<h2>Remove Nth Node From End of List</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given the head of a singly linked list and a valid position <code>n</code>, remove the <code>n</code>-th node counting from the <em>end</em> of the list and return the head. You may assume <code>1 &le; n &le; length</code>, so <code>n = 1</code> removes the last node and <code>n = length</code> removes the first.</p>
+<ul>
+  <li>The target is identified by its distance from the tail, so a single forward pass must somehow &ldquo;know&rdquo; where the end is.</li>
+  <li>Removing the <strong>head</strong> is the tricky case &mdash; there is no previous node to rewire.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> from <code>[1, 2, 3, 4, 5]</code> removing the 2nd node from the end (the value <code>4</code>) the code returns <code>[1, 2, 3, 5]</code> (computed by running it). Removing the 3rd-from-end of <code>[1, 2, 3]</code> &mdash; which <em>is</em> the head &mdash; returns <code>[2, 3]</code>; and removing the only node, <code>[7]</code> with <code>n = 1</code>, returns <code>[]</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Two pointers separated by a gap of <code>n</code>, in one pass.</strong> Put a <code>fast</code> and a <code>slow</code> pointer on a dummy head, then advance <code>fast</code> by <code>n</code> steps so it leads <code>slow</code> by exactly <code>n</code> nodes. Now move both together until <code>fast</code> reaches the last node (<code>fast.next == null</code>). At that moment <code>slow</code> sits on the node <em>just before</em> the one to delete, so <code>slow.next = slow.next.next</code> unlinks the target. Anchoring both pointers on the dummy is what makes removing the head fall out for free: when <code>n == length</code>, <code>slow</code> never moves off the dummy and we correctly drop the original first node.</p>
+
+<pre><span class="kw">public</span> <span class="type">ListNode</span> <span class="fn">removeNthFromEnd</span>(<span class="type">ListNode</span> head, <span class="kw">int</span> n) {
+    <span class="type">ListNode</span> dummy = <span class="kw">new</span> <span class="type">ListNode</span>(<span class="num">0</span>);
+    dummy.next = head;                        <span class="cm">// dummy so removing the head is uniform</span>
+    <span class="type">ListNode</span> fast = dummy, slow = dummy;
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n; i++) fast = fast.next;  <span class="cm">// open a gap of n</span>
+    <span class="kw">while</span> (fast.next != <span class="kw">null</span>) {          <span class="cm">// walk until fast is on the last node</span>
+        fast = fast.next;
+        slow = slow.next;
+    }
+    slow.next = slow.next.next;               <span class="cm">// slow.next is the node to remove</span>
+    <span class="kw">return</span> dummy.next;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(L)</code> for a list of length <code>L</code> &mdash; a single pass: <code>fast</code> traverses the whole list once. Space <code>O(1)</code>: only the dummy and two pointers, no second pass and no length pre-count needed.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>The dummy head handles removing the first node.</strong> Without it, deleting the head (<code>n == length</code>) needs a separate branch because there is no predecessor; anchoring <code>slow</code> on the dummy makes <code>slow.next = slow.next.next</code> work uniformly. <strong>Stop when <code>fast.next == null</code>, not <code>fast == null</code>.</strong> You want <code>slow</code> to land on the node <em>before</em> the target; overshooting by one leaves <code>slow</code> on the target itself and deletes the wrong node. <strong>Gap size is exactly <code>n</code>.</strong> Advance <code>fast</code> by <code>n</code> (not <code>n + 1</code>) starting from the dummy &mdash; then the &ldquo;<code>fast</code> on the last node&rdquo; stopping rule puts <code>slow</code> in the right place. <strong>One pass beats two.</strong> You could compute the length then delete at position <code>L - n</code>, but the two-pointer gap does it in a single traversal, which interviewers often ask for.</p></div>
+</div>
+
+
+<!-- PROBLEM: Copy List with Random Pointer -->
+<div class="card">
+<h2>Copy List with Random Pointer</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Each node of a linked list has the usual <code>next</code> pointer <em>and</em> a <code>random</code> pointer that may point to any node in the list or to <code>null</code>. Return a <strong>deep copy</strong>: a brand-new list whose nodes mirror the values and whose <code>next</code>/<code>random</code> links point only among the copied nodes, never into the original.</p>
+<ul>
+  <li>A <code>random</code> pointer can target any node &mdash; including the node itself, an earlier node, a later node, or <code>null</code>.</li>
+  <li>The copy must be fully independent: mutating one list must not affect the other.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> take nodes <code>1&rarr;2&rarr;3&rarr;4</code> with random pointers <code>1.random&rarr;3</code>, <code>2.random&rarr;1</code>, <code>3.random&rarr;null</code>, <code>4.random&rarr;2</code>. Running the interleave method, the deep copy prints <code>1(r=3) -&gt; 2(r=1) -&gt; 3(r=null) -&gt; 4(r=2)</code> &mdash; identical structure to the input &mdash; while the original is verified to still print <code>1(r=3) -&gt; 2(r=1) -&gt; 3(r=null) -&gt; 4(r=2)</code> and every copied node is confirmed to be a distinct object from its original (computed by running it).</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p><strong>Interleave a clone after every node, wire the randoms, then unzip &mdash; all in <code>O(1)</code> extra space.</strong> First, for each original node <code>X</code>, insert its copy <code>X'</code> directly after it, so the list becomes <code>X&rarr;X'&rarr;Y&rarr;Y'&rarr;&hellip;</code>. This adjacency is the trick: a copy always sits immediately after its original, so <code>cur.next</code> <em>is</em> the clone of <code>cur</code>. Second, set each clone&rsquo;s random with <code>cur.next.random = cur.random.next</code> &mdash; the clone of whatever <code>cur.random</code> points at is simply that target&rsquo;s <code>next</code> (and <code>null</code> stays <code>null</code>). Third, unzip the two lists apart, <strong>restoring the original&rsquo;s <code>next</code> links</strong> as you extract the copies. (A simpler alternative uses a hash map from each old node to its new node: one pass to create clones, a second to copy <code>next</code>/<code>random</code> via the map &mdash; <code>O(n)</code> time but <code>O(n)</code> space.)</p>
+
+<pre><span class="cm">// node with an extra random pointer</span>
+<span class="kw">class</span> <span class="type">Node</span> {
+    <span class="kw">int</span> val;
+    <span class="type">Node</span> next;
+    <span class="type">Node</span> random;
+    <span class="type">Node</span>(<span class="kw">int</span> v) { val = v; }
+}
+
+<span class="kw">public</span> <span class="type">Node</span> <span class="fn">copyRandomList</span>(<span class="type">Node</span> head) {
+    <span class="kw">if</span> (head == <span class="kw">null</span>) <span class="kw">return</span> <span class="kw">null</span>;
+    <span class="cm">// 1) interleave a clone after each node: A -&gt; A' -&gt; B -&gt; B' -&gt; ...</span>
+    <span class="kw">for</span> (<span class="type">Node</span> cur = head; cur != <span class="kw">null</span>; cur = cur.next.next) {
+        <span class="type">Node</span> copy = <span class="kw">new</span> <span class="type">Node</span>(cur.val);
+        copy.next = cur.next;
+        cur.next = copy;
+    }
+    <span class="cm">// 2) wire each clone's random: clone of X.random is X.random.next</span>
+    <span class="kw">for</span> (<span class="type">Node</span> cur = head; cur != <span class="kw">null</span>; cur = cur.next.next) {
+        cur.next.random = (cur.random != <span class="kw">null</span>) ? cur.random.next : <span class="kw">null</span>;
+    }
+    <span class="cm">// 3) unzip: extract copies AND restore the original list</span>
+    <span class="type">Node</span> dummy = <span class="kw">new</span> <span class="type">Node</span>(<span class="num">0</span>), copyTail = dummy;
+    <span class="kw">for</span> (<span class="type">Node</span> cur = head; cur != <span class="kw">null</span>; cur = cur.next) {
+        <span class="type">Node</span> copy = cur.next;
+        cur.next = copy.next;      <span class="cm">// restore original's next</span>
+        copyTail.next = copy;      <span class="cm">// splice copy onto the new list</span>
+        copyTail = copy;
+    }
+    <span class="kw">return</span> dummy.next;
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; three linear passes (interleave, wire randoms, unzip). Space <code>O(1)</code> extra beyond the output list: the interleaving stores the old&rarr;new mapping <em>in the list itself</em>, avoiding the <code>O(n)</code> hash map the alternative needs.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Null random pointers.</strong> The wiring step must guard <code>cur.random != null</code> before dereferencing, otherwise a <code>null</code> random throws; when it is null the clone&rsquo;s random stays <code>null</code>. <strong>Restore the original list when unzipping.</strong> The split loop must reset <code>cur.next = copy.next</code> so the input is left exactly as it was found &mdash; a copy routine that mangles its input is a real bug and a common probe. <strong>Wire randoms before unzipping.</strong> The identity &ldquo;clone of a node is that node&rsquo;s <code>next</code>&rdquo; only holds while the list is still interleaved; compute all randoms first, then split. <strong>The hash-map version is fine too.</strong> If asked for the simplest correct solution, a map from original to copy is clean <code>O(n)</code>/<code>O(n)</code>; the interleave method is the <code>O(1)</code>-space follow-up. <strong>Don&rsquo;t deep-copy randoms into the original nodes.</strong> Every copied pointer must land on a copied node, never back into the source list.</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_problems_recursion.html">&lsaquo; Recursion &amp; Backtracking</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_design.html">Design &amp; Object-Oriented &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>

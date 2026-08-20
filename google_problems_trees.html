@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trees — Recursion, DFS &amp; Tree DP — Google-style Problems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fa; --bg2: #ffffff; --bg3: #f1f3f5; --bg4: #e9ecef;
+  --border: #dee2e6; --text: #212529; --text2: #495057; --text3: #868e96;
+  --blue: #1971c2; --blue-l: #d0ebff; --green: #2f9e44; --green-l: #d3f9d8;
+  --yellow: #e67700; --yellow-l: #fff3bf; --red: #c92a2a; --red-l: #ffe3e3;
+  --purple: #7048e8; --purple-l: #e5dbff; --orange: #d9480f; --cyan: #0c8599;
+  --r: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.8; }
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
+header { text-align: center; margin-bottom: 48px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+header h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+header .sub { color: var(--text3); font-size: 14px; }
+
+h2 { font-size: 24px; font-weight: 700; margin: 32px 0 16px; color: var(--blue); }
+h3 { font-size: 18px; font-weight: 600; margin: 24px 0 12px; }
+h4 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+p { margin-bottom: 12px; color: var(--text2); }
+ul, ol { margin: 8px 0 16px 24px; color: var(--text2); }
+li { margin-bottom: 6px; }
+strong { color: var(--text); }
+
+pre { background: #1e1e2e; border-radius: 8px; padding: 16px 20px; overflow-x: auto; margin: 12px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; color: #cdd6f4; }
+code { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+p code, li code { background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--purple); }
+pre .kw { color: #cba6f7; } pre .type { color: #f9e2af; } pre .str { color: #a6e3a1; }
+pre .cm { color: #9aa0bd; } pre .num { color: #fab387; } pre .fn { color: #89b4fa; }
+
+.insight { background: var(--blue-l); border-left: 3px solid var(--blue); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.insight p { color: var(--blue); margin: 0; }
+.warning { background: var(--yellow-l); border-left: 3px solid var(--yellow); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.warning p { color: var(--yellow); margin: 0; }
+.danger { background: var(--red-l); border-left: 3px solid var(--red); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.danger p { color: var(--red); margin: 0; }
+.tip { background: var(--green-l); border-left: 3px solid var(--green); padding: 14px 18px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.tip p { color: var(--green); margin: 0; }
+
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); margin-bottom: 20px; padding: 24px 28px; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+th { background: var(--bg3); font-weight: 600; color: var(--text); }
+tr:hover { background: var(--bg3); }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; margin: 2px 4px 2px 0; }
+.tag-easy { background: var(--green-l); color: var(--green); }
+.tag-medium { background: var(--yellow-l); color: var(--yellow); }
+.tag-hard { background: var(--red-l); color: var(--red); }
+.tag-freq { background: var(--purple-l); color: var(--purple); }
+.prob-tags { margin: -8px 0 16px; }
+
+@media (max-width: 768px) { .container { padding: 20px 12px; } pre { font-size: 11px; } }
+</style>
+<style id="mobile-rwd">
+@media (max-width:768px){
+  /* Tighten container / card padding for small screens */
+  .container{padding:16px 12px !important;}
+  .card{padding:16px 14px !important;}
+  .content{padding:20px 14px !important;}
+  body{-webkit-text-size-adjust:100%;}
+
+  /* Wide tables: horizontally scrollable within their container, never crushed */
+  table{display:block !important;width:100% !important;max-width:100% !important;
+    overflow-x:auto !important;-webkit-overflow-scrolling:touch;}
+  table th,table td{white-space:nowrap;}
+
+  /* Fluid media: scale SVG and images to fit the viewport width */
+  svg,img{max-width:100% !important;height:auto !important;}
+
+  /* Code blocks scroll horizontally instead of stretching the page */
+  pre{overflow-x:auto !important;-webkit-overflow-scrolling:touch;
+    font-size:11.5px !important;white-space:pre !important;
+    word-wrap:normal !important;}
+  pre code{white-space:pre !important;}
+
+  /* Book-nav bar stays usable (already flex-wraps) */
+  .bknav{padding:8px 12px !important;font-size:12px !important;}
+  .bknav a,.bknav .bkhome{min-height:32px;display:inline-flex;align-items:center;}
+
+  /* Modestly scale down the largest headings */
+  header h1{font-size:26px !important;line-height:1.2 !important;}
+  h1{font-size:26px !important;}
+  h2{font-size:20px !important;}
+}
+</style>
+<noscript><style>.section,.sec,.tab-panel,.tab-content,.cb,.guide-collapse-body,.collapsible-body,.collapsible-content{display:block !important;max-height:none !important}.nav,.tab-bar{display:none !important}</style></noscript>
+<link rel="stylesheet" href="assets/handbook-nav.css">
+</head>
+<body>
+<style id="bknav-style">
+.bknav{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1b26;color:#c0caf5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 18px;font-size:12.5px;border-bottom:1px solid #2a2b3c;flex-wrap:wrap;line-height:1.4}
+.bknav a{color:#7aa2f7;text-decoration:none;font-weight:600;white-space:nowrap}
+.bknav a:hover{text-decoration:underline}
+.bknav .bkc{color:#9aa5ce;font-weight:500;text-align:center;flex:1 1 auto}
+.bknav .bkc b{color:#e0e6ff}
+.bknav .bkhome{flex:0 0 auto}
+.bknav-bottom{background:#16161e;border-top:1px solid #2a2b3c;border-bottom:none;margin-top:36px}
+#booknav-top{position:sticky;top:0;z-index:230}
+#booknav-bottom{position:sticky;bottom:0;z-index:230}
+.bknav .bkspacer{flex:0 0 auto;min-width:52px}
+</style>
+<nav class="bknav" id="booknav-top"><a class="bkhome" href="index.html">📖 Contents</a><span class="bkc">Part X · Chapter 5 — <b>Trees — Recursion, DFS &amp; Tree DP</b></span><span class="bkspacer"></span></nav>
+<div class="container">
+<header>
+  <h1>Trees &mdash; Recursion, DFS &amp; Tree DP</h1>
+  <div class="sub">Six Google-style tree &amp; recursion problems &bull; original framing, execution-tested solutions, and interviewer probes</div>
+</header>
+
+<div class="insight" style="margin-bottom:24px;"><p><strong>Note:</strong> Representative big-tech-style problems &mdash; <strong>not sourced from Google</strong>. The &ldquo;Google-style&rdquo; badge denotes the flavor of question, not its source.</p></div>
+
+<div class="tip" style="margin-bottom:24px;"><p><strong>How to read this chapter:</strong> every worked example uses inputs invented for this book, and each stated output was produced by <em>compiling and running</em> the accompanying Java against a suite of edge cases (empty tree, single node, all-negative values, perfect vs. skewed shapes, multi-digit counts, deep nesting) and, wherever practical, a brute-force differential check over tens of thousands of random inputs. The recurring idea below is <strong>post-order DFS</strong>: solve each child first, combine the children&rsquo;s answers at the parent, and thread a running global optimum through the recursion &mdash; the backbone of tree DP.</p></div>
+
+
+<!-- PROBLEM: Binary Tree Maximum Path Sum -->
+<div class="card">
+<h2>Binary Tree Maximum Path Sum</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>A <em>path</em> in a binary tree is any sequence of nodes where each adjacent pair is connected by an edge; a node appears at most once and the path need not pass through the root. The <em>path sum</em> is the total of the node values along it. Return the maximum path sum over every non-empty path in the tree. Values may be negative.</p>
+<ul>
+  <li>A single node is itself a valid path, so the answer for a one-node tree is just that node&rsquo;s value.</li>
+  <li>When every value is negative the best path is the single least-negative node &mdash; you are never forced to add a second, only-hurtful node.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for the tree below the answer is <code>32</code> (computed by running the code). The optimal path bends through the root: <code>9 &rarr; 11 &rarr; 4 &rarr; -3 &rarr; 6 &rarr; 5</code>, summing <code>9 + 11 + 4 - 3 + 6 + 5 = 32</code>. Note it dips through the negative <code>-3</code> because the <code>6</code>-subtree on the far side pays for it. An all-negative tree such as <code>[-10, [-2], [-13, [-1]]]</code> returns <code>-1</code> &mdash; the least-negative single node.</p></div>
+<pre><span class="cm">// node values (root at top)</span>
+        4
+       / \
+      11  -3
+     / \     \
+    9   2     6
+             / \
+            5   1        <span class="cm">// -&gt; max path sum 32</span></pre>
+
+<h3>Approach &amp; Intuition</h3>
+<p>This is <strong>tree DP via post-order DFS</strong>. For each node define its <em>downward gain</em>: the largest sum of a path that <em>starts</em> at the node and descends into exactly one of its subtrees. That gain is <code>node.val + max(gain(left), gain(right))</code>, but any child gain that is negative is clamped to <code>0</code> &mdash; a subtree that only subtracts is simply not entered. Separately, the best path that <em>bends</em> at a node (using both children) is <code>node.val + max(0, gain(left)) + max(0, gain(right))</code>; we fold that value into a running global maximum at every node. The gain a node <em>returns</em> to its parent can only continue up one side, so it uses a single child; the global best is where a full &ldquo;&Lambda;-shaped&rdquo; path is closed off. Carrying the global maximum in a one-element array lets the recursion update it in place.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">maxPathSum</span>(<span class="type">TreeNode</span> root) {
+    <span class="kw">int</span>[] best = { <span class="type">Integer</span>.MIN_VALUE };   <span class="cm">// best full path seen so far</span>
+    <span class="fn">gain</span>(root, best);
+    <span class="kw">return</span> best[<span class="num">0</span>];
+}
+<span class="cm">// Downward gain: best path that STARTS at n and descends one side only.</span>
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">gain</span>(<span class="type">TreeNode</span> n, <span class="kw">int</span>[] best) {
+    <span class="kw">if</span> (n == <span class="kw">null</span>) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">int</span> l = <span class="type">Math</span>.<span class="fn">max</span>(<span class="num">0</span>, <span class="fn">gain</span>(n.left, best));    <span class="cm">// clamp: skip a negative branch</span>
+    <span class="kw">int</span> r = <span class="type">Math</span>.<span class="fn">max</span>(<span class="num">0</span>, <span class="fn">gain</span>(n.right, best));
+    best[<span class="num">0</span>] = <span class="type">Math</span>.<span class="fn">max</span>(best[<span class="num">0</span>], n.val + l + r);  <span class="cm">// path bending through n</span>
+    <span class="kw">return</span> n.val + <span class="type">Math</span>.<span class="fn">max</span>(l, r);              <span class="cm">// straight path to extend upward</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; each node is visited exactly once and does constant work. Space <code>O(h)</code> for the recursion stack, where <code>h</code> is the tree height (<code>O(log n)</code> if balanced, <code>O(n)</code> for a degenerate chain).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Clamp negative child gains, not the node itself.</strong> Wrapping each child in <code>max(0, &hellip;)</code> lets you drop a harmful subtree, but the node&rsquo;s own value is always included &mdash; that is what keeps an all-negative tree returning the least-negative node instead of <code>0</code>. <strong>Seed the global with <code>Integer.MIN_VALUE</code>, not <code>0</code>.</strong> Initialising to <code>0</code> silently reports <code>0</code> for an all-negative tree, since no real path ever beats it. <strong>Return one side, record both.</strong> The value handed to the parent may only continue up a single branch (a path cannot fork), yet the answer considered <em>at</em> a node uses both branches; conflating the two is the classic bug. <strong>Watch for overflow on adversarial input.</strong> With tens of thousands of large-magnitude nodes the sum can exceed <code>int</code> range &mdash; an interviewer may ask you to switch the accumulator to <code>long</code>.</p></div>
+</div>
+
+
+<!-- PROBLEM: Count Complete Tree Nodes -->
+<div class="card">
+<h2>Count Complete Tree Nodes</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Given the root of a <strong>complete</strong> binary tree, count its nodes. In a complete tree every level is fully filled except possibly the last, and the last level&rsquo;s nodes are packed as far left as possible. A trivial <code>O(n)</code> traversal works, but the completeness guarantee lets you do far better &mdash; aim for <code>O(log&sup2; n)</code>.</p>
+<ul>
+  <li>An empty tree has <code>0</code> nodes; a single node has <code>1</code>.</li>
+  <li>A <em>perfect</em> tree of height <code>h</code> (all levels full) has exactly <code>2^h - 1</code> nodes &mdash; no traversal needed.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> a complete tree with <code>12</code> nodes (levels of size 1, 2, 4, and a last level of 5 packed left) returns <code>12</code> (verified by running the code). The code never visits all 12 nodes: it measures the left and right spine heights, sees they differ, and recurses &mdash; touching only <code>O(log&sup2; n)</code> nodes.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Walk the <strong>leftmost spine</strong> and the <strong>rightmost spine</strong> of the current subtree, counting their lengths. If they are equal, every level is full, so the subtree is <em>perfect</em> and holds exactly <code>2^h - 1</code> nodes &mdash; return immediately without descending. If they differ, the last level is only partly filled; recurse into both children and add <code>1</code> for the current node. The key insight is that in a complete tree, at each level of recursion at most one of the two children is <em>not</em> perfect, so the recursion follows a single root-to-leaf path of length <code>O(log n)</code>, and each step spends <code>O(log n)</code> measuring a spine &mdash; hence <code>O(log&sup2; n)</code> overall, not <code>O(n)</code>.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">countNodes</span>(<span class="type">TreeNode</span> root) {
+    <span class="kw">if</span> (root == <span class="kw">null</span>) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">int</span> lh = <span class="fn">leftHeight</span>(root), rh = <span class="fn">rightHeight</span>(root);
+    <span class="kw">if</span> (lh == rh) <span class="kw">return</span> (<span class="num">1</span> &lt;&lt; lh) - <span class="num">1</span>;   <span class="cm">// perfect subtree: 2^h - 1 nodes</span>
+    <span class="cm">// last level partly filled -&gt; count each side, plus this node</span>
+    <span class="kw">return</span> <span class="num">1</span> + <span class="fn">countNodes</span>(root.left) + <span class="fn">countNodes</span>(root.right);
+}
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">leftHeight</span>(<span class="type">TreeNode</span> n)  { <span class="kw">int</span> h = <span class="num">0</span>; <span class="kw">while</span> (n != <span class="kw">null</span>) { h++; n = n.left;  } <span class="kw">return</span> h; }
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">rightHeight</span>(<span class="type">TreeNode</span> n) { <span class="kw">int</span> h = <span class="num">0</span>; <span class="kw">while</span> (n != <span class="kw">null</span>) { h++; n = n.right; } <span class="kw">return</span> h; }</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(log&sup2; n)</code> &mdash; the recursion descends one root-to-leaf path (<code>O(log n)</code> levels) and each level measures a spine in <code>O(log n)</code>. Space <code>O(log n)</code> for the recursion stack. A plain traversal would be <code>O(n)</code> time.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Measure heights in the right directions.</strong> The left height follows <code>.left</code> repeatedly and the right height follows <code>.right</code>; swapping them breaks the perfect-subtree test. <strong>The <code>2^h - 1</code> shortcut is the whole point.</strong> Reaching for it only when <code>lh == rh</code> is what avoids the linear scan; if you always recurse you have merely written an <code>O(n)</code> count with extra height work. <strong>Use <code>1 &lt;&lt; h</code> carefully.</strong> For very tall trees <code>1 &lt;&lt; h</code> can overflow a 32-bit <code>int</code>; interviewers may ask you to guard with <code>1L &lt;&lt; h</code>. <strong>Only valid for complete trees.</strong> The shortcut assumes completeness &mdash; on an arbitrary tree equal spine heights do <em>not</em> imply perfection, so the method would overcount (<code>2^h &minus; 1</code> is the maximum node count for that height &mdash; a non-perfect tree has fewer). <strong>Empty tree.</strong> The <code>null</code> guard returns <code>0</code> and also terminates the recursion at absent children.</p></div>
+</div>
+
+
+<!-- PROBLEM: Diameter of Binary Tree -->
+<div class="card">
+<h2>Diameter of Binary Tree</h2>
+<div class="prob-tags"><span class="tag tag-easy">Easy</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>The <em>diameter</em> of a binary tree is the length of the longest path between any two nodes, where length is counted in <strong>edges</strong>. The path may or may not pass through the root. Return that edge count.</p>
+<ul>
+  <li>A single node has diameter <code>0</code> &mdash; there is no edge to traverse.</li>
+  <li>The longest path need not touch the root; it can lie entirely within one subtree.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for the tree below the diameter is <code>6</code> edges (verified by running the code). The longest path runs <code>7 &rarr; 4 &rarr; 2 &rarr; 1 &rarr; 3 &rarr; 6 &rarr; 8</code> &mdash; seven nodes, so six edges &mdash; passing through the root. Counting nodes instead would give <code>7</code>; the problem asks for edges, so <code>6</code> is correct.</p></div>
+<pre><span class="cm">// node values (root at top)</span>
+          1
+        /   \
+       2     3
+      / \      \
+     4   5      6
+    /            \
+   7              8      <span class="cm">// -&gt; diameter 6 edges (7-4-2-1-3-6-8)</span></pre>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Another <strong>post-order DFS</strong>. For each node compute its <em>height</em> in nodes &mdash; <code>1 + max(height(left), height(right))</code>, with a <code>null</code> child contributing <code>0</code> (so a leaf has height <code>1</code>). The longest path that <em>bends</em> at a node uses both subtrees fully, so its edge count is exactly <code>height(left) + height(right)</code>. Fold that quantity into a running global maximum at every node; the height returned upward continues along only one side. The pattern mirrors Maximum Path Sum: combine two children for the local answer, return one child upward. The diameter is where the widest &ldquo;&Lambda;&rdquo; closes.</p>
+
+<pre><span class="kw">public</span> <span class="kw">int</span> <span class="fn">diameterOfBinaryTree</span>(<span class="type">TreeNode</span> root) {
+    <span class="kw">int</span>[] best = { <span class="num">0</span> };        <span class="cm">// longest path length, measured in EDGES</span>
+    <span class="fn">height</span>(root, best);
+    <span class="kw">return</span> best[<span class="num">0</span>];
+}
+<span class="cm">// Height of the subtree at n, in nodes; updates best (a path's edge count) bending at n.</span>
+<span class="kw">private</span> <span class="kw">int</span> <span class="fn">height</span>(<span class="type">TreeNode</span> n, <span class="kw">int</span>[] best) {
+    <span class="kw">if</span> (n == <span class="kw">null</span>) <span class="kw">return</span> <span class="num">0</span>;
+    <span class="kw">int</span> l = <span class="fn">height</span>(n.left, best), r = <span class="fn">height</span>(n.right, best);
+    best[<span class="num">0</span>] = <span class="type">Math</span>.<span class="fn">max</span>(best[<span class="num">0</span>], l + r);   <span class="cm">// edges on the path bending through n</span>
+    <span class="kw">return</span> <span class="num">1</span> + <span class="type">Math</span>.<span class="fn">max</span>(l, r);            <span class="cm">// height (nodes) of this subtree</span>
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> &mdash; one visit per node. Space <code>O(h)</code> for the recursion stack (<code>O(log n)</code> balanced, <code>O(n)</code> for a degenerate chain).</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Edges vs. nodes.</strong> The diameter here is edges, so a null child returns height <code>0</code> and the bending path is <code>l + r</code>; if the problem instead asked for the number of <em>nodes</em> on the longest path the answer would be <code>l + r + 1</code>. State which convention you are using. <strong>Combine both children, return one.</strong> The path through a node spans both subtrees, but the height propagated to the parent may follow only one &mdash; the same two-value discipline as Maximum Path Sum. <strong>Don&rsquo;t recompute heights.</strong> A naive version calls a separate <code>height()</code> inside a diameter recursion, giving <code>O(n&sup2;)</code>; folding the update into a single post-order pass keeps it <code>O(n)</code>. <strong>Single node / empty.</strong> One node yields <code>0</code> (no edges); an empty tree also yields <code>0</code>.</p></div>
+</div>
+
+
+<!-- PROBLEM: Flip Equivalent Binary Trees -->
+<div class="card">
+<h2>Flip Equivalent Binary Trees</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>A <em>flip</em> swaps the left and right child of a node. Two binary trees are <strong>flip equivalent</strong> if one can be turned into the other by any number of flips at any set of nodes. Given the roots of two trees, decide whether they are flip equivalent.</p>
+<ul>
+  <li>Two empty trees are flip equivalent; an empty tree and a non-empty tree are not.</li>
+  <li>Node values must match at corresponding positions &mdash; flipping only reorders children, never changes values.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> the two trees below are flip equivalent, so the code returns <code>true</code> (verified by running it). Tree&nbsp;A has root <code>1</code> with children <code>2</code> (left) and <code>3</code> (right); tree&nbsp;B has the same root with <code>3</code> and <code>2</code> swapped, node <code>2</code>&rsquo;s children <code>4, 5</code> swapped, and the <code>5</code>-node&rsquo;s children <code>7, 8</code> swapped too. Flipping those three nodes (root, node&nbsp;2, and node&nbsp;5) turns A into B. If B&rsquo;s <code>8</code> were instead a <code>9</code>, the code returns <code>false</code> &mdash; no sequence of flips can change a value.</p></div>
+<pre><span class="cm">// Tree A                     Tree B  (flip root, node 2 &amp; the "5" node)</span>
+      1                             1
+     / \                           / \
+    2   3                         3   2
+   / \                               / \
+  4   5                             5   4
+     / \                           / \
+    7   8                         8   7     <span class="cm">// -&gt; flip equivalent: true</span></pre>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Recurse in lock-step over both trees. At each pair of nodes, first dispose of the base cases: if both are <code>null</code> they match; if exactly one is <code>null</code>, or the values differ, they cannot match. Otherwise the two children can align in one of two ways &mdash; <strong>without a flip</strong> (A.left with B.left, A.right with B.right) or <strong>with a flip</strong> (A.left with B.right, A.right with B.left). The trees are flip equivalent here iff <em>either</em> alignment recurses to <code>true</code>. Because the value check happens before recursing, a mismatch prunes immediately, so each node is effectively examined once.</p>
+
+<pre><span class="kw">public</span> <span class="kw">boolean</span> <span class="fn">flipEquiv</span>(<span class="type">TreeNode</span> a, <span class="type">TreeNode</span> b) {
+    <span class="kw">if</span> (a == <span class="kw">null</span> &amp;&amp; b == <span class="kw">null</span>) <span class="kw">return</span> <span class="kw">true</span>;          <span class="cm">// both empty -&gt; match</span>
+    <span class="kw">if</span> (a == <span class="kw">null</span> || b == <span class="kw">null</span> || a.val != b.val) <span class="kw">return</span> <span class="kw">false</span>;
+    <span class="cm">// children line up as-is, OR after flipping a's two children</span>
+    <span class="kw">return</span> (<span class="fn">flipEquiv</span>(a.left, b.left)  &amp;&amp; <span class="fn">flipEquiv</span>(a.right, b.right))
+        || (<span class="fn">flipEquiv</span>(a.left, b.right) &amp;&amp; <span class="fn">flipEquiv</span>(a.right, b.left));
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n)</code> where <code>n</code> is the size of the smaller tree &mdash; a value mismatch stops a branch early, so each surviving node pair is compared once. Space <code>O(h)</code> for the recursion stack.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Handle the three null cases in order.</strong> Both-null must be checked <em>before</em> the one-null test; otherwise <code>a.val</code> dereferences a null pointer. <strong>Values compared before children.</strong> Confirming <code>a.val == b.val</code> up front both prunes and prevents the null dereference on the following line. <strong>Short-circuit is what keeps it linear.</strong> Java&rsquo;s <code>&amp;&amp;</code>/<code>||</code> stop early, so the first workable alignment ends the comparison; forgetting the flipped alternative (the second <code>||</code> clause) wrongly rejects trees that differ only by a swap. <strong>Flips reorder, never relabel.</strong> A common follow-up asks you to also return the set of nodes that were flipped, or to canonicalise each tree (sort children by a hash) and compare &mdash; a useful cross-check but <code>O(n log n)</code> rather than <code>O(n)</code>.</p></div>
+</div>
+
+
+<!-- PROBLEM: Decode String -->
+<div class="card">
+<h2>Decode String</h2>
+<div class="prob-tags"><span class="tag tag-medium">Medium</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>Decode a string encoded with the rule <code>k[substring]</code>, meaning the bracketed <code>substring</code> repeats exactly <code>k</code> times. Encodings may nest, <code>k</code> is a positive integer that can have <strong>multiple digits</strong>, and the input outside brackets is plain lowercase letters. The input is always well-formed &mdash; brackets balance and every <code>[</code> is preceded by a count.</p>
+<ul>
+  <li>There are no stray digits: a number always introduces a bracket group.</li>
+  <li><code>k</code> may exceed a single digit, e.g. <code>12[z]</code> expands to twelve <code>z</code>&rsquo;s.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> running the code, <code>"2[pq3[r]]"</code> decodes to <code>"pqrrrpqrrr"</code>: the inner <code>3[r]</code> becomes <code>rrr</code>, giving <code>pqrrr</code>, which the outer <code>2[&hellip;]</code> doubles. The multi-digit case <code>"12[z]"</code> yields a 12-character run of <code>z</code>, and <code>"3[a2[bc]]"</code> yields <code>"abcbcabcbcabcbc"</code> &mdash; all three outputs were produced by executing the function.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Scan left to right with <strong>two stacks</strong>: one of pending repeat counts, one of partially-built strings. Accumulate digits into an integer <code>k</code> so multi-digit counts work. On <code>'['</code>, push the current count and the text built so far, then start a fresh buffer for the bracket body. On <code>']'</code>, the current buffer is a completed body: pop the enclosing text and the matching count, and append the body to that text <code>k</code> times. Plain letters just extend the current buffer. When the scan ends, the current buffer holds the fully decoded string. The stacks encode exactly the nesting, so arbitrarily deep encodings unwind correctly.</p>
+
+<pre><span class="kw">public</span> <span class="type">String</span> <span class="fn">decodeString</span>(<span class="type">String</span> s) {
+    <span class="type">Deque</span>&lt;<span class="type">Integer</span>&gt; counts = <span class="kw">new</span> <span class="type">ArrayDeque</span>&lt;&gt;();       <span class="cm">// pending repeat factors k</span>
+    <span class="type">Deque</span>&lt;<span class="type">StringBuilder</span>&gt; segs = <span class="kw">new</span> <span class="type">ArrayDeque</span>&lt;&gt;();   <span class="cm">// text built before each '['</span>
+    <span class="type">StringBuilder</span> cur = <span class="kw">new</span> <span class="type">StringBuilder</span>();
+    <span class="kw">int</span> k = <span class="num">0</span>;
+    <span class="kw">for</span> (<span class="kw">char</span> c : s.<span class="fn">toCharArray</span>()) {
+        <span class="kw">if</span> (<span class="type">Character</span>.<span class="fn">isDigit</span>(c)) {
+            k = k * <span class="num">10</span> + (c - <span class="str">'0'</span>);          <span class="cm">// accumulate a MULTI-digit count</span>
+        } <span class="kw">else if</span> (c == <span class="str">'['</span>) {
+            counts.<span class="fn">push</span>(k);                    <span class="cm">// stash k and the text so far</span>
+            segs.<span class="fn">push</span>(cur);
+            cur = <span class="kw">new</span> <span class="type">StringBuilder</span>();
+            k = <span class="num">0</span>;
+        } <span class="kw">else if</span> (c == <span class="str">']'</span>) {
+            <span class="type">StringBuilder</span> inner = cur;         <span class="cm">// finished bracket body</span>
+            cur = segs.<span class="fn">pop</span>();
+            <span class="kw">int</span> rep = counts.<span class="fn">pop</span>();
+            <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; rep; i++) cur.<span class="fn">append</span>(inner);
+        } <span class="kw">else</span> {
+            cur.<span class="fn">append</span>(c);                     <span class="cm">// plain letter</span>
+        }
+    }
+    <span class="kw">return</span> cur.<span class="fn">toString</span>();
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(N)</code> where <code>N</code> is the length of the <em>decoded</em> output &mdash; each output character is appended once (the input scan itself is <code>O(|s|)</code>, dominated by the expansion). Space <code>O(N)</code> for the output plus <code>O(d)</code> stack depth, where <code>d</code> is the nesting depth.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Accumulate multi-digit counts.</strong> The <code>k = k*10 + (c - '0')</code> idiom is essential; treating each digit as a separate count misreads <code>12[z]</code> as <code>1[2[z]]</code>. <strong>Reset <code>k</code> after pushing.</strong> Zero it on <code>'['</code> so the next count starts clean. <strong>Push the buffer, then start empty.</strong> On <code>'['</code> you must save the outer buffer and begin a fresh one for the body; reusing the same buffer merges the body into its own prefix. <strong>Pop order on <code>']'</code>.</strong> The completed body is the <em>current</em> buffer; the enclosing text is what you pop &mdash; append body to popped, not the reverse. A recursive-descent parser is the natural alternative and often reads more cleanly; interviewers may ask you to write both and compare stack usage against recursion depth.</p></div>
+</div>
+
+
+<!-- PROBLEM: Cracking the Safe -->
+<div class="card">
+<h2>Cracking the Safe</h2>
+<div class="prob-tags"><span class="tag tag-hard">Hard</span> <span class="tag tag-freq">Google-style</span></div>
+
+<h3>Problem</h3>
+<p>A safe is opened by the correct sequence of <code>n</code> digits, each drawn from <code>{0, 1, &hellip;, k-1}</code>. The lock checks only the <em>most recent</em> <code>n</code> digits entered, so a long input string tries a new candidate password with every keypress. Return any shortest string that is guaranteed to contain <strong>all</strong> <code>k^n</code> possible passwords as contiguous substrings. Such a string has length <code>k^n + n - 1</code>.</p>
+<ul>
+  <li>With <code>n = 1</code> the answer is simply every digit once, e.g. <code>k = 2</code> gives a length-2 string.</li>
+  <li>Every one of the <code>k^n</code> length-<code>n</code> combinations must appear exactly once at minimum length &mdash; this is a <em>de Bruijn sequence</em>.</li>
+</ul>
+<div class="insight"><p><strong>Example:</strong> for <code>n = 2, k = 2</code> the code returns <code>"01100"</code> (length <code>2&sup2; + 2 - 1 = 5</code>, verified by running it). Its length-2 windows are <code>01, 11, 10, 00</code> &mdash; all four 2-digit binary passwords, each present. For <code>n = 3, k = 2</code> the output has the expected length <code>2&sup3; + 2 = 10</code> and contains all eight 3-bit codes; the test harness confirmed completeness for every case up to <code>k = 4</code>.</p></div>
+
+<h3>Approach &amp; Intuition</h3>
+<p>Model the problem as an <strong>Euler circuit on a de Bruijn graph</strong>. Each node is a string of the last <code>n-1</code> digits (there are <code>k^(n-1)</code> of them); each of the <code>k^n</code> possible length-<code>n</code> codes is a directed <em>edge</em> from its first <code>n-1</code> digits to its last <code>n-1</code> digits. A walk that uses every edge exactly once (an Euler circuit &mdash; one exists because every node has equal in- and out-degree <code>k</code>) spells out a string in which every code appears exactly once. Build that walk with <strong>Hierholzer&rsquo;s algorithm</strong>: from the current node, greedily take each unused outgoing edge, recurse, and append the edge&rsquo;s digit <em>after</em> the recursion returns (post-order). Finally append the starting node&rsquo;s <code>n-1</code> digits to complete the final wrap-around windows.</p>
+
+<pre><span class="kw">private</span> <span class="type">Set</span>&lt;<span class="type">String</span>&gt; seen = <span class="kw">new</span> <span class="type">HashSet</span>&lt;&gt;();   <span class="cm">// length-n codes (edges) already used</span>
+<span class="kw">private</span> <span class="type">StringBuilder</span> ans = <span class="kw">new</span> <span class="type">StringBuilder</span>();
+<span class="kw">private</span> <span class="kw">int</span> k;
+
+<span class="kw">public</span> <span class="type">String</span> <span class="fn">crackSafe</span>(<span class="kw">int</span> n, <span class="kw">int</span> k) {
+    <span class="kw">this</span>.k = k;
+    <span class="kw">if</span> (n == <span class="num">1</span> &amp;&amp; k == <span class="num">1</span>) <span class="kw">return</span> <span class="str">"0"</span>;          <span class="cm">// single self-loop edge case</span>
+    <span class="type">StringBuilder</span> start = <span class="kw">new</span> <span class="type">StringBuilder</span>();
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; n - <span class="num">1</span>; i++) start.<span class="fn">append</span>(<span class="str">'0'</span>);   <span class="cm">// start node = n-1 zeros</span>
+    <span class="fn">dfs</span>(start.<span class="fn">toString</span>(), n);
+    ans.<span class="fn">append</span>(start);                    <span class="cm">// append the start node's digits to close the wrap-around</span>
+    <span class="kw">return</span> ans.<span class="fn">toString</span>();
+}
+<span class="cm">// Hierholzer: consume unused edges out of `node`, appending digits post-order.</span>
+<span class="kw">private</span> <span class="kw">void</span> <span class="fn">dfs</span>(<span class="type">String</span> node, <span class="kw">int</span> n) {
+    <span class="kw">for</span> (<span class="kw">int</span> x = <span class="num">0</span>; x &lt; k; x++) {
+        <span class="type">String</span> edge = node + (<span class="kw">char</span>) (<span class="str">'0'</span> + x);   <span class="cm">// a length-n code</span>
+        <span class="kw">if</span> (seen.<span class="fn">add</span>(edge)) {                    <span class="cm">// add() is false if already used</span>
+            <span class="fn">dfs</span>(edge.<span class="fn">substring</span>(<span class="num">1</span>), n);        <span class="cm">// next node = drop the first digit</span>
+            ans.<span class="fn">append</span>((<span class="kw">char</span>) (<span class="str">'0'</span> + x));
+        }
+    }
+}</pre>
+
+<p><strong>Complexity:</strong> Time <code>O(n &middot; k^n)</code> &mdash; the walk traverses all <code>k^n</code> edges once, and each step builds and hashes an <code>O(n)</code>-length key. Space <code>O(n &middot; k^n)</code> for the <code>seen</code> set of edges, and the output has length <code>k^n + n - 1</code>.</p>
+
+<div class="warning"><p><strong>Common pitfalls / interviewer probes:</strong> <strong>Append the edge digit after recursing.</strong> Hierholzer appends in <em>post-order</em>; appending before the recursive call produces a string that is not a valid Euler walk and drops codes. <strong>Append the start node.</strong> The post-order walk emits one digit per edge (<code>k^n</code> digits); the start node's <code>n-1</code> digits must be appended so the final wrap-around windows are real codes and the length reaches <code>k^n + n - 1</code>. <strong>Nodes are the last <code>n-1</code> digits, edges the length-<code>n</code> codes.</strong> Mixing these up (e.g. treating full codes as nodes) breaks the degree balance the Euler argument relies on. <strong>Recursion depth.</strong> This DFS recurses once per edge, so depth reaches <code>k^n</code>; on large inputs an interviewer may push you toward an explicit stack (iterative Hierholzer) to avoid overflow. <strong>Handle <code>n = 1, k = 1</code>.</strong> A single digit with one symbol is the degenerate self-loop that the up-front guard returns directly.</p></div>
+</div>
+
+</div>
+<nav class="bknav bknav-bottom" id="booknav-bottom"><a href="google_problems_graphs.html">&lsaquo; Graphs — BFS / DFS / Union-Find / Topological Sort</a><a class="bkc" href="index.html">📖 Contents</a><a href="google_problems_dp.html">Dynamic Programming &rsaquo;</a></nav>
+<script src="assets/handbook-nav.js"></script>
+</body>
+</html>
